@@ -1,7 +1,6 @@
 import {
-  IconAlertCircle,
   IconArrowBack,
-  IconCalendar,
+  IconBuildingFactory,
   IconCheck,
   IconClipboardList,
   IconClock,
@@ -10,43 +9,50 @@ import {
   IconHash,
   IconHistory,
   IconPlayerPlay,
-  IconReload,
   IconScissors,
   IconUser,
 } from "@tabler/icons-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/lib/theme";
+import { shadow } from "@/constants/design-system";
 import { useSlotContext } from "../chrome/slot-context";
 import { TUTORIAL_CUTS_LIST } from "../fixtures";
 import type { SceneProps } from "./index";
 
-// Status colors mirror ENTITY_BADGE_CONFIG.CUT used by the real cut-detail screen.
+// Status colors mirror the real detail Badge, which resolves through
+// ENTITY_BADGE_CONFIG.CUT → BADGE_COLORS:
+//   PENDING → "gray" (#737373), CUTTING → "blue" (#2563eb),
+//   COMPLETED → "green" (#15803d). Solid pill, white text.
 const CUT_STATUS_COLORS: Record<string, string> = {
   PENDING: "#737373",
-  CUTTING: "#1d4ed8",
+  CUTTING: "#2563eb",
   COMPLETED: "#15803d",
 };
 
+// CUT_TYPE_LABELS / CUT_ORIGIN_LABELS mirror the real constants used by the
+// screen (see config/list/production/cuts.ts: VINYL → "Adesivo").
 const CUT_TYPE_LABELS: Record<string, string> = {
-  VINYL: "Vinil",
-  STENCIL: "Stencil",
+  VINYL: "Adesivo",
+  STENCIL: "Espovo",
 };
 
 const CUT_ORIGIN_LABELS: Record<string, string> = {
-  PLAN: "Planejado",
-  REQUEST: "Solicitado",
+  PLAN: "Plano",
+  REQUEST: "Solicitação",
 };
 
 /**
- * Tutorial v5 scene mirroring `src/app/(tabs)/producao/recorte/detalhes/[id].tsx`.
+ * Tutorial scene mirroring `src/app/(tabs)/producao/recorte/detalhes/[id].tsx`.
  *
  * Layout, top-to-bottom:
- *   1. Header card — cut name (filename) + serial-like sub line + status pill
- *      with quick action buttons (request, advance status).
- *   2. "Informações Gerais" card — file preview placeholder + origin/type/duration rows.
- *   3. "Informações da Tarefa" card — task name/customer/sector link-style row.
- *   4. "Datas" card — solicitado/iniciado/concluído.
- *   5. "Histórico de Alterações" card — empty timeline placeholder.
+ *   1. Header card — page title ("Recorte - {arquivo}") + inline action buttons
+ *      (request, advance status).
+ *   2. "Informações Gerais" card — IconScissors header + status badge, file
+ *      preview tile, then Origem / Tipo / Tempo de Execução info rows.
+ *   3. "Informações da Tarefa" card — IconClipboardList header + "Ver" link,
+ *      then Nome / Cliente / Setor info rows.
+ *   4. "Datas" card — IconClock header, Solicitado / Iniciado / Concluído rows.
+ *   5. "Histórico de Alterações" card — IconHistory header + empty timeline.
  */
 export function CutDetailScene({ state: _state }: SceneProps) {
   const { colors } = useTheme();
@@ -57,67 +63,42 @@ export function CutDetailScene({ state: _state }: SceneProps) {
   const statusColor = CUT_STATUS_COLORS[cut.status] ?? "#737373";
   const typeLabel = CUT_TYPE_LABELS[cut.type] ?? cut.type;
   const originLabel = CUT_ORIGIN_LABELS[cut.origin] ?? cut.origin;
+  // Prefer the real fixture filename; fall back to the cut label so any cuts
+  // source without a `filename` (e.g. TUTORIAL_TASK_DETAIL.cuts) doesn't regress.
+  const fileName = cut.filename ?? cut.label;
+  const pageTitle = `Recorte - ${fileName}`;
+  const mutedRow = colors.muted + "30";
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: 12, gap: 12, paddingBottom: 100 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, gap: 16, paddingBottom: 100 }}
+      showsVerticalScrollIndicator={false}
     >
-      {/* ─── Header card — cut name + status pill + actions ──────────────── */}
+      {/* ─── Header card — page title + inline action buttons ───────────── */}
       <View
         ref={slot.registerRef("cutDetailHeader") as any}
         onLayout={slot.register("cutDetailHeader")}
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
-        <View style={styles.headerRow}>
-          <View style={styles.headerIconWrap}>
-            <IconScissors size={32} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={2}>
-              {cut.label}
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>
-              {cut.taskName}
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.pageTitle, { color: colors.foreground }]} numberOfLines={2}>
+              {pageTitle}
             </Text>
           </View>
           <View
-            ref={slot.registerRef("cutDetailStatusPill") as any}
-            onLayout={slot.register("cutDetailStatusPill")}
-            style={[styles.statusPill, { backgroundColor: statusColor }]}
+            ref={slot.registerRef("cutDetailActions") as any}
+            onLayout={slot.register("cutDetailActions")}
+            style={styles.headerActions}
           >
-            <Text style={styles.statusText} numberOfLines={1}>
-              {cut.statusLabel}
-            </Text>
+            <Pressable style={[styles.actionButton, { backgroundColor: colors.info }]}>
+              <IconScissors size={18} color="#ffffff" />
+            </Pressable>
+            <Pressable style={[styles.actionButton, { backgroundColor: colors.primary }]}>
+              <IconPlayerPlay size={18} color={colors.primaryForeground} />
+            </Pressable>
           </View>
-        </View>
-
-        {/* Quick action buttons row */}
-        <View
-          ref={slot.registerRef("cutDetailActions") as any}
-          onLayout={slot.register("cutDetailActions")}
-          style={styles.actionsRow}
-        >
-          <Pressable
-            style={[styles.actionButton, { backgroundColor: "#3b82f6" }]}
-          >
-            <IconScissors size={18} color="#ffffff" />
-          </Pressable>
-          <Pressable
-            style={[styles.actionButton, { backgroundColor: colors.primary }]}
-          >
-            <IconPlayerPlay size={18} color="#ffffff" />
-          </Pressable>
-          <Pressable
-            style={[styles.actionButton, { backgroundColor: "#16a34a" }]}
-          >
-            <IconCheck size={18} color="#ffffff" />
-          </Pressable>
-          <Pressable
-            style={[styles.actionButton, { backgroundColor: colors.muted, borderColor: colors.border, borderWidth: 1 }]}
-          >
-            <IconReload size={18} color={colors.mutedForeground} />
-          </Pressable>
         </View>
       </View>
 
@@ -127,87 +108,89 @@ export function CutDetailScene({ state: _state }: SceneProps) {
         onLayout={slot.register("cutDetailInfoCard")}
         icon={IconScissors}
         title="Informações Gerais"
+        colors={colors}
         badge={
-          <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
-            <Text style={styles.statusText} numberOfLines={1}>
+          <View
+            ref={slot.registerRef("cutDetailStatusPill") as any}
+            onLayout={slot.register("cutDetailStatusPill")}
+            style={[styles.statusBadge, { backgroundColor: statusColor }]}
+          >
+            <Text style={styles.statusBadgeText} numberOfLines={1}>
               {cut.statusLabel}
             </Text>
           </View>
         }
-        colors={colors}
       >
-        {/* File preview placeholder — mirrors the FileItem grid tile */}
+        {/* File preview tile — mirrors the FileItem grid preview */}
         <View
           ref={slot.registerRef("cutDetailFilePreview") as any}
           onLayout={slot.register("cutDetailFilePreview")}
-          style={[
-            styles.filePreview,
-            { borderColor: colors.border, backgroundColor: colors.muted },
-          ]}
+          style={styles.fileContainer}
         >
-          <IconFile size={48} color={colors.mutedForeground} />
-          <Text style={[styles.filePreviewName, { color: colors.text }]} numberOfLines={1}>
-            estrela-lateral.svg
-          </Text>
-          <Text style={[styles.filePreviewMeta, { color: colors.mutedForeground }]}>
-            420 mm × 280 mm
-          </Text>
+          <View style={[styles.filePreview, { borderColor: colors.border, backgroundColor: colors.muted }]}>
+            <IconFile size={48} color={colors.mutedForeground} />
+            <Text style={[styles.filePreviewName, { color: colors.foreground }]} numberOfLines={1}>
+              {fileName}
+            </Text>
+          </View>
         </View>
 
-        <DetailField icon={IconArrowBack} label="Origem" value={originLabel} colors={colors} />
-        <DetailField icon={IconHash} label="Tipo" value={typeLabel} colors={colors} />
-        <DetailField icon={IconHash} label="Quantidade" value="1 un" colors={colors} monospace />
-        <DetailField icon={IconClock} label="Tempo de Execução" value="Não iniciado" colors={colors} muted />
+        <View style={styles.infoRows}>
+          <InfoRow icon={IconArrowBack} label="Origem" value={originLabel} colors={colors} bg={mutedRow} />
+          <InfoRow icon={IconHash} label="Tipo" value={typeLabel} colors={colors} bg={mutedRow} />
+          <InfoRow icon={IconClock} label="Tempo de Execução" value="Não iniciado" colors={colors} bg={mutedRow} muted />
+        </View>
       </DetailCard>
 
-      {/* ─── Informações da Tarefa — link-style row ─────────────────────── */}
+      {/* ─── Informações da Tarefa ──────────────────────────────────────── */}
       <DetailCard
         slotRef={slot.registerRef("cutDetailTaskCard")}
         onLayout={slot.register("cutDetailTaskCard")}
         icon={IconClipboardList}
         title="Informações da Tarefa"
+        colors={colors}
         badge={
-          <View style={styles.linkBadge}>
+          <View style={styles.linkButton}>
             <IconExternalLink size={14} color={colors.primary} />
             <Text style={[styles.linkText, { color: colors.primary }]}>Ver</Text>
           </View>
         }
-        colors={colors}
       >
-        <Pressable
-          ref={slot.registerRef("cutDetailTaskLink") as any}
-          onLayout={slot.register("cutDetailTaskLink")}
-          style={[
-            styles.linkRow,
-            { backgroundColor: colors.muted, borderColor: colors.border },
-          ]}
-        >
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[styles.linkRowTitle, { color: colors.text }]} numberOfLines={1}>
+        <View style={styles.infoRows}>
+          {/* Task name row — best match for the "task link" spotlight slot */}
+          <View
+            ref={slot.registerRef("cutDetailTaskLink") as any}
+            onLayout={slot.register("cutDetailTaskLink")}
+            style={[styles.infoRow, { backgroundColor: mutedRow }]}
+          >
+            <View style={styles.infoRowLeft}>
+              <IconClipboardList size={16} color={colors.mutedForeground} />
+              <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>Nome</Text>
+            </View>
+            <Text style={[styles.infoValue, { color: colors.foreground }]} numberOfLines={1}>
               {cut.taskName}
             </Text>
-            <Text style={[styles.linkRowMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-              Cliente Demonstração Ltda
-            </Text>
           </View>
-          <IconExternalLink size={18} color={colors.mutedForeground} />
-        </Pressable>
 
-        <DetailField icon={IconUser} label="Cliente" value="Cliente Demonstração Ltda" colors={colors} />
-        <DetailField icon={IconClipboardList} label="Setor" value="Produção" colors={colors} />
+          <InfoRow icon={IconUser} label="Cliente" value="Cliente Demonstração Ltda" colors={colors} bg={mutedRow} />
+          <InfoRow icon={IconBuildingFactory} label="Setor" value="Produção" colors={colors} bg={mutedRow} />
+        </View>
       </DetailCard>
 
       {/* ─── Datas card ───────────────────────────────────────────────── */}
       <DetailCard
         slotRef={slot.registerRef("cutDetailDatesCard")}
         onLayout={slot.register("cutDetailDatesCard")}
-        icon={IconCalendar}
+        icon={IconClock}
         title="Datas"
         colors={colors}
       >
-        <DetailField icon={IconCalendar} label="Solicitado em" value="12/05/2026" colors={colors} />
-        <DetailField icon={IconClock} label="Iniciado em" value="—" colors={colors} muted />
-        <DetailField icon={IconCheck} label="Concluído em" value="—" colors={colors} muted />
+        <View style={styles.infoRows}>
+          <View style={[styles.infoRow, { backgroundColor: mutedRow }]}>
+            <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>Solicitado em</Text>
+            <Text style={[styles.infoValue, { color: colors.foreground }]}>12/05/2026</Text>
+          </View>
+        </View>
       </DetailCard>
 
       {/* ─── Histórico de Alterações — empty timeline placeholder ─────── */}
@@ -219,7 +202,7 @@ export function CutDetailScene({ state: _state }: SceneProps) {
         colors={colors}
       >
         <View style={styles.timelineEmpty}>
-          <IconAlertCircle size={20} color={colors.mutedForeground} />
+          <IconCheck size={20} color={colors.mutedForeground} />
           <Text style={[styles.timelineEmptyText, { color: colors.mutedForeground }]}>
             Nenhuma alteração registrada ainda.
           </Text>
@@ -229,7 +212,7 @@ export function CutDetailScene({ state: _state }: SceneProps) {
   );
 }
 
-// ─── DetailCard mock (mirrors src/components/ui/detail-page-layout.tsx) ─────
+// ─── DetailCard mock (mirrors the real Card + sectionHeader pattern) ─────────
 
 interface DetailCardProps {
   icon: any;
@@ -257,131 +240,122 @@ function DetailCard({
       onLayout={onLayout}
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
     >
-      <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.cardHeaderLeft}>
-          <Icon size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-            {title}
-          </Text>
-        </View>
-        {badge}
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <Icon size={20} color={colors.mutedForeground} />
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]} numberOfLines={1}>
+          {title}
+        </Text>
+        {badge ? <View style={{ marginLeft: "auto" }}>{badge}</View> : null}
       </View>
-      <View style={styles.cardContent}>{children}</View>
+      {children}
     </View>
   );
 }
 
-// ─── DetailField — icon + label above, value in bordered muted card below ───
+// ─── InfoRow — horizontal row: icon + label (left), value (right) ────────────
 
-function DetailField({
+function InfoRow({
   icon: Icon,
   label,
   value,
   colors,
-  monospace,
+  bg,
   muted,
 }: {
   icon: any;
   label: string;
   value: string;
   colors: any;
-  monospace?: boolean;
+  bg: string;
   muted?: boolean;
 }) {
   return (
-    <View style={styles.fieldRow}>
-      <View style={styles.fieldLabel}>
-        <Icon size={18} color={colors.mutedForeground} />
-        <Text style={[styles.labelText, { color: colors.mutedForeground }]}>{label}</Text>
+    <View style={[styles.infoRow, { backgroundColor: bg }]}>
+      <View style={styles.infoRowLeft}>
+        <Icon size={16} color={colors.mutedForeground} />
+        <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>{label}</Text>
       </View>
-      <View
-        style={[
-          styles.fieldValueCard,
-          { backgroundColor: colors.muted, borderColor: colors.border },
-        ]}
+      <Text
+        style={[styles.infoValue, { color: muted ? colors.mutedForeground : colors.foreground }]}
+        numberOfLines={1}
       >
-        <Text
-          style={[
-            styles.valueText,
-            { color: muted ? colors.mutedForeground : colors.text },
-            monospace && { fontFamily: "monospace" },
-          ]}
-        >
-          {value}
-        </Text>
-      </View>
+        {value}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Card — 8px radius, 1px border (matches detail-page-layout)
-  card: {
+  // Header card — compact title bar (paddingH 16, paddingV 4); mirrors the real
+  // Card (radius 8, 1px border, shadow.md)
+  headerCard: {
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    ...shadow.md,
   },
-  cardHeader: {
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
+    paddingVertical: 4,
   },
-  cardHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  headerLeft: {
     flex: 1,
     marginRight: 8,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    flexShrink: 1,
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: "700",
   },
-  cardContent: {
-    gap: 14,
-  },
-  // Header card (cut name + status)
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headerIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700" },
-  headerSubtitle: { fontSize: 12 },
-  // Status pill — solid rectangular, radius 6
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-  },
-  statusText: { color: "#ffffff", fontSize: 12, fontWeight: "500" },
-  // Action buttons row in the header card
-  actionsRow: {
+  headerActions: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#0000001a",
   },
   actionButton: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
   },
-  // File preview placeholder
+  // Section card — radius 8, 1px border, padding 16, shadow.md (mirrors Card)
+  card: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 16,
+    ...shadow.md,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+  // Status badge — solid, radius 6, white text 12/600 (mirrors Badge default size)
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
+  statusBadgeText: { color: "#ffffff", fontSize: 12, fontWeight: "600" },
+  // File preview tile
+  fileContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
   filePreview: {
+    width: "100%",
     borderRadius: 8,
     borderWidth: 1,
     paddingVertical: 24,
@@ -395,37 +369,43 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 4,
   },
-  filePreviewMeta: {
-    fontSize: 11,
+  // Info rows — horizontal label/value, muted bg
+  infoRows: {
+    gap: 8,
   },
-  // DetailField — icon + label above, value in bordered muted card below
-  fieldRow: { gap: 4 },
-  fieldLabel: { flexDirection: "row", alignItems: "center", gap: 4 },
-  labelText: { fontSize: 13, fontWeight: "500" },
-  fieldValueCard: {
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 10,
-  },
-  valueText: { fontSize: 13, fontWeight: "600" },
-  // Link-style row for related task
-  linkRow: {
+  infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
   },
-  linkRowTitle: { fontSize: 14, fontWeight: "600" },
-  linkRowMeta: { fontSize: 12 },
-  linkBadge: {
+  infoRowLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  linkText: { fontSize: 12, fontWeight: "500" },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    maxWidth: "50%",
+    textAlign: "right",
+  },
+  // "Ver" link in the task card header
+  linkButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  linkText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
   // Empty timeline state
   timelineEmpty: {
     flexDirection: "row",

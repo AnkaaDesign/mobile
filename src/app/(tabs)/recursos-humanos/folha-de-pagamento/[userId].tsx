@@ -171,24 +171,8 @@ export default function PayrollDetailScreen() {
 
     const bonusAmount = payroll.bonus ? getNumericValue(payroll.bonus.baseBonus) : 0;
 
-    // Calculate bonus discounts (net bonus)
-    let bonusDiscounts = 0;
-    if (payroll.bonus?.bonusDiscounts && payroll.bonus.bonusDiscounts.length > 0) {
-      let currentBonusAmount = bonusAmount;
-      payroll.bonus.bonusDiscounts
-        .sort((a: any, b: any) => (a.calculationOrder || 0) - (b.calculationOrder || 0))
-        .forEach((discount: any) => {
-          if (discount.percentage) {
-            const discountValue = currentBonusAmount * (getNumericValue(discount.percentage) / 100);
-            bonusDiscounts += discountValue;
-            currentBonusAmount -= discountValue;
-          } else if (discount.value) {
-            bonusDiscounts += getNumericValue(discount.value);
-            currentBonusAmount -= getNumericValue(discount.value);
-          }
-        });
-    }
-    // Calculate bonus extras
+    // Bonus extras (percentage extras are % of baseBonus — matches the API's
+    // recalculateNetBonus). Used only to present the gross bonus.
     let bonusExtrasTotal = 0;
     if (payroll.bonus?.bonusExtras && payroll.bonus.bonusExtras.length > 0) {
       payroll.bonus.bonusExtras.forEach((extra: any) => {
@@ -200,7 +184,16 @@ export default function PayrollDetailScreen() {
       });
     }
     const effectiveBonusBase = bonusAmount + bonusExtrasTotal;
-    const netBonus = effectiveBonusBase - bonusDiscounts;
+
+    // netBonus is authoritative from the server (recalculateNetBonus): it
+    // applies the discount cascade in calculationOrder with the correct
+    // min(value, running) / floor clamps and a single final round. NEVER
+    // re-derive that cascade on the client — the bonus-discount portion shown
+    // below is just the difference between the gross bonus and the server net.
+    const netBonus = payroll.bonus
+      ? getNumericValue(payroll.bonus.netBonus ?? payroll.bonus.baseBonus)
+      : 0;
+    const bonusDiscounts = Math.max(0, effectiveBonusBase - netBonus);
 
     // Get Secullum data - overtime and DSR
     const overtime50Amount = getNumericValue(payroll.overtime50Amount);
@@ -218,8 +211,10 @@ export default function PayrollDetailScreen() {
     const irrfAmount = getNumericValue(payroll.irrfAmount);
     const fgtsAmount = getNumericValue(payroll.fgtsAmount);
 
-    // Total gross includes ALL earnings
-    const totalGross = baseRemuneration + Math.max(0, netBonus) + overtime50Amount + overtime100Amount + nightDifferentialAmount + dsrAmount;
+    // Total gross includes ALL earnings, using the GROSS bonus (base + extras).
+    // The bonus discounts are then deducted below (via bonusDiscounts), so the
+    // bonus contributes exactly its server netBonus to the net — no double count.
+    const totalGross = baseRemuneration + Math.max(0, effectiveBonusBase) + overtime50Amount + overtime100Amount + nightDifferentialAmount + dsrAmount;
 
     // Calculate payroll discounts
     let totalDiscounts = 0;

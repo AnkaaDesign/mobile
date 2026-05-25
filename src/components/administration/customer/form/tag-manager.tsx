@@ -29,8 +29,8 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
     const trimmedTag = newTag.trim();
     if (!trimmedTag) return;
 
-    // Convert to uppercase for consistency
-    const normalizedTag = trimmedTag.toUpperCase();
+    // Normalize to lowercase for cross-platform consistency (matches web)
+    const normalizedTag = trimmedTag.toLowerCase();
 
     if (!tags.includes(normalizedTag)) {
       onChange([...tags, normalizedTag]);
@@ -73,7 +73,7 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
             onChangeText={(value: string | number | null) => setNewTag(value?.toString() || "")}
             placeholder="Digite a tag"
             maxLength={50}
-            autoCapitalize="characters"
+            autoCapitalize="none"
             style={styles.tagInput}
             onSubmitEditing={handleAddTag}
           />

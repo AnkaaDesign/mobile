@@ -1,6 +1,7 @@
 import { IconInbox } from "@tabler/icons-react-native";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/lib/theme";
+import { shadow } from "@/constants/design-system";
 import { useSlotContext } from "../chrome/slot-context";
 import { TUTORIAL_MESSAGES } from "../fixtures";
 import type { SceneProps } from "./index";
@@ -38,7 +39,8 @@ export function MinhasMensagensScene({ state }: SceneProps) {
               Nenhuma mensagem
             </Text>
             <Text style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
-              Você não possui mensagens no momento.
+              Você não possui mensagens no momento. Quando houver comunicados ou
+              avisos importantes, eles aparecerão aqui.
             </Text>
           </View>
         ) : (
@@ -153,9 +155,12 @@ const styles = StyleSheet.create({
     // 2-column layout: 50% width minus half the gap
     width: `48%`,
   },
+  // Card chrome — radius 8 (borderRadius.lg) + shadow.md, matching the real
+  // <Card> base (border 1 applied inline via colors.border + borderWidth).
   messageCard: {
     overflow: "hidden",
     borderRadius: 8,
+    ...shadow.md,
   },
   cardHeader: {
     paddingHorizontal: 8,
@@ -205,6 +210,7 @@ const styles = StyleSheet.create({
     gap: 16,
     borderRadius: 8,
     borderWidth: 1,
+    ...shadow.md,
   },
   emptyIconContainer: {
     width: 64,

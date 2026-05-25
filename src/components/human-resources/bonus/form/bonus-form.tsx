@@ -73,7 +73,12 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
             month: bonus?.month,
             userId: bonus?.userId,
             performanceLevel: bonus?.performanceLevel,
-            baseBonus: typeof bonus?.baseBonus === "number" ? bonus.baseBonus : undefined,
+            // baseBonus arrives as a Prisma Decimal object or a plain number; convert
+            // via toNumber() so edit mode hydrates the value (matches web bonus-form).
+            baseBonus:
+              typeof bonus?.baseBonus === "number"
+                ? bonus.baseBonus
+                : bonus?.baseBonus?.toNumber?.() ?? undefined,
           },
   });
 

@@ -1,9 +1,23 @@
 import { IconCamera, IconTrash } from "@tabler/icons-react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef } from "react";
+import {
+  Dimensions,
+  type LayoutChangeEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { useSlotContext } from "../chrome/slot-context";
+import { useTutorialStore } from "../engine-store";
 import { TUTORIAL_USER } from "../fixtures";
 import type { SceneProps } from "./index";
+
+// How far below the top of the scroll viewport a highlighted section lands —
+// upper third, leaving room for the tooltip above or below it.
+const REVEAL_GAP = Math.round(Dimensions.get("window").height * 0.22);
 
 // Mirrors src/app/(tabs)/perfil/index.tsx — vertical stack of cards:
 // 1) Foto de Perfil (100x100 circle with initials, Alterar/Remover buttons row)
@@ -15,6 +29,35 @@ export function PerfilScene(_props: SceneProps) {
   const { colors } = useTheme();
   const slot = useSlotContext();
 
+  const scrollRef = useRef<ScrollView>(null);
+  // Content-relative y of each section, captured from its onLayout.
+  const offsets = useRef<Record<string, number>>({});
+  const activeSlot = useTutorialStore((s) => s.activeSlot);
+
+  // onLayout that records the section's scroll offset AND forwards to the
+  // slot measurement. Used on every spotlight-eligible section.
+  const track = useCallback(
+    (name: string) => (e: LayoutChangeEvent) => {
+      offsets.current[name] = e.nativeEvent.layout.y;
+      slot.register(name)(e);
+    },
+    [slot],
+  );
+
+  // When the highlighted section changes, scroll it into view so the spotlight
+  // target is actually on screen. A programmatic scroll does NOT re-fire the
+  // children's onLayout, so the cached rect would be stale — onScroll
+  // remeasures every frame so the spotlight/tooltip track the section as it
+  // moves, and a settle timer covers the final resting position.
+  useEffect(() => {
+    if (!activeSlot) return;
+    const y = offsets.current[activeSlot];
+    if (y == null) return; // slot lives outside this scene
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - REVEAL_GAP), animated: true });
+    const id = setTimeout(() => slot.remeasureAll(), 380);
+    return () => clearTimeout(id);
+  }, [activeSlot, slot]);
+
   const initials = TUTORIAL_USER.fullName
     .split(" ")
     .map((n) => n[0])
@@ -25,20 +68,23 @@ export function PerfilScene(_props: SceneProps) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
+        ref={scrollRef}
+        onScroll={() => slot.remeasureAll()}
+        scrollEventThrottle={16}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Drawer slot anchor (hidden) */}
         <View
           ref={slot.registerRef("drawerPerfil") as any}
-          onLayout={slot.register("drawerPerfil")}
+          onLayout={track("drawerPerfil")}
           style={{ height: 0 }}
         />
 
         {/* Foto de Perfil */}
         <View
           ref={slot.registerRef("perfilPhoto") as any}
-          onLayout={slot.register("perfilPhoto")}
+          onLayout={track("perfilPhoto")}
           style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Foto de Perfil</Text>
@@ -115,7 +161,7 @@ export function PerfilScene(_props: SceneProps) {
         {/* Medidas */}
         <View
           ref={slot.registerRef("perfilSizes") as any}
-          onLayout={slot.register("perfilSizes")}
+          onLayout={track("perfilSizes")}
           style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Medidas</Text>
@@ -132,7 +178,7 @@ export function PerfilScene(_props: SceneProps) {
         {/* Endereço */}
         <View
           ref={slot.registerRef("perfilAddress") as any}
-          onLayout={slot.register("perfilAddress")}
+          onLayout={track("perfilAddress")}
           style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Endereço</Text>
@@ -150,6 +196,14 @@ export function PerfilScene(_props: SceneProps) {
             </View>
           </View>
           <Field label="Complemento" value="Apto 12" colors={colors} />
+          <View style={styles.addressRow}>
+            <View style={styles.halfField}>
+              <Field label="Bairro" value="Centro" colors={colors} noBottom />
+            </View>
+            <View style={styles.halfField}>
+              <Field label="CEP" value="86200-000" colors={colors} noBottom />
+            </View>
+          </View>
           <View style={styles.addressRow}>
             <View style={styles.halfField}>
               <Field label="Cidade" value="Ibiporã" colors={colors} noBottom />
@@ -207,8 +261,8 @@ function Field({
           styles.fieldInput,
           {
             borderColor: colors.border,
-            backgroundColor: disabled ? colors.muted : colors.background,
-            opacity: disabled ? 0.6 : 1,
+            backgroundColor: colors.input,
+            opacity: disabled ? 0.5 : 1,
           },
         ]}
       >
@@ -248,6 +302,12 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   cardTitle: {
     fontSize: 18,
@@ -281,9 +341,9 @@ const styles = StyleSheet.create({
   photoButton: {
     flexDirection: "row",
     alignItems: "center",
+    height: 33,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 6,
     gap: 8,
   },
   outlineButton: {
@@ -306,14 +366,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   fieldInput: {
-    height: 44,
+    height: 42,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 6,
     paddingHorizontal: 12,
     justifyContent: "center",
   },
   fieldValue: {
-    fontSize: 14,
+    fontSize: 16,
   },
   measuresGrid: {
     flexDirection: "row",
@@ -357,16 +417,16 @@ const styles = StyleSheet.create({
   },
   actionButtonOutline: {
     flex: 1,
-    height: 44,
+    height: 37,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
   },
   actionButton: {
     flex: 1,
-    height: 44,
-    borderRadius: 8,
+    height: 37,
+    borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
   },

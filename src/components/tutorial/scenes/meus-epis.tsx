@@ -1,252 +1,363 @@
 import {
-  IconCalendar,
-  IconChevronRight,
-  IconShieldCheck,
+  IconArrowsSort,
+  IconColumns3,
+  IconFilter,
   IconPlus,
+  IconSearch,
 } from "@tabler/icons-react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { useSlotContext } from "../chrome/slot-context";
 import { TUTORIAL_PPE_DELIVERIES } from "../fixtures";
 import type { SceneProps } from "./index";
 
-// Status → solid badge color, mirroring the real screen's PPE_DELIVERY badge
-// resolution (see constants/badge-colors.ts → ENTITY_BADGE_MAP.PPE_DELIVERY).
-// All variants use white text on a saturated background, identical to the
-// rectangular pill rendered by Table/CellContent for format: "badge".
+/**
+ * Mirrors the real "Meus EPIs" list page:
+ *   src/app/(tabs)/pessoal/meus-epis/index.tsx
+ *     → <Layout config={personalPpeDeliveriesListConfig} />
+ *
+ * The generic list renders:
+ *   1. A header row: search bar + column-visibility button + filter button
+ *      (Layout/index.tsx — paddingH 12, paddingV 12, gap 8, 40px controls).
+ *   2. A bordered "table card" (radius 8, 1px border) containing a fixed
+ *      header (uppercase 10px labels), alternating-background rows, and a
+ *      "Mostrando N de N" footer (Table/index.tsx + Header.tsx + Row.tsx).
+ *   3. A primary FAB (plus) bottom-right → "Solicitar EPI"
+ *      (config.actions.create → ui/fab.tsx).
+ *
+ * Visible columns mirror config.table.defaultVisible:
+ *   ['item.name', 'status', 'createdAt'] → ITEM / STATUS / DATA REQUISIÇÃO.
+ * The status cell is the same solid radius-6 badge rendered by CellContent
+ * for format:"badge" with badgeEntity:"PPE_DELIVERY".
+ */
+
+// Status → solid badge color + label, mirroring exactly
+// constants/badge-colors.ts → ENTITY_BADGE_CONFIG.PPE_DELIVERY → BADGE_COLORS
+// and constants/enum-labels PPE_DELIVERY_STATUS_LABELS.
 const STATUS_BADGE: Record<string, { bg: string; label: string }> = {
-  PENDING: { bg: "#737373", label: "Pendente" }, // gray (neutral-500)
-  APPROVED: { bg: "#2563eb", label: "Aprovado" }, // blue-600
-  DELIVERED: { bg: "#15803d", label: "Entregue" }, // green-700 (delivered)
-  WAITING_SIGNATURE: { bg: "#f59e0b", label: "Aguardando assinatura" }, // amber-500
-  COMPLETED: { bg: "#15803d", label: "Concluído" }, // green-700
-  SIGNATURE_REJECTED: { bg: "#b91c1c", label: "Assinatura rejeitada" }, // red-700
-  REPROVED: { bg: "#b91c1c", label: "Reprovado" }, // red-700
-  CANCELLED: { bg: "#737373", label: "Cancelado" }, // gray
+  PENDING: { bg: "#737373", label: "Pendente" }, // gray → neutral-500
+  APPROVED: { bg: "#2563eb", label: "Aprovado" }, // blue → blue-600
+  DELIVERED: { bg: "#15803d", label: "Entregue" }, // delivered → green-700
+  WAITING_SIGNATURE: { bg: "#f59e0b", label: "Aguardando Assinatura" }, // amber → amber-500
+  COMPLETED: { bg: "#15803d", label: "Concluído" }, // green → green-700
+  SIGNATURE_REJECTED: { bg: "#b91c1c", label: "Assinatura Rejeitada" }, // red → red-700
+  REPROVED: { bg: "#b91c1c", label: "Reprovado" }, // red → red-700
+  CANCELLED: { bg: "#b91c1c", label: "Cancelado" }, // cancelled → red-700
 };
 
-// Fixture entries don't carry a PPE size, so we infer a plausible one per item
-// just for visual fidelity (the real list config doesn't display size either,
-// but the tutorial brief asks for "EPI name + size + status pill + delivery
-// date"). These match typical PPE catalog sizes from the real app.
-const ITEM_SIZE: Record<string, string> = {
-  "Botas de segurança": "Tam. 42",
-  "Luvas nitrílicas": "Tam. M",
-  "Óculos de proteção": "Único",
-  Avental: "Tam. G",
+// Plausible "Data Requisição" timestamps for the datetime-multiline cell
+// (real config renders delivery.createdAt with format "datetime-multiline":
+// a date line + a dimmed HH:mm line). Fixtures lack createdAt, so we mirror
+// the visual shape only.
+const REQUEST_DATE: Record<string, { date: string; time: string }> = {
+  "ppe-0": { date: "05/05/26", time: "08:12" },
+  "ppe-1": { date: "12/05/26", time: "14:03" },
+  "ppe-2": { date: "10/05/26", time: "09:47" },
+  "ppe-3": { date: "06/05/26", time: "16:21" },
 };
 
 export function MeusEpisScene(_props: SceneProps) {
   const { colors } = useTheme();
   const slot = useSlotContext();
+  const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView
-      ref={slot.registerRef("pessoalEpis") as any}
-      onLayout={slot.register("pessoalEpis")}
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={styles.scrollContent}
-    >
-      {/* Primary CTA — full-width "Solicitar EPI" button, mirrors the
-          create action exposed by personalPpeDeliveriesListConfig (which
-          shows up as a FAB on the real screen but is surfaced as an
-          inline CTA here so the tutorial highlight target is obvious). */}
-      <Pressable
-        ref={slot.registerRef("pessoalEpisRequestButton") as any}
-        onLayout={slot.register("pessoalEpisRequestButton")}
-        style={[styles.cta, { backgroundColor: colors.primary }]}
-      >
-        <IconPlus size={20} color="#fff" />
-        <Text style={styles.ctaText}>Solicitar EPI</Text>
-      </Pressable>
-
-      {/* List card — wraps every delivery row, matching the rounded
-          card pattern used elsewhere in the tutorial (incluir-ponto,
-          meus-feriados). */}
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.card, borderColor: colors.border },
-        ]}
-      >
-        <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Últimas entregas
-          </Text>
-          <Text style={[styles.cardCount, { color: colors.mutedForeground }]}>
-            {TUTORIAL_PPE_DELIVERIES.length} itens
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* ── Header: search + column-visibility + filter (Layout/index.tsx) ── */}
+      <View style={styles.header}>
+        <View
+          style={[
+            styles.search,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <IconSearch size={20} color={colors.mutedForeground} />
+          <Text
+            style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}
+            numberOfLines={1}
+          >
+            Buscar EPIs...
           </Text>
         </View>
+        <View
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <IconColumns3 size={20} color={colors.foreground} />
+        </View>
+        <View
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <IconFilter size={20} color={colors.foreground} />
+        </View>
+      </View>
 
-        {TUTORIAL_PPE_DELIVERIES.map((p, idx) => {
-          const badge =
-            STATUS_BADGE[p.status] ?? {
-              bg: "#737373",
-              label: p.statusLabel,
-            };
-          const size = ITEM_SIZE[p.item] ?? "Único";
-          const isLast = idx === TUTORIAL_PPE_DELIVERIES.length - 1;
-          const deliveryLabel =
-            p.deliveredAt === "—" ? "Aguardando entrega" : p.deliveredAt;
+      {/* ── Table card (Table/index.tsx) — registers the list slot ─────────── */}
+      <View style={styles.tableWrap}>
+        <View
+          ref={slot.registerRef("pessoalEpis") as any}
+          onLayout={slot.register("pessoalEpis")}
+          style={[
+            styles.tableCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          {/* Fixed header row — uppercase 10px labels + sort glyphs */}
+          <View
+            style={[styles.tableHeader, { borderBottomColor: colors.border }]}
+          >
+            <View style={[styles.headerCell, { flex: 2.0 }]}>
+              <Text
+                style={[styles.headerText, { color: colors.foreground }]}
+                numberOfLines={1}
+              >
+                ITEM
+              </Text>
+              <IconArrowsSort size={14} color={colors.mutedForeground} />
+            </View>
+            <View style={[styles.headerCell, styles.headerCenter, { flex: 1.5 }]}>
+              <Text
+                style={[styles.headerText, { color: colors.foreground }]}
+                numberOfLines={1}
+              >
+                STATUS
+              </Text>
+              <IconArrowsSort size={14} color={colors.mutedForeground} />
+            </View>
+            <View style={[styles.headerCell, { flex: 1.5 }]}>
+              <Text
+                style={[styles.headerText, { color: colors.foreground }]}
+                numberOfLines={1}
+              >
+                DATA REQUISIÇÃO
+              </Text>
+              <IconArrowsSort size={14} color={colors.mutedForeground} />
+            </View>
+          </View>
 
-          return (
-            <View
-              key={p.id}
-              style={[
-                styles.row,
-                !isLast && {
-                  borderBottomColor: colors.border,
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                },
-              ]}
-            >
-              <View
+          {/* Rows — alternating background, item / status badge / datetime.
+              Real rows are pressable and open the delivery detail (Row.tsx
+              onPress → router.push). The "Aguardando Assinatura" row is the
+              spotlight target the worker taps to sign (pessoalEpisAwaitingRow). */}
+          {TUTORIAL_PPE_DELIVERIES.map((p, idx) => {
+            const badge =
+              STATUS_BADGE[p.status] ?? { bg: "#737373", label: p.statusLabel };
+            const req = REQUEST_DATE[p.id] ?? { date: "—", time: "" };
+            const rowBg = idx % 2 === 0 ? colors.background : colors.card;
+            const isLast = idx === TUTORIAL_PPE_DELIVERIES.length - 1;
+            const isAwaiting = p.status === "WAITING_SIGNATURE";
+
+            return (
+              <Pressable
+                key={p.id}
+                ref={
+                  isAwaiting
+                    ? (slot.registerRef("pessoalEpisAwaitingRow") as any)
+                    : undefined
+                }
+                onLayout={
+                  isAwaiting ? slot.register("pessoalEpisAwaitingRow") : undefined
+                }
                 style={[
-                  styles.iconWrap,
-                  { backgroundColor: badge.bg + "1F" },
+                  styles.row,
+                  { backgroundColor: rowBg },
+                  !isLast && {
+                    borderBottomColor: colors.border,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                  },
                 ]}
               >
-                <IconShieldCheck size={22} color={badge.bg} />
-              </View>
-
-              <View style={styles.rowMid}>
-                <Text
-                  style={[styles.itemName, { color: colors.text }]}
-                  numberOfLines={1}
-                >
-                  {p.item}
-                </Text>
-                <View style={styles.metaLine}>
+                {/* ITEM */}
+                <View style={[styles.cell, { flex: 2.0 }]}>
                   <Text
-                    style={[
-                      styles.metaSize,
-                      {
-                        color: colors.mutedForeground,
-                        borderColor: colors.border,
-                      },
-                    ]}
+                    style={[styles.itemText, { color: colors.foreground }]}
+                    numberOfLines={2}
                   >
-                    {size}
+                    {p.item}
                   </Text>
-                  <View style={styles.metaDateRow}>
-                    <IconCalendar size={12} color={colors.mutedForeground} />
-                    <Text
-                      style={[
-                        styles.metaDate,
-                        { color: colors.mutedForeground },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {deliveryLabel}
+                </View>
+
+                {/* STATUS — solid radius-6 badge (CellContent badge cell) */}
+                <View style={[styles.cell, styles.cellCenter, { flex: 1.5 }]}>
+                  <View
+                    style={[styles.statusBadge, { backgroundColor: badge.bg }]}
+                  >
+                    <Text style={styles.statusText} numberOfLines={1}>
+                      {badge.label}
                     </Text>
                   </View>
                 </View>
-              </View>
 
-              <View style={styles.rowRight}>
-                {/* Solid rectangular status pill — radius 6, white text,
-                    fontSize 12 / weight 500 — identical to the real
-                    table's badge cells. */}
-                <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-                  <Text style={styles.statusText} numberOfLines={1}>
-                    {badge.label}
+                {/* DATA REQUISIÇÃO — datetime-multiline (date + dimmed time) */}
+                <View style={[styles.cell, { flex: 1.5 }]}>
+                  <Text style={[styles.dateText, { color: colors.foreground }]}>
+                    {req.date}
                   </Text>
+                  {!!req.time && (
+                    <Text
+                      style={[
+                        styles.dateText,
+                        { color: colors.foreground, opacity: 0.7 },
+                      ]}
+                    >
+                      {req.time}
+                    </Text>
+                  )}
                 </View>
-                <IconChevronRight size={16} color={colors.mutedForeground} />
-              </View>
-            </View>
-          );
-        })}
+              </Pressable>
+            );
+          })}
+
+          {/* Footer — pagination summary */}
+          <View
+            style={[
+              styles.tableFooter,
+              { borderTopColor: colors.border, backgroundColor: colors.card },
+            ]}
+          >
+            <Text style={[styles.footerText, { color: colors.foreground }]}>
+              Mostrando {TUTORIAL_PPE_DELIVERIES.length} de{" "}
+              {TUTORIAL_PPE_DELIVERIES.length}
+            </Text>
+          </View>
+        </View>
       </View>
-    </ScrollView>
+
+      {/* ── FAB → "Solicitar EPI" (ui/fab.tsx, plus icon) ──────────────────── */}
+      <Pressable
+        ref={slot.registerRef("pessoalEpisRequestButton") as any}
+        onLayout={slot.register("pessoalEpisRequestButton")}
+        style={[
+          styles.fab,
+          {
+            backgroundColor: colors.primary,
+            bottom: Math.max(24, insets.bottom + 32),
+          },
+        ]}
+      >
+        <IconPlus size={24} color="#ffffff" />
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 14,
-    gap: 14,
-    paddingBottom: 100,
+  // Header row — search + action buttons (Layout/index.tsx styles.header)
+  header: {
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 8,
+    alignItems: "center",
   },
-  // Primary CTA — matches incluir-ponto's "Nova Inclusão" button style
-  cta: {
+  search: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 12,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
     gap: 8,
-    paddingVertical: 16,
-    borderRadius: 12,
   },
-  ctaText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  // List card — same rounded card pattern as incluir-ponto / meus-feriados
-  card: {
-    borderRadius: 12,
+  searchPlaceholder: { flex: 1, fontSize: 16 },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  // Table card (Table/index.tsx — container paddingH 12, card radius 8)
+  tableWrap: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+  tableCard: {
+    flex: 1,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
   },
-  cardHeader: {
+  tableHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
+    borderBottomWidth: 1,
   },
-  cardTitle: { fontSize: 15, fontWeight: "700" },
-  cardCount: { fontSize: 12 },
-  // Row — left icon, mid content (name + size + date), right pill + chevron
+  headerCell: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  headerCenter: { justifyContent: "center" },
+  headerText: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  // Rows (Row.tsx — minHeight 48, per-cell paddingH 12)
   row: {
     flexDirection: "row",
+    minHeight: 48,
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 12,
   },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: "center",
+  cell: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     justifyContent: "center",
   },
-  rowMid: { flex: 1, gap: 4 },
-  itemName: { fontSize: 14, fontWeight: "600" },
-  metaLine: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  metaSize: {
-    fontSize: 11,
-    fontWeight: "600",
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  metaDateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    flexShrink: 1,
-  },
-  metaDate: { fontSize: 11 },
-  rowRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  // Solid rectangular pill — radius 6, white text — matches CellContent
-  // statusBadge: paddingH 10, paddingV 3, borderRadius 6, fontSize 12, weight 500
+  cellCenter: { alignItems: "center" },
+  itemText: { fontSize: 12, fontWeight: "500" },
+  dateText: { fontSize: 12 },
+  // Status badge — CellContent statusBadge (paddingH 10, paddingV 3, radius 6)
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 6,
-    maxWidth: 130,
+    alignSelf: "center",
+    maxWidth: "100%",
   },
-  statusText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "500",
+  statusText: { color: "#ffffff", fontSize: 12, fontWeight: "500" },
+  // Footer (Table/index.tsx footerContainer + paginationText)
+  tableFooter: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 36,
+  },
+  footerText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  // FAB (ui/fab.tsx — radius 28, paddingH 16, paddingV 16, bottom =
+  // max(24, insets.bottom + 32) applied inline, right 16, shadow 0.2/8)
+  fab: {
+    position: "absolute",
+    right: 16,
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

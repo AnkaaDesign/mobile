@@ -1,16 +1,23 @@
-import { View, StyleSheet } from "react-native";
+import { useMemo, useState } from "react";
+import { View, StyleSheet, Modal, TextInput, TouchableOpacity } from "react-native";
 import { useFormContext, useWatch } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
 import { FormCard } from "@/components/ui/form-section";
 import { Combobox } from "@/components/ui/combobox";
+import { Button } from "@/components/ui/button";
 import { BudgetPreview } from "@/components/production/task/quote/budget-preview";
 import { InvoiceListCard } from "@/components/production/task/billing/invoice-list-card";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import {
   TASK_QUOTE_STATUS,
   TASK_QUOTE_STATUS_LABELS,
 } from "@/constants";
+import {
+  canUpdateQuoteStatus,
+  getAvailableQuoteStatusTransitions,
+} from "@/utils/permissions/quote-permissions";
+import type { TASK_QUOTE_STATUS as TaskQuoteStatusType } from "@/types/task-quote";
 import type { FilePickerItem } from "@/components/ui/file-picker";
 
 interface StatusOption {
@@ -46,6 +53,8 @@ interface StepReviewProps {
   layoutFiles: FilePickerItem[];
   /** When true, render the status as an editable combobox. Otherwise, read-only badge. */
   canEditStatus?: boolean;
+  /** User sector privilege — drives allowed status transitions. */
+  userRole?: string;
   fieldPrefix?: string; // '' for create, 'quote.' for edit
 }
 
@@ -56,10 +65,16 @@ export function StepReview({
   selectedCustomers,
   layoutFiles,
   canEditStatus = false,
+  userRole = "",
   fieldPrefix = "",
 }: StepReviewProps) {
   const { colors } = useTheme();
   const { control, setValue } = useFormContext();
+
+  // Reject-reason capture: required when stepping a quote back to PENDING.
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [pendingRejectStatus, setPendingRejectStatus] = useState<string | null>(null);
 
   // Quote status lives at `quote.status` (edit/billing) or `budgetStatus` (create).
   // New budgets are always PENDING at creation time, so we never expose editing in create mode.
@@ -69,7 +84,33 @@ export function StepReview({
     | undefined;
   const currentStatus: TASK_QUOTE_STATUS =
     watchedStatus || TASK_QUOTE_STATUS.PENDING;
-  const statusEditable = mode !== "create" && canEditStatus;
+  // Editable only outside create mode, when the caller allows it, AND the user
+  // role is permitted to update status.
+  const statusEditable =
+    mode !== "create" && canEditStatus && canUpdateQuoteStatus(userRole);
+
+  // Allowed next statuses for the current state + role. The current status is
+  // always shown (selected) but disabled; everything else is gated.
+  const allowedNextStatuses = useMemo(
+    () =>
+      getAvailableQuoteStatusTransitions(
+        currentStatus as TaskQuoteStatusType,
+        userRole,
+      ),
+    [currentStatus, userRole],
+  );
+
+  // Apply a status transition, capturing a reason when reverting to PENDING.
+  const applyStatusChange = (next: string) => {
+    if (!next || next === currentStatus) return;
+    if (next === TASK_QUOTE_STATUS.PENDING && currentStatus !== TASK_QUOTE_STATUS.PENDING) {
+      setPendingRejectStatus(next);
+      setRejectReason("");
+      setRejectModalOpen(true);
+      return;
+    }
+    setValue(statusFieldName, next as TASK_QUOTE_STATUS, { shouldDirty: true });
+  };
 
   // Watch all quote-related form values
   const formQuoteValues = useWatch({
@@ -125,11 +166,15 @@ export function StepReview({
           onValueChange={(value) => {
             if (!statusEditable) return;
             const next = typeof value === "string" ? value : "";
-            if (next) setValue(statusFieldName, next as TASK_QUOTE_STATUS);
+            if (next) applyStatusChange(next);
           }}
           options={STATUS_OPTIONS}
           getOptionValue={(o) => o.value}
           getOptionLabel={(o) => o.label}
+          isOptionDisabled={(o) =>
+            o.value !== currentStatus &&
+            !allowedNextStatuses.includes(o.value as TaskQuoteStatusType)
+          }
           triggerStyle={{
             backgroundColor: STATUS_TRIGGER_COLORS[currentStatus].bg,
             borderColor: STATUS_TRIGGER_COLORS[currentStatus].border,
@@ -216,6 +261,86 @@ export function StepReview({
       {mode === "billing" && task?.id && (
         <InvoiceListCard taskId={task.id} />
       )}
+
+      {/* Reject-reason modal — required when reverting to PENDING. The reason is
+          written to the form ("statusReason"). NOTE: the API does not currently
+          accept a reason on the status-update path, so this is captured UI-side
+          only until the backend supports it. */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={rejectModalOpen}
+        onRequestClose={() => setRejectModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.popover, borderColor: colors.border },
+            ]}
+          >
+            <ThemedText style={styles.modalTitle}>Rejeitar Orçamento</ThemedText>
+            <ThemedText style={[styles.modalDescription, { color: colors.mutedForeground }]}>
+              Informe o motivo da rejeição. O status do orçamento voltará para Pendente.
+            </ThemedText>
+            <ThemedText style={[styles.modalLabel, { color: colors.foreground }]}>
+              Motivo da rejeição *
+            </ThemedText>
+            <TextInput
+              value={rejectReason}
+              onChangeText={setRejectReason}
+              placeholder="Descreva o motivo (mínimo 5 caracteres)..."
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              numberOfLines={4}
+              style={[
+                styles.modalTextArea,
+                {
+                  backgroundColor: colors.input,
+                  borderColor: colors.border,
+                  color: colors.foreground,
+                },
+              ]}
+            />
+            <View style={styles.modalButtons}>
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => {
+                  setRejectModalOpen(false);
+                  setPendingRejectStatus(null);
+                  setRejectReason("");
+                }}
+              >
+                Voltar
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={rejectReason.trim().length < 5}
+                onPress={() => {
+                  if (rejectReason.trim().length < 5 || !pendingRejectStatus) return;
+                  setValue(
+                    fieldPrefix ? `${fieldPrefix}statusReason` : "statusReason",
+                    rejectReason.trim(),
+                    { shouldDirty: true },
+                  );
+                  setValue(
+                    statusFieldName,
+                    pendingRejectStatus as TASK_QUOTE_STATUS,
+                    { shouldDirty: true },
+                  );
+                  setRejectModalOpen(false);
+                  setPendingRejectStatus(null);
+                  setRejectReason("");
+                }}
+              >
+                Confirmar Rejeição
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -239,5 +364,48 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
+  },
+  // Reject-reason modal
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    padding: spacing.lg,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  modalTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  modalDescription: {
+    fontSize: fontSize.sm,
+    marginBottom: spacing.xs,
+  },
+  modalLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  modalTextArea: {
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: fontSize.sm,
+    minHeight: 90,
+    textAlignVertical: "top",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
 });

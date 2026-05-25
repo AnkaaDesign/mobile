@@ -8,7 +8,7 @@
 
 export const TUTORIAL_USER = {
   firstName: "Pedro",
-  fullName: "Pedro Demo",
+  fullName: "Pedro Henrique",
   role: "Pintor",
   sectorName: "Produção",
 };
@@ -20,9 +20,10 @@ export const TUTORIAL_TASKS = [
     customer: "Cliente Demonstração Ltda",
     customerCity: "Ibiporã, PR",
     serial: "FROTA-001",
+    countdownSeconds: 635530, // 7d 8h 32m to deadline (safe → green)
     status: "IN_PRODUCTION",
     statusLabel: "Em Produção",
-    statusColor: "#15803d",
+    statusColor: "#2563eb",
     truckCategory: "Carreta",
     sectorName: "Produção",
     entryDate: "12/05/2026",
@@ -39,9 +40,10 @@ export const TUTORIAL_TASKS = [
     customer: "Frota Modelo S.A.",
     customerCity: "Londrina, PR",
     serial: "FROTA-002",
+    countdownSeconds: 0, // waiting → countdown not shown
     status: "WAITING_PRODUCTION",
     statusLabel: "Aguardando Produção",
-    statusColor: "#f59e0b",
+    statusColor: "#737373",
     truckCategory: "Truck",
     sectorName: "Produção",
     entryDate: "14/05/2026",
@@ -58,9 +60,10 @@ export const TUTORIAL_TASKS = [
     customer: "Transportadora Tour",
     customerCity: "Cambé, PR",
     serial: "FROTA-005",
+    countdownSeconds: 277920, // 3d 5h 12m past deadline (overdue → red)
     status: "IN_PRODUCTION",
     statusLabel: "Em Produção (Atrasado)",
-    statusColor: "#bf4040",
+    statusColor: "#2563eb",
     truckCategory: "Carreta",
     sectorName: "Produção",
     entryDate: "01/05/2026",
@@ -77,9 +80,10 @@ export const TUTORIAL_TASKS = [
     customer: "Frota Express LTDA",
     customerCity: "Apucarana, PR",
     serial: "FROTA-007",
+    countdownSeconds: 13500, // 3h 45m to deadline (tight, < 4h → orange)
     status: "IN_PRODUCTION",
     statusLabel: "Em Produção (Prazo Curto)",
-    statusColor: "#f59e0b",
+    statusColor: "#2563eb",
     truckCategory: "Truck",
     sectorName: "Produção",
     entryDate: "20/05/2026",
@@ -95,19 +99,25 @@ export const TUTORIAL_TASKS = [
 export const TUTORIAL_TASK_DETAIL = {
   ...TUTORIAL_TASKS[0],
   isCommissionable: true,
-  commissionPercent: 5,
+  // Real commission is an enum (COMMISSION_STATUS), not a percentage.
+  commission: "FULL_COMMISSION",
+  // Real service-order descriptions (PRODUCTION_SERVICE_DESCRIPTIONS) + real
+  // SERVICE_ORDER_STATUS_LABELS (Title Case).
   services: [
-    { id: "so-0", label: "Pintura completa", status: "IN_PROGRESS", statusLabel: "Em andamento", hasObservation: true },
-    { id: "so-1", label: "Logo Ankaa", status: "PENDING", statusLabel: "Pendente", hasObservation: false },
-    { id: "so-2", label: "Orientação técnica", status: "COMPLETED", statusLabel: "Concluído", hasObservation: false },
-    { id: "so-3", label: "Aprovação artwork", status: "WAITING_APPROVE", statusLabel: "Aguardando aprovação", hasObservation: false },
+    { id: "so-0", label: "Pintura Geral", status: "IN_PROGRESS", statusLabel: "Em Andamento", hasObservation: true },
+    { id: "so-1", label: "Logomarca Lateral", status: "PENDING", statusLabel: "Pendente", hasObservation: false },
+    { id: "so-2", label: "Adesivo Cabine", status: "COMPLETED", statusLabel: "Concluído", hasObservation: false },
+    { id: "so-3", label: "Aerografia Traseira", status: "WAITING_APPROVE", statusLabel: "Aguardando Aprovação", hasObservation: false },
   ],
   generalPaint: { name: "Branco Geada", hex: "#EEF1EC", brand: "Suvinil", type: "Poliéster" },
-  groundPaints: [{ name: "Fundo Cinza Médio", hex: "#9CA3AF" }],
+  // Ground/logo paints carry the same brand + type/finish chips the real
+  // ground/logo paint cards render (paintBrand.name, paintType.name,
+  // PAINT_FINISH_LABELS[finish]).
+  groundPaints: [{ name: "Fundo Cinza Médio", hex: "#9CA3AF", brand: "Lazzuril", type: "PU", finish: "Fosco" }],
   logoPaints: [
-    { name: "Verde Ankaa", hex: "#15803D" },
-    { name: "Verde Floresta", hex: "#0F4D2D" },
-    { name: "Verde Limão", hex: "#65A30D" },
+    { name: "Verde Ankaa", hex: "#15803D", brand: "Suvinil", type: "Poliéster", finish: "Brilhante" },
+    { name: "Verde Floresta", hex: "#0F4D2D", brand: "Lazzuril", type: "PU", finish: "Acetinado" },
+    { name: "Verde Limão", hex: "#65A30D", brand: "Sherwin-Williams", type: "Poliéster", finish: "Brilhante" },
   ],
   observations: [
     { id: "obs-0", text: "Vazamento de tinta na lateral direita", createdAt: "12/05" },
@@ -115,9 +125,13 @@ export const TUTORIAL_TASK_DETAIL = {
     { id: "obs-2", text: "Logo desalinhado", createdAt: "16/05" },
   ],
   artworks: [
-    { id: "art-0", thumbnail: null, label: "Layout Lateral D" },
+    // Real approved-layout image bundled in assets/.
+    {
+      id: "art-0",
+      thumbnail: require("../../../../assets/923e17f4-8b03-426d-a4a2-835faa659add.png"),
+      label: "Layout Lateral D",
+    },
     { id: "art-1", thumbnail: null, label: "Layout Frente" },
-    { id: "art-2", thumbnail: null, label: "Layout Tampa" },
   ],
   cuts: [
     { id: "cut-0", label: "Estrela lateral", type: "VINYL", status: "PENDING" },
@@ -131,10 +145,10 @@ export const TUTORIAL_TASK_DETAIL = {
 };
 
 export const TUTORIAL_NOTIFICATIONS = [
-  { id: "n-0", title: "Tarefa atribuída", body: "Você foi designado para Frota Modelo S.A.", time: "agora", unread: true },
-  { id: "n-1", title: "Recorte pronto", body: "Estrela lateral disponível para retirada.", time: "1 h", unread: true },
-  { id: "n-2", title: "Manutenção programada", body: "Sistema offline dia 23/06 22h-23h.", time: "ontem", unread: false },
-  { id: "n-3", title: "Tarefa em atraso", body: "Transportadora Tour com prazo vencido.", time: "ontem", unread: false },
+  { id: "n-0", type: "PRODUCTION", title: "Tarefa atribuída", body: "Você foi designado para Frota Modelo S.A.", time: "agora", unread: true },
+  { id: "n-1", type: "PRODUCTION", title: "Recorte pronto", body: "Estrela lateral disponível para retirada.", time: "1 h", unread: true },
+  { id: "n-2", type: "SYSTEM", title: "Manutenção programada", body: "Sistema offline dia 23/06 22h-23h.", time: "ontem", unread: false },
+  { id: "n-3", type: "PRODUCTION", title: "Tarefa em atraso", body: "Transportadora Tour com prazo vencido.", time: "ontem", unread: false },
 ];
 
 export const TUTORIAL_OBSERVATIONS_LIST = [
@@ -144,16 +158,16 @@ export const TUTORIAL_OBSERVATIONS_LIST = [
 ];
 
 export const TUTORIAL_CUTS_LIST = [
-  { id: "c-0", label: "Estrela lateral", taskName: "Caminhão Frota - Modelo A", type: "VINYL", status: "PENDING", statusLabel: "Pendente", origin: "PLAN" },
-  { id: "c-1", label: "Logo Ankaa costas", taskName: "Caminhão Frota - Modelo A", type: "VINYL", status: "CUTTING", statusLabel: "Cortando", origin: "PLAN" },
-  { id: "c-2", label: "Número de frota", taskName: "Caminhão Frota - Modelo A", type: "STENCIL", status: "COMPLETED", statusLabel: "Concluído", origin: "PLAN" },
-  { id: "c-3", label: "Faixa curva", taskName: "Frota Modelo S.A.", type: "VINYL", status: "PENDING", statusLabel: "Pendente", origin: "REQUEST" },
+  { id: "c-0", label: "Estrela lateral", filename: "estrela-lateral.eps", taskName: "Caminhão Frota - Modelo A", type: "VINYL", status: "PENDING", statusLabel: "Pendente", origin: "PLAN" },
+  { id: "c-1", label: "Logo Ankaa costas", filename: "logo-ankaa-costas.eps", taskName: "Caminhão Frota - Modelo A", type: "VINYL", status: "CUTTING", statusLabel: "Cortando", origin: "PLAN" },
+  { id: "c-2", label: "Número de frota", filename: "numero-frota.eps", taskName: "Caminhão Frota - Modelo A", type: "STENCIL", status: "COMPLETED", statusLabel: "Concluído", origin: "PLAN" },
+  { id: "c-3", label: "Faixa curva", filename: "faixa-curva.eps", taskName: "Frota Modelo S.A.", type: "VINYL", status: "PENDING", statusLabel: "Pendente", origin: "REQUEST" },
 ];
 
 export const TUTORIAL_HISTORICO = [
-  { id: "h-0", taskName: "Caminhão Antigo - Modelo X", customer: "Cliente Antigo", completedAt: "02/05/2026" },
-  { id: "h-1", taskName: "Frota 2023", customer: "Velho Cliente", completedAt: "28/04/2026" },
-  { id: "h-2", taskName: "Express LTDA", customer: "Express Old", completedAt: "20/04/2026" },
+  { id: "h-0", taskName: "Caminhão Antigo - Modelo X", customer: "Cliente Antigo", sector: "Produção 1", completedAt: "02/05/2026" },
+  { id: "h-1", taskName: "Frota 2023", customer: "Velho Cliente", sector: "Produção 2", completedAt: "28/04/2026" },
+  { id: "h-2", taskName: "Express LTDA", customer: "Express Old", sector: "Produção 1", completedAt: "20/04/2026" },
 ];
 
 // ─── Pessoal / Time tracking ──────────────────────────────────────────────
@@ -196,16 +210,16 @@ export const TUTORIAL_MISSING_DAYS = [
 // ─── Holidays, PPE, Messages, Warnings, Loans, Movements ──────────────────
 
 export const TUTORIAL_HOLIDAYS = [
-  { id: "f-0", date: "Hoje", weekday: "21/05", name: "Aniversário da empresa", type: "COMPANY" },
-  { id: "f-1", date: "Em 7 dias", weekday: "28/05", name: "Corpus Christi", type: "NATIONAL" },
-  { id: "f-2", date: "Em 30 dias", weekday: "20/06", name: "Confraternização", type: "COMPANY" },
+  { id: "f-0", name: "Aniversário da empresa", date: "21/05/2026", weekday: "Quinta-feira", type: "COMPANY" },
+  { id: "f-1", name: "Corpus Christi", date: "04/06/2026", weekday: "Quinta-feira", type: "NATIONAL" },
+  { id: "f-2", name: "Confraternização", date: "20/06/2026", weekday: "Sábado", type: "COMPANY" },
 ];
 
 export const TUTORIAL_PPE_DELIVERIES = [
-  { id: "ppe-0", item: "Botas de segurança", deliveredAt: "10/05/2026", status: "DELIVERED", statusLabel: "Entregue", color: "#16a34a" },
-  { id: "ppe-1", item: "Luvas nitrílicas", deliveredAt: "—", status: "PENDING", statusLabel: "Pendente", color: "#f59e0b" },
-  { id: "ppe-2", item: "Óculos de proteção", deliveredAt: "15/05/2026", status: "WAITING_SIGNATURE", statusLabel: "Aguardando assinatura", color: "#2563EB" },
-  { id: "ppe-3", item: "Avental", deliveredAt: "08/05/2026", status: "APPROVED", statusLabel: "Aprovado", color: "#16a34a" },
+  { id: "ppe-0", item: "Botas de segurança", uniCode: "EPI-001", ppeType: "Calçado", ppeSize: "42", brand: "Marluvas", category: "Calçados", caNumber: "CA 12345", quantity: 1, createdAt: "06/05/2026", scheduledDate: "08/05/2026", deliveredAt: "10/05/2026", reviewedBy: "Ana Costa", status: "DELIVERED", statusLabel: "Entregue", color: "#15803d" },
+  { id: "ppe-1", item: "Luvas nitrílicas", uniCode: "EPI-014", ppeType: "Luva", ppeSize: "G", brand: "Volk", category: "Luvas", caNumber: "CA 28456", quantity: 2, createdAt: "12/05/2026", scheduledDate: "—", deliveredAt: "—", reviewedBy: "—", status: "PENDING", statusLabel: "Pendente", color: "#737373" },
+  { id: "ppe-2", item: "Óculos de proteção", uniCode: "EPI-022", ppeType: "Proteção facial", ppeSize: "Único", brand: "3M", category: "Proteção facial", caNumber: "CA 9722", quantity: 1, createdAt: "13/05/2026", scheduledDate: "15/05/2026", deliveredAt: "—", reviewedBy: "Ana Costa", status: "WAITING_SIGNATURE", statusLabel: "Aguardando Assinatura", color: "#f59e0b" },
+  { id: "ppe-3", item: "Avental", uniCode: "EPI-008", ppeType: "Vestuário", ppeSize: "M", brand: "Ledan", category: "Vestuário", caNumber: "CA 31002", quantity: 1, createdAt: "06/05/2026", scheduledDate: "08/05/2026", deliveredAt: "08/05/2026", reviewedBy: "Ana Costa", status: "APPROVED", statusLabel: "Aprovado", color: "#2563eb" },
 ];
 
 export const TUTORIAL_MESSAGES = [
@@ -220,7 +234,7 @@ export const TUTORIAL_WARNINGS = [
 ];
 
 export const TUTORIAL_LOANS = [
-  { id: "l-0", item: "Furadeira Bosch", status: "ACTIVE", statusLabel: "Ativa", borrowedAt: "10/05/2026" },
+  { id: "l-0", item: "Furadeira Bosch", status: "ACTIVE", statusLabel: "Ativo", borrowedAt: "10/05/2026" },
   { id: "l-1", item: "Pistola de pintura", status: "RETURNED", statusLabel: "Devolvido", borrowedAt: "20/04/2026" },
 ];
 
@@ -253,15 +267,41 @@ export const TUTORIAL_BONUS_HISTORY = [
 ];
 
 // ─── Home dashboard ───────────────────────────────────────────────────────
-
-export const TUTORIAL_HOME_FAVORITES = [
-  { id: "fav-0", label: "Cronograma", icon: "Briefcase" },
-  { id: "fav-1", label: "Meus Pontos", icon: "Clock" },
-  { id: "fav-2", label: "Meus EPIs", icon: "Shield" },
-];
+//
+// The real "Adicionar widget" gallery colors each card by its widget category
+// (production = amber, inventory = emerald, financial = blue) and shows an
+// uppercase category badge. Accent hexes mirror CATEGORY_PALETTE in
+// dashboard/components/add-widget-sheet.tsx.
 
 export const TUTORIAL_HOME_WIDGETS_AVAILABLE = [
-  { id: "table.tasks", label: "Tarefas", description: "Lista de tarefas atribuídas a você" },
-  { id: "low-stock", label: "Estoque crítico", description: "Itens com estoque baixo" },
-  { id: "metrics", label: "Métricas", description: "Indicadores chave" },
+  {
+    id: "table.tasks",
+    label: "Tarefas",
+    description: "Tarefas em produção com prazo, cliente, setor e status.",
+    iconKey: "tasks" as const,
+    categoryLabel: "Produção",
+    accent: "#f59e0b",
+    accentTint: "#f59e0b1f",
+    accentText: "#b45309",
+  },
+  {
+    id: "low-stock",
+    label: "Estoque crítico",
+    description: "Itens com estoque abaixo do nível ideal.",
+    iconKey: "stock" as const,
+    categoryLabel: "Estoque",
+    accent: "#10b981",
+    accentTint: "#10b9811f",
+    accentText: "#047857",
+  },
+  {
+    id: "metrics",
+    label: "Métricas",
+    description: "Indicadores chave do seu setor.",
+    iconKey: "metrics" as const,
+    categoryLabel: "Financeiro",
+    accent: "#3b82f6",
+    accentTint: "#3b82f61f",
+    accentText: "#1d4ed8",
+  },
 ];

@@ -46,8 +46,19 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
 
   const handleSubmit = async (data: ItemBrandBaseFormData) => {
     try {
+      // In update mode, never send itemIds. The web edit form (BrandEditForm)
+      // only submits the changed `name`; the API treats a provided itemIds
+      // array as the full association set, so sending an empty/stale array
+      // would disassociate every item from the brand. Web parity + safety.
+      const payload =
+        mode === "update"
+          ? (() => {
+              const { itemIds: _omitItemIds, ...rest } = data;
+              return rest;
+            })()
+          : data;
       // Cast to the appropriate type based on mode
-      await onSubmit(data as TMode extends "create" ? ItemBrandCreateFormData : ItemBrandUpdateFormData);
+      await onSubmit(payload as TMode extends "create" ? ItemBrandCreateFormData : ItemBrandUpdateFormData);
     } catch (error) {
       // Error handling done by parent component
     }

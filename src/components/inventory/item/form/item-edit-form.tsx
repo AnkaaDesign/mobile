@@ -189,6 +189,11 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
             </View>
           </FormCard>
 
+          {/* Stock Calculation Breakdown (read-only) - matches web order (3rd) */}
+          <FormCard title="Cálculo de Estoque" icon="IconCalculator">
+            <CalculationBreakdown item={item} />
+          </FormCard>
+
           {/* Pricing */}
           <FormCard title="Preço e Impostos" icon="IconCurrencyReal">
             <View style={styles.fieldGroup}>
@@ -222,11 +227,6 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
               <PpeConfigSection disabled={isSubmitting} />
             </FormCard>
           )}
-
-          {/* Stock Calculation Breakdown (read-only) */}
-          <FormCard title="Cálculo de Estoque" icon="IconCalculator">
-            <CalculationBreakdown item={item} />
-          </FormCard>
             </KeyboardAwareFormProvider>
           </ScrollView>
 

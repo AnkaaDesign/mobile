@@ -9,7 +9,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Cabeçalho da tarefa",
     description: "Nome, serial, categoria e status no topo.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-info-card",
@@ -19,17 +18,15 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Informações",
     description: "Cliente, cidade, setor e responsáveis pela tarefa.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-commission-badge",
     kind: "showcase",
     scene: "task-detail",
     highlight: "taskCommissionBadge",
-    title: "Tarefa comissionável",
-    description: "Esta tarefa gera comissão. Conclua para garantir o bônus.",
+    title: "Comissão",
+    description: "O tipo de comissão da tarefa: integral, parcial, suspensa ou sem comissão.",
     placement: "top",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-dates-card",
@@ -39,7 +36,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Datas",
     description: "Entrada, prazo final e previsão atual.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-services-card",
@@ -49,7 +45,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Serviços",
     description: "Lista de ordens de serviço da tarefa, com status individual.",
     placement: "top",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-service-observation",
@@ -59,7 +54,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Observação na OS",
     description: "Quando um serviço tem observação, este ícone aparece.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-paints-general",
@@ -69,7 +63,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Tinta geral",
     description: "A cor principal da pintura, com marca e tipo.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-ground-paints",
@@ -79,7 +72,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Fundos",
     description: "Tintas de fundo aplicadas antes da pintura final.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-logo-paints",
@@ -89,7 +81,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Tintas de logo",
     description: "Cores usadas nos logos e detalhes.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-observations-table",
@@ -99,17 +90,15 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Observações",
     description: "Observações registradas durante a produção.",
     placement: "top",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-artworks",
     kind: "showcase",
     scene: "task-detail",
     highlight: "taskArtworksGallery",
-    title: "Artworks",
+    title: "Artes",
     description: "Layouts de aprovação dos clientes.",
     placement: "top",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-cuts-table",
@@ -119,7 +108,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Recortes",
     description: "Vinis e stencils utilizados.",
     placement: "top",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-airbrushings-table",
@@ -129,7 +117,6 @@ export const taskDetailSteps: TutorialStep[] = [
     title: "Aerografias",
     description: "Detalhes pintados à mão registrados aqui.",
     placement: "top",
-    autoAdvanceMs: 3000,
   },
   {
     id: "task-back-to-list",

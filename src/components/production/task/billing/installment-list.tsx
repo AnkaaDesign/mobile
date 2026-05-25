@@ -6,6 +6,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { InstallmentStatusBadge } from "./installment-status-badge";
 import { BankSlipStatusBadge } from "./bank-slip-status-badge";
+import { BoletoActions } from "./boleto-actions";
 import type { Installment } from "@/types/invoice";
 import {
   INSTALLMENT_STATUS,
@@ -14,6 +15,12 @@ import {
 
 interface InstallmentListProps {
   installments: Installment[];
+  /**
+   * When true, render per-installment BoletoActions (view/copy/regenerate/
+   * mark-paid/cancel). Off by default so read-only surfaces (e.g. the billing
+   * wizard review step) stay action-free.
+   */
+  showActions?: boolean;
 }
 
 /**
@@ -42,7 +49,7 @@ function shouldShowBankSlipBadge(
   return true;
 }
 
-export function InstallmentList({ installments }: InstallmentListProps) {
+export function InstallmentList({ installments, showActions = false }: InstallmentListProps) {
   const { colors } = useTheme();
 
   if (!installments || installments.length === 0) {
@@ -121,6 +128,14 @@ export function InstallmentList({ installments }: InstallmentListProps) {
                   />
                 )}
               </View>
+            )}
+
+            {showActions && (
+              <BoletoActions
+                installmentId={installment.id}
+                bankSlip={installment.bankSlip}
+                installmentStatus={installmentStatus}
+              />
             )}
           </View>
         );

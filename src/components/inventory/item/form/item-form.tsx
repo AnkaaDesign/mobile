@@ -59,7 +59,7 @@ type ItemFormProps = CreateItemFormProps | UpdateItemFormProps;
 
 export function ItemForm(props: ItemFormProps) {
   const { colors } = useTheme();
-  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory: _initialCategory, initialBrand: _initialBrand, initialSupplier: _initialSupplier } = props;
+  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory, initialBrand, initialSupplier } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
   const [isPPE, setIsPPE] = useState(false);
 
@@ -222,13 +222,16 @@ export function ItemForm(props: ItemFormProps) {
                 <NameInput disabled={isSubmitting} required={isRequired} />
                 <CategorySelector
                   disabled={isSubmitting}
+                  initialCategory={initialCategory}
                   onCategoryChange={setSelectedCategoryId}
                 />
                 <BrandSelector
                   disabled={isSubmitting}
+                  initialBrand={initialBrand}
                 />
                 <SupplierSelector
                   disabled={isSubmitting}
+                  initialSupplier={initialSupplier}
                 />
               </View>
             </FormCard>
@@ -240,6 +243,11 @@ export function ItemForm(props: ItemFormProps) {
                 <BoxQuantityInput disabled={isSubmitting} />
                 <LeadTimeInput disabled={isSubmitting} />
               </View>
+            </FormCard>
+
+            {/* Stock Calculation Breakdown (read-only) - matches web order (3rd) */}
+            <FormCard title="Cálculo de Estoque" icon="IconCalculator">
+              <CalculationBreakdown />
             </FormCard>
 
             {/* Pricing */}
@@ -276,11 +284,6 @@ export function ItemForm(props: ItemFormProps) {
                 <AssignToUserToggle disabled={isSubmitting} />
                 <StatusToggle disabled={isSubmitting} />
               </View>
-            </FormCard>
-
-            {/* Stock Calculation Breakdown (read-only) */}
-            <FormCard title="Cálculo de Estoque" icon="IconCalculator">
-              <CalculationBreakdown />
             </FormCard>
             </KeyboardAwareFormProvider>
           </ScrollView>

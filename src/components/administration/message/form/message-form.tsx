@@ -202,8 +202,9 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
       targetSectors: [],
       targetPositions: [],
       isActive: message?.status === 'ACTIVE' || mode === 'create',
-      startDate: message?.startsAt ? new Date(message.startsAt) : defaultScheduling.startDate,
-      endDate: message?.endsAt ? new Date(message.endsAt) : defaultScheduling.endDate,
+      // API entity exposes startDate/endDate (Prisma fields); keep startsAt/endsAt as fallback.
+      startDate: (message?.startDate || message?.startsAt) ? new Date(message.startDate ?? message.startsAt) : defaultScheduling.startDate,
+      endDate: (message?.endDate || message?.endsAt) ? new Date(message.endDate ?? message.endsAt) : defaultScheduling.endDate,
     },
     mode: "onTouched",
   });
@@ -280,25 +281,58 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
     }
   };
 
+  // Resolve targeting selection to a flat array of user IDs.
+  // The API CreateMessageDto only accepts `targets` (UUIDs); empty = all users.
+  // Sector/position selections must be resolved to user IDs client-side
+  // (mirrors web's resolveTargetingToUserIds in utils/message-targeting.ts).
+  const resolveTargetsToUserIds = useCallback(async (data: MessageFormData): Promise<string[]> => {
+    if (data.targetType === "all") {
+      return [];
+    }
+    if (data.targetType === "specific") {
+      return data.targetUsers || [];
+    }
+    if (data.targetType === "sector") {
+      const sectorIds = data.targetSectors || [];
+      if (sectorIds.length === 0) return [];
+      const users = await getUsers({
+        where: { sectorId: { in: sectorIds }, isActive: true },
+        select: { id: true },
+      });
+      return (users.data || []).map((u: User) => u.id);
+    }
+    if (data.targetType === "position") {
+      const positionIds = data.targetPositions || [];
+      if (positionIds.length === 0) return [];
+      const users = await getUsers({
+        where: { positionId: { in: positionIds }, isActive: true },
+        select: { id: true },
+      });
+      return (users.data || []).map((u: User) => u.id);
+    }
+    return [];
+  }, []);
+
   const handleSubmit = async (data: MessageFormData) => {
     try {
       setIsSubmitting(true);
 
+      // Resolve targeting (sectors/positions → user IDs) to match API DTO
+      const targets = await resolveTargetsToUserIds(data);
+
       const payload: any = {
         title: data.title,
         contentBlocks: data.blocks,
+        targets, // Simple array of user IDs (empty = all users)
         isActive: data.isActive,
       };
 
-      // Add targeting
-      if (data.targetType === "all") {
-        payload.targets = [];
-      } else if (data.targetType === "specific") {
-        payload.targets = data.targetUsers || [];
-      } else if (data.targetType === "sector") {
-        payload.targetSectors = data.targetSectors || [];
-      } else if (data.targetType === "position") {
-        payload.targetPositions = data.targetPositions || [];
+      // Add scheduling fields if provided (API expects ISO strings: startsAt/endsAt)
+      if (data.startDate) {
+        payload.startsAt = data.startDate.toISOString();
+      }
+      if (data.endDate) {
+        payload.endsAt = data.endDate.toISOString();
       }
 
       if (mode === "create") {

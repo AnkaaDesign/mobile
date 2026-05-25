@@ -72,10 +72,12 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
   };
 
   const getMeasureTypeOptions = () => {
-    return Object.values(MEASURE_TYPE).map((type) => ({
-      value: type,
-      label: MEASURE_TYPE_LABELS[type] || type,
-    }));
+    return Object.values(MEASURE_TYPE)
+      .filter((type) => type !== MEASURE_TYPE.SIZE) // SIZE is PPE-only, configured in the EPI section (web parity)
+      .map((type) => ({
+        value: type,
+        label: MEASURE_TYPE_LABELS[type] || type,
+      }));
   };
 
   const addNewMeasure = () => {

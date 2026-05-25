@@ -339,8 +339,13 @@ export default function BasicInfoSection({
         </SimpleFormField>
       )}
 
-      {/* Commission Status - Only visible to specific roles */}
-      {canViewCommissionField && (
+      {/* Commission Status - Only visible to specific roles.
+          TODO(parity): `commission` is NOT part of taskCreateSchema/taskUpdateSchema and web's
+          create form has no such field, so this control is effectively inert on submit (it's a
+          read-only display field elsewhere). Guarded to edit mode so it is never forwarded in
+          the create payload (cadastrar.tsx spreads `...rest`). Remove entirely once confirmed
+          no edit flow relies on it. */}
+      {mode === 'edit' && canViewCommissionField && (
         <SimpleFormField label="Status de Comissão" error={errors.commission}>
           <Controller
             control={control}
@@ -371,7 +376,7 @@ export default function BasicInfoSection({
               onBlur={onBlur}
               placeholder="Detalhes adicionais da tarefa..."
               numberOfLines={4}
-              maxLength={500}
+              maxLength={1000}
               error={!!errors.details}
               editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
             />

@@ -11,9 +11,9 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import { usePositions, useUsers, useScreenReady } from "@/hooks";
 import { bonusKeys } from "@/hooks/queryKeys";
 import { formatCurrency, getCurrentPayrollPeriod } from "@/utils";
-import { calculateBonusForPosition } from "@/utils/bonus";
 import { USER_STATUS } from "@/constants";
 import { bonusService } from "@/api-client";
+import type { SimulateResponse } from "@/api-client/services/bonus";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BonusSimulationScreen() {
@@ -136,12 +136,14 @@ export default function BonusSimulationScreen() {
     limit: 100,
   });
 
-  // Fetch all EFFECTED users with bonifiable positions (for calculating average)
-  // NOTE: The API does not support nested relation filters like `position: { bonifiable: true }`
-  // So we fetch all effected users and filter client-side
+  // Fetch eligible users for the B1 denominator. We filter the two relation
+  // predicates (bonifiable + performanceLevel) client-side, but the two
+  // top-level predicates (EFFECTED + secullumEmployeeId) go in the query so the
+  // eligible set matches the API canon exactly (same as the HR simulator).
   const { data: allUsersData } = useUsers({
     where: {
       status: USER_STATUS.EFFECTED,
+      secullumEmployeeId: { not: null },
     },
     include: {
       position: true,
@@ -228,11 +230,40 @@ export default function BonusSimulationScreen() {
     return quantity / eligibleUsersCount;
   }, [taskQuantity, eligibleUsersCount]);
 
-  // Calculate simulated bonus (using calculated average from task quantity)
-  const calculatedBonus = useMemo(() => {
-    if (!selectedPosition?.name) return 0;
-    return calculateBonusForPosition(selectedPosition.name, selectedPerformanceLevel, simulatedAverage);
-  }, [selectedPosition, selectedPerformanceLevel, simulatedAverage]);
+  // Calculate simulated bonus server-side via POST /bonuses/my-bonus-simulate.
+  // The app NEVER recomputes the formula locally; sending year/month makes the
+  // API inject the saved period reajuste so the simulation matches the real
+  // bonus. The personal route is open to all roles (the HR-only /bonus/simulate
+  // would 403 a regular employee).
+  const simulateMyInput = useMemo(() => {
+    if (!selectedPosition?.id && !selectedPosition?.name) return null;
+    return {
+      averageTasksPerUser: simulatedAverage,
+      users: [
+        {
+          id: currentUser?.id,
+          positionId: selectedPosition?.id,
+          positionName: selectedPosition?.name,
+          performanceLevel: selectedPerformanceLevel,
+        },
+      ],
+      year: periodYear,
+      month: periodMonth,
+    };
+  }, [selectedPosition?.id, selectedPosition?.name, selectedPerformanceLevel, simulatedAverage, currentUser?.id, periodYear, periodMonth]);
+
+  const { data: simulationResult } = useQuery({
+    queryKey: [...bonusKeys.all, 'my-bonus-simulate', simulateMyInput],
+    queryFn: async () => {
+      const response = await bonusService.simulateMyBonus(simulateMyInput!);
+      const data = (response.data as any)?.data ?? response.data;
+      return data as SimulateResponse;
+    },
+    enabled: simulateMyInput !== null,
+    staleTime: 1000 * 5,
+  });
+
+  const calculatedBonus = simulationResult?.users?.[0]?.bonus ?? 0;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

@@ -14,6 +14,10 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations } from "@/hooks/useTask";
 import { useTaskQuoteByTask } from "@/hooks/useTaskQuote";
+import { taskQuoteService } from "@/api-client/task-quote";
+import { uploadSingleFile } from "@/api-client/file";
+import type { TASK_QUOTE_STATUS } from "@/types/task-quote";
+import { canUpdateQuoteStatus } from "@/utils/permissions/quote-permissions";
 import { taskQuoteCreateNestedSchema } from "@/schemas/task-quote";
 import { spacing } from "@/constants/design-system";
 import type { FormStep } from "@/components/ui/form-steps";
@@ -387,6 +391,9 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         return isNaN(n) ? null : n;
       };
       const quotePayload = { ...data.quote };
+      // statusReason is captured UI-side only (the API ignores it on every
+      // quote path); never forward it in the payload.
+      delete (quotePayload as any).statusReason;
       quotePayload.subtotal = toNumber(quotePayload.subtotal) ?? 0;
       quotePayload.total = toNumber(quotePayload.total) ?? 0;
       quotePayload.guaranteeYears = toNumber(quotePayload.guaranteeYears);
@@ -413,6 +420,97 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       }
       const newLayoutFiles = layoutFiles.filter(f => !f.uploaded);
 
+      // Layout-removal detection (canonical web fix): a pure layout removal —
+      // existing quote had a layoutFileId but the user cleared all picked files
+      // — must still trigger an update. Don't trust the stale form field; force
+      // layoutFileId to null when no files remain. Works for budget AND billing.
+      const layoutRemoved =
+        !!existingQuote?.layoutFileId && layoutFiles.length === 0;
+      if (layoutFiles.length === 0) {
+        quotePayload.layoutFileId = null;
+      }
+
+      // Quotes that have reached BILLING_APPROVED or later are "locked": the API
+      // rejects edits to billing-structural fields (subtotal/total/services/
+      // customerConfigs) on these statuses (SAFE_AFTER_BILLING_FIELDS guard) and
+      // requires status changes to go through the dedicated /status endpoint.
+      // Mirror web: only send the locked-safe quote fields, and route the
+      // status change separately. We use the dedicated task-quote endpoints here
+      // (not the nested task.update path) because the nested path requires a
+      // services array and would otherwise drop a reduced locked payload.
+      const BILLING_LOCKED_STATUSES = [
+        'BILLING_APPROVED',
+        'UPCOMING',
+        'DUE',
+        'PARTIAL',
+        'SETTLED',
+      ];
+      const existingStatus = existingQuote?.status as TASK_QUOTE_STATUS | undefined;
+      const isQuoteLocked =
+        !!existingStatus && BILLING_LOCKED_STATUSES.includes(existingStatus);
+
+      if (isQuoteLocked && existingQuote?.id) {
+        const targetStatus = data.quote.status as TASK_QUOTE_STATUS | undefined;
+
+        // Resolve the layout file id for the locked path. Mirror web: upload a
+        // new layout via the dedicated file endpoint first, then persist its id.
+        // We cannot use the nested task.update multipart path here because that
+        // path only writes the quote when a non-empty `services` array is
+        // present (which the reduced locked payload deliberately omits).
+        let lockedLayoutFileId: string | null = quotePayload.layoutFileId ?? null;
+
+        if (newLayoutFiles.length > 0) {
+          const layoutFile = newLayoutFiles[0];
+          const uploadResponse = await uploadSingleFile(
+            {
+              uri: layoutFile.uri,
+              type: layoutFile.type,
+              name: layoutFile.name,
+            } as any,
+            { fileContext: 'quote-layout' },
+          );
+          if (uploadResponse.success && uploadResponse.data?.id) {
+            lockedLayoutFileId = uploadResponse.data.id;
+          }
+        }
+
+        // Reduced payload: ONLY the fields the API allows on a locked quote
+        // (SAFE_AFTER_BILLING_FIELDS). layoutFileId is included so a layout
+        // change/removal still persists.
+        const lockedPayload: Record<string, any> = {
+          expiresAt: quotePayload.expiresAt,
+          guaranteeYears: quotePayload.guaranteeYears,
+          customGuaranteeText: quotePayload.customGuaranteeText,
+          customForecastDays: quotePayload.customForecastDays,
+          simultaneousTasks: quotePayload.simultaneousTasks,
+          layoutFileId: lockedLayoutFileId,
+        };
+        await taskQuoteService.update(existingQuote.id, lockedPayload as any);
+
+        // Status change (if any) goes through the dedicated endpoint. The API
+        // ignores any reason on this path (see report), so statusReason is not
+        // forwarded here.
+        if (targetStatus && targetStatus !== existingStatus) {
+          await taskQuoteService.updateStatus(existingQuote.id, targetStatus);
+        }
+
+        methods.reset();
+        setCurrentStep(1);
+        setLayoutFiles([]);
+
+        const source = navigationTracker.getSource();
+        let detailRoute: string;
+        if (source?.includes('/agenda')) {
+          detailRoute = `/(tabs)/producao/agenda/detalhes/${taskId}`;
+        } else if (source?.includes('/historico')) {
+          detailRoute = `/(tabs)/producao/historico/detalhes/${taskId}`;
+        } else {
+          detailRoute = `/(tabs)/producao/cronograma/detalhes/${taskId}`;
+        }
+        router.replace(detailRoute as any);
+        return;
+      }
+
       // Short-circuit: skip sending `quote` in the payload when no quote
       // form field is dirty. Mobile uses task.update() with a nested quote,
       // and the inline-quote path on the API still touches services/configs
@@ -422,6 +520,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       const dq = (dirty.quote || {}) as Record<string, unknown>;
       const quoteFieldDirty =
         newLayoutFiles.length > 0 ||
+        layoutRemoved ||
         Boolean(
           dq.expiresAt ||
             dq.subtotal ||
@@ -475,7 +574,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
     } finally {
       setIsSaving(false);
     }
-  }, [getValues, taskId, updateAsync, router, methods, layoutFiles]);
+  }, [getValues, taskId, updateAsync, router, methods, layoutFiles, existingQuote]);
 
   // Handle cancel
   const handleCancel = useCallback(() => {
@@ -505,7 +604,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
   }
 
   const userRole = user?.sector?.privileges || "";
-  const canEditStatus = userRole === "ADMIN" || userRole === "FINANCIAL" || userRole === "COMMERCIAL";
+  const canEditStatus = canUpdateQuoteStatus(userRole);
 
   const canProceed = currentStep === 1
     ? canProceedFromStep1
@@ -597,6 +696,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
             selectedCustomers={selectedCustomers}
             layoutFiles={layoutFiles}
             canEditStatus={canEditStatus}
+            userRole={userRole}
             fieldPrefix="quote."
           />
         )}

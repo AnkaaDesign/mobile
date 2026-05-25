@@ -1,15 +1,32 @@
 import React from "react";
 import { View, StyleSheet} from "react-native";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from "@/constants";
+import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS, PPE_TYPE, MEASURE_TYPE, MEASURE_UNIT } from "@/constants";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 import { spacing } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { PpeSizeSelector } from "./ppe-size-selector";
 
 type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
+
+// Letter sizes (P, M, G, GG, XG) are stored in the measure's `unit` field.
+// Numeric sizes (SIZE_35, SIZE_36, ...) are stored in the measure's `value` field.
+const LETTER_SIZES = ["P", "M", "G", "GG", "XG"];
+
+// Convert a PPE size enum string (e.g. "SIZE_42") to its numeric value (42).
+function ppeSizeToNumeric(size: string): number | null {
+  const match = size.match(/^SIZE_(\d+)$/);
+  if (match) return parseInt(match[1], 10);
+  return null;
+}
+
+// Convert a numeric value (42) back to a PPE size enum string ("SIZE_42").
+function numericToPpeSize(value: number): string {
+  return `SIZE_${value}`;
+}
 
 interface PpeConfigSectionProps {
   disabled?: boolean;
@@ -17,7 +34,69 @@ interface PpeConfigSectionProps {
 }
 
 export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) {
-  const { control } = useFormContext<ItemFormData>();
+  const form = useFormContext<ItemFormData>();
+  const { control, setValue, getValues } = form;
+
+  const ppeType = useWatch({ control, name: "ppeType" });
+  const measures = useWatch({ control, name: "measures" });
+
+  // Derive the current PPE size from the SIZE measure in the measures array.
+  const getCurrentPpeSize = (): string | null => {
+    if (!measures || !Array.isArray(measures)) return null;
+    const sizeMeasure = measures.find((m: any) => m.measureType === MEASURE_TYPE.SIZE);
+    if (!sizeMeasure) return null;
+
+    // Letter size stored in unit
+    if (sizeMeasure.unit && LETTER_SIZES.includes(sizeMeasure.unit)) {
+      return sizeMeasure.unit;
+    }
+    // Numeric size stored in value
+    if (sizeMeasure.value !== null && sizeMeasure.value !== undefined) {
+      return numericToPpeSize(sizeMeasure.value);
+    }
+    return null;
+  };
+
+  // Write the PPE size into the measures array (replacing any existing SIZE measure).
+  const setPpeSize = (newSize: string | null) => {
+    const currentMeasures = (getValues("measures") as any[]) || [];
+    const otherMeasures = currentMeasures.filter((m: any) => m.measureType !== MEASURE_TYPE.SIZE);
+
+    if (newSize) {
+      const sizeMeasure: any = { measureType: MEASURE_TYPE.SIZE };
+
+      if (LETTER_SIZES.includes(newSize)) {
+        // Letter size -> store in unit, value is null
+        sizeMeasure.value = null;
+        sizeMeasure.unit = newSize as MEASURE_UNIT;
+      } else {
+        // Numeric size -> store in value, unit is null
+        const numericValue = ppeSizeToNumeric(newSize);
+        if (numericValue !== null) {
+          sizeMeasure.value = numericValue;
+          sizeMeasure.unit = null;
+        }
+      }
+
+      if (sizeMeasure.value !== undefined || sizeMeasure.unit !== undefined) {
+        setValue("measures", [...otherMeasures, sizeMeasure] as any, { shouldDirty: true, shouldValidate: true });
+      }
+    } else {
+      setValue("measures", otherMeasures as any, { shouldDirty: true, shouldValidate: true });
+    }
+  };
+
+  // Clear the size when the PPE type changes (sizes are type-specific), mirroring web.
+  const prevPpeTypeRef = React.useRef(ppeType);
+  React.useEffect(() => {
+    if (prevPpeTypeRef.current && prevPpeTypeRef.current !== ppeType) {
+      setPpeSize(null);
+    }
+    prevPpeTypeRef.current = ppeType;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ppeType]);
+
+  const sizeRequired = required && !!ppeType && ppeType !== PPE_TYPE.OTHERS;
 
   return (
     <View style={styles.fieldGroup}>
@@ -60,6 +139,15 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
             </View>
           );
         }}
+      />
+
+      {/* Size - stored inside the measures array as a SIZE measure (web parity) */}
+      <PpeSizeSelector
+        ppeType={(ppeType as PPE_TYPE) ?? undefined}
+        disabled={disabled || !ppeType}
+        required={sizeRequired}
+        value={getCurrentPpeSize()}
+        onValueChange={setPpeSize}
       />
 
       {/* Delivery Configuration */}

@@ -3,7 +3,18 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, dateRangeSchema, uuidArraySchema } from "./common";
 import type { OrderSchedule } from '../types';
-import { SCHEDULE_FREQUENCY } from '../constants';
+import { SCHEDULE_FREQUENCY, MONTH_OCCURRENCE, WEEK_DAY } from '../constants';
+
+// Inline nested-create payload for MonthlyScheduleConfig.
+// Used when the user picks the positional weekday option (e.g. 1st Thursday)
+// instead of a flat day-of-month. Field name on the wire is `monthlySchedule`
+// to match the API repo; the read-side relation is still `monthlyConfig`.
+const monthlyScheduleInlineSchema = z
+  .object({
+    occurrence: z.nativeEnum(MONTH_OCCURRENCE, { errorMap: () => ({ message: "Ocorrência inválida" }) }),
+    dayOfWeek: z.nativeEnum(WEEK_DAY, { errorMap: () => ({ message: "Dia da semana inválido" }) }),
+  })
+  .strict();
 
 // =====================
 // OrderSchedule Include Schemas
@@ -647,6 +658,10 @@ export const orderScheduleCreateSchema = z
     isActive: z.boolean().default(true),
     items: uuidArraySchema("item"),
 
+    // Target supplier for generated orders. Nullable to keep parity with legacy
+    // schedules. No UI selector (schema-only contract field).
+    supplierId: z.string().uuid("Fornecedor inválido").nullable().optional(),
+
     // Specific scheduling fields - conditionally required based on frequency
     specificDate: z.coerce.date().optional(),
     nextRun: z.coerce.date().optional(),
@@ -659,6 +674,11 @@ export const orderScheduleCreateSchema = z
     weeklyConfigId: z.string().uuid("Configuração semanal inválida").optional(),
     monthlyConfigId: z.string().uuid("Configuração mensal inválida").optional(),
     yearlyConfigId: z.string().uuid("Configuração anual inválida").optional(),
+
+    // Inline positional config (sibling to monthlyConfigId). Wire name is
+    // `monthlySchedule` to match the API repo's nested-create path. When set,
+    // dayOfMonth should be omitted.
+    monthlySchedule: monthlyScheduleInlineSchema.optional(),
   })
   .refine(
     (data) => {
@@ -666,6 +686,8 @@ export const orderScheduleCreateSchema = z
       switch (data.frequency) {
         case SCHEDULE_FREQUENCY.ONCE:
           return !!data.specificDate;
+        case SCHEDULE_FREQUENCY.DAILY:
+          return true; // No specific config needed
         case SCHEDULE_FREQUENCY.WEEKLY:
         case SCHEDULE_FREQUENCY.BIWEEKLY:
           return !!data.dayOfWeek || !!data.weeklyConfigId;
@@ -675,9 +697,9 @@ export const orderScheduleCreateSchema = z
         case SCHEDULE_FREQUENCY.TRIANNUAL:
         case SCHEDULE_FREQUENCY.QUADRIMESTRAL:
         case SCHEDULE_FREQUENCY.SEMI_ANNUAL:
-          return !!data.dayOfMonth || !!data.monthlyConfigId;
+          return !!data.dayOfMonth || !!data.monthlyConfigId || !!data.monthlySchedule;
         case SCHEDULE_FREQUENCY.ANNUAL:
-          return (!!data.dayOfMonth && !!data.month) || !!data.yearlyConfigId;
+          return (!!data.dayOfMonth && !!data.month) || !!data.yearlyConfigId || !!data.monthlySchedule;
         case SCHEDULE_FREQUENCY.CUSTOM:
           return !!data.customMonths && data.customMonths.length > 0;
         default:
@@ -713,6 +735,14 @@ export const orderScheduleUpdateSchema = z
     dayOfWeek: z.string().nullable().optional(),
     month: z.string().nullable().optional(),
     customMonths: z.array(z.string()).optional(),
+
+    // Target supplier — nullable so editing existing schedules without
+    // changing supplier is a no-op. No UI selector (schema-only contract field).
+    supplierId: z.string().uuid("Fornecedor inválido").nullable().optional(),
+
+    // Inline positional config — wire name `monthlySchedule` matches the API
+    // repo's upsert path. Clear via undefined.
+    monthlySchedule: monthlyScheduleInlineSchema.optional(),
 
     // Reschedule fields
     rescheduleCount: z.number().int().min(0).optional(),
@@ -811,9 +841,20 @@ export const mapOrderScheduleToFormData = createMapToFormDataHelper<OrderSchedul
   originalDate: orderSchedule.originalDate || null,
   lastRescheduleDate: orderSchedule.lastRescheduleDate || null,
   rescheduleReason: orderSchedule.rescheduleReason ?? undefined,
+  supplierId: orderSchedule.supplierId ?? null,
   weeklyConfigId: orderSchedule.weeklyConfigId || null,
   monthlyConfigId: orderSchedule.monthlyConfigId || null,
   yearlyConfigId: orderSchedule.yearlyConfigId || null,
+  // Round-trip the loaded positional config back into the write-side
+  // `monthlySchedule` key. Requires include.monthlyConfig on the GET. Only
+  // populate when both occurrence + dayOfWeek are present.
+  monthlySchedule:
+    orderSchedule.monthlyConfig?.occurrence && orderSchedule.monthlyConfig?.dayOfWeek
+      ? {
+          occurrence: orderSchedule.monthlyConfig.occurrence as MONTH_OCCURRENCE,
+          dayOfWeek: orderSchedule.monthlyConfig.dayOfWeek as WEEK_DAY,
+        }
+      : undefined,
   finishedAt: orderSchedule.finishedAt || null,
   lastRunId: orderSchedule.lastRunId || null,
   originalScheduleId: orderSchedule.originalScheduleId || null,

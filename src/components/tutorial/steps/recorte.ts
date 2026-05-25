@@ -21,7 +21,6 @@ export const recorteSteps: TutorialStep[] = [
     title: "Lista de recortes",
     description: "Vinis e stencils das tarefas em produção.",
     placement: "center",
-    autoAdvanceMs: 3000,
   },
   {
     id: "recorte-row-overview",

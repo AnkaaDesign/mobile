@@ -557,10 +557,13 @@ export function useExternalWithdrawalFormState(
       notes: notes.trim() || undefined,
       nfeId: nfeId || null,
       receiptId: receiptId || null,
+      // Item payload must match externalWithdrawalCreateSchema:
+      // { itemId, withdrawedQuantity, price }. Price is only sent for
+      // CHARGEABLE withdrawals (mirrors web create form behavior).
       items: getSelectedItemsWithData().map((item) => ({
         itemId: item.id,
-        quantity: item.quantity,
-        unitPrice: item.price > 0 ? item.price : undefined,
+        withdrawedQuantity: item.quantity,
+        price: type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE ? item.price || 0 : undefined,
       })),
     };
   }, [withdrawerName, type, notes, nfeId, receiptId, getSelectedItemsWithData]);

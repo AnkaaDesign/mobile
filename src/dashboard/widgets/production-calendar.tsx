@@ -1143,9 +1143,10 @@ export const productionCalendarWidget: WidgetDefinition<Config> = {
     "Visão mensal do período (26→25) com tarefas plotadas por prazo, previsão, início e conclusão. Cada tipo de evento tem cor própria e pode ser ativado/desativado.",
   icon: IconCalendarStats,
   category: "production",
+  // PRODUCTION (shop-floor) is intentionally excluded — the schedule overview is
+  // a managerial view; PRODUCTION_MANAGER keeps access.
   allowedSectors: [
     SECTOR_PRIVILEGES.ADMIN,
-    SECTOR_PRIVILEGES.PRODUCTION,
     SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
     SECTOR_PRIVILEGES.COMMERCIAL,
     SECTOR_PRIVILEGES.LOGISTIC,

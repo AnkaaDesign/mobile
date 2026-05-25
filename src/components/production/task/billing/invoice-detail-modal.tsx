@@ -14,7 +14,6 @@ import { formatCurrency } from "@/utils/formatters";
 import { InvoiceStatusBadge } from "./invoice-status-badge";
 import { NfseStatusBadge } from "./nfse-status-badge";
 import { InstallmentList } from "./installment-list";
-import { BoletoActions } from "./boleto-actions";
 import { NfseActions } from "./nfse-actions";
 import { NfseEnrichedInfo } from "./nfse-enriched-info";
 import { useCancelInvoice } from "@/hooks/useInvoice";
@@ -169,13 +168,7 @@ export function InvoiceDetailModal({ invoice, visible, onClose }: InvoiceDetailM
                     key={installment.id}
                     style={[styles.installmentRow, { borderBottomColor: colors.border }]}
                   >
-                    <InstallmentList installments={[installment]} />
-                    {installment.bankSlip && (
-                      <BoletoActions
-                        installmentId={installment.id}
-                        bankSlip={installment.bankSlip}
-                      />
-                    )}
+                    <InstallmentList installments={[installment]} showActions />
                   </View>
                 ))}
             </View>

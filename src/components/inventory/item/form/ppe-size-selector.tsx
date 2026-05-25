@@ -12,12 +12,17 @@ interface PpeSizeSelectorProps<_TFormData extends ItemCreateFormData | ItemUpdat
   disabled?: boolean;
   required?: boolean;
   name?: string;
+  /** Controlled mode: when provided, the selector reads/writes through these props instead of a form field. */
+  value?: string | null;
+  onValueChange?: (value: string | null) => void;
+  /** Optional error text to display in controlled mode. */
+  error?: string;
 }
 
 // Map PPE types to their corresponding sizes - matching web implementation
 const PPE_TYPE_SIZE_MAP: Record<PPE_TYPE, PPE_SIZE[]> = {
   [PPE_TYPE.SHIRT]: [PPE_SIZE.P, PPE_SIZE.M, PPE_SIZE.G, PPE_SIZE.GG, PPE_SIZE.XG],
-  [PPE_TYPE.PANTS]: [PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_46, PPE_SIZE.SIZE_48, PPE_SIZE.SIZE_50],
+  [PPE_TYPE.PANTS]: [PPE_SIZE.SIZE_35, PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_37, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_39, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_41, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_43, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_45, PPE_SIZE.SIZE_46, PPE_SIZE.SIZE_47, PPE_SIZE.SIZE_48, PPE_SIZE.SIZE_50],
   [PPE_TYPE.SHORT]: [PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_46, PPE_SIZE.SIZE_48, PPE_SIZE.SIZE_50],
   [PPE_TYPE.BOOTS]: [PPE_SIZE.SIZE_35, PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_37, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_39, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_41, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_43, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_45, PPE_SIZE.SIZE_46, PPE_SIZE.SIZE_47, PPE_SIZE.SIZE_48],
   [PPE_TYPE.SLEEVES]: [PPE_SIZE.P, PPE_SIZE.M, PPE_SIZE.G, PPE_SIZE.GG, PPE_SIZE.XG],
@@ -27,21 +32,54 @@ const PPE_TYPE_SIZE_MAP: Record<PPE_TYPE, PPE_SIZE[]> = {
   [PPE_TYPE.OTHERS]: [],
 };
 
-export function PpeSizeSelector<TFormData extends ItemCreateFormData | ItemUpdateFormData = ItemCreateFormData | ItemUpdateFormData>({ ppeType, disabled, required, name = "ppeSize" }: PpeSizeSelectorProps<TFormData>) {
+export function PpeSizeSelector<TFormData extends ItemCreateFormData | ItemUpdateFormData = ItemCreateFormData | ItemUpdateFormData>({
+  ppeType,
+  disabled,
+  required,
+  name = "ppeSize",
+  value: controlledValue,
+  onValueChange: controlledOnChange,
+  error: controlledError,
+}: PpeSizeSelectorProps<TFormData>) {
   const { control } = useFormContext<TFormData>();
   // Get available sizes based on PPE type or all sizes
   const availableSizes = ppeType ? PPE_TYPE_SIZE_MAP[ppeType] : Object.values(PPE_SIZE);
+
+  const sizeOptions: ComboboxOption[] = availableSizes.map((size) => ({
+    value: size,
+    label: PPE_SIZE_LABELS[size],
+  }));
+
+  // Controlled mode: used by the PPE config section to store the size inside the measures array.
+  if (controlledValue !== undefined && controlledOnChange) {
+    return (
+      <View style={styles.field}>
+        <ThemedText style={styles.label}>
+          Tamanho
+          {required && <ThemedText variant="destructive"> *</ThemedText>}
+        </ThemedText>
+        <Combobox
+          options={sizeOptions}
+          value={controlledValue || ""}
+          onValueChange={(newValue) => {
+            const normalized = Array.isArray(newValue) ? newValue[0] : newValue;
+            controlledOnChange(normalized ? normalized : null);
+          }}
+          placeholder={ppeType ? "Selecione o tamanho" : "Selecione o tipo de EPI primeiro"}
+          disabled={disabled}
+          searchable={false}
+          clearable={!required}
+        />
+        {controlledError && <ThemedText variant="destructive" style={{ fontSize: 12, marginTop: 4 }}>{controlledError}</ThemedText>}
+      </View>
+    );
+  }
 
   return (
     <Controller
       control={control}
       name={name as any}
       render={({ field: { onChange, value }, fieldState: { error } }) => {
-        const sizeOptions: ComboboxOption[] = availableSizes.map((size) => ({
-          value: size,
-          label: PPE_SIZE_LABELS[size],
-        }));
-
         return (
           <View style={styles.field}>
             <ThemedText style={styles.label}>

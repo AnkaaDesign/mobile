@@ -1,37 +1,113 @@
 import {
   IconAlertTriangle,
+  IconBrush,
   IconBuilding,
+  IconBuildingFactory2,
   IconCalendar,
-  IconCalendarTime,
+  IconCalendarEvent,
+  IconCalendarStats,
+  IconCalendarWeek,
+  IconCategory,
   IconClipboardList,
+  IconCoins,
   IconCut,
-  IconFactory,
+  IconEdit,
+  IconFiles,
   IconHash,
+  IconLayersSubtract,
   IconMapPin,
   IconNote,
-  IconNotes,
   IconPaint,
-  IconPalette,
+  IconPaperclip,
   IconPhoto,
-  IconScissors,
-  IconTags,
+  IconSpray,
   IconTools,
-  IconTruck,
-  IconUser,
+  IconTrash,
 } from "@tabler/icons-react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef } from "react";
+import {
+  Dimensions,
+  Image,
+  type LayoutChangeEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useTheme } from "@/lib/theme";
+import {
+  borderRadius,
+  fontSize,
+  fontWeight,
+  shadow,
+  spacing,
+} from "@/constants/design-system";
 import { useSlotContext } from "../chrome/slot-context";
+import { useTutorialStore } from "../engine-store";
 import { TUTORIAL_TASK_DETAIL } from "../fixtures";
 import type { SceneProps } from "./index";
 
-// Per-service-order status colors — mirror task-services-card.tsx STATUS_COLORS.
+// Commission is an enum (mirror of COMMISSION_STATUS_LABELS), not a percentage.
+const COMMISSION_STATUS_LABELS: Record<string, string> = {
+  NO_COMMISSION: "Sem Comissão",
+  PARTIAL_COMMISSION: "Comissão Parcial",
+  FULL_COMMISSION: "Comissão Integral",
+  SUSPENDED_COMMISSION: "Comissão Suspensa",
+};
+
+// Cut type labels — the tutorial copy refers to vinyl cuts as "Adesivo"
+// (sticker) and stencil cuts as "Espovo"; never show the raw enum.
+const CUT_TYPE_LABELS: Record<string, string> = {
+  VINYL: "Adesivo",
+  STENCIL: "Espovo",
+};
+
+// Spotlight targets nested inside a scrollable section map to that section so
+// we can still scroll them into view (their own onLayout y is relative to an
+// inner row, not the scroll content).
+const PARENT_SECTION: Record<string, string> = {
+  taskCommissionBadge: "taskInfoCard",
+  taskServiceObservationIndicator: "taskServicesCard",
+};
+
+// How far below the top of the scroll viewport a highlighted section lands —
+// upper third, leaving room for the tooltip above or below it.
+const REVEAL_GAP = Math.round(Dimensions.get("window").height * 0.22);
+
+// The shared list Table renders alternating rows separated by a fixed
+// translucent divider (Table/Row.tsx rowWrapper) — the inner tables used by
+// observations/cuts/airbrushings detail cards inherit it. Match that line so
+// the tutorial's table-style cards read like the real ones.
+const ROW_DIVIDER = "rgba(0,0,0,0.05)";
+
+// Status colors — mirror the centralized badge-colors.ts mapping so the
+// service-order, cut and airbrushing pills all use the real semantic colors.
+// Service orders: IN_PROGRESS/WAITING_APPROVE; cuts: CUTTING; airbrushings:
+// IN_PRODUCTION; plus the shared PENDING/COMPLETED/CANCELLED.
 const SO_STATUS_COLORS: Record<string, string> = {
-  PENDING: "#737373",
-  IN_PROGRESS: "#1d4ed8",
-  WAITING_APPROVE: "#9333ea",
-  COMPLETED: "#15803d",
-  CANCELLED: "#b91c1c",
+  PENDING: "#737373", // gray
+  IN_PROGRESS: "#1d4ed8", // blue-700
+  WAITING_APPROVE: "#9333ea", // purple
+  IN_PRODUCTION: "#2563eb", // blue-600 (AIRBRUSHING IN_PRODUCTION)
+  CUTTING: "#2563eb", // blue-600 (CUT CUTTING)
+  COMPLETED: "#15803d", // green-700
+  CANCELLED: "#b91c1c", // red-700
+};
+
+// Portuguese status labels for cuts/airbrushings (mirror CUT_STATUS_LABELS /
+// AIRBRUSHING_STATUS_LABELS) since the fixtures only carry the raw enum value.
+const CUT_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendente",
+  CUTTING: "Cortando",
+  COMPLETED: "Concluído",
+};
+
+const AIRBRUSHING_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendente",
+  IN_PRODUCTION: "Em produção",
+  COMPLETED: "Concluído",
+  CANCELLED: "Cancelado",
 };
 
 export function TaskDetailScene(_props: SceneProps) {
@@ -39,30 +115,64 @@ export function TaskDetailScene(_props: SceneProps) {
   const slot = useSlotContext();
   const t = TUTORIAL_TASK_DETAIL;
 
+  const scrollRef = useRef<ScrollView>(null);
+  // Content-relative y of each section, captured from its onLayout.
+  const offsets = useRef<Record<string, number>>({});
+  const activeSlot = useTutorialStore((s) => s.activeSlot);
+
+  // onLayout that records the section's scroll offset AND forwards to the
+  // slot measurement. Used on every spotlight-eligible section.
+  const track = useCallback(
+    (name: string) => (e: LayoutChangeEvent) => {
+      offsets.current[name] = e.nativeEvent.layout.y;
+      slot.register(name)(e);
+    },
+    [slot],
+  );
+
+  // When the highlighted section changes, scroll it into view so the spotlight
+  // target is actually on screen. A programmatic scroll does NOT re-fire the
+  // children's onLayout, so the cached rect would be stale — onScroll
+  // remeasures every frame so the spotlight/tooltip track the section as it
+  // moves, and a settle timer covers the final resting position.
+  useEffect(() => {
+    if (!activeSlot) return;
+    const sectionSlot = PARENT_SECTION[activeSlot] ?? activeSlot;
+    const y = offsets.current[sectionSlot];
+    if (y == null) return; // slot lives outside this scene (e.g. header back)
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - REVEAL_GAP), animated: true });
+    const id = setTimeout(() => slot.remeasureAll(), 380);
+    return () => clearTimeout(id);
+  }, [activeSlot, slot]);
+
   return (
     <ScrollView
+      ref={scrollRef}
+      onScroll={() => slot.remeasureAll()}
+      scrollEventThrottle={16}
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={{ padding: 12, gap: 12, paddingBottom: 100 }}
     >
-      {/* Header card — large title + serial; matches detail header pattern */}
+      {/* Header card — task name + Edit/Delete action buttons (no status pill,
+          no subtitle); mirrors the real ScheduleDetailsScreen header card. */}
       <View
         ref={slot.registerRef("taskHeader") as any}
-        onLayout={slot.register("taskHeader")}
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onLayout={track("taskHeader")}
+        style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
         <View style={styles.headerRow}>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={2}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.headerTitle, { color: colors.foreground }]} numberOfLines={2}>
               {t.name}
             </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>
-              {t.serial} · {t.truckCategory}
-            </Text>
           </View>
-          <View style={[styles.statusPill, { backgroundColor: t.statusColor }]}>
-            <Text style={styles.statusText} numberOfLines={1}>
-              {t.statusLabel.split(" (")[0]}
-            </Text>
+          <View style={styles.headerActions}>
+            <View style={[styles.actionButton, { backgroundColor: colors.primary }]}>
+              <IconEdit size={18} color={colors.primaryForeground} />
+            </View>
+            <View style={[styles.actionButton, { backgroundColor: colors.destructive }]}>
+              <IconTrash size={18} color={colors.destructiveForeground} />
+            </View>
           </View>
         </View>
       </View>
@@ -70,7 +180,7 @@ export function TaskDetailScene(_props: SceneProps) {
       {/* Informações Gerais */}
       <DetailCard
         slotRef={slot.registerRef("taskInfoCard")}
-        onLayout={slot.register("taskInfoCard")}
+        onLayout={track("taskInfoCard")}
         icon={IconClipboardList}
         title="Informações Gerais"
         badge={
@@ -83,43 +193,44 @@ export function TaskDetailScene(_props: SceneProps) {
         colors={colors}
       >
         <DetailField icon={IconBuilding} label="Razão Social" value={t.customer} colors={colors} />
-        <DetailField icon={IconFactory} label="Setor" value={t.sectorName} colors={colors} />
-        <DetailField icon={IconHash} label="Número de Série" value={t.serial} colors={colors} monospace />
-        <DetailField icon={IconTruck} label="Categoria" value={t.truckCategory} colors={colors} />
-        <DetailField icon={IconMapPin} label="Local" value={t.customerCity} colors={colors} />
+        <DetailField icon={IconBuildingFactory2} label="Setor" value={t.sectorName} colors={colors} />
         {t.isCommissionable && (
+          /* Real card shows commission as a "Comissão" DetailField (icon coins);
+             the spotlight slot lives on its wrapping row. */
           <View
             ref={slot.registerRef("taskCommissionBadge") as any}
-            onLayout={slot.register("taskCommissionBadge")}
-            style={[
-              styles.commissionRow,
-              { borderColor: colors.primary, backgroundColor: colors.primary + "14" },
-            ]}
+            onLayout={track("taskCommissionBadge")}
           >
-            <Text style={[styles.commissionText, { color: colors.primary }]}>
-              Comissão: {t.commissionPercent}%
-            </Text>
+            <DetailField
+              icon={IconCoins}
+              label="Comissão"
+              value={COMMISSION_STATUS_LABELS[t.commission] ?? t.commission}
+              colors={colors}
+            />
           </View>
         )}
+        <DetailField icon={IconHash} label="Número de Série" value={t.serial} colors={colors} monospace />
+        <DetailField icon={IconCategory} label="Categoria" value={t.truckCategory} colors={colors} />
+        <DetailField icon={IconMapPin} label="Local" value={t.customerCity} colors={colors} />
       </DetailCard>
 
       {/* Datas */}
       <DetailCard
         slotRef={slot.registerRef("taskDatesCard")}
-        onLayout={slot.register("taskDatesCard")}
-        icon={IconCalendar}
+        onLayout={track("taskDatesCard")}
+        icon={IconCalendarWeek}
         title="Datas"
         colors={colors}
       >
         <DetailField icon={IconCalendar} label="Entrada" value={t.entryDate} colors={colors} />
-        <DetailField icon={IconCalendarTime} label="Prazo" value={t.term} colors={colors} />
-        <DetailField icon={IconCalendar} label="Previsão" value={t.forecast} colors={colors} />
+        <DetailField icon={IconCalendarEvent} label="Prazo" value={t.term} colors={colors} />
+        <DetailField icon={IconCalendarStats} label="Previsão de Liberação" value={t.forecast} colors={colors} />
       </DetailCard>
 
       {/* Serviços */}
       <DetailCard
         slotRef={slot.registerRef("taskServicesCard")}
-        onLayout={slot.register("taskServicesCard")}
+        onLayout={track("taskServicesCard")}
         icon={IconTools}
         title="Serviços"
         badge={
@@ -141,99 +252,115 @@ export function TaskDetailScene(_props: SceneProps) {
                 i !== t.services.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
               ]}
             >
-              {/* Row 1: description + observation indicator */}
-              <View style={styles.serviceDescRow}>
-                <Text
-                  style={[styles.serviceName, { color: colors.text, flex: 1 }]}
-                  numberOfLines={1}
+              {/* Single row: name (left, fills space) + status pill + observation
+                  indicator (far right). The obs icon sits AFTER the badge. */}
+              <Text
+                style={[styles.serviceName, { color: colors.foreground, flex: 1 }]}
+                numberOfLines={1}
+              >
+                {s.label}
+              </Text>
+              <View style={[styles.statusPill, styles.serviceStatusPill, { backgroundColor: statusColor }]}>
+                <Text style={styles.statusText}>{s.statusLabel}</Text>
+              </View>
+              {s.hasObservation && (
+                <Pressable
+                  ref={slot.registerRef("taskServiceObservationIndicator") as any}
+                  onLayout={track("taskServiceObservationIndicator")}
+                  style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
                 >
-                  {s.label}
-                </Text>
-                {s.hasObservation && (
-                  <Pressable
-                    ref={slot.registerRef("taskServiceObservationIndicator") as any}
-                    onLayout={slot.register("taskServiceObservationIndicator")}
-                    style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
-                  >
-                    <IconNote size={14} color={colors.mutedForeground} />
-                    <View style={styles.observationBadge}>
-                      <Text style={styles.observationBadgeText}>!</Text>
-                    </View>
-                  </Pressable>
-                )}
-              </View>
-              {/* Row 2: status pill (solid) */}
-              <View style={styles.serviceStatusRow}>
-                <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
-                  <Text style={styles.statusText}>{s.statusLabel}</Text>
-                </View>
-              </View>
+                  <IconNote size={14} color={colors.mutedForeground} />
+                  <View style={styles.observationBadge}>
+                    <Text style={styles.observationBadgeText}>!</Text>
+                  </View>
+                </Pressable>
+              )}
             </View>
           );
         })}
       </DetailCard>
 
-      {/* Tinta Geral — 56x56 swatch */}
+      {/* Pintura Geral — 56x56 swatch */}
       <DetailCard
         slotRef={slot.registerRef("taskPaintsCard")}
-        onLayout={slot.register("taskPaintsCard")}
-        icon={IconPaint}
-        title="Tinta Geral"
+        onLayout={track("taskPaintsCard")}
+        icon={IconBrush}
+        title="Pintura Geral"
         colors={colors}
       >
-        <View style={styles.generalPaintRow}>
-          <View
-            style={[
-              styles.generalPaintSwatch,
-              { backgroundColor: t.generalPaint.hex, borderColor: colors.border },
-            ]}
-          />
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[styles.paintName, { color: colors.text }]} numberOfLines={1}>
-              {t.generalPaint.name}
-            </Text>
-            <Text style={[styles.paintMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-              {t.generalPaint.brand} · {t.generalPaint.type}
-            </Text>
+        {/* Tinted container + 56x56 preview + name and type/brand chip badges */}
+        <View style={[styles.paintItemContainer, { backgroundColor: colors.muted + "50" }]}>
+          <View style={styles.generalPaintRow}>
+            <View
+              style={[
+                styles.generalPaintSwatch,
+                { backgroundColor: t.generalPaint.hex, borderColor: colors.border },
+              ]}
+            />
+            <View style={{ flex: 1, gap: 4, justifyContent: "center" }}>
+              <Text style={[styles.paintName, { color: colors.foreground }]} numberOfLines={1}>
+                {t.generalPaint.name}
+              </Text>
+              <View style={styles.paintBadgesRow}>
+                <View style={[styles.paintChip, { backgroundColor: colors.muted }]}>
+                  <Text style={[styles.paintChipText, { color: colors.mutedForeground }]}>
+                    {t.generalPaint.type}
+                  </Text>
+                </View>
+                <View style={[styles.paintChip, { backgroundColor: colors.muted }]}>
+                  <Text style={[styles.paintChipText, { color: colors.mutedForeground }]}>
+                    {t.generalPaint.brand}
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
         </View>
       </DetailCard>
 
-      {/* Fundos — 44x44 swatches stacked */}
+      {/* Fundos Recomendados — 44x44 swatches stacked */}
       <DetailCard
         slotRef={slot.registerRef("taskGroundPaintsCard")}
-        onLayout={slot.register("taskGroundPaintsCard")}
-        icon={IconPalette}
-        title="Fundos"
+        onLayout={track("taskGroundPaintsCard")}
+        icon={IconLayersSubtract}
+        title="Fundos Recomendados"
+        badge={
+          <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
+            <Text style={[styles.countBadgeText, { color: colors.text }]}>
+              {t.groundPaints.length}
+            </Text>
+          </View>
+        }
         colors={colors}
       >
         {t.groundPaints.map((p, i) => (
           <View
             key={i}
             style={[
+              styles.paintItemContainer,
               styles.stackedPaintRow,
-              i !== t.groundPaints.length - 1 && {
-                borderBottomColor: colors.border,
-                borderBottomWidth: StyleSheet.hairlineWidth,
-              },
+              { backgroundColor: colors.muted + "50" },
             ]}
           >
             <View
               style={[styles.mediumPaintSwatch, { backgroundColor: p.hex, borderColor: colors.border }]}
             />
-            <Text style={[styles.paintName, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-              {p.name}
-            </Text>
+            <View style={styles.paintInfo}>
+              <Text style={[styles.paintName, { color: colors.foreground }]} numberOfLines={1}>
+                {p.name}
+              </Text>
+              <PaintChips type={p.type} brand={p.brand} finish={p.finish} colors={colors} />
+            </View>
           </View>
         ))}
       </DetailCard>
 
-      {/* Tintas de Logo — 44x44 swatches stacked */}
+      {/* Tintas da Logomarca — 44x44 swatches stacked */}
       <DetailCard
         slotRef={slot.registerRef("taskLogoPaintsCard")}
-        onLayout={slot.register("taskLogoPaintsCard")}
-        icon={IconTags}
-        title="Tintas de Logo"
+        onLayout={track("taskLogoPaintsCard")}
+        icon={IconPaint}
+        title="Tintas da Logomarca"
         badge={
           <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
             <Text style={[styles.countBadgeText, { color: colors.text }]}>
@@ -247,36 +374,31 @@ export function TaskDetailScene(_props: SceneProps) {
           <View
             key={i}
             style={[
+              styles.paintItemContainer,
               styles.stackedPaintRow,
-              i !== t.logoPaints.length - 1 && {
-                borderBottomColor: colors.border,
-                borderBottomWidth: StyleSheet.hairlineWidth,
-              },
+              { backgroundColor: colors.muted + "50" },
             ]}
           >
             <View
               style={[styles.mediumPaintSwatch, { backgroundColor: p.hex, borderColor: colors.border }]}
             />
-            <Text style={[styles.paintName, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-              {p.name}
-            </Text>
+            <View style={styles.paintInfo}>
+              <Text style={[styles.paintName, { color: colors.foreground }]} numberOfLines={1}>
+                {p.name}
+              </Text>
+              <PaintChips type={p.type} brand={p.brand} finish={p.finish} colors={colors} />
+            </View>
           </View>
         ))}
       </DetailCard>
 
-      {/* Observações — table-like */}
+      {/* Observações — table-style Card (muted-foreground icon, count in title) */}
       <DetailCard
         slotRef={slot.registerRef("taskObservationsTable")}
-        onLayout={slot.register("taskObservationsTable")}
-        icon={IconNotes}
-        title="Observações"
-        badge={
-          <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
-            <Text style={[styles.countBadgeText, { color: colors.text }]}>
-              {t.observations.length}
-            </Text>
-          </View>
-        }
+        onLayout={track("taskObservationsTable")}
+        icon={IconPaperclip}
+        iconColor={colors.mutedForeground}
+        title={`Observações (${t.observations.length})`}
         colors={colors}
       >
         {t.observations.map((o, i) => (
@@ -286,7 +408,7 @@ export function TaskDetailScene(_props: SceneProps) {
               styles.tableRow,
               {
                 backgroundColor: i % 2 === 0 ? colors.background : colors.card,
-                borderBottomColor: colors.border,
+                borderBottomColor: ROW_DIVIDER,
               },
               i === t.observations.length - 1 && { borderBottomWidth: 0 },
             ]}
@@ -302,12 +424,13 @@ export function TaskDetailScene(_props: SceneProps) {
         ))}
       </DetailCard>
 
-      {/* Artworks — grid */}
+      {/* Layouts (artworks) — grid; table-style Card (muted-foreground icon) */}
       <DetailCard
         slotRef={slot.registerRef("taskArtworksGallery")}
-        onLayout={slot.register("taskArtworksGallery")}
-        icon={IconPhoto}
-        title="Artworks"
+        onLayout={track("taskArtworksGallery")}
+        icon={IconFiles}
+        iconColor={colors.mutedForeground}
+        title="Layouts"
         badge={
           <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
             <Text style={[styles.countBadgeText, { color: colors.text }]}>
@@ -319,35 +442,44 @@ export function TaskDetailScene(_props: SceneProps) {
       >
         <View style={styles.artworksGrid}>
           {t.artworks.map((a) => (
+            /* Mirrors the real FileItem grid tile: rounded card, square
+               cover-fit thumbnail on top, filename strip below. */
             <View
               key={a.id}
-              style={[styles.artworkTile, { borderColor: colors.border, backgroundColor: colors.background }]}
+              style={[styles.artworkTile, { borderColor: colors.border, backgroundColor: colors.card }]}
             >
-              <IconPhoto size={32} color={colors.mutedForeground} />
-              <Text
-                style={[styles.artworkLabel, { color: colors.text }]}
-                numberOfLines={2}
-              >
-                {a.label}
-              </Text>
+              <View style={[styles.artworkThumb, { backgroundColor: colors.muted + "20" }]}>
+                {a.thumbnail ? (
+                  <Image
+                    source={a.thumbnail}
+                    style={styles.artworkThumbImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <IconPhoto size={32} color={colors.mutedForeground} />
+                )}
+              </View>
+              <View style={[styles.artworkCaption, { backgroundColor: colors.background + "F0" }]}>
+                <Text
+                  style={[styles.artworkLabel, { color: colors.foreground }]}
+                  numberOfLines={2}
+                  ellipsizeMode="middle"
+                >
+                  {a.label}
+                </Text>
+              </View>
             </View>
           ))}
         </View>
       </DetailCard>
 
-      {/* Recortes — table */}
+      {/* Recortes — table-style Card (muted-foreground icon, count in title) */}
       <DetailCard
         slotRef={slot.registerRef("taskCutsTable")}
-        onLayout={slot.register("taskCutsTable")}
-        icon={IconScissors}
-        title="Recortes"
-        badge={
-          <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
-            <Text style={[styles.countBadgeText, { color: colors.text }]}>
-              {t.cuts.length}
-            </Text>
-          </View>
-        }
+        onLayout={track("taskCutsTable")}
+        icon={IconCut}
+        iconColor={colors.mutedForeground}
+        title={`Recortes (${t.cuts.length})`}
         colors={colors}
       >
         {t.cuts.map((c, i) => (
@@ -357,7 +489,7 @@ export function TaskDetailScene(_props: SceneProps) {
               styles.tableRow,
               {
                 backgroundColor: i % 2 === 0 ? colors.background : colors.card,
-                borderBottomColor: colors.border,
+                borderBottomColor: ROW_DIVIDER,
               },
               i === t.cuts.length - 1 && { borderBottomWidth: 0 },
             ]}
@@ -367,28 +499,22 @@ export function TaskDetailScene(_props: SceneProps) {
               {c.label}
             </Text>
             <Text style={[styles.tableRowMeta, { color: colors.mutedForeground }]}>
-              {c.type}
+              {CUT_TYPE_LABELS[c.type] ?? c.type}
             </Text>
             <View style={[styles.statusPill, { backgroundColor: SO_STATUS_COLORS[c.status] ?? "#737373" }]}>
-              <Text style={styles.statusText}>{c.status}</Text>
+              <Text style={styles.statusText}>{CUT_STATUS_LABELS[c.status] ?? c.status}</Text>
             </View>
           </View>
         ))}
       </DetailCard>
 
-      {/* Aerografias — table */}
+      {/* Aerografias — table-style Card (muted-foreground icon, count in title) */}
       <DetailCard
         slotRef={slot.registerRef("taskAirbrushingsTable")}
-        onLayout={slot.register("taskAirbrushingsTable")}
-        icon={IconPaint}
-        title="Aerografias"
-        badge={
-          <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
-            <Text style={[styles.countBadgeText, { color: colors.text }]}>
-              {t.airbrushings.length}
-            </Text>
-          </View>
-        }
+        onLayout={track("taskAirbrushingsTable")}
+        icon={IconSpray}
+        iconColor={colors.mutedForeground}
+        title={`Aerografias (${t.airbrushings.length})`}
         colors={colors}
       >
         {t.airbrushings.map((a, i) => (
@@ -398,7 +524,7 @@ export function TaskDetailScene(_props: SceneProps) {
               styles.tableRow,
               {
                 backgroundColor: i % 2 === 0 ? colors.background : colors.card,
-                borderBottomColor: colors.border,
+                borderBottomColor: ROW_DIVIDER,
               },
               i === t.airbrushings.length - 1 && { borderBottomWidth: 0 },
             ]}
@@ -408,7 +534,7 @@ export function TaskDetailScene(_props: SceneProps) {
               {a.label}
             </Text>
             <View style={[styles.statusPill, { backgroundColor: SO_STATUS_COLORS[a.status] ?? "#737373" }]}>
-              <Text style={styles.statusText}>{a.status}</Text>
+              <Text style={styles.statusText}>{AIRBRUSHING_STATUS_LABELS[a.status] ?? a.status}</Text>
             </View>
           </View>
         ))}
@@ -422,6 +548,9 @@ export function TaskDetailScene(_props: SceneProps) {
 interface DetailCardProps {
   icon: any;
   title: string;
+  /** Header icon color. DetailCard sections default to primary; table-style
+      Card sections (observations/cuts/airbrushings/layouts) pass mutedForeground. */
+  iconColor?: string;
   badge?: React.ReactNode;
   children: React.ReactNode;
   colors: any;
@@ -433,6 +562,7 @@ interface DetailCardProps {
 function DetailCard({
   icon: Icon,
   title,
+  iconColor,
   badge,
   children,
   colors,
@@ -447,8 +577,8 @@ function DetailCard({
     >
       <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.cardHeaderLeft}>
-          <Icon size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+          <Icon size={20} color={iconColor ?? colors.primary} />
+          <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
             {title}
           </Text>
         </View>
@@ -489,7 +619,7 @@ function DetailField({
         <Text
           style={[
             styles.valueText,
-            { color: colors.text },
+            { color: colors.foreground },
             monospace && { fontFamily: "monospace" },
           ]}
         >
@@ -500,97 +630,152 @@ function DetailField({
   );
 }
 
+// ─── PaintChips — type / brand / finish chips for ground & logo paints ──────
+// Mirrors task-ground-paints-card / task-logo-paints-card badge row:
+// paintType.name, paintBrand.name and PAINT_FINISH_LABELS[finish] as chips.
+
+function PaintChips({
+  type,
+  brand,
+  finish,
+  colors,
+}: {
+  type?: string;
+  brand?: string;
+  finish?: string;
+  colors: any;
+}) {
+  const chips = [type, brand, finish].filter(Boolean) as string[];
+  if (chips.length === 0) return null;
+  return (
+    <View style={styles.paintBadgesRow}>
+      {chips.map((chip) => (
+        <View key={chip} style={[styles.paintChip, { backgroundColor: colors.muted }]}>
+          <Text style={[styles.paintChipText, { color: colors.mutedForeground }]} numberOfLines={1}>
+            {chip}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  // Card — 8px radius, 1px border, card bg
+  // Card — mirrors the real Card (card.tsx) + detail-page-layout: radius 8
+  // (borderRadius.lg), 1px border, shadow.md, paddingHorizontal 8 (spacing.sm),
+  // paddingVertical 16 (spacing.md).
   card: {
-    borderRadius: 8,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    ...shadow.md,
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
-    paddingBottom: 10,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
   cardHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.xs,
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
+  // cardTitle — fontSize.lg (18), fontWeight.medium (500)
   cardTitle: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.medium,
     flexShrink: 1,
   },
   cardContent: {
-    gap: 14,
+    gap: spacing.md,
   },
+  // Count badge — secondary Badge (muted bg, rounded) shown beside section titles.
   countBadge: {
     minWidth: 22,
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
   countBadgeText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
   },
-  // Header card (task name + status)
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headerTitle: { fontSize: 18, fontWeight: "700" },
-  headerSubtitle: { fontSize: 12 },
-  // Status pill — solid rectangular, radius 6, padX 10, padY 3, fs 12 w 500
+  // Header card (task name + Edit/Delete actions) — mirrors ScheduleDetailsScreen
+  // headerCard: a real Card (radius 8, border, shadow.md), padH16/padV4.
+  headerCard: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    ...shadow.md,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  headerLeft: { flex: 1, marginRight: spacing.sm },
+  // taskTitle — fontSize.xl (20), fontWeight.bold (700)
+  headerTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },
+  // 36×36 inline action buttons, radius 6 (borderRadius.md).
+  headerActions: { flexDirection: "row", gap: spacing.sm },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Status badge — solid rectangular, radius 6, padH10/padV3, 12/500, white text
+  // (mirrors CellContent/Badge solid status badges).
   statusPill: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: borderRadius.md,
     alignSelf: "flex-start",
   },
-  statusText: { color: "#ffffff", fontSize: 12, fontWeight: "500" },
-  // DetailField — icon + label above, value in bordered muted card below
-  fieldRow: { gap: 4 },
-  fieldLabel: { flexDirection: "row", alignItems: "center", gap: 4 },
-  labelText: { fontSize: 13, fontWeight: "500" },
+  statusText: { color: "#ffffff", fontSize: fontSize.xs, fontWeight: fontWeight.medium },
+  // DetailField — icon + label above, value in bordered muted card below.
+  // Mirrors detail-page-layout: labelText fontSize.sm (14) weight 500,
+  // fieldValueCard radius md (6) + padding spacing.sm (8), valueText fontSize.sm (14) weight 600.
+  // DetailField — icon+label above, value in bordered muted card below.
+  fieldRow: { gap: spacing.xs },
+  fieldLabel: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  labelText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
   fieldValueCard: {
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    padding: 10,
+    padding: spacing.sm,
   },
-  valueText: { fontSize: 13, fontWeight: "600" },
-  // Commission banner
-  commissionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  commissionText: { fontSize: 13, fontWeight: "600" },
-  // Service row — description on top, status pill below
+  valueText: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+  // Service row — name + status pill + observation indicator on a single row.
+  // The name's flex:1 pushes the status badge and then the observation icon to
+  // the right edge; the obs indicator renders AFTER the badge (its far right).
   serviceRow: {
-    paddingVertical: 10,
-    gap: 6,
-  },
-  serviceDescRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 8,
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
   },
-  serviceName: { fontSize: 14, fontWeight: "500" },
+  serviceName: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
+  // Inline status pill on the service row — center-aligned, never shrinks
+  // (mirrors statusBadgeInline flexShrink:0 in task-services-card).
+  serviceStatusPill: { alignSelf: "center", flexShrink: 0 },
+  // Observation indicator — 28×28 r6 bordered button with a red "!" badge.
   observationButton: {
     width: 28,
     height: 28,
-    borderRadius: 6,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -607,40 +792,63 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  observationBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
-  serviceStatusRow: { marginTop: 2 },
-  // General paint card — 56x56 swatch
+  observationBadgeText: { color: "#fff", fontSize: 9, fontWeight: fontWeight.bold },
+  // General paint card — tinted container (muted+50, r8, pad16) + 56×56 swatch
+  // + type/brand chips (mirrors task-general-paint-card paintItemContainer).
+  paintItemContainer: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   generalPaintRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
   },
   generalPaintSwatch: {
     width: 56,
     height: 56,
-    borderRadius: 8,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
   },
-  paintName: { fontSize: 14, fontWeight: "600" },
-  paintMeta: { fontSize: 12 },
-  // Logo paint row — 44x44 swatch
+  // paintName — fontSize.base (16), weight 600
+  paintName: { fontSize: fontSize.base, fontWeight: fontWeight.semibold },
+  paintBadgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  // Type/brand chips — r4, padH8/padV3, 12 (task-general-paint-card badge).
+  paintChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.sm,
+  },
+  paintChipText: { fontSize: fontSize.xs },
+  // Logo/ground paint row — 44×44 swatch inside the tinted paintItemContainer
+  // (mirrors task-logo-paints-card / task-ground-paints-card 44px preview).
+  // The container supplies the padding; this only sets the row layout.
   stackedPaintRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 8,
   },
   mediumPaintSwatch: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
   },
-  // Table rows for observations, cuts, airbrushings — alternating bg, 48px-ish min height
+  // Info column beside a ground/logo swatch — name + chip row (mirrors the
+  // paintInfo column in task-ground-paints-card / task-logo-paints-card).
+  paintInfo: { flex: 1, justifyContent: "center", gap: spacing.xs },
+  // Table rows (observations, cuts, airbrushings) — alternating bg, minHeight 48,
+  // padH10, divider 1px (mirrors the list Table rows used by *-table.tsx cards).
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
     paddingHorizontal: 10,
     paddingVertical: 12,
     minHeight: 48,
@@ -648,21 +856,32 @@ const styles = StyleSheet.create({
   },
   tableRowText: { fontSize: 13 },
   tableRowMeta: { fontSize: 11 },
-  // Artworks grid — 3 columns
+  // Artworks (Layouts) grid — mirrors the real FileItem grid tiles: a rounded
+  // bordered card (radius md), a square cover-fit thumbnail on top and a
+  // filename caption strip below. 3 per row.
   artworksGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.md,
   },
   artworkTile: {
     width: "31%",
-    aspectRatio: 1,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
+    overflow: "hidden",
+  },
+  artworkThumb: {
+    width: "100%",
+    aspectRatio: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    padding: 6,
   },
-  artworkLabel: { fontSize: 10, fontWeight: "600", textAlign: "center" },
+  artworkThumbImage: {
+    width: "100%",
+    height: "100%",
+  },
+  artworkCaption: {
+    padding: spacing.sm,
+  },
+  artworkLabel: { fontSize: fontSize.xs, fontWeight: fontWeight.medium, textAlign: "center" },
 });

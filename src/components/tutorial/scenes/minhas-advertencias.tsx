@@ -1,30 +1,34 @@
-import {
-  IconAlertTriangle,
-  IconCalendar,
-  IconCircleCheck,
-  IconExclamationCircle,
-  IconFilter,
-  IconSearch,
-  IconUser,
-} from "@tabler/icons-react-native";
+import { IconColumns, IconFilter, IconSearch } from "@tabler/icons-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { useSlotContext } from "../chrome/slot-context";
 import { TUTORIAL_WARNINGS } from "../fixtures";
 import type { SceneProps } from "./index";
 
-// Severity → label + solid badge color (mirrors real list-config which uses
-// the WARNING_SEVERITY badge mapping: info/pending/warning/destructive).
-// VERBAL = info (blue), WRITTEN = pending (amber),
-// SUSPENSION = warning (orange), FINAL_WARNING = destructive (red).
+// Mirrors src/app/(tabs)/pessoal/minhas-advertencias/index.tsx — a read-only
+// list rendered via <Layout> with `personalWarningsListConfig`: a search bar +
+// column-visibility + filter buttons, then a generic Table card with uppercase
+// headers, alternating rows, solid rectangular status badges, and a
+// "Mostrando X de Y" footer.
+//
+// Default visible columns (personalWarningsListConfig.table.defaultVisible):
+//   severity · category · reason
+//
+// Severity badge colors follow ENTITY_BADGE_CONFIG.WARNING → BADGE_COLORS:
+//   VERBAL        → "Verbal"            info        (#1d4ed8 blue-700)
+//   WRITTEN       → "Escrita"           pending     (#d97706 amber-600)
+//   SUSPENSION    → "Suspensão"         warning     (#ea580c orange-600)
+//   FINAL_WARNING → "Advertência Final" destructive (#b91c1c red-700)
+// Category badge has no badgeEntity → resolves to default gray (#737373).
+
 const SEVERITY_META: Record<string, { label: string; color: string }> = {
-  VERBAL: { label: "Verbal", color: "#5985b3" },
+  VERBAL: { label: "Verbal", color: "#1d4ed8" },
   WRITTEN: { label: "Escrita", color: "#d97706" },
   SUSPENSION: { label: "Suspensão", color: "#ea580c" },
-  FINAL_WARNING: { label: "Advertência Final", color: "#bf4040" },
+  FINAL_WARNING: { label: "Advertência Final", color: "#b91c1c" },
 };
 
-// Fallback category label so the fixture stays in sync with the real screen.
+// WARNING_CATEGORY_LABELS (mirrors @/constants/enum-labels).
 const CATEGORY_LABELS: Record<string, string> = {
   SAFETY: "Segurança",
   MISCONDUCT: "Má Conduta",
@@ -36,39 +40,28 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: "Outro",
 };
 
-// Extra fixture display fields (supervisor, follow-up, active) inferred from
-// the real screen's list config columns. Indexed by fixture id.
-const ROW_EXTRA: Record<
-  string,
-  {
-    severity: string;
-    reasonCategory: string;
-    reason: string;
-    supervisor: string;
-    followUpDate: string;
-    isActive: boolean;
-    acknowledged: boolean;
-  }
-> = {
+// The fixture's `category` field actually carries the severity enum; map each
+// row to the real (severity, category, reason) display columns.
+const ROW_EXTRA: Record<string, { severity: string; reasonCategory: string; reason: string }> = {
   "w-0": {
     severity: "VERBAL",
     reasonCategory: "ATTENDANCE",
     reason: "Atraso reiterado no início do expediente",
-    supervisor: "Carlos Andrade",
-    followUpDate: "12/06/2026",
-    isActive: true,
-    acknowledged: false,
   },
   "w-1": {
     severity: "WRITTEN",
     reasonCategory: "SAFETY",
     reason: "Não utilização de EPI obrigatório",
-    supervisor: "Marina Souza",
-    followUpDate: "05/06/2026",
-    isActive: true,
-    acknowledged: true,
   },
 };
+
+const COLUMNS: Array<{ key: string; label: string; width: number; align?: "left" | "center" }> = [
+  { key: "severity", label: "SEVERIDADE", width: 120, align: "center" },
+  { key: "category", label: "CATEGORIA", width: 130 },
+  { key: "reason", label: "MOTIVO", width: 200 },
+];
+
+const CATEGORY_BADGE_COLOR = "#737373"; // default gray
 
 export function MinhasAdvertenciasScene(_props: SceneProps) {
   const { colors } = useTheme();
@@ -80,7 +73,7 @@ export function MinhasAdvertenciasScene(_props: SceneProps) {
       onLayout={slot.register("pessoalAdvertencias")}
       style={{ flex: 1, backgroundColor: colors.background }}
     >
-      {/* Toolbar — search + filter, mirroring the Layout list pattern */}
+      {/* Toolbar — search + column visibility + filter */}
       <View style={styles.toolbar}>
         <View
           style={[
@@ -88,7 +81,7 @@ export function MinhasAdvertenciasScene(_props: SceneProps) {
             { backgroundColor: colors.card, borderColor: colors.border },
           ]}
         >
-          <IconSearch size={18} color={colors.mutedForeground} />
+          <IconSearch size={20} color={colors.mutedForeground} />
           <Text
             style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}
           >
@@ -96,158 +89,127 @@ export function MinhasAdvertenciasScene(_props: SceneProps) {
           </Text>
         </View>
         <Pressable
-          style={[
-            styles.iconBtn,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
+          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
-          <IconFilter size={20} color={colors.text} />
+          <IconColumns size={20} color={colors.foreground} />
+          {/* visible (3) < total columns → primary badge with visible count */}
+          <View style={[styles.countBadge, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.countBadgeText, { color: colors.primaryForeground }]}>3</Text>
+          </View>
+        </Pressable>
+        <Pressable
+          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
+          <IconFilter size={20} color={colors.foreground} />
         </Pressable>
       </View>
 
-      {/* Section header — count summary */}
-      <View style={styles.sectionHeader}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <View style={styles.tableWrapper}>
+        {/* Table card — generic Table layout (card bg, border, radius 8) */}
+        <View
+          style={[
+            styles.tableCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          {/* Header row */}
           <View
-            style={{
-              width: 4,
-              height: 20,
-              borderRadius: 2,
-              backgroundColor: colors.primary,
-            }}
-          />
-          <Text style={[styles.sectionTitle, { color: colors.primary }]}>
-            Histórico de Advertências
-          </Text>
-        </View>
-        <Text style={[styles.sectionCount, { color: colors.mutedForeground }]}>
-          {TUTORIAL_WARNINGS.length}{" "}
-          {TUTORIAL_WARNINGS.length === 1 ? "registro" : "registros"}
-        </Text>
-      </View>
+            style={[styles.tableHeaderRow, { borderBottomColor: colors.border }]}
+          >
+            {COLUMNS.map((c) => (
+              <View
+                key={c.key}
+                style={[
+                  styles.headerCell,
+                  {
+                    width: c.width,
+                    alignItems: c.align === "center" ? "center" : "flex-start",
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.headerCellText, { color: colors.foreground }]}
+                  numberOfLines={1}
+                >
+                  {c.label}
+                </Text>
+              </View>
+            ))}
+          </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 100, gap: 12 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {TUTORIAL_WARNINGS.map((w) => {
-          const extra = ROW_EXTRA[w.id] ?? {
-            severity: w.category,
-            reasonCategory: "OTHER",
-            reason: w.description,
-            supervisor: "—",
-            followUpDate: "—",
-            isActive: true,
-            acknowledged: false,
-          };
-          const sev = SEVERITY_META[extra.severity] ?? SEVERITY_META.VERBAL;
-          const StatusIcon = extra.acknowledged
-            ? IconCircleCheck
-            : IconExclamationCircle;
-          const statusColor = extra.acknowledged ? "#16a34a" : "#f59e0b";
-          const statusLabel = extra.acknowledged ? "Ciente" : "Pendente";
+          {/* Body rows — alternating background */}
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {TUTORIAL_WARNINGS.map((w, idx) => {
+              const extra =
+                ROW_EXTRA[w.id] ?? {
+                  severity: w.category,
+                  reasonCategory: "OTHER",
+                  reason: w.description,
+                };
+              const sev = SEVERITY_META[extra.severity] ?? SEVERITY_META.VERBAL;
 
-          return (
-            <View
-              key={w.id}
-              style={[
-                styles.card,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  borderLeftColor: sev.color,
-                },
-              ]}
-            >
-              {/* Header row: severity badge + date + status pill */}
-              <View style={styles.cardHeader}>
-                <View style={styles.headerLeft}>
-                  <View style={styles.severityIconWrap}>
-                    <IconAlertTriangle size={18} color={sev.color} />
-                  </View>
-                  <View style={[styles.severityBadge, { backgroundColor: sev.color }]}>
-                    <Text style={styles.severityBadgeText} numberOfLines={1}>
-                      {sev.label.toUpperCase()}
-                    </Text>
-                  </View>
+              return (
+                <View
+                  key={w.id}
+                  style={[
+                    styles.bodyRow,
+                    {
+                      // Alternating bg + hairline divider — matches the generic
+                      // Table Row (index%2 → background/card, borderBottom
+                      // rgba(0,0,0,.05)).
+                      backgroundColor: idx % 2 === 0 ? colors.background : colors.card,
+                    },
+                  ]}
+                >
+                  {/* Severity badge */}
                   <View
                     style={[
-                      styles.categoryBadge,
-                      { borderColor: colors.border, backgroundColor: colors.muted },
+                      styles.bodyCell,
+                      { width: COLUMNS[0].width, alignItems: "center" },
                     ]}
                   >
-                    <Text
-                      style={[styles.categoryBadgeText, { color: colors.text }]}
-                      numberOfLines={1}
+                    <View style={[styles.statusBadge, { backgroundColor: sev.color }]}>
+                      <Text style={styles.statusText} numberOfLines={1}>
+                        {sev.label}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Category badge (default gray) */}
+                  <View style={[styles.bodyCell, { width: COLUMNS[1].width }]}>
+                    <View
+                      style={[styles.statusBadge, { backgroundColor: CATEGORY_BADGE_COLOR }]}
                     >
-                      {CATEGORY_LABELS[extra.reasonCategory] ?? "Outro"}
+                      <Text style={styles.statusText} numberOfLines={1}>
+                        {CATEGORY_LABELS[extra.reasonCategory] ?? "Outro"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Reason (plain text, medium weight) */}
+                  <View style={[styles.bodyCell, { width: COLUMNS[2].width }]}>
+                    <Text
+                      style={[styles.cellText, { color: colors.foreground, fontWeight: "500" }]}
+                      numberOfLines={2}
+                    >
+                      {extra.reason}
                     </Text>
                   </View>
                 </View>
-                <View style={[styles.statusPill, { backgroundColor: statusColor + "1A" }]}>
-                  <StatusIcon size={12} color={statusColor} />
-                  <Text style={[styles.statusPillText, { color: statusColor }]}>
-                    {statusLabel}
-                  </Text>
-                </View>
-              </View>
+              );
+            })}
+          </ScrollView>
 
-              {/* Reason — primary line */}
-              <Text
-                style={[styles.reason, { color: colors.text }]}
-                numberOfLines={2}
-              >
-                {extra.reason}
-              </Text>
-
-              {/* Description — secondary line */}
-              <Text
-                style={[styles.description, { color: colors.mutedForeground }]}
-                numberOfLines={2}
-              >
-                {w.description}
-              </Text>
-
-              {/* Metadata footer: supervisor + date + follow-up */}
-              <View
-                style={[styles.metaRow, { borderTopColor: colors.border }]}
-              >
-                <View style={styles.metaItem}>
-                  <IconUser size={13} color={colors.mutedForeground} />
-                  <Text
-                    style={[styles.metaText, { color: colors.mutedForeground }]}
-                    numberOfLines={1}
-                  >
-                    {extra.supervisor}
-                  </Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <IconCalendar size={13} color={colors.mutedForeground} />
-                  <Text
-                    style={[styles.metaText, { color: colors.mutedForeground }]}
-                    numberOfLines={1}
-                  >
-                    {w.date}
-                  </Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text
-                    style={[styles.followUpLabel, { color: colors.mutedForeground }]}
-                  >
-                    Acomp.
-                  </Text>
-                  <Text
-                    style={[styles.metaText, { color: colors.text }]}
-                    numberOfLines={1}
-                  >
-                    {extra.followUpDate}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          );
-        })}
-      </ScrollView>
+          {/* Footer with pagination info — mirrors the generic Table
+              pagination footer (table-pagination-footer.tsx): "Mostrando X de
+              Y" at fontSize.sm (14) in mutedForeground, paddingV 8. */}
+          <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
+              Mostrando {TUTORIAL_WARNINGS.length} de {TUTORIAL_WARNINGS.length}
+            </Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
@@ -258,7 +220,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   search: {
     flexDirection: "row",
@@ -270,7 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  searchPlaceholder: { fontSize: 14 },
+  searchPlaceholder: { fontSize: 16 },
   iconBtn: {
     width: 40,
     height: 40,
@@ -278,107 +240,83 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 8,
     borderWidth: 1,
+    position: "relative",
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: { fontSize: 15, fontWeight: "600" },
-  sectionCount: { fontSize: 12 },
-  card: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderLeftWidth: 4,
-    padding: 14,
-    gap: 8,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flex: 1,
-    flexWrap: "wrap",
-  },
-  severityIconWrap: {
-    width: 24,
-    height: 24,
+  countBadge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
     alignItems: "center",
     justifyContent: "center",
   },
-  severityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+  countBadgeText: { fontSize: 10, fontWeight: "700" },
+  tableWrapper: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
   },
-  severityBadgeText: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+  tableCard: {
+    flex: 1,
+    borderRadius: 8,
     borderWidth: 1,
+    overflow: "hidden",
   },
-  categoryBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  statusPill: {
+  tableHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
+    minHeight: 40,
+    borderBottomWidth: 1,
   },
-  statusPillText: {
+  headerCell: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: "center",
+  },
+  headerCellText: {
     fontSize: 10,
     fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  reason: {
-    fontSize: 14,
-    fontWeight: "600",
-    lineHeight: 19,
+  bodyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 48,
+    borderBottomWidth: 1,
+    // Matches the generic Table Row divider (Table/Row.tsx rowWrapper).
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  description: {
+  bodyCell: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    justifyContent: "center",
+  },
+  cellText: { fontSize: 12 },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: "center",
+    maxWidth: "100%",
+  },
+  statusText: {
+    color: "#ffffff",
     fontSize: 12,
-    lineHeight: 17,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    paddingTop: 8,
-    marginTop: 2,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    flexShrink: 1,
-  },
-  metaText: {
-    fontSize: 11,
     fontWeight: "500",
   },
-  followUpLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
+  footer: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 36,
+  },
+  footerText: {
+    fontSize: 14,
   },
 });

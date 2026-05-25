@@ -1,21 +1,21 @@
 import { IconFilter, IconColumns, IconSearch } from "@tabler/icons-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/lib/theme";
+import { shadow } from "@/constants/design-system";
 import { useSlotContext } from "../chrome/slot-context";
 import { TUTORIAL_BONUS_HISTORY } from "../fixtures";
 import type { SceneProps } from "./index";
 
 // Mirrors src/app/(tabs)/pessoal/meu-bonus/historico.tsx — which delegates to
 // <Layout config={personalBonusesListConfig} />: a search toolbar with column
-// visibility + filter buttons, followed by a horizontally scrollable table
-// whose default visible columns are ['period', 'netBonus', 'weightedTasks'].
-// We also include 'status' and 'performanceLevel' visually so the table feels
-// populated like the real screen on a wider device.
+// visibility + filter buttons, followed by a horizontally scrollable table.
+// Here the table is intentionally pared down to just the two columns that
+// matter for the colaborador's eye in the tutorial: Período and Valor.
 //
-// Step file (steps/bonus.ts) has a single scene step
-// (`pessoal-bonus-historico-overview`) with placement: "center" and NO
-// `highlight:` slot ID — so no slot registrations are required, but we use
-// the same chrome+toolbar+table design language as cronograma.tsx for fidelity.
+// The history step (`pessoal-bonus-historico-overview`) highlights the
+// `pessoalBonusHistory` slot registered on the table card below, so the
+// colaborador's eye lands on the list of past periods + values.
+// We use the same chrome+toolbar+table design language as cronograma.tsx.
 
 const COLUMNS: Array<{
   key: string;
@@ -23,23 +23,12 @@ const COLUMNS: Array<{
   width: number;
   align?: "left" | "center" | "right";
 }> = [
-  { key: "status", label: "Status", width: 110, align: "center" },
-  { key: "period", label: "Período", width: 140, align: "left" },
-  { key: "netBonus", label: "Valor", width: 120, align: "right" },
-  { key: "performanceLevel", label: "Nível", width: 90, align: "center" },
-  { key: "weightedTasks", label: "Tarefas Pond.", width: 110, align: "center" },
+  { key: "period", label: "Período", width: 200, align: "left" },
+  { key: "netBonus", label: "Valor", width: 160, align: "right" },
 ];
 
 // Mock derived data per row so the table looks real.
-const ROWS = TUTORIAL_BONUS_HISTORY.map((b, idx) => ({
-  ...b,
-  // Most recent row is the "live" (provisional) one — matches the real list's
-  // dynamically-injected provisional bonus.
-  isLive: idx === 0,
-  statusLabel: idx === 0 ? "Provisório" : "Confirmado",
-  performanceLevel: [4, 4, 3, 5][idx] ?? 3,
-  weightedTasks: [21.5, 22.0, 19.75, 24.25][idx] ?? 20,
-}));
+const ROWS = TUTORIAL_BONUS_HISTORY.map((b) => ({ ...b }));
 
 function formatBRL(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
@@ -54,7 +43,7 @@ export function MeuBonusHistoricoScene(_props: SceneProps) {
       {/* Toolbar: search (flex 1) + columns btn + filter btn */}
       <View style={styles.toolbar}>
         <View style={[styles.search, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <IconSearch size={18} color={colors.mutedForeground} />
+          <IconSearch size={20} color={colors.mutedForeground} />
           <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
             Buscar bônus por período...
           </Text>
@@ -62,32 +51,26 @@ export function MeuBonusHistoricoScene(_props: SceneProps) {
         <Pressable
           style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
-          <IconColumns size={20} color={colors.text} />
+          <IconColumns size={20} color={colors.foreground} />
+          {/* visible column count → primary badge (Período + Valor = 2) */}
           <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-            <Text style={styles.badgeText}>3</Text>
+            <Text style={[styles.badgeText, { color: colors.primaryForeground }]}>2</Text>
           </View>
         </Pressable>
         <Pressable
           style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
-          <IconFilter size={20} color={colors.text} />
+          <IconFilter size={20} color={colors.foreground} />
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 80 }}>
-        {/* Section header above the table card */}
-        <View style={styles.sectionHeader}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View style={{ width: 4, height: 20, borderRadius: 2, backgroundColor: colors.primary }} />
-            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Meus Bônus</Text>
-          </View>
-          <Text style={[styles.sectionCount, { color: colors.mutedForeground }]}>
-            {ROWS.length} bônus
-          </Text>
-        </View>
-
-        {/* Card wraps both header + body, horizontally scrollable */}
-        <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Table card — mirrors generic Layout/Table: bordered card + Mostrando footer */}
+      <View style={styles.tableWrapper}>
+        <View
+          ref={slot.registerRef("pessoalBonusHistory") as any}
+          onLayout={slot.register("pessoalBonusHistory")}
+          style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View>
               {/* Column headers */}
@@ -114,7 +97,7 @@ export function MeuBonusHistoricoScene(_props: SceneProps) {
                     ]}
                   >
                     <Text
-                      style={[styles.headerCellText, { color: colors.mutedForeground }]}
+                      style={[styles.headerCellText, { color: colors.foreground }]}
                       numberOfLines={1}
                     >
                       {c.label}
@@ -123,82 +106,51 @@ export function MeuBonusHistoricoScene(_props: SceneProps) {
                 ))}
               </View>
 
-              {/* Body rows */}
-              {ROWS.map((r, idx) => {
-                const statusColor = r.isLive ? "#f59e0b" : "#16a34a";
-                return (
-                  <View
-                    key={r.id}
-                    style={[
-                      styles.bodyRow,
-                      {
-                        backgroundColor: idx % 2 === 0 ? colors.background : colors.card,
-                        borderBottomColor: colors.border,
-                      },
-                      idx === ROWS.length - 1 && { borderBottomWidth: 0 },
-                    ]}
-                  >
-                    {/* Status badge */}
-                    <View style={[styles.bodyCell, { width: COLUMNS[0].width, alignItems: "center" }]}>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          { backgroundColor: statusColor + "22", borderColor: statusColor },
-                        ]}
-                      >
-                        <Text style={[styles.statusBadgeText, { color: statusColor }]}>
-                          {r.statusLabel}
-                        </Text>
-                      </View>
-                    </View>
-                    {/* Period */}
-                    <View style={[styles.bodyCell, { width: COLUMNS[1].width }]}>
-                      <Text
-                        style={[styles.cellText, { color: colors.text, fontWeight: "500" }]}
-                        numberOfLines={1}
-                      >
-                        {r.period}
-                      </Text>
-                    </View>
-                    {/* Value (right-aligned, bold) */}
-                    <View
-                      style={[styles.bodyCell, { width: COLUMNS[2].width, alignItems: "flex-end" }]}
+              {/* Body rows — only Período | Valor */}
+              {ROWS.map((r, idx) => (
+                <View
+                  key={r.id}
+                  style={[
+                    styles.bodyRow,
+                    {
+                      backgroundColor: idx % 2 === 0 ? colors.background : colors.card,
+                    },
+                    idx === ROWS.length - 1 && { borderBottomWidth: 0 },
+                  ]}
+                >
+                  {/* Period */}
+                  <View style={[styles.bodyCell, { width: COLUMNS[0].width }]}>
+                    <Text
+                      style={[styles.cellText, { color: colors.text, fontWeight: "500" }]}
+                      numberOfLines={1}
                     >
-                      <Text
-                        style={[styles.cellText, { color: colors.text, fontWeight: "600" }]}
-                        numberOfLines={1}
-                      >
-                        {formatBRL(r.value)}
-                      </Text>
-                    </View>
-                    {/* Performance level badge */}
-                    <View
-                      style={[styles.bodyCell, { width: COLUMNS[3].width, alignItems: "center" }]}
-                    >
-                      <View style={[styles.levelBadge, { backgroundColor: colors.muted }]}>
-                        <Text style={[styles.levelBadgeText, { color: colors.foreground }]}>
-                          Nível {r.performanceLevel}
-                        </Text>
-                      </View>
-                    </View>
-                    {/* Weighted tasks */}
-                    <View
-                      style={[styles.bodyCell, { width: COLUMNS[4].width, alignItems: "center" }]}
-                    >
-                      <Text
-                        style={[styles.cellText, { color: colors.mutedForeground }]}
-                        numberOfLines={1}
-                      >
-                        {r.weightedTasks.toFixed(2)}
-                      </Text>
-                    </View>
+                      {r.period}
+                    </Text>
                   </View>
-                );
-              })}
+                  {/* Value (right-aligned, bold) */}
+                  <View
+                    style={[styles.bodyCell, { width: COLUMNS[1].width, alignItems: "flex-end" }]}
+                  >
+                    <Text
+                      style={[styles.cellText, { color: colors.text, fontWeight: "600" }]}
+                      numberOfLines={1}
+                    >
+                      {formatBRL(r.value)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
             </View>
           </ScrollView>
+
+          {/* Fixed footer with pagination info (mirrors generic Table footer) */}
+          <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.footerText, { color: colors.foreground }]}>
+              Mostrando {ROWS.length} de {ROWS.length}
+            </Text>
+          </View>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -221,7 +173,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  searchPlaceholder: { fontSize: 14 },
+  searchPlaceholder: { fontSize: 16 },
   iconBtn: {
     width: 40,
     height: 40,
@@ -243,19 +195,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+  tableWrapper: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "600" },
-  sectionCount: { fontSize: 12 },
   tableCard: {
+    flex: 1,
     borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
+    ...shadow.md,
   },
   tableHeaderRow: {
     flexDirection: "row",
@@ -269,16 +219,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerCellText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 10,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   bodyRow: {
     flexDirection: "row",
     alignItems: "center",
     minHeight: 48,
     borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   bodyCell: {
     paddingHorizontal: 12,
@@ -286,24 +237,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cellText: { fontSize: 13 },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
-    borderWidth: 1,
-    maxWidth: 100,
+  footer: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 36,
   },
-  statusBadgeText: {
+  footerText: {
     fontSize: 11,
     fontWeight: "700",
-  },
-  levelBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  levelBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

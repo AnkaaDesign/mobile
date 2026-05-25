@@ -219,6 +219,11 @@ const DEFAULT_CONFIG: ApiClientConfig = {
 const deepFixArraySerialization = (value: unknown): unknown => {
   if (value === null || value === undefined || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.map(deepFixArraySerialization);
+  // Preserve built-in objects whose data lives in internal slots, not own
+  // enumerable keys. A Date has no own keys, so recursing would rebuild it as
+  // an empty `{}` and drop the value — breaking any write body that carries a
+  // Date (e.g. the productivity analytics startDate/endDate → 400 invalid_date).
+  if (value instanceof Date) return value;
 
   const obj = value as Record<string, unknown>;
   const keys = Object.keys(obj);
@@ -720,6 +725,15 @@ const createApiClient = (
           config.url?.includes("/mark-viewed") ||
           config.url?.includes("/dismiss");
 
+        // Analytics/statistics endpoints are READS exposed as POST (they carry
+        // complex filter bodies). They're consumed by dashboard widgets and the
+        // statistics pages, where a "loaded successfully" toast is pure noise —
+        // never surface a success toast for them. This is what stops the home
+        // dashboard widgets (e.g. productivity) from popping a toast on load.
+        const isAnalyticsRead =
+          config.url?.includes("/analytics/") ||
+          config.url?.includes("/statistics/");
+
         // Only show success if the response indicates success
         const isSuccess = response.data?.success !== (false as boolean); // Show success unless explicitly false
 
@@ -727,6 +741,7 @@ const createApiClient = (
           !isBatchOperation &&
           !isAuthOperation &&
           !isBackgroundOperation &&
+          !isAnalyticsRead &&
           isSuccess &&
           !metadata?.suppressToast
         ) {

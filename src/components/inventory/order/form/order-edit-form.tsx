@@ -54,7 +54,7 @@ const orderEditFormSchema = z.object({
   supplierId: z.string().uuid("Selecione um fornecedor válido").optional().nullable(),
   forecast: z.date().optional().nullable(),
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
-  itemMode: z.enum(["inventory", "temporary"]).default("inventory"),
+  freight: z.number().min(0, "Frete deve ser maior ou igual a 0").optional().nullable(),
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
   paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
@@ -113,8 +113,13 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   // Local state for date (since it's a Date object)
   const [forecastDate, setForecastDate] = useState<Date | undefined>(undefined);
 
-  // Temporary items state (for temporary item mode)
+  // Temporary items state (coexist with inventory items, like web)
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItem[]>([]);
+
+  // Per-inventory-item ICMS/IPI maps (hydrated from existing order items;
+  // mobile multi-step hook doesn't carry these, so kept in local state).
+  const [itemIcms, setItemIcms] = useState<Record<string, number>>({});
+  const [itemIpi, setItemIpi] = useState<Record<string, number>>({});
 
   // File upload states
   const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>([]);
@@ -134,12 +139,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   // Track whether we've initialized from order data
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Detect item mode from existing order items
-  const detectedItemMode = useMemo(() => {
-    if (!order?.items || order.items.length === 0) return "inventory";
-    return order.items.some((i: any) => !i.itemId) ? "temporary" : "inventory";
-  }, [order?.items]);
-
   // Mutations
   const { updateAsync, isLoading: isMutating } = useOrderMutations();
 
@@ -153,7 +152,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       supplierId: null,
       forecast: null,
       notes: "",
-      itemMode: "inventory",
+      freight: null,
       paymentMethod: null,
       paymentPix: null,
       paymentDueDays: null,
@@ -167,13 +166,14 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         return !!state.formData.description?.trim();
       }
       if (step === 2) {
-        if (state.formData.itemMode === "inventory") {
-          return state.selectedItems.length > 0;
-        } else {
-          return temporaryItems.length > 0 && temporaryItems.every(
-            item => item.description.trim() && item.quantity > 0 && item.price >= 0
+        // Unified list: at least one inventory item OR a valid temporary item
+        const hasInventory = state.selectedItems.length > 0;
+        const hasValidTemp =
+          temporaryItems.length > 0 &&
+          temporaryItems.every(
+            (item) => item.description.trim() && item.quantity > 0 && item.price >= 0,
           );
-        }
+        return hasInventory || hasValidTemp;
       }
       return true;
     },
@@ -185,11 +185,10 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         }
       }
       if (step === 2) {
-        if (state.formData.itemMode === "inventory" && state.selectedItems.length === 0) {
-          errors.items = "Selecione pelo menos um item";
-        }
-        if (state.formData.itemMode === "temporary" && temporaryItems.length === 0) {
-          errors.items = "Adicione pelo menos um item temporário";
+        const hasInventory = state.selectedItems.length > 0;
+        const hasTemp = temporaryItems.length > 0;
+        if (!hasInventory && !hasTemp) {
+          errors.items = "Adicione pelo menos um item (estoque ou temporário)";
         }
       }
       return errors;
@@ -221,7 +220,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       supplierId: order.supplierId || null,
       forecast: order.forecast ? new Date(order.forecast) : null,
       notes: order.notes || "",
-      itemMode: detectedItemMode,
+      freight: (order as any).freight ?? 0,
       paymentMethod: (order.paymentMethod as any) || null,
       paymentPix: order.paymentPix || null,
       paymentDueDays: order.paymentDueDays || null,
@@ -239,36 +238,45 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       setForecastDate(new Date(order.forecast));
     }
 
-    // Pre-populate items
+    // Pre-populate items — hydrate inventory AND temporary items together
+    // (no XOR mode; mirrors web and prevents dropping the non-selected mode on save)
     if (order.items && order.items.length > 0) {
-      if (detectedItemMode === "inventory") {
-        const itemIds: string[] = [];
-        const quantities: Record<string, number> = {};
-        const prices: Record<string, number> = {};
+      const itemIds: string[] = [];
+      const quantities: Record<string, number> = {};
+      const prices: Record<string, number> = {};
+      const icmsMap: Record<string, number> = {};
+      const ipiMap: Record<string, number> = {};
+      const tempItems: TemporaryItem[] = [];
 
-        order.items.forEach((item: any) => {
-          if (item.itemId) {
-            itemIds.push(item.itemId);
-            quantities[item.itemId] = item.orderedQuantity || 1;
-            prices[item.itemId] = item.price || 0;
-          }
-        });
+      order.items.forEach((item: any) => {
+        if (item.itemId) {
+          itemIds.push(item.itemId);
+          quantities[item.itemId] = item.orderedQuantity || 1;
+          prices[item.itemId] = item.price || 0;
+          icmsMap[item.itemId] = item.icms || 0;
+          ipiMap[item.itemId] = item.ipi || 0;
+        } else {
+          tempItems.push({
+            id: `temp-${item.id || Date.now()}-${Math.random().toString(36).slice(2)}`,
+            description: item.temporaryItemDescription || "",
+            quantity: item.orderedQuantity || 1,
+            price: item.price || 0,
+            icms: item.icms || 0,
+            ipi: item.ipi || 0,
+          });
+        }
+      });
 
+      if (itemIds.length > 0) {
         multiStepForm.updateState({
           selectedItems: itemIds,
           quantities,
           prices,
         });
-      } else {
-        // Temporary items
-        const tempItems: TemporaryItem[] = order.items.map((item: any) => ({
-          id: `temp-${item.id || Date.now()}-${Math.random().toString(36).slice(2)}`,
-          description: item.temporaryItemDescription || "",
-          quantity: item.orderedQuantity || 1,
-          price: item.price || 0,
-          icms: item.icms || 0,
-          ipi: item.ipi || 0,
-        }));
+        setItemIcms(icmsMap);
+        setItemIpi(ipiMap);
+      }
+      if (tempItems.length > 0) {
         setTemporaryItems(tempItems);
       }
     }
@@ -281,7 +289,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     if (order.invoiceReimbursements) setExistingReimbursementInvoiceIds(order.invoiceReimbursements.map((f: any) => f.id));
 
     setIsInitialized(true);
-  }, [order, isInitialized, detectedItemMode]);
+  }, [order, isInitialized]);
 
   // Fetch suppliers for selection
   const { data: suppliers, isLoading: isLoadingSuppliers } = useSuppliers({
@@ -338,19 +346,39 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     }));
   }, [selectedItemsData, multiStepForm]);
 
-  // Calculate totals for review
+  // Freight value (carried in form data)
+  const freightValue = (multiStepForm.formData.freight as number | null | undefined) || 0;
+
+  // Calculate totals for review (unified: inventory + temporary, with taxes + freight)
   const totals = useMemo(() => {
-    if (multiStepForm.formData.itemMode === "inventory") {
-      const items = multiStepForm.getSelectedItemsWithData();
-      const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
-      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-      return { itemCount: items.length, totalQuantity, subtotal };
-    } else {
-      const subtotal = temporaryItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const totalQuantity = temporaryItems.reduce((sum, item) => sum + item.quantity, 0);
-      return { itemCount: temporaryItems.length, totalQuantity, subtotal };
-    }
-  }, [multiStepForm, temporaryItems]);
+    const invItems = multiStepForm.getSelectedItemsWithData();
+
+    let subtotal = 0;
+    let totalQuantity = 0;
+
+    invItems.forEach((item) => {
+      const lineSubtotal = (item.price || 0) * item.quantity;
+      const icms = itemIcms[item.id] || 0;
+      const ipi = itemIpi[item.id] || 0;
+      subtotal += lineSubtotal + lineSubtotal * (icms / 100) + lineSubtotal * (ipi / 100);
+      totalQuantity += item.quantity;
+    });
+
+    temporaryItems.forEach((item) => {
+      const lineSubtotal = item.price * item.quantity;
+      subtotal += lineSubtotal + lineSubtotal * ((item.icms || 0) / 100) + lineSubtotal * ((item.ipi || 0) / 100);
+      totalQuantity += item.quantity;
+    });
+
+    const total = subtotal + freightValue;
+
+    return {
+      itemCount: invItems.length + temporaryItems.length,
+      totalQuantity,
+      subtotal,
+      total,
+    };
+  }, [multiStepForm, temporaryItems, itemIcms, itemIpi, freightValue]);
 
   // Temporary item handlers
   const handleAddTemporaryItem = useCallback(() => {
@@ -385,42 +413,45 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   // Handle form submission
   const handleFormSubmit = useCallback(async () => {
     try {
-      // Build items array
-      let itemsData: OrderUpdateFormData["items"] = [];
+      // Build unified items array (inventory + temporary coexist, mirroring web)
+      const itemsData: NonNullable<OrderUpdateFormData["items"]> = [];
 
-      if (multiStepForm.formData.itemMode === "inventory") {
-        const items = multiStepForm.getSelectedItemsWithData();
-        const invalidItems = items.filter((item) => item.quantity <= 0 || (item.price || 0) < 0);
-
-        if (invalidItems.length > 0) {
-          Alert.alert("Erro", "Todos os itens devem ter quantidade maior que zero");
-          return;
-        }
-
-        itemsData = items.map((item) => ({
+      const invItems = multiStepForm.getSelectedItemsWithData();
+      const invalidInvItems = invItems.filter((item) => item.quantity <= 0 || (item.price || 0) < 0);
+      if (invalidInvItems.length > 0) {
+        Alert.alert("Erro", "Todos os itens de estoque devem ter quantidade maior que zero");
+        return;
+      }
+      invItems.forEach((item) => {
+        itemsData.push({
           itemId: item.id,
           orderedQuantity: item.quantity,
           price: item.price || 0,
-          icms: 0,
-          ipi: 0,
-        }));
-      } else {
-        const invalidTempItems = temporaryItems.filter(
-          (item) => !item.description.trim() || item.quantity <= 0 || item.price < 0
-        );
+          icms: itemIcms[item.id] || 0,
+          ipi: itemIpi[item.id] || 0,
+        });
+      });
 
-        if (invalidTempItems.length > 0) {
-          Alert.alert("Erro", "Todos os itens temporários devem ter descrição, quantidade e preço válidos");
-          return;
-        }
-
-        itemsData = temporaryItems.map((item) => ({
+      const invalidTempItems = temporaryItems.filter(
+        (item) => !item.description.trim() || item.quantity <= 0 || item.price < 0
+      );
+      if (invalidTempItems.length > 0) {
+        Alert.alert("Erro", "Todos os itens temporários devem ter descrição, quantidade e preço válidos");
+        return;
+      }
+      temporaryItems.forEach((item) => {
+        itemsData.push({
           temporaryItemDescription: item.description,
           orderedQuantity: item.quantity,
           price: item.price,
           icms: item.icms,
           ipi: item.ipi,
-        }));
+        });
+      });
+
+      if (itemsData.length === 0) {
+        Alert.alert("Erro", "Adicione pelo menos um item ao pedido");
+        return;
       }
 
       // Build update payload - only send changed fields
@@ -437,6 +468,9 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       }
       if (multiStepForm.formData.notes !== (order?.notes || "")) {
         changedData.notes = multiStepForm.formData.notes || undefined;
+      }
+      if (freightValue !== ((order as any)?.freight ?? 0)) {
+        changedData.freight = freightValue;
       }
       if (multiStepForm.formData.paymentMethod !== order?.paymentMethod) {
         changedData.paymentMethod = multiStepForm.formData.paymentMethod || undefined;
@@ -526,6 +560,9 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     order,
     multiStepForm,
     temporaryItems,
+    itemIcms,
+    itemIpi,
+    freightValue,
     forecastDate,
     budgetFiles,
     invoiceFiles,
@@ -580,7 +617,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   }
 
   const isSubmitting = isMutating || isUploadingFiles;
-  const isInventoryMode = multiStepForm.formData.itemMode === "inventory";
 
   return (
     <FormProvider {...form}>
@@ -596,7 +632,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         canSubmit={multiStepForm.validation.canSubmit}
         submitLabel={isUploadingFiles ? "Enviando arquivos..." : "Salvar"}
         cancelLabel="Cancelar"
-        scrollable={multiStepForm.currentStep !== 2 || !isInventoryMode}
+        scrollable={multiStepForm.currentStep !== 2}
       >
         {/* Step 1: Order Information */}
         {multiStepForm.currentStep === 1 && (
@@ -660,32 +696,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                   )}
                 />
 
-                {/* Item Mode Selection */}
-                <Controller
-                  control={form.control}
-                  name="itemMode"
-                  render={({ field: { value } }) => (
-                    <View style={styles.fieldGroup}>
-                      <Label>Tipo de Itens</Label>
-                      <Combobox
-                        value={value || "inventory"}
-                        onValueChange={(val) => handleFormChange("itemMode", (val || "inventory") as "inventory" | "temporary")}
-                        options={[
-                          { label: "Itens do Estoque", value: "inventory" },
-                          { label: "Itens Temporários", value: "temporary" },
-                        ]}
-                        placeholder="Selecione o tipo de itens"
-                        disabled={isSubmitting}
-                        clearable={false}
-                      />
-                      <ThemedText style={styles.helpText}>
-                        {isInventoryMode
-                          ? "Selecione itens cadastrados no estoque"
-                          : "Adicione itens avulsos que não estão no estoque"}
-                      </ThemedText>
-                    </View>
-                  )}
-                />
 
                 {/* Delivery Date */}
                 <View style={styles.fieldGroup}>
@@ -812,164 +822,45 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           </View>
         )}
 
-        {/* Step 2: Item Selection */}
+        {/* Step 2: Inventory Item Selection (temporary items managed in review) */}
         {multiStepForm.currentStep === 2 && (
           <View style={styles.itemSelectorContainer}>
-            {isInventoryMode ? (
-              <ItemSelectorTable
-                selectedItems={multiStepForm.selectedItems}
-                quantities={multiStepForm.quantities}
-                prices={multiStepForm.prices}
-                onSelectItem={(itemId, item) => {
-                  let defaultPrice = 0;
-                  if (item?.prices?.length > 0) {
-                    const sortedPrices = [...item.prices].sort((a: any, b: any) =>
-                      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                    );
-                    defaultPrice = sortedPrices[0].value || 0;
-                  } else if (item?.price != null) {
-                    defaultPrice = item.price;
-                  }
-                  multiStepForm.toggleItemSelection(itemId, undefined, defaultPrice);
-                }}
-                onQuantityChange={multiStepForm.setItemQuantity}
-                onPriceChange={multiStepForm.setItemPrice}
-                showQuantityInput
-                showPriceInput
-                minQuantity={1}
-                showSelectedOnly={multiStepForm.showSelectedOnly}
-                searchTerm={multiStepForm.searchTerm}
-                showInactive={multiStepForm.showInactive}
-                categoryIds={multiStepForm.categoryIds}
-                brandIds={multiStepForm.brandIds}
-                supplierIds={multiStepForm.supplierIds}
-                onShowSelectedOnlyChange={multiStepForm.setShowSelectedOnly}
-                onSearchTermChange={multiStepForm.setSearchTerm}
-                onShowInactiveChange={multiStepForm.setShowInactive}
-                onCategoryIdsChange={multiStepForm.setCategoryIds}
-                onBrandIdsChange={multiStepForm.setBrandIds}
-                onSupplierIdsChange={multiStepForm.setSupplierIds}
-                allowZeroStock
-                emptyMessage="Nenhum item encontrado"
-              />
-            ) : (
-              <View style={styles.temporaryItemsContainer}>
-                <Card style={styles.card}>
-                  <CardHeader>
-                    <CardTitle>Itens Temporários</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Button
-                      variant="outline"
-                      onPress={handleAddTemporaryItem}
-                      disabled={isSubmitting}
-                      style={styles.addItemButton}
-                    >
-                      <IconPlus size={16} color={colors.foreground} />
-                      <ThemedText style={styles.addButtonText}>Adicionar Item</ThemedText>
-                    </Button>
-
-                    {temporaryItems.length === 0 ? (
-                      <View style={styles.emptyState}>
-                        <IconBox size={48} color={colors.mutedForeground} />
-                        <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                          Nenhum item adicionado
-                        </ThemedText>
-                      </View>
-                    ) : (
-                      temporaryItems.map((item, index) => (
-                        <React.Fragment key={item.id}>
-                          {index > 0 && (
-                            <View style={[styles.itemSeparator, { backgroundColor: colors.border }]} />
-                          )}
-                          <ReanimatedSwipeableRow
-                            rightActions={[
-                              {
-                                key: "delete",
-                                label: "Excluir",
-                                icon: <IconTrash size={18} color="white" />,
-                                backgroundColor: "#9b2c2c",
-                                onPress: () => handleRemoveTemporaryItem(item.id),
-                                closeOnPress: true,
-                              },
-                            ]}
-                            enabled={!isSubmitting}
-                          >
-                            <View style={styles.temporaryItemRow}>
-                              <View style={styles.fieldGroup}>
-                                <View style={styles.labelRow}>
-                                  <Label style={{ marginBottom: 0 }}>Descrição</Label>
-                                  <Text style={styles.requiredAsterisk}> *</Text>
-                                </View>
-                                <Input
-                                  value={item.description}
-                                  onChangeText={(val) => handleUpdateTemporaryItem(item.id, "description", val)}
-                                  placeholder="Descrição do item"
-                                  editable={!isSubmitting}
-                                />
-                              </View>
-
-                              <View style={styles.rowFields}>
-                                <View style={styles.smallField}>
-                                  <View style={styles.labelRow}>
-                                    <Label style={{ marginBottom: 0 }}>Qtd</Label>
-                                    <Text style={styles.requiredAsterisk}> *</Text>
-                                  </View>
-                                  <Input
-                                    value={String(item.quantity)}
-                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "quantity", Number(val) || 0)}
-                                    keyboardType="numeric"
-                                    editable={!isSubmitting}
-                                  />
-                                </View>
-                                <View style={styles.priceField}>
-                                  <View style={styles.labelRow}>
-                                    <Label style={{ marginBottom: 0 }}>Preço</Label>
-                                    <Text style={styles.requiredAsterisk}> *</Text>
-                                  </View>
-                                  <Input
-                                    type="currency"
-                                    value={item.price}
-                                    onChange={(val) => handleUpdateTemporaryItem(item.id, "price", typeof val === "number" ? val : 0)}
-                                    editable={!isSubmitting}
-                                  />
-                                </View>
-                                <View style={styles.smallField}>
-                                  <Label>ICMS %</Label>
-                                  <Input
-                                    value={String(item.icms)}
-                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
-                                    keyboardType="numeric"
-                                    editable={!isSubmitting}
-                                  />
-                                </View>
-                                <View style={styles.smallField}>
-                                  <Label>IPI %</Label>
-                                  <Input
-                                    value={String(item.ipi)}
-                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
-                                    keyboardType="numeric"
-                                    editable={!isSubmitting}
-                                  />
-                                </View>
-                              </View>
-                            </View>
-                          </ReanimatedSwipeableRow>
-                        </React.Fragment>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-
-                {multiStepForm.formTouched && multiStepForm.validation.errors.items && (
-                  <View style={styles.errorContainer}>
-                    <ThemedText style={styles.errorText}>
-                      {multiStepForm.validation.errors.items}
-                    </ThemedText>
-                  </View>
-                )}
-              </View>
-            )}
+            <ItemSelectorTable
+              selectedItems={multiStepForm.selectedItems}
+              quantities={multiStepForm.quantities}
+              prices={multiStepForm.prices}
+              onSelectItem={(itemId, item) => {
+                let defaultPrice = 0;
+                if (item?.prices?.length > 0) {
+                  const sortedPrices = [...item.prices].sort((a: any, b: any) =>
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                  );
+                  defaultPrice = sortedPrices[0].value || 0;
+                } else if (item?.price != null) {
+                  defaultPrice = item.price;
+                }
+                multiStepForm.toggleItemSelection(itemId, undefined, defaultPrice);
+              }}
+              onQuantityChange={multiStepForm.setItemQuantity}
+              onPriceChange={multiStepForm.setItemPrice}
+              showQuantityInput
+              showPriceInput
+              minQuantity={1}
+              showSelectedOnly={multiStepForm.showSelectedOnly}
+              searchTerm={multiStepForm.searchTerm}
+              showInactive={multiStepForm.showInactive}
+              categoryIds={multiStepForm.categoryIds}
+              brandIds={multiStepForm.brandIds}
+              supplierIds={multiStepForm.supplierIds}
+              onShowSelectedOnlyChange={multiStepForm.setShowSelectedOnly}
+              onSearchTermChange={multiStepForm.setSearchTerm}
+              onShowInactiveChange={multiStepForm.setShowInactive}
+              onCategoryIdsChange={multiStepForm.setCategoryIds}
+              onBrandIdsChange={multiStepForm.setBrandIds}
+              onSupplierIdsChange={multiStepForm.setSupplierIds}
+              allowZeroStock
+              emptyMessage="Nenhum item encontrado"
+            />
           </View>
         )}
 
@@ -1035,12 +926,114 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                     <ThemedText style={styles.detailValue}>{multiStepForm.formData.notes}</ThemedText>
                   </View>
                 )}
-                <View style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>Tipo</ThemedText>
-                  <Badge variant={isInventoryMode ? "default" : "secondary"}>
-                    <ThemedText>{isInventoryMode ? "Estoque" : "Temporário"}</ThemedText>
-                  </Badge>
-                </View>
+              </CardContent>
+            </Card>
+
+            {/* Temporary Items (coexist with inventory items) */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Itens Temporários</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="outline"
+                  onPress={handleAddTemporaryItem}
+                  disabled={isSubmitting}
+                  style={styles.addItemButton}
+                >
+                  <IconPlus size={16} color={colors.foreground} />
+                  <ThemedText style={styles.addButtonText}>Adicionar Item Temporário</ThemedText>
+                </Button>
+
+                {temporaryItems.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <IconBox size={40} color={colors.mutedForeground} />
+                    <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                      Nenhum item temporário
+                    </ThemedText>
+                  </View>
+                ) : (
+                  temporaryItems.map((item, index) => (
+                    <React.Fragment key={item.id}>
+                      {index > 0 && (
+                        <View style={[styles.itemSeparator, { backgroundColor: colors.border }]} />
+                      )}
+                      <ReanimatedSwipeableRow
+                        rightActions={[
+                          {
+                            key: "delete",
+                            label: "Excluir",
+                            icon: <IconTrash size={18} color="white" />,
+                            backgroundColor: "#9b2c2c",
+                            onPress: () => handleRemoveTemporaryItem(item.id),
+                            closeOnPress: true,
+                          },
+                        ]}
+                        enabled={!isSubmitting}
+                      >
+                        <View style={styles.temporaryItemRow}>
+                          <View style={styles.fieldGroup}>
+                            <View style={styles.labelRow}>
+                              <Label style={{ marginBottom: 0 }}>Descrição</Label>
+                              <Text style={styles.requiredAsterisk}> *</Text>
+                            </View>
+                            <Input
+                              value={item.description}
+                              onChangeText={(val) => handleUpdateTemporaryItem(item.id, "description", val)}
+                              placeholder="Descrição do item"
+                              editable={!isSubmitting}
+                            />
+                          </View>
+
+                          <View style={styles.rowFields}>
+                            <View style={styles.smallField}>
+                              <View style={styles.labelRow}>
+                                <Label style={{ marginBottom: 0 }}>Qtd</Label>
+                                <Text style={styles.requiredAsterisk}> *</Text>
+                              </View>
+                              <Input
+                                value={String(item.quantity)}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "quantity", Number(val) || 0)}
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                            <View style={styles.priceField}>
+                              <View style={styles.labelRow}>
+                                <Label style={{ marginBottom: 0 }}>Preço</Label>
+                                <Text style={styles.requiredAsterisk}> *</Text>
+                              </View>
+                              <Input
+                                type="currency"
+                                value={item.price}
+                                onChange={(val) => handleUpdateTemporaryItem(item.id, "price", typeof val === "number" ? val : 0)}
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                            <View style={styles.smallField}>
+                              <Label>ICMS %</Label>
+                              <Input
+                                value={String(item.icms)}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                            <View style={styles.smallField}>
+                              <Label>IPI %</Label>
+                              <Input
+                                value={String(item.ipi)}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                          </View>
+                        </View>
+                      </ReanimatedSwipeableRow>
+                    </React.Fragment>
+                  ))
+                )}
               </CardContent>
             </Card>
 
@@ -1220,6 +1213,26 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                     )}
                   />
                 )}
+
+                {/* Freight */}
+                <Controller
+                  control={form.control}
+                  name="freight"
+                  render={({ field: { value } }) => (
+                    <View style={styles.lastFieldGroup}>
+                      <Label>Frete</Label>
+                      <Input
+                        type="currency"
+                        value={(value as number | null | undefined) ?? 0}
+                        onChange={(val) => handleFormChange("freight", typeof val === "number" ? val : 0)}
+                        editable={!isSubmitting}
+                      />
+                      <ThemedText style={styles.helpText}>
+                        Valor do frete somado ao total do pedido
+                      </ThemedText>
+                    </View>
+                  )}
+                />
               </CardContent>
             </Card>
 
@@ -1242,75 +1255,130 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                   </ThemedText>
                 </View>
 
-                {/* Table Body */}
-                {isInventoryMode ? (
-                  selectedItemsWithNames.map((item, index) => (
-                    <View
-                      key={item.id}
-                      style={[
-                        styles.tableRow,
-                        { backgroundColor: index % 2 === 0 ? colors.background : colors.card },
-                        index === selectedItemsWithNames.length - 1 && styles.tableRowLast,
-                      ]}
-                    >
-                      <View style={styles.itemInfo}>
-                        <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
-                          {item.uniCode ? `${item.name} - ${item.uniCode}` : item.name}
-                        </ThemedText>
-                        {item.brand && (
-                          <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
-                            {item.brand}
-                          </ThemedText>
-                        )}
-                      </View>
-                      <View style={styles.itemQuantity}>
-                        <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
-                          {formatQuantity(item.quantity)}
-                        </ThemedText>
-                      </View>
-                      <View style={styles.itemPrice}>
-                        <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
-                          {formatCurrency(item.price || 0)}
-                        </ThemedText>
-                      </View>
-                    </View>
-                  ))
+                {/* Table Body - unified list (inventory + temporary) */}
+                {selectedItemsWithNames.length === 0 && temporaryItems.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <IconBox size={40} color={colors.mutedForeground} />
+                    <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                      Nenhum item no pedido
+                    </ThemedText>
+                  </View>
                 ) : (
-                  temporaryItems.map((item, index) => (
-                    <View
-                      key={item.id}
-                      style={[
-                        styles.tableRow,
-                        { backgroundColor: index % 2 === 0 ? colors.background : colors.card },
-                        index === temporaryItems.length - 1 && styles.tableRowLast,
-                      ]}
-                    >
-                      <View style={styles.itemInfo}>
-                        <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
-                          {item.description || "Sem descrição"}
-                        </ThemedText>
+                  <>
+                    {selectedItemsWithNames.map((item, index) => (
+                      <View
+                        key={`inv-${item.id}`}
+                        style={[
+                          styles.tableRow,
+                          { backgroundColor: index % 2 === 0 ? colors.background : colors.card, flexWrap: "wrap" },
+                        ]}
+                      >
+                        <View style={styles.itemInfo}>
+                          <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
+                            {item.uniCode ? `${item.name} - ${item.uniCode}` : item.name}
+                          </ThemedText>
+                          {item.brand && (
+                            <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
+                              {item.brand}
+                            </ThemedText>
+                          )}
+                        </View>
+                        <View style={styles.itemQuantity}>
+                          <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
+                            {formatQuantity(item.quantity)}
+                          </ThemedText>
+                        </View>
+                        <View style={styles.itemPrice}>
+                          <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                            {formatCurrency(item.price || 0)}
+                          </ThemedText>
+                        </View>
+                        {/* Per-item ICMS / IPI editing */}
+                        <View style={styles.taxEditRow}>
+                          <View style={styles.smallField}>
+                            <Label>ICMS %</Label>
+                            <Input
+                              value={String(itemIcms[item.id] ?? 0)}
+                              onChangeText={(val) =>
+                                setItemIcms((prev) => ({ ...prev, [item.id]: Number(val) || 0 }))
+                              }
+                              keyboardType="numeric"
+                              editable={!isSubmitting}
+                            />
+                          </View>
+                          <View style={styles.smallField}>
+                            <Label>IPI %</Label>
+                            <Input
+                              value={String(itemIpi[item.id] ?? 0)}
+                              onChangeText={(val) =>
+                                setItemIpi((prev) => ({ ...prev, [item.id]: Number(val) || 0 }))
+                              }
+                              keyboardType="numeric"
+                              editable={!isSubmitting}
+                            />
+                          </View>
+                        </View>
                       </View>
-                      <View style={styles.itemQuantity}>
-                        <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
-                          {formatQuantity(item.quantity)}
-                        </ThemedText>
+                    ))}
+                    {temporaryItems.map((item, index) => (
+                      <View
+                        key={`tmp-${item.id}`}
+                        style={[
+                          styles.tableRow,
+                          {
+                            backgroundColor:
+                              (selectedItemsWithNames.length + index) % 2 === 0 ? colors.background : colors.card,
+                          },
+                        ]}
+                      >
+                        <View style={styles.itemInfo}>
+                          <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
+                            {item.description || "Item temporário"}
+                          </ThemedText>
+                          <Badge variant="outline" size="sm">
+                            <ThemedText style={{ fontSize: fontSize.xs }}>Temporário</ThemedText>
+                          </Badge>
+                        </View>
+                        <View style={styles.itemQuantity}>
+                          <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
+                            {formatQuantity(item.quantity)}
+                          </ThemedText>
+                        </View>
+                        <View style={styles.itemPrice}>
+                          <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                            {formatCurrency(item.price)}
+                          </ThemedText>
+                        </View>
                       </View>
-                      <View style={styles.itemPrice}>
-                        <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
-                          {formatCurrency(item.price)}
-                        </ThemedText>
-                      </View>
-                    </View>
-                  ))
+                    ))}
+                  </>
                 )}
 
                 {/* Table Footer */}
                 <View style={[styles.tableFooterRow, { borderTopColor: colors.border, backgroundColor: colors.muted }]}>
                   <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
-                    Total ({totals.totalQuantity} unidades)
+                    Subtotal ({totals.totalQuantity} unidades)
+                  </ThemedText>
+                  <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
+                    {formatCurrency(totals.subtotal)}
+                  </ThemedText>
+                </View>
+                {freightValue > 0 && (
+                  <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
+                    <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                      Frete
+                    </ThemedText>
+                    <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
+                      {formatCurrency(freightValue)}
+                    </ThemedText>
+                  </View>
+                )}
+                <View style={[styles.tableFooterRow, { borderTopColor: colors.border, marginTop: 0 }]}>
+                  <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                    Total
                   </ThemedText>
                   <ThemedText style={[styles.tableFooterValue, { color: colors.primary }]}>
-                    {formatCurrency(totals.subtotal)}
+                    {formatCurrency(totals.total)}
                   </ThemedText>
                 </View>
               </CardContent>
@@ -1501,6 +1569,12 @@ const styles = StyleSheet.create({
   },
   priceField: {
     flex: 1.5,
+  },
+  taxEditRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    width: "100%",
+    marginTop: spacing.xs,
   },
   errorContainer: {
     padding: spacing.md,

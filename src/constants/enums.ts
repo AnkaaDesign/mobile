@@ -63,6 +63,17 @@ export enum SECTOR_PRIVILEGES {
  */
 export const TEAM_LEADER = 'TEAM_LEADER' as const;
 
+/**
+ * Admin-configurable goal metrics. Mirrors web's GOAL_METRIC enum
+ * (web/src/constants/enums.ts) — keep the string values identical so goal rows
+ * resolve the same on both platforms. Mobile only consumes TASKS_COMPLETED
+ * today (the productivity widget's default goal line); add members as other
+ * widgets start reading goals.
+ */
+export enum GOAL_METRIC {
+  TASKS_COMPLETED = "TASKS_COMPLETED",
+}
+
 export enum USER_STATUS {
   EXPERIENCE_PERIOD_1 = "EXPERIENCE_PERIOD_1",
   EXPERIENCE_PERIOD_2 = "EXPERIENCE_PERIOD_2",

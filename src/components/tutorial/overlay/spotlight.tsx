@@ -164,7 +164,15 @@ export function TutorialSpotlight() {
 
   if (!currentStep) return null;
 
-  const dimEnabled = currentStep.dimBackground !== false;
+  // A highlight that fills most of the screen is a whole list / form / page
+  // overview (e.g. "Incluir Ponto", the histórico list). Dimming only a thin
+  // border around it looks wrong and hides the very content being described,
+  // so we skip the dim for these. Explicit `dimBackground: false` still wins.
+  const isFullPageTarget =
+    !!rect &&
+    rect.height >= windowHeight * 0.6 &&
+    rect.width >= windowWidth * 0.9;
+  const dimEnabled = currentStep.dimBackground !== false && !isFullPageTarget;
   const isInteractive = currentStep.kind === "interactive";
   const showSpotlightTap = isInteractive && mode === "spotlight";
 

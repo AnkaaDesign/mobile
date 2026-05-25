@@ -137,10 +137,14 @@ export const bonusesListConfig: ListConfig<Bonus> = {
         width: 1.2,
         align: 'right',
         render: (bonus) => {
-          // Calculate discounts as baseBonus - netBonus (simpler and more accurate)
+          // Discounts = baseBonus - netBonus. When the bonus has extras (e.g.
+          // assiduidade) netBonus can EXCEED baseBonus, making this negative —
+          // that's a net credit, not a discount, so show "-" (matches the
+          // personal bonus list).
           const baseBonus = getNumericValue(bonus.baseBonus)
           const netBonus = getNumericValue(bonus.netBonus)
           const totalDiscounts = baseBonus - netBonus
+          if (totalDiscounts <= 0) return '-'
           return formatCurrency(totalDiscounts)
         },
         style: { color: '#ef4444' },

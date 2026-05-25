@@ -106,7 +106,7 @@ export function MeuPessoalScene(_props: SceneProps) {
 
       {/* Header */}
       <View style={styles.header}>
-        <IconUsers size={28} color={colors.primary} />
+        <IconUsers size={32} color={colors.primary} />
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>
           Minha Equipe
         </Text>
@@ -211,7 +211,10 @@ export function MeuPessoalScene(_props: SceneProps) {
               key={m.id}
               style={[
                 styles.row,
-                !isLast && { borderBottomColor: colors.border, borderBottomWidth: 1 },
+                !isLast && {
+                  borderBottomColor: colors.border,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                },
               ]}
             >
               <View style={[styles.avatar, { backgroundColor: m.color }]}>
@@ -227,10 +230,14 @@ export function MeuPessoalScene(_props: SceneProps) {
                   </Text>
                   <View
                     style={[
-                      styles.statusDot,
+                      styles.statusBadge,
                       { backgroundColor: meta.color },
                     ]}
-                  />
+                  >
+                    <Text style={styles.statusBadgeText} numberOfLines={1}>
+                      {meta.label}
+                    </Text>
+                  </View>
                 </View>
                 <Text
                   style={[styles.role, { color: colors.mutedForeground }]}
@@ -323,12 +330,18 @@ const styles = StyleSheet.create({
   },
   metricTile: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
     alignItems: "center",
     gap: 4,
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   metricIcon: {
     width: 32,
@@ -356,14 +369,21 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 15, fontWeight: "600" },
   sectionCount: { fontSize: 12 },
   listCard: {
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    minHeight: 48,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
@@ -390,10 +410,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     flexShrink: 1,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
+  // Canonical status badge: r4, padH8/padV2, 11/500, solid bg + white text.
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 4,
+  },
+  statusBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "500",
   },
   role: {
     fontSize: 12,
@@ -435,7 +461,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   hintText: {
     fontSize: 12,

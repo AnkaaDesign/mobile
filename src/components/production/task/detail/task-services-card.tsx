@@ -8,8 +8,9 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize } from "@/constants/design-system";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS, SERVICE_ORDER_TYPE, SERVICE_ORDER_TYPE_LABELS, SECTOR_PRIVILEGES, getBadgeVariant } from "@/constants";
-import { hasPrivilege, formatDateShort } from "@/utils";
-import { canLeaderUpdateServiceOrder, getVisibleServiceOrderTypes, hasDetailedServiceOrderView, canEditServiceOrderOfType, getAllowedServiceOrderStatuses } from "@/utils/permissions/entity-permissions";
+import { hasPrivilege, formatDateShort, isTeamLeader } from "@/utils";
+import { canLeaderUpdateServiceOrder, getVisibleServiceOrderTypes, hasDetailedServiceOrderView, canEditServiceOrderOfType } from "@/utils/permissions/entity-permissions";
+import { canCancelServiceOrder } from "@/utils/permissions/service-order-permissions";
 import { useServiceOrderMutations } from "@/hooks";
 import type { ServiceOrder } from '../../../../types';
 import { IconNote, IconUser, IconCalendar } from "@tabler/icons-react-native";
@@ -18,6 +19,8 @@ import { IconNote, IconUser, IconCalendar } from "@tabler/icons-react-native";
 const STATUS_COLORS = {
   PENDING: { bg: '#737373', border: '#525252' }, // neutral-500
   IN_PROGRESS: { bg: '#1d4ed8', border: '#1e40af' }, // blue-700
+  PAUSED: { bg: '#eab308', border: '#ca8a04' }, // yellow-500
+  WAITING_ARTWORK: { bg: '#9333ea', border: '#7e22ce' }, // purple-600
   WAITING_APPROVE: { bg: '#9333ea', border: '#7e22ce' }, // purple-600
   COMPLETED: { bg: '#15803d', border: '#166534' }, // green-700
   CANCELLED: { bg: '#b91c1c', border: '#991b1b' }, // red-700
@@ -126,8 +129,10 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     return null;
   }
 
-  // Get status options for a specific service order (filtered by permissions)
-  const getStatusOptionsForService = (service: ServiceOrder) => {
+  // Get status options for a specific service order.
+  // Mirrors the web state-machine (web/src/pages/production/schedule/details/[id].tsx):
+  // the current status keeps its plain label; transitions use action verbs.
+  const getStatusOptionsForService = (service: ServiceOrder): { label: string; value: SERVICE_ORDER_STATUS }[] => {
     const serviceType = (service.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
 
     // For PRODUCTION service orders, apply sector-based restrictions for team leaders
@@ -143,12 +148,116 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       }
     }
 
-    const allowedStatuses = getAllowedServiceOrderStatuses(user, serviceType, service.status || '');
+    const isArtworkServiceOrder = serviceType === SERVICE_ORDER_TYPE.ARTWORK;
+    const isDesignerUser = userSectorPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+    const isAdminUser = userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN;
+    const currentSOStatus = (service.status as SERVICE_ORDER_STATUS | null) ?? null;
+    const userCanCancel = canCancelServiceOrder(userSectorPrivilege as SECTOR_PRIVILEGES | undefined);
+    // "Em Negociação" (Commercial) auto-completes when the task quote is approved — hide manual Concluir.
+    const isAutoCompletingTask =
+      serviceType === SERVICE_ORDER_TYPE.COMMERCIAL && service.description === 'Em Negociação';
 
-    return allowedStatuses.map(status => ({
-      label: SERVICE_ORDER_STATUS_LABELS[status as SERVICE_ORDER_STATUS],
-      value: status,
-    }));
+    const statusOptions: { label: string; value: SERVICE_ORDER_STATUS }[] = [];
+
+    if (currentSOStatus === SERVICE_ORDER_STATUS.PENDING) {
+      // Pendente → can only Iniciar. Admin can Cancelar.
+      statusOptions.push(
+        { value: SERVICE_ORDER_STATUS.PENDING, label: "Pendente" },
+        { value: SERVICE_ORDER_STATUS.IN_PROGRESS, label: "Iniciar" },
+      );
+      if (isAdminUser) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.CANCELLED, label: "Cancelar" });
+      }
+    } else if (currentSOStatus === SERVICE_ORDER_STATUS.IN_PROGRESS) {
+      // Em Andamento → can Pausar, (artwork) Enviar para Aprovação, Concluir, (cancel-capable) Cancelar.
+      statusOptions.push(
+        { value: SERVICE_ORDER_STATUS.IN_PROGRESS, label: "Em Andamento" },
+        { value: SERVICE_ORDER_STATUS.PAUSED, label: "Pausar" },
+      );
+      if (isArtworkServiceOrder) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.WAITING_APPROVE, label: "Enviar para Aprovação" });
+      }
+      if (!(isArtworkServiceOrder && isDesignerUser) && !isAutoCompletingTask) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.COMPLETED, label: "Concluir" });
+      }
+      if (isAdminUser) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.PENDING, label: "Voltar para Pendente" });
+      }
+      if (userCanCancel) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.CANCELLED, label: "Cancelar" });
+      }
+    } else if (currentSOStatus === SERVICE_ORDER_STATUS.PAUSED) {
+      // Pausado → can Continuar (resume to IN_PROGRESS), Concluir, (cancel-capable) Cancelar.
+      statusOptions.push(
+        { value: SERVICE_ORDER_STATUS.PAUSED, label: "Pausado" },
+        { value: SERVICE_ORDER_STATUS.IN_PROGRESS, label: "Continuar" },
+      );
+      if (!isAutoCompletingTask) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.COMPLETED, label: "Concluir" });
+      }
+      if (isAdminUser) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.PENDING, label: "Voltar para Pendente" });
+      }
+      if (userCanCancel) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.CANCELLED, label: "Cancelar" });
+      }
+    } else if (currentSOStatus === SERVICE_ORDER_STATUS.WAITING_ARTWORK) {
+      // Aguardando Arte → auto-set by Em Negociação sync. Auto-clears when artwork is uploaded.
+      // For Em Negociação specifically: NEVER offer Concluir — completion is driven by
+      // artwork-upload, not by hand. Pausar / Voltar para Pendente / Cancelar follow the
+      // same gating as the IN_PROGRESS branch.
+      statusOptions.push(
+        { value: SERVICE_ORDER_STATUS.WAITING_ARTWORK, label: "Aguardando Arte" },
+        { value: SERVICE_ORDER_STATUS.PAUSED, label: "Pausar" },
+      );
+      if (!isAutoCompletingTask) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.COMPLETED, label: "Concluir" });
+      }
+      if (isAdminUser) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.PENDING, label: "Voltar para Pendente" });
+      }
+      if (userCanCancel) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.CANCELLED, label: "Cancelar" });
+      }
+    } else if (currentSOStatus === SERVICE_ORDER_STATUS.WAITING_APPROVE) {
+      // Aguardando Aprovação → Admin: Aprovar / Reprovar. Designer: Retirar. Others: Aprovar.
+      statusOptions.push({ value: SERVICE_ORDER_STATUS.WAITING_APPROVE, label: "Aguardando Aprovação" });
+      if (isAdminUser) {
+        statusOptions.push(
+          { value: SERVICE_ORDER_STATUS.COMPLETED, label: "Aprovar" },
+          { value: SERVICE_ORDER_STATUS.IN_PROGRESS, label: "Reprovar" },
+        );
+      } else if (!isDesignerUser) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.COMPLETED, label: "Aprovar" });
+      } else {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.IN_PROGRESS, label: "Retirar Envio" });
+      }
+      if (userCanCancel) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.CANCELLED, label: "Cancelar" });
+      }
+    } else if (currentSOStatus === SERVICE_ORDER_STATUS.COMPLETED) {
+      // Concluído → terminal. Admin can Reabrir.
+      statusOptions.push({ value: SERVICE_ORDER_STATUS.COMPLETED, label: "Concluído" });
+      if (isAdminUser) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.IN_PROGRESS, label: "Reabrir" });
+      }
+    } else if (currentSOStatus === SERVICE_ORDER_STATUS.CANCELLED) {
+      // Cancelado → terminal. Admin can Restaurar.
+      statusOptions.push({ value: SERVICE_ORDER_STATUS.CANCELLED, label: "Cancelado" });
+      if (isAdminUser) {
+        statusOptions.push({ value: SERVICE_ORDER_STATUS.PENDING, label: "Restaurar" });
+      }
+    } else {
+      // Fallback
+      statusOptions.push(
+        { value: SERVICE_ORDER_STATUS.PENDING, label: "Pendente" },
+        { value: SERVICE_ORDER_STATUS.IN_PROGRESS, label: "Iniciar" },
+        { value: SERVICE_ORDER_STATUS.PAUSED, label: "Pausar" },
+        { value: SERVICE_ORDER_STATUS.COMPLETED, label: "Concluir" },
+      );
+    }
+
+    return statusOptions;
   };
 
   // Check if user can edit a specific service order

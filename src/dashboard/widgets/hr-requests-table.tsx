@@ -450,17 +450,16 @@ function HrRequestsTableRender({
         config.accent?.borderColor as WidgetBorderColor,
       )}
       count={(config.display.showCount ?? true) && !isLoading ? rows.length : null}
-    >
-      <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
-        {display.showSearchBox && (
+      fixedHeader={
+        display.showSearchBox ? (
           <WidgetTableSearch
             value={searchInput}
             onChangeText={setSearchInput}
             placeholder="Buscar por colaborador..."
           />
-        )}
-      </View>
-
+        ) : undefined
+      }
+    >
       {isLoading ? (
         <View style={{ padding: 12 }}>
           <SkeletonRows count={5} density={density} />

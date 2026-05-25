@@ -12,6 +12,10 @@ import {
   MEASURE_TYPE_LABELS,
   ITEM_CATEGORY_TYPE,
   ITEM_CATEGORY_TYPE_LABELS,
+  ABC_CATEGORY,
+  XYZ_CATEGORY,
+  ABC_CATEGORY_LABELS,
+  XYZ_CATEGORY_LABELS,
 } from '@/constants'
 import { canEditItems } from '@/utils/permissions/entity-permissions'
 import { determineStockLevel } from '@/utils'
@@ -527,6 +531,62 @@ export const itemsListConfig: ListConfig<Item> = {
         label: 'Faixa de Preço',
         type: 'number-range',
         placeholder: { min: 'Mínimo', max: 'Máximo' },
+      },
+      {
+        key: 'icmsRange',
+        label: 'Faixa de ICMS (%)',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
+      },
+      {
+        key: 'ipiRange',
+        label: 'Faixa de IPI (%)',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
+      },
+      {
+        key: 'abcCategories',
+        label: 'Categoria ABC',
+        type: 'select',
+        multiple: true,
+        options: Object.values(ABC_CATEGORY).map((category) => ({
+          label: ABC_CATEGORY_LABELS[category as keyof typeof ABC_CATEGORY_LABELS] || category,
+          value: category,
+        })),
+        placeholder: 'Selecione categorias ABC...',
+      },
+      {
+        key: 'xyzCategories',
+        label: 'Categoria XYZ',
+        type: 'select',
+        multiple: true,
+        options: Object.values(XYZ_CATEGORY).map((category) => ({
+          label: XYZ_CATEGORY_LABELS[category as keyof typeof XYZ_CATEGORY_LABELS] || category,
+          value: category,
+        })),
+        placeholder: 'Selecione categorias XYZ...',
+      },
+      {
+        key: 'nearReorderPoint',
+        label: 'Próximo ao Ponto de Reposição',
+        type: 'toggle',
+      },
+      {
+        key: 'noReorderPoint',
+        label: 'Sem Ponto de Reposição',
+        type: 'toggle',
+      },
+      {
+        key: 'createdAt',
+        label: 'Data de Criação',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
+      },
+      {
+        key: 'updatedAt',
+        label: 'Data de Atualização',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
       },
     ],
   },

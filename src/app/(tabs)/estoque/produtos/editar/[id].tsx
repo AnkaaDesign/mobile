@@ -68,7 +68,7 @@ function ItemEditScreen() {
         select: { id: true, value: true, unit: true, measureType: true },
       },
       prices: {
-        take: 1,
+        take: 10,
         orderBy: { createdAt: "desc" },
         select: { id: true, value: true, createdAt: true },
       },

@@ -138,6 +138,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+    // Matches the real `Card` (shadow.md) used on the Pessoal hub grid.
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   iconContainer: {
     marginBottom: 4,

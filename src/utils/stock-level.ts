@@ -23,6 +23,9 @@ const STOCK_LEVEL_LOW_MULTIPLIER = 1.2;
  * @param _hasActiveOrder IGNORED — kept for backward compatibility. Render
  *   pending-order state as a separate UI overlay.
  * @param categoryType When `ITEM_CATEGORY_TYPE.TOOL`, qty > 0 always returns OPTIMAL
+ * @param incomingOrderedQuantity Quantity already on open orders. CRITICAL/LOW
+ *   bands classify on "effective stock" (quantity + incoming) so an item with a
+ *   pending order is not flagged critical; OVERSTOCKED still uses physical qty.
  * @returns The appropriate stock level
  */
 export function determineStockLevel(
@@ -31,6 +34,7 @@ export function determineStockLevel(
   maxQuantity: number | null,
   _hasActiveOrder: boolean = false,
   categoryType: ITEM_CATEGORY_TYPE | null = null,
+  incomingOrderedQuantity: number = 0,
 ): STOCK_LEVEL {
   if (!Number.isFinite(quantity)) return STOCK_LEVEL.OPTIMAL;
 
@@ -46,12 +50,17 @@ export function determineStockLevel(
   const hasMaxSignal = maxQuantity !== null && maxQuantity > 0;
   if (!hasReorderSignal && !hasMaxSignal) return STOCK_LEVEL.OPTIMAL;
 
-  if (hasReorderSignal && quantity <= (reorderPoint as number)) return STOCK_LEVEL.CRITICAL;
+  // Effective stock counts open orders toward the reorder bands (spec §15.1).
+  const incoming = Math.max(0, incomingOrderedQuantity || 0);
+  const effective = quantity + incoming;
+
+  if (hasReorderSignal && effective <= (reorderPoint as number)) return STOCK_LEVEL.CRITICAL;
   if (
     hasReorderSignal &&
-    quantity <= (reorderPoint as number) * STOCK_LEVEL_LOW_MULTIPLIER
+    effective <= (reorderPoint as number) * STOCK_LEVEL_LOW_MULTIPLIER
   )
     return STOCK_LEVEL.LOW;
+  // OVERSTOCKED stays on physical quantity (incoming not yet received).
   if (hasMaxSignal && quantity > (maxQuantity as number)) return STOCK_LEVEL.OVERSTOCKED;
   return STOCK_LEVEL.OPTIMAL;
 }

@@ -48,6 +48,13 @@ export interface WidgetCardProps {
   viewAllHref?: string;
   /** Optional right-side header content (e.g., refresh button, day picker). */
   headerExtra?: ReactNode;
+  /** Optional content pinned directly below the card header, OUTSIDE the
+   *  scrollable body — so it stays flush under the header and does not scroll
+   *  with the rows. Table widgets pass their search box + column-header row
+   *  here so the column headers behave like web's sticky header. Rendered with
+   *  the same 12px horizontal inset as the body, so edge-to-edge children
+   *  (negative-margin header strips) line up. */
+  fixedHeader?: ReactNode;
   /** Optional content shown to the right of the centered "Ver todos" link. */
   footerExtra?: ReactNode;
   /** Optional integer shown as a muted pill in the header. */
@@ -136,6 +143,7 @@ export function WidgetCard({
   icon,
   viewAllHref,
   headerExtra,
+  fixedHeader,
   footerExtra,
   count,
   showHeader = true,
@@ -360,6 +368,13 @@ export function WidgetCard({
             </View>
           )}
         </View>
+      )}
+      {/* FIXED HEADER — pinned directly below the card header, outside the
+          scrollable body. Flush against the header (no top gap) and shares the
+          body's 12px horizontal inset so negative-margin strips (search box,
+          column header) bleed edge-to-edge. Only the rows below this scroll. */}
+      {fixedHeader && (
+        <View style={{ paddingHorizontal: HEADER_PADDING_X }}>{fixedHeader}</View>
       )}
       {/* BODY — fills remaining vertical space. Three rendering modes:
             1. bodyAsList: widget owns its own scroller (FlatList /

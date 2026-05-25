@@ -537,6 +537,7 @@ export function BudgetCreateWizard() {
       return (
         <Suspense fallback={<ActivityIndicator style={{ marginTop: 40 }} />}>
           <BasicInfoSection mode="create" />
+          <ResponsiblesSection />
           <DatesSection mode="create" />
           <FilesSection mode="create" />
         </Suspense>

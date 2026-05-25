@@ -93,7 +93,10 @@ function CreateResponsibleScreenInner() {
         data.password = undefined;
       }
 
-      const result = await createAsync(data);
+      // Convert empty company selection to null (responsibles can be global / company-less, matching web + API)
+      const payload = { ...data, companyId: data.companyId || null };
+
+      const result = await createAsync(payload);
       Alert.alert("Sucesso", "Responsável cadastrado com sucesso!");
       const resultId = (result as any)?.data?.id || (result as any)?.id;
       if (resultId) {
@@ -188,7 +191,7 @@ function CreateResponsibleScreenInner() {
               />
             </FormFieldGroup>
 
-            <FormFieldGroup label="Empresa" required error={errors.companyId?.message}>
+            <FormFieldGroup label="Empresa" error={errors.companyId?.message}>
               <Controller
                 control={control}
                 name="companyId"

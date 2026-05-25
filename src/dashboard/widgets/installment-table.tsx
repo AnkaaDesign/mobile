@@ -924,15 +924,15 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       accentColor={accent.hex}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       count={showCount ? visibleRows.length : null}
-    >
-      <WidgetTableContainer density={density}>
-        {display.showSearchBox && (
-          <WidgetTableSearch
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar cliente, tarefa ou nosso nº..."
-          />
-        )}
+      fixedHeader={
+        <>
+          {display.showSearchBox && (
+            <WidgetTableSearch
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar cliente, tarefa ou nosso nº..."
+            />
+          )}
 
         {showBucketChips && (
           // Horizontal scroll strip — fits the 8 buckets without forcing a
@@ -1009,14 +1009,17 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           </ScrollView>
         )}
 
-        {display.showColumnHeaders && layoutMode === "flat" && (
-          <WidgetTableHeader
-            columns={tableColumns}
-            reserveRowDot={display.showRowDot}
-            density={density}
-          />
-        )}
-
+          {display.showColumnHeaders && layoutMode === "flat" && (
+            <WidgetTableHeader
+              columns={tableColumns}
+              reserveRowDot={display.showRowDot}
+              density={density}
+            />
+          )}
+        </>
+      }
+    >
+      <WidgetTableContainer density={density}>
         {isLoading ? (
           <SkeletonRows count={5} density={density} />
         ) : isError ? (

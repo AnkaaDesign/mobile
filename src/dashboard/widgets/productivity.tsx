@@ -8,24 +8,22 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { z } from "zod";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import Svg, { Rect, Line, G, Text as SvgText } from "react-native-svg";
-import { useRouter } from "expo-router";
 import {
   IconChartBar,
   IconAdjustments,
   IconCalendarStats,
   IconChartLine,
-  IconTarget,
   IconFilter,
 } from "@tabler/icons-react-native";
 
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { SECTOR_PRIVILEGES, GOAL_METRIC } from "@/constants/enums";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
-import { Input } from "@/components/ui/input";
 import { useSectors } from "@/hooks/useSector";
 import { useTaskProductionStats } from "@/hooks/use-production-analytics";
+import { useDefaultGoal, type BusinessPeriod } from "@/hooks/use-default-goal";
 import type {
   TaskProductionXAxisMode,
   TaskProductionYAxisMode,
@@ -45,13 +43,13 @@ import {
 } from "../components/widget-accent";
 import {
   Section,
-  SectionGroup,
   ToggleRow,
   LabeledField,
   HelpText,
   ConfigTitleInput,
   Combobox,
 } from "./_shared";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import type {
   WidgetConfigProps,
@@ -151,6 +149,29 @@ function resolvePeriodRange(
   }
 }
 
+// Enumerate the (year, month) business periods a [startDate, endDate] range
+// spans. Walks from the business month containing startDate to the one
+// containing endDate inclusively. Mirrors web's getBusinessPeriodsInRange so
+// the default-goal lookup filters to the same periods the chart draws.
+function businessPeriodsInRange(
+  startDate: Date,
+  endDate: Date,
+): Array<{ year: number; month: number }> {
+  const start = businessMonthOf(startDate);
+  const end = businessMonthOf(endDate);
+  const periods: Array<{ year: number; month: number }> = [];
+  let { year, month } = start;
+  // Guard against malformed ranges (end before start) — cap at a few years.
+  for (let i = 0; i < 64; i++) {
+    periods.push({ year, month });
+    if (year === end.year && month === end.month) break;
+    if (year > end.year || (year === end.year && month > end.month)) break;
+    month++;
+    if (month > 12) { month = 1; year++; }
+  }
+  return periods;
+}
+
 // ============================================================
 // Config option vocabularies — mirror productivity page semantics.
 // ============================================================
@@ -204,9 +225,14 @@ const configSchema = z.object({
     .default({ type: "bar" }),
   goal: z
     .object({
-      override: z.number().nullable().default(null),
+      // Toggles the admin-configured default goal line. The value itself is no
+      // longer typed by the user — it's sourced from the DB (GOAL_METRIC.
+      // TASKS_COMPLETED target), matching the web widget. Old persisted configs
+      // carried `goal.override`; zod strips that unknown key and `enabled`
+      // defaults to true, so they parse fine (back-compat safe).
+      enabled: z.boolean().default(true),
     })
-    .default({ override: null }),
+    .default({ enabled: true }),
   filters: z
     .object({
       sectorIds: z.array(z.string().uuid()).default([]),
@@ -222,7 +248,7 @@ const DEFAULT_CONFIG: Config = {
   period: { preset: "last-6-months", xAxisMode: "month" },
   metric: { yAxisMode: "count" },
   chart: { type: "bar" },
-  goal: { override: null },
+  goal: { enabled: true },
   filters: { sectorIds: [] },
 };
 
@@ -231,11 +257,10 @@ const DEFAULT_CONFIG: Config = {
 // ============================================================
 
 interface MiniChartProps {
-  data: Array<{ label: string; value: number }>;
+  data: Array<{ label: string; value: number; goal: number | null }>;
   width: number;
   height: number;
   fillHex: string;
-  goalValue?: number | null;
   type: "bar" | "line";
   textHex: string;
   gridHex: string;
@@ -247,7 +272,6 @@ function MiniChart({
   width,
   height,
   fillHex,
-  goalValue,
   type,
   textHex,
   gridHex,
@@ -268,13 +292,20 @@ function MiniChart({
   const plotW = Math.max(0, width - padLeft - padRight);
   const plotH = Math.max(0, height - padTop - padBottom);
 
+  // The tallest goal point must stay on-chart so the goal line isn't clipped.
+  const goalMax = data.reduce((a, d) => Math.max(a, d.goal ?? 0), 0);
   const rawMax = Math.max(
     data.reduce((a, d) => Math.max(a, d.value), 0),
-    goalValue ?? 0,
+    goalMax,
     1,
   );
-  const niceMax = niceCeil(rawMax);
+  // Nice y-axis targeting ~4-5 evenly-spaced ticks with round steps (so we get
+  // e.g. 0/20/40/60/80/100 instead of just 0/50/100). The gridlines + labels
+  // below are drawn at each of these ticks.
+  const { niceMax, niceStep } = niceAxis(rawMax);
   const yScale = (v: number) => padTop + plotH - (v / niceMax) * plotH;
+  const yTicks: number[] = [];
+  for (let t = 0; t <= niceMax + niceStep * 1e-6; t += niceStep) yTicks.push(t);
 
   const n = data.length;
   // Slot width — each datum gets an equal column. Bars use 65% of the slot
@@ -282,11 +313,27 @@ function MiniChart({
   const slotW = plotW / Math.max(n, 1);
   const barW = Math.max(2, slotW * 0.65);
 
-  // Label-density throttle: show every Nth label so they don't overlap.
-  // 6 labels max comfortably for plot widths around 200-280px.
-  const labelStride = Math.max(1, Math.ceil(n / 6));
-
-  const goalY = goalValue != null && goalValue >= 0 ? yScale(goalValue) : null;
+  // Show as MANY x labels as comfortably fit, so the full year view labels all
+  // 12 months (the 3-letter abbreviations are narrow). We estimate each label's
+  // width from its char count (~5.5px/char at fontSize 9 + 6px gap) and divide
+  // the plot width. Only when labels would collide (narrow widget, or dense
+  // day-mode with many points) do we drop to an evenly-spaced subset that still
+  // includes the first and last. Always-incl-endpoints avoids the old
+  // stride+force-last bug that could collide Nov/Dez.
+  const maxLabelChars = Math.min(
+    4,
+    data.reduce((a, d) => Math.max(a, d.label.length), 1),
+  );
+  const approxLabelW = maxLabelChars * 5.5 + 6;
+  const maxLabels = Math.max(2, Math.floor(plotW / approxLabelW));
+  const labelIdx = new Set<number>();
+  if (n <= maxLabels) {
+    for (let i = 0; i < n; i++) labelIdx.add(i);
+  } else {
+    for (let k = 0; k < maxLabels; k++) {
+      labelIdx.add(Math.round((k * (n - 1)) / (maxLabels - 1)));
+    }
+  }
 
   // Pre-compute polyline points for line mode.
   const linePoints = type === "line"
@@ -297,61 +344,74 @@ function MiniChart({
 
   return (
     <Svg width={width} height={height}>
-      {/* Y axis baseline */}
+      {/* Horizontal gridline + Y label at each tick (0, step, 2·step, … max).
+          The baseline (tick 0) is solid; the rest are faint guides. */}
+      {yTicks.map((t, i) => {
+        const y = yScale(t);
+        return (
+          <G key={`yt-${i}`}>
+            <Line
+              x1={padLeft}
+              y1={y}
+              x2={padLeft + plotW}
+              y2={y}
+              stroke={gridHex}
+              strokeWidth={i === 0 ? 1 : 0.5}
+              opacity={i === 0 ? 1 : 0.4}
+            />
+            <SvgText
+              x={padLeft - 4}
+              y={y + 3}
+              fill={textHex}
+              fontSize={9}
+              textAnchor="end"
+            >
+              {formatAxisNumber(t)}
+            </SvgText>
+          </G>
+        );
+      })}
+      {/* Y axis vertical line */}
       <Line
         x1={padLeft}
-        y1={padTop + plotH}
-        x2={padLeft + plotW}
+        y1={padTop}
+        x2={padLeft}
         y2={padTop + plotH}
         stroke={gridHex}
         strokeWidth={1}
       />
-      {/* Y axis labels — 0, mid, max */}
-      <SvgText
-        x={padLeft - 4}
-        y={padTop + 4}
-        fill={textHex}
-        fontSize={9}
-        textAnchor="end"
-      >
-        {formatAxisNumber(niceMax)}
-      </SvgText>
-      <SvgText
-        x={padLeft - 4}
-        y={padTop + plotH / 2 + 3}
-        fill={textHex}
-        fontSize={9}
-        textAnchor="end"
-      >
-        {formatAxisNumber(niceMax / 2)}
-      </SvgText>
-      <SvgText
-        x={padLeft - 4}
-        y={padTop + plotH + 3}
-        fill={textHex}
-        fontSize={9}
-        textAnchor="end"
-      >
-        0
-      </SvgText>
 
       {/* Bars OR line */}
       {type === "bar" ? (
         <G>
           {data.map((d, i) => {
+            const cx = padLeft + i * slotW + slotW / 2;
             const x = padLeft + i * slotW + (slotW - barW) / 2;
             const y = yScale(d.value);
             const h = padTop + plotH - y;
             return (
-              <Rect
-                key={i}
-                x={x}
-                y={y}
-                width={barW}
-                height={Math.max(0, h)}
-                rx={2}
-                fill={fillHex}
-              />
+              <G key={i}>
+                <Rect
+                  x={x}
+                  y={y}
+                  width={barW}
+                  height={Math.max(0, h)}
+                  rx={2}
+                  fill={fillHex}
+                />
+                {/* Value (count) above the bar — mirrors the statistics page. */}
+                {d.value > 0 && (
+                  <SvgText
+                    x={cx}
+                    y={y - 3}
+                    fill={textHex}
+                    fontSize={9}
+                    textAnchor="middle"
+                  >
+                    {formatAxisNumber(d.value)}
+                  </SvgText>
+                )}
+              </G>
             );
           })}
         </G>
@@ -391,24 +451,51 @@ function MiniChart({
         </G>
       )}
 
-      {/* Goal line — overlays bars/line if configured */}
-      {goalY != null && (
+      {/* Goal line — FOLLOWS each period's target (mirrors the statistics page).
+          Dashed segments connect adjacent periods that both have a goal; a
+          diamond marks each goal point. Periods without a goal are skipped. */}
+      {data.some((d) => d.goal != null) && (
         <G>
-          <Line
-            x1={padLeft}
-            y1={goalY}
-            x2={padLeft + plotW}
-            y2={goalY}
-            stroke={goalHex}
-            strokeWidth={1}
-            strokeDasharray="4 3"
-          />
+          {data.slice(0, -1).map((_, i) => {
+            const g1 = data[i].goal;
+            const g2 = data[i + 1].goal;
+            if (g1 == null || g2 == null) return null;
+            return (
+              <Line
+                key={`goal-seg-${i}`}
+                x1={padLeft + i * slotW + slotW / 2}
+                y1={yScale(g1)}
+                x2={padLeft + (i + 1) * slotW + slotW / 2}
+                y2={yScale(g2)}
+                stroke={goalHex}
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                strokeLinecap="round"
+              />
+            );
+          })}
+          {data.map((d, i) => {
+            if (d.goal == null) return null;
+            const cx = padLeft + i * slotW + slotW / 2;
+            const cy = yScale(d.goal);
+            return (
+              <Rect
+                key={`goal-pt-${i}`}
+                x={cx - 2.5}
+                y={cy - 2.5}
+                width={5}
+                height={5}
+                fill={goalHex}
+                transform={`rotate(45 ${cx} ${cy})`}
+              />
+            );
+          })}
         </G>
       )}
 
-      {/* X axis labels — strided */}
+      {/* X axis labels — evenly-spaced subset, short (3-letter month) labels */}
       {data.map((d, i) => {
-        if (i % labelStride !== 0 && i !== n - 1) return null;
+        if (!labelIdx.has(i)) return null;
         return (
           <SvgText
             key={`xl-${i}`}
@@ -418,7 +505,7 @@ function MiniChart({
             fontSize={9}
             textAnchor="middle"
           >
-            {truncate(d.label, 6)}
+            {truncate(d.label, 4)}
           </SvgText>
         );
       })}
@@ -426,13 +513,17 @@ function MiniChart({
   );
 }
 
-function niceCeil(n: number): number {
-  if (n <= 1) return 1;
-  const exp = Math.floor(Math.log10(n));
-  const base = Math.pow(10, exp);
-  const ratio = n / base;
-  const step = ratio <= 2 ? 2 : ratio <= 5 ? 5 : 10;
-  return step * base;
+// Compute a "nice" y-axis (max + step) targeting ~5 evenly-spaced round ticks,
+// so the chart shows e.g. 0/20/40/60/80/100 rather than just 0/50/100. Steps
+// snap to 1/2/5 × a power of ten. Handles fractional ranges (avg/user rates).
+function niceAxis(max: number): { niceMax: number; niceStep: number } {
+  const safe = max > 0 ? max : 1;
+  const rawStep = safe / 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const norm = rawStep / mag;
+  const niceStep = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  const niceMax = Math.ceil(safe / niceStep) * niceStep;
+  return { niceMax, niceStep };
 }
 
 function formatAxisNumber(n: number): string {
@@ -493,7 +584,6 @@ function SummaryTile({
 
 function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
-  const router = useRouter();
 
   const accent = useMemo(
     () =>
@@ -556,13 +646,73 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
 
   const useAvg = yAxisMode === "avgPerUser";
 
+  // Per-period goal line — sourced from the admin-configured DB target
+  // (GOAL_METRIC.TASKS_COMPLETED), mirroring the web widget + statistics page.
+  // Each month can have a DIFFERENT goal, so the line FOLLOWS the bars rather
+  // than being flat. No typed override. The (year, month) periods are derived
+  // from the displayed range so the lookup filters to what the chart draws.
+  const goalPeriods = useMemo<BusinessPeriod[]>(
+    () => businessPeriodsInRange(startDate, endDate),
+    [startDate, endDate],
+  );
+
+  // count mode → each period's monthly target; avgPerUser → that target per
+  // that period's active users.
+  const goalAggregation = useAvg ? "AVERAGE_PER_USER" : "AVERAGE_PER_PERIOD";
+
+  const { perPeriodValues: goalPerPeriod } = useDefaultGoal({
+    metric: GOAL_METRIC.TASKS_COMPLETED,
+    periods: goalPeriods,
+    sectorIds,
+    aggregation: goalAggregation,
+    // Only relevant in avgPerUser mode; in count mode it's ignored.
+    activeUserCount: useAvg ? summary?.totalActiveUsers ?? null : null,
+    enabled: config.goal.enabled,
+  });
+
+  // Resolve a per-bar goal value aligned to `items`. year mode sums the 12
+  // months' targets for that year; avgPerUser divides each period's target by
+  // that period's active users; count+day snaps to an integer. null = no goal
+  // for that period (the line skips it).
+  const perPeriodGoalValues = useMemo<(number | null)[] | null>(() => {
+    if (!goalPerPeriod) return null;
+    return items.map((item) => {
+      let rawSum: number | null;
+      if (xAxisMode === "year") {
+        let total = 0;
+        let hasAny = false;
+        for (let m = 1; m <= 12; m++) {
+          const v = goalPerPeriod.get(`${item.period}-${String(m).padStart(2, "0")}`);
+          if (v != null) {
+            total += v;
+            hasAny = true;
+          }
+        }
+        rawSum = hasAny ? total : null;
+      } else {
+        rawSum = goalPerPeriod.get(item.period) ?? null;
+      }
+      if (rawSum == null) return null;
+      let val = rawSum;
+      if (useAvg) {
+        const activeUsers = item.activeUsers ?? 0;
+        if (activeUsers <= 0) return null;
+        val = val / activeUsers;
+      } else if (xAxisMode === "day") {
+        val = Math.round(val);
+      }
+      return val;
+    });
+  }, [goalPerPeriod, items, xAxisMode, useAvg]);
+
   const chartData = useMemo(
     () =>
-      items.map((item) => ({
-        label: stripYear(item.periodLabel),
+      items.map((item, i) => ({
+        label: abbreviateMonthLabel(stripYear(item.periodLabel)),
         value: useAvg ? item.avgPerUser : item.totalCount,
+        goal: perPeriodGoalValues?.[i] ?? null,
       })),
-    [items, useAvg],
+    [items, useAvg, perPeriodGoalValues],
   );
 
   // KPI strip values
@@ -608,18 +758,6 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       borderColor={accent.hex}
       onRefresh={refetch}
       refreshing={isFetching}
-      footerExtra={
-        <Pressable
-          onPress={() =>
-            router.push("/(tabs)/estatisticas/producao/produtividade" as any)
-          }
-          hitSlop={6}
-        >
-          <Text style={{ fontSize: 11, color: accent.hex, fontWeight: "600" }}>
-            Ver detalhes →
-          </Text>
-        </Pressable>
-      }
     >
       <ProductivityBody
         data={chartData}
@@ -630,7 +768,6 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         peakCount={peakCount}
         useAvg={useAvg}
         xAxisMode={xAxisMode}
-        goalValue={config.goal.override}
         accentHex={accent.hex}
         colors={colors}
         isLoading={isLoading}
@@ -652,12 +789,11 @@ function ProductivityBody({
   peakCount,
   useAvg,
   xAxisMode,
-  goalValue,
   accentHex,
   colors,
   isLoading,
 }: {
-  data: Array<{ label: string; value: number }>;
+  data: Array<{ label: string; value: number; goal: number | null }>;
   chartType: "bar" | "line";
   showSummary: boolean;
   summary: { totalCompleted: number; avgPerUser: number } | undefined;
@@ -665,7 +801,6 @@ function ProductivityBody({
   peakCount: number;
   useAvg: boolean;
   xAxisMode: TaskProductionXAxisMode;
-  goalValue: number | null;
   accentHex: string;
   colors: ReturnType<typeof useTheme>["colors"];
   isLoading: boolean;
@@ -704,7 +839,6 @@ function ProductivityBody({
             width={plot.width}
             height={plot.height}
             fillHex={accentHex}
-            goalValue={goalValue}
             type={chartType}
             textHex={colors.mutedForeground}
             gridHex={colors.border}
@@ -773,6 +907,35 @@ function stripYear(label: string): string {
   return label.replace(/\s+\d{4}\s*$/, "").trim();
 }
 
+// Portuguese month name → 3-letter abbreviation. Used for x-axis labels so the
+// 12-month year view fits without overlapping (the API returns full month
+// names like "Janeiro"). Non-month labels (a year "2026", a day date) pass
+// through unchanged.
+const MONTH_ABBR: Record<string, string> = {
+  janeiro: "Jan",
+  fevereiro: "Fev",
+  "março": "Mar",
+  marco: "Mar",
+  abril: "Abr",
+  maio: "Mai",
+  junho: "Jun",
+  julho: "Jul",
+  agosto: "Ago",
+  setembro: "Set",
+  outubro: "Out",
+  novembro: "Nov",
+  dezembro: "Dez",
+};
+
+function abbreviateMonthLabel(label: string): string {
+  const key = label.trim().toLowerCase();
+  if (MONTH_ABBR[key]) return MONTH_ABBR[key];
+  for (const [full, abbr] of Object.entries(MONTH_ABBR)) {
+    if (key.startsWith(full)) return abbr;
+  }
+  return label;
+}
+
 // ============================================================
 // Config component (bottom sheet body)
 // ============================================================
@@ -783,7 +946,8 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   const accentShade = (config.accent?.shade ?? "500") as WidgetAccentShade;
   const borderColor = (config.accent?.borderColor ?? "none") as WidgetBorderColor;
 
-  const sectorsQ = useSectors({ take: 200 });
+  // API caps `take` at 100 (sectors is a small set, so 100 fetches all).
+  const sectorsQ = useSectors({ take: 100 });
   const sectorOptions = useMemo(
     () =>
       (sectorsQ.data?.data ?? []).map((s: Sector) => ({
@@ -794,149 +958,171 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   );
 
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: 12 }}>
       <ConfigTitleInput
         value={config.title}
         onChange={(v) => onChange({ ...config, title: v })}
         placeholder="Produtividade"
       />
 
-      <SectionGroup>
-        <Section title="Aparência" icon={<IconAdjustments size={14} />} defaultOpen>
-          <AccentPicker
-            value={{
-              color: accentColor,
-              icon: accentIcon,
-              borderColor,
-              shade: accentShade,
-            }}
-            onChange={(next) =>
-              onChange({
-                ...config,
-                accent: {
-                  ...config.accent,
-                  color: next.color,
-                  icon: next.icon,
-                  borderColor: next.borderColor,
-                  shade: next.shade,
-                },
-              })
-            }
-          />
-          <ToggleRow
-            label="Cabeçalho visível"
-            checked={config.display.showHeader}
-            onCheckedChange={(v) =>
-              onChange({ ...config, display: { ...config.display, showHeader: v } })
-            }
-          />
-          <ToggleRow
-            label="Mostrar resumo"
-            checked={config.display.showSummary}
-            onCheckedChange={(v) =>
-              onChange({ ...config, display: { ...config.display, showSummary: v } })
-            }
-          />
-        </Section>
+      <Tabs defaultValue="appearance">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <TabsList style={{ minWidth: 320 }}>
+            <TabsTrigger value="appearance">Aparência</TabsTrigger>
+            <TabsTrigger value="chart">Gráfico</TabsTrigger>
+            <TabsTrigger value="filters">Filtros</TabsTrigger>
+          </TabsList>
+        </ScrollView>
 
-        <Section title="Período" icon={<IconCalendarStats size={14} />}>
-          <LabeledField label="Janela de tempo">
-            <Combobox
-              value={config.period.preset}
-              onValueChange={(v) =>
-                onChange({
-                  ...config,
-                  period: {
-                    ...config.period,
-                    preset: (v as PeriodPreset) ?? "last-6-months",
-                  },
-                })
-              }
-              options={PERIOD_PRESET_OPTIONS}
-            />
-          </LabeledField>
-          <HelpText>Janela móvel — recalculada a cada abertura.</HelpText>
-          <LabeledField label="Agrupamento (eixo X)">
-            <Combobox
-              value={config.period.xAxisMode}
-              onValueChange={(v) =>
-                onChange({
-                  ...config,
-                  period: {
-                    ...config.period,
-                    xAxisMode: (v as TaskProductionXAxisMode) ?? "month",
-                  },
-                })
-              }
-              options={X_AXIS_OPTIONS}
-            />
-          </LabeledField>
-        </Section>
-
-        <Section title="Métrica" icon={<IconChartBar size={14} />}>
-          <LabeledField label="Métrica do eixo Y">
-            <Combobox
-              value={config.metric.yAxisMode}
-              onValueChange={(v) => {
-                // Mobile intentionally doesn't support the "both" series mode
-                // (TaskProductionYAxisMode includes it, but the small phone
-                // chart can't fit two series). Coerce "both" → "count" so the
-                // narrowed schema type ("count" | "avgPerUser") holds.
-                const mode = (v as TaskProductionYAxisMode) ?? "count";
-                onChange({
-                  ...config,
-                  metric: {
-                    yAxisMode: mode === "avgPerUser" ? "avgPerUser" : "count",
-                  },
-                });
+        <TabsContent value="appearance">
+          <Section title="Aparência" defaultOpen>
+            <AccentPicker
+              value={{
+                color: accentColor,
+                icon: accentIcon,
+                borderColor,
+                shade: accentShade,
               }}
-              options={Y_AXIS_OPTIONS}
-            />
-          </LabeledField>
-        </Section>
-
-        <Section title="Gráfico" icon={<IconChartLine size={14} />}>
-          <LabeledField label="Tipo de gráfico">
-            <Combobox
-              value={config.chart.type}
-              onValueChange={(v) =>
+              onChange={(next) =>
                 onChange({
                   ...config,
-                  chart: { type: (v as "bar" | "line") ?? "bar" },
-                })
-              }
-              options={CHART_TYPE_OPTIONS}
-            />
-          </LabeledField>
-        </Section>
-
-        <Section title="Meta" icon={<IconTarget size={14} />}>
-          <HelpText>
-            Defina uma meta numérica para mostrar a linha tracejada sobre o
-            gráfico. Deixe em branco para ocultar.
-          </HelpText>
-        </Section>
-
-        <Section title="Filtros" icon={<IconFilter size={14} />}>
-          <LabeledField label="Setores">
-            <Combobox
-              mode="multiple"
-              value={config.filters.sectorIds}
-              onValueChange={(v) =>
-                onChange({
-                  ...config,
-                  filters: {
-                    sectorIds: Array.isArray(v) ? v : v ? [v] : [],
+                  accent: {
+                    ...config.accent,
+                    color: next.color,
+                    icon: next.icon,
+                    borderColor: next.borderColor,
+                    shade: next.shade,
                   },
                 })
               }
-              options={sectorOptions}
-              placeholder="Todos os setores"
             />
-          </LabeledField>
-          <HelpText>Vazio = todos os setores de produção.</HelpText>
-        </Section>
-      </SectionGroup>
+            <ToggleRow
+              label="Cabeçalho visível"
+              checked={config.display.showHeader}
+              onCheckedChange={(v) =>
+                onChange({ ...config, display: { ...config.display, showHeader: v } })
+              }
+            />
+            <ToggleRow
+              label="Mostrar resumo"
+              checked={config.display.showSummary}
+              onCheckedChange={(v) =>
+                onChange({ ...config, display: { ...config.display, showSummary: v } })
+              }
+            />
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="chart">
+          <Section title="Período" defaultOpen>
+            <LabeledField label="Janela de tempo">
+              <Combobox
+                value={config.period.preset}
+                onValueChange={(v) =>
+                  onChange({
+                    ...config,
+                    period: {
+                      ...config.period,
+                      preset: (v as PeriodPreset) ?? "last-6-months",
+                    },
+                  })
+                }
+                options={PERIOD_PRESET_OPTIONS}
+              />
+            </LabeledField>
+            <HelpText>Janela móvel — recalculada a cada abertura.</HelpText>
+            <LabeledField label="Agrupamento (eixo X)">
+              <Combobox
+                value={config.period.xAxisMode}
+                onValueChange={(v) =>
+                  onChange({
+                    ...config,
+                    period: {
+                      ...config.period,
+                      xAxisMode: (v as TaskProductionXAxisMode) ?? "month",
+                    },
+                  })
+                }
+                options={X_AXIS_OPTIONS}
+              />
+            </LabeledField>
+          </Section>
+
+          <Section title="Métrica">
+            <LabeledField label="Métrica do eixo Y">
+              <Combobox
+                value={config.metric.yAxisMode}
+                onValueChange={(v) => {
+                  // Mobile intentionally doesn't support the "both" series mode
+                  // (TaskProductionYAxisMode includes it, but the small phone
+                  // chart can't fit two series). Coerce "both" → "count" so the
+                  // narrowed schema type ("count" | "avgPerUser") holds.
+                  const mode = (v as TaskProductionYAxisMode) ?? "count";
+                  onChange({
+                    ...config,
+                    metric: {
+                      yAxisMode: mode === "avgPerUser" ? "avgPerUser" : "count",
+                    },
+                  });
+                }}
+                options={Y_AXIS_OPTIONS}
+              />
+            </LabeledField>
+          </Section>
+
+          <Section title="Gráfico">
+            <LabeledField label="Tipo de gráfico">
+              <Combobox
+                value={config.chart.type}
+                onValueChange={(v) =>
+                  onChange({
+                    ...config,
+                    chart: { type: (v as "bar" | "line") ?? "bar" },
+                  })
+                }
+                options={CHART_TYPE_OPTIONS}
+              />
+            </LabeledField>
+          </Section>
+
+          <Section title="Meta">
+            <ToggleRow
+              label="Mostrar meta"
+              checked={config.goal.enabled}
+              onCheckedChange={(v) =>
+                onChange({ ...config, goal: { enabled: v } })
+              }
+            />
+            <HelpText>
+              A meta vem do alvo configurado em Administração › Metas
+              (não é digitada aqui). A linha tracejada mostra a meta padrão do
+              período exibido. Desative para ocultá-la.
+            </HelpText>
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="filters">
+          <Section title="Filtros" defaultOpen>
+            <LabeledField label="Setores">
+              <Combobox
+                mode="multiple"
+                value={config.filters.sectorIds}
+                onValueChange={(v) =>
+                  onChange({
+                    ...config,
+                    filters: {
+                      sectorIds: Array.isArray(v) ? v : v ? [v] : [],
+                    },
+                  })
+                }
+                options={sectorOptions}
+                placeholder="Todos os setores"
+              />
+            </LabeledField>
+            <HelpText>Vazio = todos os setores de produção.</HelpText>
+          </Section>
+        </TabsContent>
+      </Tabs>
     </View>
   );
 }

@@ -1,6 +1,7 @@
-import { IconArrowDown, IconArrowUp, IconBox, IconFilter, IconList, IconSearch } from "@tabler/icons-react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { IconArrowDown, IconArrowUp, IconFilter, IconList, IconSearch } from "@tabler/icons-react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/lib/theme";
+import { shadow } from "@/constants/design-system";
 import { useSlotContext } from "../chrome/slot-context";
 import { TUTORIAL_MOVEMENTS } from "../fixtures";
 import type { SceneProps } from "./index";
@@ -41,7 +42,7 @@ export function MinhasMovimentacoesScene(_props: SceneProps) {
       {/* Toolbar: search + columns btn + filter btn */}
       <View style={styles.toolbar}>
         <View style={[styles.search, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <IconSearch size={18} color={colors.mutedForeground} />
+          <IconSearch size={20} color={colors.mutedForeground} />
           <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
             Buscar movimentações...
           </Text>
@@ -83,8 +84,10 @@ export function MinhasMovimentacoesScene(_props: SceneProps) {
           {rows.map((m, idx) => {
             const isInbound = m.type === "INBOUND";
             const sign = isInbound ? "+" : "-";
-            const badgeBg = isInbound ? "#dcfce7" : "#fee2e2";
-            const badgeFg = isInbound ? "#15803d" : "#bf4040";
+            // Real screen renders a solid Badge (success/destructive) with white
+            // text — mirrors badgeColors.success / badgeColors.destructive.
+            const badgeBg = isInbound ? "#15803d" : "#b91c1c";
+            const badgeFg = "#ffffff";
             // Parse "DD/MM/YYYY" to display date + time line like the real screen.
             const [day, month, year] = m.at.split("/");
             const time = isInbound ? "09:14" : "14:32";
@@ -96,22 +99,18 @@ export function MinhasMovimentacoesScene(_props: SceneProps) {
                   styles.bodyRow,
                   {
                     backgroundColor: idx % 2 === 0 ? colors.background : altRowBg,
-                    borderBottomColor: colors.border,
                   },
                   idx === rows.length - 1 && { borderBottomWidth: 0 },
                 ]}
               >
                 {/* Item cell */}
                 <View style={[styles.bodyCell, { flex: itemRatio }]}>
-                  <View style={styles.itemInner}>
-                    <IconBox size={16} color={colors.mutedForeground} />
-                    <Text
-                      style={[styles.itemText, { color: colors.foreground }]}
-                      numberOfLines={2}
-                    >
-                      {m.item}
-                    </Text>
-                  </View>
+                  <Text
+                    style={[styles.itemText, { color: colors.foreground }]}
+                    numberOfLines={2}
+                  >
+                    {m.item}
+                  </Text>
                 </View>
 
                 {/* Quantity badge */}
@@ -144,10 +143,11 @@ export function MinhasMovimentacoesScene(_props: SceneProps) {
         </View>
       </View>
 
-      {/* Items count display footer */}
+      {/* Items count display footer — mirrors <ItemsCountDisplay /> default copy */}
       <View style={styles.countFooter}>
         <Text style={[styles.countText, { color: colors.mutedForeground }]}>
-          {rows.length} de {rows.length} movimentações
+          {rows.length} {rows.length === 1 ? "item carregado" : "itens carregados"} de{" "}
+          {rows.length}
         </Text>
       </View>
     </View>
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  searchPlaceholder: { fontSize: 14 },
+  searchPlaceholder: { fontSize: 16 },
   iconBtn: {
     width: 40,
     height: 40,
@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
+    ...shadow.md,
   },
   headerRow: {
     flexDirection: "row",
@@ -219,24 +220,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   bodyRow: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 56,
+    minHeight: 48,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   bodyCell: {
     paddingHorizontal: 4,
     paddingVertical: 8,
     justifyContent: "center",
-  },
-  itemInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
   },
   itemText: {
     fontSize: 12,
@@ -247,23 +244,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 6,
     alignSelf: "flex-start",
   },
   qtyText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
   },
   dateText: { fontSize: 12 },
   dateSub: { fontSize: 11, opacity: 0.8, marginTop: 2 },
   countFooter: {
-    paddingVertical: 10,
+    paddingVertical: 4,
     paddingHorizontal: 16,
     alignItems: "center",
   },
   countText: {
-    fontSize: 12,
+    fontSize: 14,
   },
 });

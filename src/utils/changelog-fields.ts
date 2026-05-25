@@ -871,6 +871,11 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "startedBy.name": "Nome de quem Iniciou",
     "approvedBy.name": "Nome de quem Aprovou",
     "completedBy.name": "Nome de quem Concluiu",
+    // Web-parity field-name variants (API may emit these keys for service orders).
+    completedAt: "Concluído em",
+    userId: "Responsável",
+    notes: "Observações",
+    "user.name": "Nome do Responsável",
   },
   [CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE]: {
     subtotal: "Subtotal",
@@ -891,8 +896,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     customerConfigs: "Configurações de Clientes",
     customerSignatureId: "Assinatura do Cliente",
     customForecastDays: "Dias de Previsão Personalizados",
-    services: "Serviços",
-    services_snapshot: "Snapshot dos Serviços",
+    services: "Serviços do Orçamento",
+    services_snapshot: "Serviços do Orçamento",
     "services.length": "Quantidade de Serviços",
   },
   [CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE_ITEM]: {

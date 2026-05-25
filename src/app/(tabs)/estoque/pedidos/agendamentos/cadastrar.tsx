@@ -20,7 +20,7 @@ import {
   orderScheduleCreateSchema,
   type OrderScheduleCreateFormData,
 } from "@/schemas";
-import { SCHEDULE_FREQUENCY, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { SCHEDULE_FREQUENCY, MONTH_OCCURRENCE, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { SCHEDULE_FREQUENCY_LABELS } from "@/constants/enum-labels";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Card } from "@/components/ui/card";
@@ -63,6 +63,18 @@ const FREQUENCY_OPTIONS = Object.values(SCHEDULE_FREQUENCY).map((freq) => ({
   value: freq,
 }));
 
+// Portuguese labels for the positional weekday UX (MONTH_OCCURRENCE_LABELS in
+// constants is English; UI stays Portuguese).
+const MONTH_OCCURRENCE_OPTIONS = [
+  { label: "Primeira", value: MONTH_OCCURRENCE.FIRST },
+  { label: "Segunda", value: MONTH_OCCURRENCE.SECOND },
+  { label: "Terceira", value: MONTH_OCCURRENCE.THIRD },
+  { label: "Quarta", value: MONTH_OCCURRENCE.FOURTH },
+  { label: "Ultima", value: MONTH_OCCURRENCE.LAST },
+];
+
+type MonthlyMode = "dayOfMonth" | "positional";
+
 export default function OrderScheduleCreateScreen() {
   return (
     <PrivilegeGate
@@ -81,6 +93,7 @@ function OrderScheduleCreateScreenInner() {
     nav.goBack({ fallback: mobileRoute(routes.inventory.orders.schedules.root) });
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [monthlyMode, setMonthlyMode] = useState<MonthlyMode>("dayOfMonth");
 
   const createSchedule = useCreateOrderSchedule();
 
@@ -294,27 +307,115 @@ function OrderScheduleCreateScreenInner() {
               )}
 
               {frequencyGroups.needsDayOfMonth && (
-                <Controller
-                  control={form.control}
-                  name="dayOfMonth"
-                  render={({ field, fieldState }) => (
-                    <View style={styles.field}>
-                      <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                        Dia do Mes (1-31) *
-                      </ThemedText>
-                      <Input
-                        value={field.value != null ? String(field.value) : ""}
-                        onChangeText={(text: string) => {
-                          const num = parseInt(text);
-                          field.onChange(isNaN(num) ? undefined : Math.min(31, Math.max(1, num)));
+                <View style={styles.field}>
+                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                    Configuracao do Mes *
+                  </ThemedText>
+                  <View style={styles.modeToggleRow}>
+                    <Button
+                      variant={monthlyMode === "dayOfMonth" ? "default" : "outline"}
+                      onPress={() => {
+                        setMonthlyMode("dayOfMonth");
+                        form.setValue("monthlySchedule", undefined);
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      <ThemedText
+                        style={{
+                          color:
+                            monthlyMode === "dayOfMonth"
+                              ? colors.primaryForeground
+                              : colors.foreground,
                         }}
-                        keyboardType="numeric"
-                        placeholder="Ex: 15"
-                        error={!!fieldState.error}
+                      >
+                        Dia fixo do mes
+                      </ThemedText>
+                    </Button>
+                    <Button
+                      variant={monthlyMode === "positional" ? "default" : "outline"}
+                      onPress={() => {
+                        setMonthlyMode("positional");
+                        form.setValue("dayOfMonth", undefined);
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      <ThemedText
+                        style={{
+                          color:
+                            monthlyMode === "positional"
+                              ? colors.primaryForeground
+                              : colors.foreground,
+                        }}
+                      >
+                        Dia da semana
+                      </ThemedText>
+                    </Button>
+                  </View>
+
+                  {monthlyMode === "dayOfMonth" ? (
+                    <Controller
+                      control={form.control}
+                      name="dayOfMonth"
+                      render={({ field, fieldState }) => (
+                        <View style={styles.field}>
+                          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                            Dia do Mes (1-31) *
+                          </ThemedText>
+                          <Input
+                            value={field.value != null ? String(field.value) : ""}
+                            onChangeText={(text: string) => {
+                              const num = parseInt(text);
+                              field.onChange(isNaN(num) ? undefined : Math.min(31, Math.max(1, num)));
+                            }}
+                            keyboardType="numeric"
+                            placeholder="Ex: 15"
+                            error={!!fieldState.error}
+                          />
+                        </View>
+                      )}
+                    />
+                  ) : (
+                    <>
+                      <Controller
+                        control={form.control}
+                        name="monthlySchedule.occurrence"
+                        render={({ field, fieldState }) => (
+                          <View style={styles.field}>
+                            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                              Ocorrencia *
+                            </ThemedText>
+                            <Select
+                              value={field.value || ""}
+                              onValueChange={field.onChange}
+                              options={MONTH_OCCURRENCE_OPTIONS}
+                              placeholder="Selecione a ocorrencia"
+                            />
+                          </View>
+                        )}
                       />
-                    </View>
+                      <Controller
+                        control={form.control}
+                        name="monthlySchedule.dayOfWeek"
+                        render={({ field, fieldState }) => (
+                          <View style={styles.field}>
+                            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                              Dia da Semana *
+                            </ThemedText>
+                            <Select
+                              value={field.value || ""}
+                              onValueChange={field.onChange}
+                              options={DAY_OF_WEEK_OPTIONS}
+                              placeholder="Selecione o dia"
+                            />
+                          </View>
+                        )}
+                      />
+                      <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
+                        Exemplo: "Primeira Segunda-feira" ou "Ultima Sexta-feira" do mes
+                      </ThemedText>
+                    </>
                   )}
-                />
+                </View>
               )}
 
               {frequencyGroups.needsMonth && (
@@ -520,6 +621,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  modeToggleRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  helperText: {
+    fontSize: fontSize.xs,
   },
   actionsRow: {
     flexDirection: "row",

@@ -1163,28 +1163,33 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       count={showCount ? filtered.length : null}
       onRefresh={refetch}
       refreshing={isRefetching}
+      fixedHeader={
+        <>
+          {tabsStrip && (
+            <View style={{ marginHorizontal: -12 }}>{tabsStrip}</View>
+          )}
+          {display.showSearchBox && (
+            <WidgetTableSearch
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar tarefa, cliente ou OS..."
+            />
+          )}
+          {display.showColumnHeaders && (
+            <WidgetTableHeader
+              columns={renderedColumns}
+              // Reserve the leading-dot slot only when the generic accent dot
+              // (`showRowDot`) is enabled. Paint color no longer renders as a
+              // leading dot — it's applied to the task-name text directly — so
+              // the header sits flush with the row content.
+              reserveRowDot={display.showRowDot}
+              density={density}
+            />
+          )}
+        </>
+      }
     >
-      {tabsStrip}
       <WidgetTableContainer density={density}>
-        {display.showSearchBox && (
-          <WidgetTableSearch
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar tarefa, cliente ou OS..."
-          />
-        )}
-        {display.showColumnHeaders && (
-          <WidgetTableHeader
-            columns={renderedColumns}
-            // Reserve the leading-dot slot only when the generic accent dot
-            // (`showRowDot`) is enabled. Paint color no longer renders as a
-            // leading dot — it's applied to the task-name text directly — so
-            // the header sits flush with the row content.
-            reserveRowDot={display.showRowDot}
-            density={density}
-          />
-        )}
-
         {isLoading ? (
           <SkeletonRows count={5} density={density} />
         ) : isError ? (

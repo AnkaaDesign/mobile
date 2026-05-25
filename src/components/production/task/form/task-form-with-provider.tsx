@@ -37,8 +37,9 @@ function getCreateDefaultValues() {
     details: '',
     plates: [],
     serialNumbers: [],
-    category: '',
-    implementType: IMPLEMENT_TYPE.REFRIGERATED,
+    // NOTE: truck.category / truck.implementType hold the real values (see truck below).
+    // The dead top-level `category`/`implementType` defaults were removed — they were
+    // dropped on submit and the form binds truck.category/truck.implementType instead.
     forecastDate: null,
     term: null,
     paintId: null,
@@ -46,10 +47,12 @@ function getCreateDefaultValues() {
     sectorId: undefined,
     serviceOrders: [
       {
+        // Seed the default commercial "Em Negociação" SO as IN_PROGRESS (statusOrder 2),
+        // matching web. The commercial workflow handoff depends on this being in-progress.
         description: DEFAULT_TASK_SERVICE_ORDER.description,
         type: SERVICE_ORDER_TYPE.COMMERCIAL,
-        status: SERVICE_ORDER_STATUS.PENDING,
-        statusOrder: 1,
+        status: SERVICE_ORDER_STATUS.IN_PROGRESS,
+        statusOrder: 2,
         assignedToId: null,
       },
       {

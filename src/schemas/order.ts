@@ -1,7 +1,7 @@
 // packages/schemas/src/order.ts
 
 import { z } from "zod";
-import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, moneySchema } from "./common";
+import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, unitPriceSchema } from "./common";
 import type { Order, OrderItem, OrderSchedule } from '../types';
 import { ORDER_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, MONTH_OCCURRENCE } from '../constants';
 
@@ -1323,6 +1323,13 @@ export const orderCreateSchema = z
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
     notes: z.string().optional(),
+    // Freight (verified against api/src/schemas/order.ts orderCreateSchema)
+    freight: z
+      .number()
+      .min(0, "Frete deve ser maior ou igual a 0")
+      .transform((v) => Math.round(v * 1000) / 1000)
+      .default(0)
+      .optional(),
     // Payment fields
     paymentMethod: z
       .enum(Object.values(PAYMENT_METHOD) as [string, ...string[]], {
@@ -1350,7 +1357,7 @@ export const orderCreateSchema = z
           itemId: z.string().uuid({ message: "Item inválido" }).optional(),
           temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
           orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
-          price: moneySchema,
+          price: unitPriceSchema,
           icms: z
             .number()
             .min(0, "ICMS deve ser maior ou igual a 0")
@@ -1410,6 +1417,12 @@ export const orderUpdateSchema = z
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
     notes: z.string().optional(),
+    // Freight (verified against api/src/schemas/order.ts orderUpdateSchema)
+    freight: z
+      .number()
+      .min(0, "Frete deve ser maior ou igual a 0")
+      .transform((v) => Math.round(v * 1000) / 1000)
+      .optional(),
     // Payment fields
     paymentMethod: z
       .enum(Object.values(PAYMENT_METHOD) as [string, ...string[]], {
@@ -1438,7 +1451,7 @@ export const orderUpdateSchema = z
           itemId: z.string().uuid({ message: "Item inválido" }).optional(),
           temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
           orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
-          price: moneySchema,
+          price: unitPriceSchema,
           icms: z
             .number()
             .min(0, "ICMS deve ser maior ou igual a 0")
@@ -1481,18 +1494,6 @@ export const orderUpdateSchema = z
         },
       )
       .optional(),
-    // Temporary items for the form's useFieldArray (client-side only, not sent to API)
-    temporaryItems: z
-      .array(
-        z.object({
-          temporaryItemDescription: z.string().optional(),
-          orderedQuantity: z.number().positive("Quantidade deve ser positiva").optional(),
-          price: z.number().min(0, "Preço deve ser maior ou igual a 0").optional(),
-          icms: z.number().min(0).max(100).optional().default(0),
-          ipi: z.number().min(0).max(100).optional().default(0),
-        }),
-      )
-      .optional(),
   })
   .transform(toFormData);
 
@@ -1506,7 +1507,7 @@ export const orderItemCreateSchema = z
     itemId: z.string().uuid({ message: "Item inválido" }).optional(),
     temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
     orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
-    price: moneySchema,
+    price: unitPriceSchema,
     icms: z
       .number()
       .min(0, "ICMS deve ser maior ou igual a 0")
@@ -1544,7 +1545,7 @@ export const orderItemUpdateSchema = z
     temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
     orderedQuantity: z.number().positive("Quantidade deve ser positiva").optional(),
     receivedQuantity: z.number().min(0, "Quantidade recebida deve ser não negativa").optional(),
-    price: moneySchema.optional(),
+    price: unitPriceSchema.optional(),
     icms: z
       .number()
       .min(0, "ICMS deve ser maior ou igual a 0")
@@ -1890,6 +1891,7 @@ export type YearlyScheduleFormData = z.infer<typeof yearlyScheduleSchema>;
 export const mapOrderToFormData = createMapToFormDataHelper<Order, OrderUpdateFormData>((order) => ({
   description: order.description,
   forecast: order.forecast || undefined,
+  freight: (order as any).freight ?? 0,
   status: order.status as ORDER_STATUS,
   supplierId: order.supplierId || undefined,
   orderScheduleId: order.orderScheduleId || undefined,

@@ -75,6 +75,64 @@ export interface BonusCalculationParams {
   month: string;
 }
 
+/**
+ * Request shape for the salary-based logistic bonus simulation. Mirrors the
+ * web client and the API `bonusSimulateSchema` exactly so the same algorithm
+ * runs everywhere.
+ */
+export interface BonusSimulateInput {
+  averageTasksPerUser: number;
+  users: Array<{
+    id?: string;
+    name?: string;
+    positionName?: string;
+    positionId?: string;
+    sectorName?: string;
+    /** Either `salary` or `positionId`/`positionName` must be provided; the
+     * API resolves the salary from the position when only that is given. */
+    salary?: number;
+    performanceLevel: number;
+  }>;
+  config?: {
+    k?: number;
+    x0?: number;
+    piso?: number;
+    pscale?: number;
+    ceil?: number;
+    adjustment?: number;
+  };
+  /** Period the simulation targets. When set (and no explicit
+   * config.adjustment), the API injects the saved period reajuste. */
+  year?: number;
+  month?: number;
+  salaryRange?: { min: number; max: number };
+}
+
+export interface SimulateResponseUser {
+  id?: string;
+  name?: string;
+  positionName?: string;
+  positionId?: string;
+  sectorName?: string;
+  salary: number;
+  performanceLevel: number;
+  bonus: number;
+  baseBonus: number;
+  ratio: number;
+  x: number;
+  anchor: number;
+  performanceMultiplier: number;
+}
+
+export interface SimulateResponse {
+  averageTasksPerUser: number;
+  salaryRange: { min: number; max: number };
+  config: { k: number; x0: number; piso: number; pscale: number; ceil: number; adjustment: number };
+  anchor: number;
+  users: SimulateResponseUser[];
+  totals: { totalBonus: number; userCount: number; eligibleCount: number };
+}
+
 export interface BonusCalculationResult {
   success: boolean;
   message: string;
@@ -152,6 +210,25 @@ export const bonusService = {
    */
   getMyPeriodTaskStats: (year: number, month: number) =>
     apiClient.get<any>(`/bonuses/my-period-stats/${year}/${month}`),
+
+  /**
+   * Run the salary-based logistic bonus simulation (HR/admin).
+   *
+   * The bonus ALGORITHM lives in exactly one place — the API. Mobile must NOT
+   * recompute bonuses client-side; both simulators POST here. Passing
+   * `year`/`month` makes the API inject the saved period reajuste so the
+   * simulated value matches the real, saved bonus to the cent.
+   */
+  simulate: (data: BonusSimulateInput) =>
+    apiClient.post<any>('/bonus/simulate', data),
+
+  /**
+   * Personal ("my bonus") simulation for the authenticated employee.
+   * Identical algorithm/parameters to `simulate`, on a route open to all
+   * roles (a regular employee can't hit the HR-only POST /bonus/simulate).
+   */
+  simulateMyBonus: (data: BonusSimulateInput) =>
+    apiClient.post<any>('/bonuses/my-bonus-simulate', data),
 
   // =====================================================
   // Live Bonus Calculation Endpoints (NEW - Clean Implementation)

@@ -11,7 +11,12 @@ import { historicoSteps } from "./historico";
 import { observacoesSteps } from "./observacoes";
 import { recorteSteps } from "./recorte";
 import { pessoalSteps } from "./pessoal-hub";
-import { meusPontosSteps } from "./meus-pontos";
+import {
+  meusPontosIntroSteps,
+  meusPontosJustifyEntrySteps,
+  meusPontosAjustarEntrySteps,
+  meusPontosOutroSteps,
+} from "./meus-pontos";
 import { justificarSteps } from "./justificar";
 import { ajustarPontoSteps } from "./ajustar-ponto";
 import { incluirPontoSteps } from "./incluir-ponto";
@@ -34,17 +39,26 @@ export function buildSteps(ctx: TutorialUserContext): TutorialStep[] {
     ...observacoesSteps,
     ...recorteSteps,
     ...pessoalSteps,
-    ...meusPontosSteps,
-    ...justificarSteps,
-    ...ajustarPontoSteps,
-    ...incluirPontoSteps,
+    // Pessoal sub-flows follow the hub card order (src/app/(tabs)/pessoal):
+    // Feriados → EPIs → Empréstimos → Movimentações → Bônus → Pontos →
+    // Mensagens → Advertências.
     ...feriadosSteps,
     ...episSteps,
-    ...mensagensSteps,
-    ...advertenciasSteps,
     ...emprestimosSteps,
     ...movimentacoesSteps,
     ...bonusSteps,
+    // Meus Pontos (hub card #6) — hub interleaved with its sub-flows. The user
+    // taps a toolbar button to enter each sub-flow; the sub-flow's closing
+    // "Voltar" step returns to the hub before the next entry step.
+    ...meusPontosIntroSteps,
+    ...incluirPontoSteps,
+    ...meusPontosJustifyEntrySteps,
+    ...justificarSteps,
+    ...meusPontosAjustarEntrySteps,
+    ...ajustarPontoSteps,
+    ...meusPontosOutroSteps,
+    ...mensagensSteps,
+    ...advertenciasSteps,
     ...leaderSteps,
     ...perfilSteps,
   ];

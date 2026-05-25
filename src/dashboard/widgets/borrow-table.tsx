@@ -452,22 +452,26 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       accentColor={accent.hex}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       count={display.showCount === false ? null : rows.length}
+      fixedHeader={
+        <>
+          {display.showSearchBox && (
+            <WidgetTableSearch
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar item, código, usuário..."
+            />
+          )}
+          {display.showColumnHeaders && (
+            <WidgetTableHeader
+              columns={visibleCols.map((k) => COLUMN_DEFS[k])}
+              reserveRowDot={display.showRowDot}
+              density={density}
+            />
+          )}
+        </>
+      }
     >
       <WidgetTableContainer density={density}>
-        {display.showSearchBox && (
-          <WidgetTableSearch
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar item, código, usuário..."
-          />
-        )}
-        {display.showColumnHeaders && (
-          <WidgetTableHeader
-            columns={visibleCols.map((k) => COLUMN_DEFS[k])}
-            reserveRowDot={display.showRowDot}
-            density={density}
-          />
-        )}
         {isLoading ? (
           <SkeletonRows count={5} density={density} />
         ) : isError ? (

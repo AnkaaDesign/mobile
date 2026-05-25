@@ -124,6 +124,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     marginBottom: 8,
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   preferenceLeft: {
     flexDirection: "row",
@@ -140,6 +146,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   preferenceDescription: {
-    fontSize: 13,
+    fontSize: 14,
   },
 });

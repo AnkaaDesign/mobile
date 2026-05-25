@@ -53,7 +53,7 @@ export interface TutorialSceneState {
 
   // Incluir-ponto scene
   incluirPontoExpandedRow?: number | null;
-  incluirPontoCaptureFlow?: "idle" | "capturing" | "submitting";
+  incluirPontoCaptureFlow?: "idle" | "capturing" | "ready" | "submitting";
 
   // Justificar-ausência form
   justificarPeriodoTipo?:
@@ -102,6 +102,7 @@ export type SceneId =
   | "minhas-movimentacoes"
   | "meu-bonus"
   | "meu-bonus-historico"
+  | "meu-bonus-simulacao"
   | "meu-pessoal"
   | "preferencias"
   | "notif-prefs"
@@ -126,8 +127,6 @@ export interface TutorialStep {
   ctaLabel?: string;
   hint?: string;
 
-  /** Auto-advance after N ms (showcase steps). */
-  autoAdvanceMs?: number;
   /** "continue" = CTA only. "tap" = user must tap the highlighted slot. */
   expectedAction?: TutorialActionType;
   /** Filter steps for non-applicable user contexts (leader / bonifiable). */
@@ -138,6 +137,16 @@ export interface TutorialStep {
   celebrate?: boolean;
   dimBackground?: boolean;
   tooltipPinToScreenTop?: boolean;
+  /**
+   * Pin the tooltip to the bottom of the screen even when the step has a
+   * highlight (which would otherwise anchor the tooltip next to the spotlight
+   * rect). The spotlight/pulse/tap on the highlighted slot stay intact — only
+   * the tooltip card is detached and dropped to the bottom. Mirror of
+   * `tooltipPinToScreenTop`.
+   */
+  tooltipPinToScreenBottom?: boolean;
+  /** Nudge the tooltip card down (+) or up (−) by N px. */
+  tooltipOffsetY?: number;
 }
 
 // ─── Engine state ──────────────────────────────────────────────────────────

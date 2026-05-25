@@ -1,69 +1,63 @@
-import {
-  IconColumns,
-  IconFilter,
-  IconPackage,
-  IconSearch,
-} from "@tabler/icons-react-native";
+import { IconColumns, IconFilter, IconSearch } from "@tabler/icons-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/lib/theme";
+import { shadow } from "@/constants/design-system";
 import { useSlotContext } from "../chrome/slot-context";
 import { TUTORIAL_LOANS } from "../fixtures";
 import type { SceneProps } from "./index";
 
 // Mirrors src/app/(tabs)/pessoal/meus-emprestimos/index.tsx — a read-only list
-// of borrows the user has out. The real screen uses a generic <Layout> with
-// a search bar + column-visibility + filter buttons on top, and a horizontally
-// scrollable table card with columns Item / Status / Data de Empréstimo.
+// of borrows the user has out. The real screen renders <Layout> with the
+// `personalBorrowsListConfig`: a search bar + column-visibility + filter
+// buttons on top, then a generic Table card with uppercase column headers,
+// alternating rows, solid rectangular status badges, and a "Mostrando X de Y"
+// footer.
 //
-// Default visible columns (from `personalBorrowsListConfig.table.defaultVisible`):
+// Default visible columns (personalBorrowsListConfig.table.defaultVisible):
 //   item.name · status · createdAt
 //
-// Status badge colors follow BORROW_STATUS_LABELS:
-//   ACTIVE   → "Ativo"      (primary blue)
-//   RETURNED → "Devolvido"  (success green)
-//   OVERDUE  → "Atrasado"   (destructive red)
+// Status badge colors follow ENTITY_BADGE_CONFIG.BORROW → BADGE_COLORS. The
+// BORROW entity only maps three states (there is no OVERDUE entry — borrows
+// have no defined return date, so nothing can be "overdue"):
+//   ACTIVE   → "Ativo"     blue  (#2563eb)
+//   RETURNED → "Devolvido" green (#15803d)
+//   LOST     → "Perdido"   red   (#b91c1c)
+//
+// Column widths mirror the real personalBorrowsListConfig.table proportions
+// (item.name 2.0 · status 1.5 · createdAt 1.5). The item column was too wide
+// before (200) — rebalanced so the three columns sit at a 2:1.5:1.5 ratio.
 
 const COLUMNS: Array<{ key: string; label: string; width: number; align?: "left" | "center" }> = [
-  { key: "item", label: "Item", width: 170 },
-  { key: "status", label: "Status", width: 100, align: "center" },
-  { key: "quantity", label: "Qtde", width: 60, align: "center" },
-  { key: "borrower", label: "Colaborador", width: 130 },
-  { key: "createdAt", label: "Data de Empréstimo", width: 130 },
-  { key: "returnedAt", label: "Devolvido em", width: 110 },
+  { key: "item", label: "ITEM", width: 160 },
+  { key: "status", label: "STATUS", width: 120, align: "center" },
+  { key: "createdAt", label: "DATA DE EMPRÉSTIMO", width: 120 },
 ];
 
-// Borrows are simple in the fixture (only id/item/status/borrowedAt). Enrich
-// them inline so the table looks like real production data without forcing
-// fixture changes that would ripple into other scenes.
+// Borrows are simple in the fixture (id/item/status/borrowedAt). Enrich them
+// inline with the createdAt time-of-day so the date cell renders the same
+// date-over-time line the real `datetime-multiline` format produces.
 const ROWS = [
   {
     ...TUTORIAL_LOANS[0],
-    quantity: 1,
-    borrower: "Pedro Demo",
-    borrowerRole: "Pintor",
-    statusColor: "#2563EB", // primary blue → Ativo
-    returnedAt: "—",
+    statusLabel: "Ativo",
+    statusColor: "#2563eb", // BORROW.ACTIVE → blue
+    time: "08:14",
   },
   {
     ...TUTORIAL_LOANS[1],
-    quantity: 2,
-    borrower: "Pedro Demo",
-    borrowerRole: "Pintor",
-    statusColor: "#16a34a", // success green → Devolvido
-    returnedAt: "05/05/2026",
+    statusLabel: "Devolvido",
+    statusColor: "#15803d", // BORROW.RETURNED → green
+    time: "16:02",
   },
-  // Extra synthetic row to cover the OVERDUE state mentioned in the screen.
+  // Extra synthetic row to cover the LOST state.
   {
     id: "l-2",
     item: "Lixadeira orbital",
-    status: "OVERDUE" as const,
-    statusLabel: "Atrasado",
+    status: "LOST" as const,
+    statusLabel: "Perdido",
     borrowedAt: "02/05/2026",
-    quantity: 1,
-    borrower: "Pedro Demo",
-    borrowerRole: "Pintor",
-    statusColor: "#bf4040", // destructive red → Atrasado
-    returnedAt: "—",
+    statusColor: "#b91c1c", // BORROW.LOST → red (red-700)
+    time: "11:30",
   },
 ];
 
@@ -85,7 +79,7 @@ export function MeusEmprestimosScene(_props: SceneProps) {
             { backgroundColor: colors.card, borderColor: colors.border },
           ]}
         >
-          <IconSearch size={18} color={colors.mutedForeground} />
+          <IconSearch size={20} color={colors.mutedForeground} />
           <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
             Buscar empréstimos...
           </Text>
@@ -94,8 +88,9 @@ export function MeusEmprestimosScene(_props: SceneProps) {
           style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
           <IconColumns size={20} color={colors.foreground} />
+          {/* visible (3) < total columns → primary badge with visible count */}
           <View style={[styles.countBadge, { backgroundColor: colors.primary }]}>
-            <Text style={styles.countBadgeText}>3</Text>
+            <Text style={[styles.countBadgeText, { color: colors.primaryForeground }]}>3</Text>
           </View>
         </Pressable>
         <Pressable
@@ -105,158 +100,99 @@ export function MeusEmprestimosScene(_props: SceneProps) {
         </Pressable>
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Section header (matches grouped table pattern) */}
-        <View style={styles.sectionHeader}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View
-              style={{ width: 4, height: 20, borderRadius: 2, backgroundColor: colors.primary }}
-            />
-            <Text style={[styles.sectionTitle, { color: colors.primary }]}>
-              Meus Empréstimos
-            </Text>
-          </View>
-          <Text style={[styles.sectionCount, { color: colors.mutedForeground }]}>
-            {ROWS.length} itens
-          </Text>
-        </View>
-
-        {/* Table card — horizontally scrollable, mirrors cronograma layout */}
+      <View style={styles.tableWrapper}>
+        {/* Table card — generic Table layout (card bg, border, radius 8) */}
         <View
           style={[
             styles.tableCard,
             { backgroundColor: colors.card, borderColor: colors.border },
           ]}
         >
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View>
-              {/* Header row */}
+          {/* Header row */}
+          <View
+            style={[
+              styles.tableHeaderRow,
+              { borderBottomColor: colors.border },
+            ]}
+          >
+            {COLUMNS.map((c) => (
               <View
+                key={c.key}
                 style={[
-                  styles.tableHeaderRow,
-                  { borderBottomColor: colors.border, backgroundColor: colors.card },
+                  styles.headerCell,
+                  {
+                    width: c.width,
+                    alignItems: c.align === "center" ? "center" : "flex-start",
+                  },
                 ]}
               >
-                {COLUMNS.map((c) => (
-                  <View
-                    key={c.key}
-                    style={[
-                      styles.headerCell,
-                      {
-                        width: c.width,
-                        alignItems: c.align === "center" ? "center" : "flex-start",
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.headerCellText, { color: colors.mutedForeground }]}
-                      numberOfLines={1}
-                    >
-                      {c.label}
-                    </Text>
-                  </View>
-                ))}
+                <Text
+                  style={[styles.headerCellText, { color: colors.foreground }]}
+                  numberOfLines={1}
+                >
+                  {c.label}
+                </Text>
               </View>
+            ))}
+          </View>
 
-              {/* Body rows — alternating background */}
-              {ROWS.map((b, idx) => (
+          {/* Body rows — alternating background */}
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {ROWS.map((b, idx) => (
+              <View
+                key={b.id}
+                style={[
+                  styles.bodyRow,
+                  {
+                    backgroundColor: idx % 2 === 0 ? colors.background : colors.card,
+                  },
+                ]}
+              >
+                {/* Item name */}
+                <View style={[styles.bodyCell, { width: COLUMNS[0].width }]}>
+                  <Text
+                    style={[styles.cellText, { color: colors.foreground, fontWeight: "500" }]}
+                    numberOfLines={2}
+                  >
+                    {b.item}
+                  </Text>
+                </View>
+
+                {/* Status badge — solid rectangular, white text */}
                 <View
-                  key={b.id}
                   style={[
-                    styles.bodyRow,
-                    {
-                      backgroundColor: idx % 2 === 0 ? colors.background : colors.card,
-                      borderBottomColor: colors.border,
-                    },
-                    idx === ROWS.length - 1 && { borderBottomWidth: 0 },
+                    styles.bodyCell,
+                    { width: COLUMNS[1].width, alignItems: "center" },
                   ]}
                 >
-                  {/* Item name + package icon */}
-                  <View style={[styles.bodyCell, { width: COLUMNS[0].width }]}>
-                    <View style={styles.itemCellInner}>
-                      <IconPackage size={18} color={colors.primary} />
-                      <Text
-                        style={[styles.cellText, { color: colors.foreground, flex: 1, fontWeight: "500" }]}
-                        numberOfLines={1}
-                      >
-                        {b.item}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Status pill — solid rectangular, white text */}
-                  <View
-                    style={[
-                      styles.bodyCell,
-                      { width: COLUMNS[1].width, alignItems: "center" },
-                    ]}
-                  >
-                    <View style={[styles.statusPill, { backgroundColor: b.statusColor }]}>
-                      <Text style={styles.statusText} numberOfLines={1}>
-                        {b.statusLabel}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Quantity */}
-                  <View
-                    style={[styles.bodyCell, { width: COLUMNS[2].width, alignItems: "center" }]}
-                  >
-                    <Text style={[styles.cellText, { color: colors.foreground }]}>
-                      {b.quantity}
-                    </Text>
-                  </View>
-
-                  {/* Borrower (name + role) */}
-                  <View style={[styles.bodyCell, { width: COLUMNS[3].width }]}>
-                    <Text
-                      style={[styles.cellText, { color: colors.foreground }]}
-                      numberOfLines={1}
-                    >
-                      {b.borrower}
-                    </Text>
-                    <Text
-                      style={[styles.subCellText, { color: colors.mutedForeground }]}
-                      numberOfLines={1}
-                    >
-                      {b.borrowerRole}
-                    </Text>
-                  </View>
-
-                  {/* Created at (loaned) */}
-                  <View style={[styles.bodyCell, { width: COLUMNS[4].width }]}>
-                    <Text
-                      style={[styles.cellText, { color: colors.foreground }]}
-                      numberOfLines={1}
-                    >
-                      {b.borrowedAt}
-                    </Text>
-                  </View>
-
-                  {/* Returned at */}
-                  <View style={[styles.bodyCell, { width: COLUMNS[5].width }]}>
-                    <Text
-                      style={[
-                        styles.cellText,
-                        {
-                          color:
-                            b.returnedAt === "—" ? colors.mutedForeground : colors.foreground,
-                        },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {b.returnedAt}
+                  <View style={[styles.statusBadge, { backgroundColor: b.statusColor }]}>
+                    <Text style={styles.statusText} numberOfLines={1}>
+                      {b.statusLabel}
                     </Text>
                   </View>
                 </View>
-              ))}
-            </View>
+
+                {/* Created at (datetime-multiline: date over time) */}
+                <View style={[styles.bodyCell, { width: COLUMNS[2].width }]}>
+                  <Text style={[styles.cellText, { color: colors.foreground }]} numberOfLines={1}>
+                    {b.borrowedAt}
+                  </Text>
+                  <Text style={[styles.cellSubText, { color: colors.foreground }]} numberOfLines={1}>
+                    {b.time}
+                  </Text>
+                </View>
+              </View>
+            ))}
           </ScrollView>
+
+          {/* Footer with pagination info (mirrors generic Table footer) */}
+          <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.footerText, { color: colors.foreground }]}>
+              Mostrando {ROWS.length} de {ROWS.length}
+            </Text>
+          </View>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -279,7 +215,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  searchPlaceholder: { fontSize: 14 },
+  searchPlaceholder: { fontSize: 16 },
   iconBtn: {
     width: 40,
     height: 40,
@@ -300,20 +236,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  countBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+  countBadgeText: { fontSize: 10, fontWeight: "700" },
+  tableWrapper: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "600" },
-  sectionCount: { fontSize: 12 },
   tableCard: {
+    flex: 1,
     borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
+    ...shadow.md,
   },
   tableHeaderRow: {
     flexDirection: "row",
@@ -327,38 +261,49 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerCellText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 10,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   bodyRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 48,
     borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   bodyCell: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     justifyContent: "center",
   },
-  itemCellInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  cellText: { fontSize: 13 },
-  subCellText: { fontSize: 11, marginTop: 2 },
-  statusPill: {
+  cellText: { fontSize: 12 },
+  cellSubText: { fontSize: 12, opacity: 0.7 },
+  statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 6,
-    maxWidth: 96,
+    alignSelf: "center",
+    maxWidth: "100%",
   },
   statusText: {
     color: "#ffffff",
     fontSize: 12,
     fontWeight: "500",
+  },
+  footer: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 36,
+  },
+  footerText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

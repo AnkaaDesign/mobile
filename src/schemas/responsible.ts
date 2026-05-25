@@ -36,7 +36,9 @@ export const responsibleCreateSchema = z.object({
   password: passwordSchema,
   companyId: z
     .string()
-    .uuid('ID da empresa inválido'),
+    .uuid('ID da empresa inválido')
+    .optional()
+    .nullable(),
   role: z.nativeEnum(ResponsibleRole, {
     errorMap: () => ({ message: 'Função inválida' }),
   }),

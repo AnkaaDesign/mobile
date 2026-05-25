@@ -248,6 +248,31 @@ export default function FilesSection({
   const handleArtworkFilesChange = useCallback((files: ArtworkFileItem[]) => {
     setArtworkFiles(files);
     setValue('artworkIds', extractFileIds(files), { shouldDirty: true });
+    // Keep the artworkStatuses map (File id -> DRAFT/APPROVED/REPROVED) in sync with the
+    // uploaded files so the create payload can forward per-file approval state (mirrors web).
+    const statuses: Record<string, string> = {};
+    for (const f of files) {
+      const fileId = (f as any).uploadedFileId || (f as any).fileId || f.id;
+      if (fileId && f.status) {
+        statuses[fileId] = f.status;
+      }
+    }
+    setValue('artworkStatuses', statuses, { shouldDirty: true });
+  }, [setValue]);
+
+  const handleArtworkStatusChange = useCallback((fileId: string, status: 'DRAFT' | 'APPROVED' | 'REPROVED') => {
+    setArtworkFiles((prev) => {
+      const updated = prev.map((f) => (f.id === fileId ? { ...f, status } : f));
+      const statuses: Record<string, string> = {};
+      for (const f of updated) {
+        const id = (f as any).uploadedFileId || (f as any).fileId || f.id;
+        if (id && f.status) {
+          statuses[id] = f.status;
+        }
+      }
+      setValue('artworkStatuses', statuses, { shouldDirty: true });
+      return updated;
+    });
   }, [setValue]);
 
   const handleProjectFilesChange = useCallback((files: FilePickerItem[]) => {
@@ -305,6 +330,7 @@ export default function FilesSection({
         <FormCard title="Layouts" icon="IconPhotoPlus">
           <ArtworkFileUploadField
             onFilesChange={handleArtworkFilesChange}
+            onStatusChange={handleArtworkStatusChange}
             maxFiles={10}
             disabled={isSubmitting}
             showPreview={true}
@@ -331,6 +357,12 @@ export default function FilesSection({
               const updated = [...artworkFiles, item];
               setArtworkFiles(updated);
               setValue('artworkIds', extractFileIds(updated), { shouldDirty: true });
+              const statuses: Record<string, string> = {};
+              for (const f of updated) {
+                const id = (f as any).uploadedFileId || (f as any).fileId || f.id;
+                if (id && f.status) statuses[id] = f.status;
+              }
+              setValue('artworkStatuses', statuses, { shouldDirty: true });
             }}
             disabled={isSubmitting}
           />

@@ -4,9 +4,10 @@
  */
 
 import React from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { SimpleFormField } from '@/components/ui';
+import { Input } from '@/components/ui/input';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { SECTOR_PRIVILEGES } from '@/constants';
@@ -15,15 +16,27 @@ interface DatesSectionProps {
   isSubmitting?: boolean;
   errors?: any;
   mode?: 'create' | 'edit';
+  /** Original task being edited; used to detect a forecast-date reschedule. */
+  task?: any;
 }
 
 export default function DatesSection({
   isSubmitting = false,
   errors = {},
-  mode = 'create'
+  mode = 'create',
+  task
 }: DatesSectionProps) {
   const { control } = useFormContext();
   const { user } = useAuth();
+
+  // Show the "Motivo do Reagendamento" input when the forecast date is changed on a
+  // task that already had one (mirrors web task-edit-form's showForecastReason logic).
+  const watchedForecastDate = useWatch({ control, name: 'forecastDate' });
+  const originalForecastDate = task?.forecastDate ? new Date(task.forecastDate) : null;
+  const hadForecast = mode === 'edit' && !!originalForecastDate;
+  const currentForecast = watchedForecastDate ? new Date(watchedForecastDate) : null;
+  const showForecastReason =
+    hadForecast && !!currentForecast && originalForecastDate!.getTime() !== currentForecast.getTime();
 
   // Check user sector privileges
   const userPrivilege = user?.sector?.privileges;
@@ -63,6 +76,28 @@ export default function DatesSection({
                 placeholder="Selecione a previsão"
                 disabled={isSubmitting || !canEditDates}
                 error={errors.forecastDate?.message}
+              />
+            )}
+          />
+        </SimpleFormField>
+      )}
+
+      {/* Forecast reschedule reason — only when an existing forecast date is changed */}
+      {canViewForecast && showForecastReason && (
+        <SimpleFormField label="Motivo do Reagendamento" error={errors.forecastReason}>
+          <Controller
+            control={control}
+            name="forecastReason"
+            defaultValue=""
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value ?? ''}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Ex: Solicitação do cliente, falta de material..."
+                maxLength={500}
+                error={!!errors.forecastReason}
+                editable={!isSubmitting && canEditDates}
               />
             )}
           />

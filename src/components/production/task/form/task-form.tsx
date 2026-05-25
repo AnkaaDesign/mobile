@@ -360,12 +360,14 @@ export function TaskForm({
         isSubmitting={isSubmitting}
         errors={formErrors}
         mode={mode}
+        task={task}
       />
 
       {/* 4. Services */}
       <ServicesSection
         isSubmitting={isSubmitting}
         errors={formErrors}
+        mode={mode}
         initialGeneralPaint={task?.generalPainting}
         initialLogoPaints={task?.logoPaints}
       />

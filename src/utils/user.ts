@@ -529,10 +529,12 @@ export function canAccessTeamManagement(user: User): boolean {
 // =====================
 
 /**
- * Check if user is eligible for bonus calculation based on:
- * 1. user.status === CONTRACTED (not in experience period or dismissed)
- * 2. user.performanceLevel > 0
- * 3. position.bonifiable === true
+ * Check if user is eligible for bonus calculation. This is the SINGLE
+ * canonical definition (must match the API live calc) — all four predicates:
+ * 1. user.status === EFFECTED (not in experience period or dismissed)
+ * 2. position.bonifiable === true
+ * 3. user.performanceLevel > 0
+ * 4. user.secullumEmployeeId != null (registered in the time-clock system)
  */
 export function isUserEligibleForBonus(user: User): boolean {
   // Check if user is EFFECTED (not in experience period or dismissed)
@@ -547,6 +549,12 @@ export function isUserEligibleForBonus(user: User): boolean {
 
   // Check if user's position is bonifiable
   if (!user.position?.bonifiable) {
+    return false;
+  }
+
+  // Check if user is registered in Secullum (required for attendance + bonus).
+  // Mirrors the live-calc query `secullumEmployeeId: { not: null }`.
+  if ((user as { secullumEmployeeId?: number | null }).secullumEmployeeId == null) {
     return false;
   }
 

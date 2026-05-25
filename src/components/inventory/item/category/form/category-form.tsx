@@ -49,8 +49,19 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
 
   const handleSubmit = async (data: ItemCategoryBaseFormData) => {
     try {
+      // In update mode, never send itemIds. The web edit form (CategoryEditForm)
+      // does not submit itemIds; the API treats a provided itemIds array as the
+      // full association set, so sending an empty/stale array would disassociate
+      // every item from the category. Web parity + safety.
+      const payload =
+        mode === "update"
+          ? (() => {
+              const { itemIds: _omitItemIds, ...rest } = data;
+              return rest;
+            })()
+          : data;
       // Cast to the appropriate type based on mode
-      await onSubmit(data as TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData);
+      await onSubmit(payload as TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData);
     } catch (error) {
       // Error handling done by parent component
     }

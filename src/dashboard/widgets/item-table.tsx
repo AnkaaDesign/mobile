@@ -571,24 +571,26 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       count={config.showCount === false ? null : filtered.length}
       onRefresh={refetch}
       refreshing={isRefetching}
+      fixedHeader={
+        <>
+          {display.showSearchBox && (
+            <WidgetTableSearch
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar item, marca, código ou fornecedor..."
+            />
+          )}
+          {display.showColumnHeaders && (
+            <WidgetTableHeader
+              columns={headerColumns}
+              reserveRowDot={display.showRowDot}
+              density={density}
+            />
+          )}
+        </>
+      }
     >
       <WidgetTableContainer density={density}>
-        {display.showSearchBox && (
-          <WidgetTableSearch
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar item, marca, código ou fornecedor..."
-          />
-        )}
-
-        {display.showColumnHeaders && (
-          <WidgetTableHeader
-            columns={headerColumns}
-            reserveRowDot={display.showRowDot}
-            density={density}
-          />
-        )}
-
         {isLoading ? (
           <SkeletonRows count={5} density={density} />
         ) : isError ? (

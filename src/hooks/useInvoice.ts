@@ -91,8 +91,8 @@ export function useRegenerateBoleto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (installmentId: string) =>
-      regenerateBoleto(installmentId),
+    mutationFn: ({ installmentId, newDueDate }: { installmentId: string; newDueDate?: string }) =>
+      regenerateBoleto(installmentId, newDueDate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
     },

@@ -5,16 +5,26 @@ import {
 } from "@tabler/icons-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  borderRadius,
+  fontSize,
+  fontWeight,
+  spacing,
+} from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import { useSlotContext } from "./slot-context";
 
 /**
- * Fake header — matches the real app chrome:
+ * Fake header — pixel-matches the real React Navigation header configured in
+ * `src/navigation/privilege-optimized-full-fixed.tsx`:
  *   - LEFT side: optional back arrow (only on detail/sub routes)
- *   - CENTER: title
+ *   - CENTER: title (centered — `headerTitleAlign: "center"`), 18px / 600
  *   - RIGHT side: bell + hamburger (in that order, left → right)
  *
- * Background: card color, 1px border-bottom in the border color.
+ * The real header background is `colors.card` (#fafafa / #262626) and the
+ * border-bottom uses a DEDICATED header border tone (#e3e3e3 / #3a3a3a) at a
+ * full 1px width — not `colors.border` and not hairline. The 56px bar sits
+ * below the top safe-area inset, so the total chrome height = insets.top + 56.
  */
 interface Props {
   title: string;
@@ -24,6 +34,9 @@ interface Props {
   onOpenNotifications: () => void;
 }
 
+// Header bar height beneath the safe-area inset (matches the native default).
+const HEADER_BAR_HEIGHT = 56;
+
 export function FakeHeader({
   title,
   showBack,
@@ -32,8 +45,11 @@ export function FakeHeader({
   onOpenNotifications,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const slot = useSlotContext();
+
+  // Dedicated header border tone from the real navigator's `headerStyle`.
+  const headerBorder = isDark ? "#3a3a3a" : "#e3e3e3";
 
   return (
     <View
@@ -42,7 +58,7 @@ export function FakeHeader({
         {
           paddingTop: insets.top,
           backgroundColor: colors.card,
-          borderBottomColor: colors.border,
+          borderBottomColor: headerBorder,
         },
       ]}
     >
@@ -104,13 +120,14 @@ export function FakeHeader({
 
 const styles = StyleSheet.create({
   root: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    // Real navigator uses a solid 1px border-bottom (not hairline) and no shadow.
+    borderBottomWidth: 1,
   },
   bar: {
-    height: 56,
+    height: HEADER_BAR_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
   },
   side: {
     minWidth: 48,
@@ -120,37 +137,38 @@ const styles = StyleSheet.create({
   rightIcons: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: spacing.sm, // real headerRight uses gap:8 between bell and menu
     marginLeft: "auto",
   },
   iconBtn: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: fontSize.lg, // 18 — matches headerTitleStyle.fontSize
+    fontWeight: fontWeight.semibold, // "600" — matches headerTitleStyle.fontWeight
     textAlign: "center",
   },
   bellBadge: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: spacing.sm,
+    right: spacing.sm,
     minWidth: 14,
     height: 14,
     borderRadius: 7,
     paddingHorizontal: 3,
-    backgroundColor: "#dc2626",
+    backgroundColor: "#dc2626", // real notificationBadge background
     alignItems: "center",
     justifyContent: "center",
   },
   bellBadgeText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 9,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
+    lineHeight: 11,
   },
 });

@@ -1,6 +1,69 @@
 import type { TutorialStep } from "../engine-types";
 
 export const perfilSteps: TutorialStep[] = [
+  // ─── Reaching Configurações ──────────────────────────────────────────────
+  // Teach HOW to get to Preferências/Perfil instead of teleporting there:
+  // open the sidebar (hamburger) → tap the user avatar at the top of the
+  // drawer. These guided steps run right before the existing Preferências
+  // content so those screens feel reached, not jumped into.
+  {
+    id: "settings-intro",
+    kind: "narration",
+    scene: "home",
+    title: "Vamos às configurações",
+    description:
+      "Por último, vamos ajustar suas preferências e perfil. Eles ficam no menu lateral, no seu avatar.",
+    placement: "center",
+  },
+  {
+    id: "settings-open-drawer",
+    kind: "interactive",
+    scene: "home",
+    highlight: "chromeDrawerToggle",
+    title: "Abrir menu",
+    description: "Toque no menu, no canto superior direito, para abrir a barra lateral.",
+    expectedAction: "tap",
+    placement: "bottom",
+    pulseTarget: true,
+  },
+  {
+    id: "settings-tap-avatar",
+    kind: "interactive",
+    scene: "home",
+    sceneState: { drawer: "menu" },
+    highlight: "chromeDrawerAvatar",
+    title: "Seu perfil",
+    description:
+      "Toque no seu avatar, no topo do menu. É por aqui que você acessa o Perfil e as Configurações.",
+    expectedAction: "tap",
+    placement: "bottom",
+    pulseTarget: true,
+  },
+  // Tapping the avatar opens a popover (não vai direto para Preferências):
+  // primeiro mostramos o menu, depois pedimos que toque em "Preferências".
+  {
+    id: "settings-avatar-menu",
+    kind: "showcase",
+    scene: "home",
+    sceneState: { drawer: "menu", avatarMenuOpen: true },
+    highlight: "chromeAvatarMenu",
+    title: "Menu do perfil",
+    description:
+      "Aqui estão suas opções: Meu Perfil, Preferências e o atalho de Tema (claro/escuro).",
+    placement: "bottom",
+  },
+  {
+    id: "settings-tap-preferencias",
+    kind: "interactive",
+    scene: "home",
+    sceneState: { drawer: "menu", avatarMenuOpen: true },
+    highlight: "chromeAvatarMenuPreferencias",
+    title: "Abrir Preferências",
+    description: "Toque em \"Preferências\" para ajustar tema e notificações.",
+    expectedAction: "tap",
+    placement: "bottom",
+    pulseTarget: true,
+  },
   {
     id: "preferences-theme-card",
     kind: "showcase",
@@ -9,7 +72,6 @@ export const perfilSteps: TutorialStep[] = [
     title: "Tema",
     description: "Escolha entre tema claro, escuro ou seguir o sistema.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "preferences-notifications-tap",
@@ -30,7 +92,6 @@ export const perfilSteps: TutorialStep[] = [
     title: "Canais de envio",
     description: "App, push, email e WhatsApp — cada um com sua cor.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "notifications-section",
@@ -40,7 +101,6 @@ export const perfilSteps: TutorialStep[] = [
     title: "Tipos de notificação",
     description: "Habilite ou desabilite por tipo de evento.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "notifications-toggles",
@@ -50,17 +110,6 @@ export const perfilSteps: TutorialStep[] = [
     title: "Toggles",
     description: "Quatro pontos coloridos = quatro canais. Toque para ativar/desativar.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
-  },
-  {
-    id: "preferences-replay",
-    kind: "showcase",
-    scene: "preferencias",
-    highlight: "preferencesReplayButton",
-    title: "Refazer tutorial",
-    description: "Sempre que quiser revisar este tutorial, é por aqui.",
-    placement: "top",
-    autoAdvanceMs: 3000,
   },
   {
     id: "perfil-photo",
@@ -70,7 +119,6 @@ export const perfilSteps: TutorialStep[] = [
     title: "Foto de perfil",
     description: "Toque na câmera para trocar sua foto.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "perfil-info",
@@ -80,7 +128,6 @@ export const perfilSteps: TutorialStep[] = [
     title: "Endereço",
     description: "Mantenha seu endereço atualizado.",
     placement: "bottom",
-    autoAdvanceMs: 3000,
   },
   {
     id: "perfil-sizes",
@@ -90,7 +137,15 @@ export const perfilSteps: TutorialStep[] = [
     title: "Tamanhos",
     description: "Camisa, calça e bota — usado pelo RH ao solicitar uniformes.",
     placement: "top",
-    autoAdvanceMs: 3000,
+  },
+  {
+    id: "preferences-replay",
+    kind: "showcase",
+    scene: "preferencias",
+    highlight: "preferencesReplayButton",
+    title: "Refazer tutorial",
+    description: "Sempre que quiser revisar este tutorial, é por aqui.",
+    placement: "top",
   },
   {
     id: "completion",

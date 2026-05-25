@@ -4,6 +4,7 @@ import { useWatch, useFormContext } from "react-hook-form";
 import { IconCurrencyReal } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Combobox } from "@/components/ui/combobox";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Switch } from "@/components/ui/switch";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { useTheme } from "@/lib/theme";
@@ -345,25 +346,37 @@ export function StepCustomerPayment({
           </View>
         )}
 
-        {/* Specific date — only shown when Personalizado is chosen */}
+        {/* Specific date — only shown when Personalizado is chosen.
+            Uses the shared mobile DatePicker; specificDate is persisted as a
+            YYYY-MM-DD string (same format web uses). */}
         {paymentType && paymentConfig?.specificDate !== undefined && (
           <View style={{ marginTop: spacing.sm }}>
             <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-              {paymentConfig.specificDate ? "Data específica (ativo)" : "Data específica (AAAA-MM-DD)"}
+              Data específica
             </ThemedText>
-            <TextInput
-              value={paymentConfig.specificDate ?? ""}
-              onChangeText={(t) => patch({ specificDate: t.trim() || "" })}
-              placeholder="AAAA-MM-DD"
-              placeholderTextColor={colors.mutedForeground}
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: colors.input,
-                  borderColor: paymentConfig.specificDate ? colors.primary : colors.border,
-                  color: colors.foreground,
-                },
-              ]}
+            <DatePicker
+              type="date"
+              value={
+                paymentConfig.specificDate
+                  ? (() => {
+                      const [y, m, d] = paymentConfig.specificDate
+                        .split("-")
+                        .map(Number);
+                      return new Date(y, m - 1, d, 13, 0, 0);
+                    })()
+                  : undefined
+              }
+              onChange={(date) => {
+                if (!date || !(date instanceof Date)) {
+                  patch({ specificDate: "" });
+                  return;
+                }
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, "0");
+                const dd = String(date.getDate()).padStart(2, "0");
+                patch({ specificDate: `${yyyy}-${mm}-${dd}` });
+              }}
+              placeholder="Selecione a data"
             />
           </View>
         )}

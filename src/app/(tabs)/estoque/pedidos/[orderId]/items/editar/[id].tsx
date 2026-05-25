@@ -92,6 +92,8 @@ function EditOrderItemScreenInner() {
   // Watch for quantity and unit price changes to calculate total
   const watchedQuantity = watch("orderedQuantity");
   const watchedUnitPrice = watch("price");
+  const watchedIcms = watch("icms");
+  const watchedIpi = watch("ipi");
   const watchedFulfilledQuantity = watch("receivedQuantity");
   const watchedReceivedQuantity = watch("receivedQuantity");
 
@@ -101,6 +103,8 @@ function EditOrderItemScreenInner() {
       reset({
         orderedQuantity: orderItem.data.orderedQuantity,
         price: orderItem.data.price || 0,
+        icms: orderItem.data.icms ?? 0,
+        ipi: orderItem.data.ipi ?? 0,
         receivedQuantity: orderItem.data.receivedQuantity || undefined,
       });
       formInitialized.current = true;
@@ -191,8 +195,15 @@ function EditOrderItemScreenInner() {
   };
 
   const status = getItemStatus();
-  const totalPrice = (watchedQuantity || 0) * (watchedUnitPrice || 0);
-  const originalTotalPrice = (orderItem?.data?.orderedQuantity || 0) * (orderItem?.data?.price || 0);
+  // Line total mirrors order-items-card.tsx: subtotal + ICMS + IPI
+  const newSubtotal = (watchedQuantity || 0) * (watchedUnitPrice || 0);
+  const totalPrice =
+    newSubtotal + newSubtotal * ((watchedIcms || 0) / 100) + newSubtotal * ((watchedIpi || 0) / 100);
+  const origSubtotal = (orderItem?.data?.orderedQuantity || 0) * (orderItem?.data?.price || 0);
+  const originalTotalPrice =
+    origSubtotal +
+    origSubtotal * ((orderItem?.data?.icms || 0) / 100) +
+    origSubtotal * ((orderItem?.data?.ipi || 0) / 100);
 
   return (
     <KeyboardAvoidingView
@@ -322,6 +333,65 @@ function EditOrderItemScreenInner() {
                       }}
                       keyboardType="numeric"
                       error={errors.price?.message}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            {/* Taxes (ICMS / IPI) */}
+            <View style={styles.formRow}>
+              <View style={styles.formGroup}>
+                <Controller
+                  control={control}
+                  name="icms"
+                  rules={{
+                    min: { value: 0, message: "ICMS deve ser entre 0 e 100%" },
+                    max: { value: 100, message: "ICMS deve ser entre 0 e 100%" },
+                  }}
+                  render={({ field: { value, onChange } }) => (
+                    <ThemedTextInput
+                      label="ICMS (%)"
+                      placeholder="0,00"
+                      value={value?.toString() || ""}
+                      onChangeText={(text) => {
+                        if (text === "") {
+                          onChange(0);
+                          return;
+                        }
+                        const numericValue = parseFloat(text.replace(",", ".")) || 0;
+                        onChange(numericValue);
+                      }}
+                      keyboardType="numeric"
+                      error={errors.icms?.message}
+                    />
+                  )}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Controller
+                  control={control}
+                  name="ipi"
+                  rules={{
+                    min: { value: 0, message: "IPI deve ser entre 0 e 100%" },
+                    max: { value: 100, message: "IPI deve ser entre 0 e 100%" },
+                  }}
+                  render={({ field: { value, onChange } }) => (
+                    <ThemedTextInput
+                      label="IPI (%)"
+                      placeholder="0,00"
+                      value={value?.toString() || ""}
+                      onChangeText={(text) => {
+                        if (text === "") {
+                          onChange(0);
+                          return;
+                        }
+                        const numericValue = parseFloat(text.replace(",", ".")) || 0;
+                        onChange(numericValue);
+                      }}
+                      keyboardType="numeric"
+                      error={errors.ipi?.message}
                     />
                   )}
                 />

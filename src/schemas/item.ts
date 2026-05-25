@@ -2197,6 +2197,7 @@ export const itemCreateSchemaBase = z.object({
 });
 
 export const itemUpdateSchemaBase = z.object({
+  // Note: ppeSizeOrder is declared near the PPE fields below.
   name: z.string().min(1).max(255).optional(),
   uniCode: nullableString.optional(),
   quantity: z.number().min(0).optional(),
@@ -2265,6 +2266,8 @@ export const itemUpdateSchemaBase = z.object({
     .enum(Object.values(PPE_SIZE) as [string, ...string[]])
     .nullable()
     .optional(),
+  // ppeSizeOrder is derived/computed by the API from the SIZE measure; accepted as optional for web parity
+  ppeSizeOrder: z.number().int().nullable().optional(),
   ppeCA: z.string().nullable().optional(),
   ppeDeliveryMode: z.nativeEnum(PPE_DELIVERY_MODE).nullable().optional(),
   ppeStandardQuantity: z.number().int().positive().nullable().optional(),
@@ -2576,6 +2579,7 @@ export const mapItemToFormData = createMapToFormDataHelper<Item, ItemUpdateFormD
   // PPE fields
   ppeType: item.ppeType || undefined,
   ppeSize: item.ppeSize || undefined,
+  ppeSizeOrder: item.ppeSizeOrder || undefined,
   ppeCA: item.ppeCA || undefined,
   ppeDeliveryMode: item.ppeDeliveryMode || undefined,
   ppeStandardQuantity: item.ppeStandardQuantity || undefined,

@@ -974,6 +974,10 @@ export const userCreateSchema = z
     // Sector leader flag - when true, sets this user as leader of the selected sector
     // The backend will update Sector.leaderId accordingly
     isSectorLeader: z.boolean().default(false),
+    // Secullum integration toggle (parity with web <SecullumSyncSwitch />).
+    secullumSyncEnabled: z.boolean().default(false).optional(),
+    // Per-user override for Secullum Horario.Id (parity with web <HorarioSelector />).
+    secullumHorarioId: z.number().int().nullable().optional(),
   })
   .refine((data) => data.email || data.phone, {
     message: "Email ou telefone deve ser fornecido",
@@ -1061,6 +1065,10 @@ export const userUpdateSchema = z
     // Sector leader flag - when true, sets this user as leader of the selected sector
     // The backend will update Sector.leaderId accordingly
     isSectorLeader: z.boolean().optional(),
+    // Secullum integration toggle (parity with web <SecullumSyncSwitch />).
+    secullumSyncEnabled: z.boolean().optional(),
+    // Per-user override for Secullum Horario.Id (parity with web <HorarioSelector />).
+    secullumHorarioId: z.number().int().nullable().optional(),
   })
   .refine(
     (data) => {

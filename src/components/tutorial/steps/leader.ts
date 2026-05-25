@@ -17,7 +17,6 @@ export const leaderSteps: TutorialStep[] = [
     title: "Minha Equipe",
     description: "Gerencie usuários, EPIs e cálculos dos seus subordinados.",
     placement: "center",
-    autoAdvanceMs: 3000,
     condition: (ctx) => ctx.isLeader,
   },
 ];

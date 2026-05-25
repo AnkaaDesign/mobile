@@ -58,8 +58,18 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
 
   query: {
     hook: 'useTaskQuotesInfiniteMobile',
-    defaultSort: { field: 'budgetNumber', direction: 'desc' },
+    // Web parity: budget list shows quotes that are still in the budget pipeline
+    // (PENDING + BUDGET_APPROVED), default-sorted by statusOrder asc.
+    // (Web budget-table.tsx adds a secondary `term asc`; mobile useSort is single-key
+    // so that secondary sort is not expressed here — acceptable partial parity.)
+    defaultSort: { field: 'statusOrder', direction: 'asc' },
     pageSize: 25,
+    // Base where applied unless the user picks an explicit status filter, in which
+    // case useList strips the conflicting `status` key from this base where so the
+    // chosen filter wins.
+    where: {
+      status: { in: [TASK_QUOTE_STATUS.PENDING, TASK_QUOTE_STATUS.BUDGET_APPROVED] },
+    },
     include: {
       task: {
         select: {
@@ -208,7 +218,7 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         badge: (quote: TaskQuote) => getQuoteStatusBadge(quote.status),
       },
     ],
-    defaultVisible: ['task.name', 'customerConfigs', 'total', 'task.term'],
+    defaultVisible: ['task.name', 'customerConfigs', 'total', 'task.term', 'status'],
     rowHeight: 52,
     actions: [
       {
@@ -269,9 +279,10 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         placeholder: 'Data de Criacao',
       },
     ],
-    defaultValues: {
-      status: TASK_QUOTE_STATUS.PENDING,
-    },
+    // No default status filter: the base query `where` already scopes the default
+    // view to PENDING + BUDGET_APPROVED. Leaving this empty lets an explicit status
+    // pick override the base where (useList strips the conflicting key).
+    defaultValues: {},
   },
 
   search: {

@@ -21,17 +21,9 @@ export const pessoalSteps: TutorialStep[] = [
     title: "Hub pessoal",
     description: "Aqui você acessa pontos, EPIs, holerites, bônus, mensagens, e mais.",
     placement: "center",
-    autoAdvanceMs: 3000,
   },
-  {
-    id: "pessoal-pontos-tap",
-    kind: "interactive",
-    scene: "pessoal-hub",
-    highlight: "pessoalGridCardPontos",
-    title: "Meus Pontos",
-    description: "Toque em \"Meus Pontos\" para abrir o espelho de ponto.",
-    expectedAction: "tap",
-    placement: "bottom",
-    pulseTarget: true,
-  },
+  // NOTE: each pessoal sub-flow is entered by tapping its OWN hub card at the
+  // start of that flow's step array (e.g. feriados → pessoalGridCardFeriados,
+  // pontos → pessoalGridCardPontos). The hub intro must NOT tap a card itself,
+  // otherwise that flow would jump ahead of the hub card order.
 ];

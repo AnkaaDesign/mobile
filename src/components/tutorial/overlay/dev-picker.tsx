@@ -18,7 +18,7 @@ import { IconChevronRight, IconX } from "@tabler/icons-react-native";
 import { useTutorial } from "../provider";
 import type { TutorialStep } from "../engine-types";
 
-const ROW_HEIGHT = 44;
+const ROW_HEIGHT = 72;
 
 export function TutorialDevPicker() {
   const tutorial = useTutorial();
@@ -91,9 +91,8 @@ function PickerSheet({
     if (!trimmed) return steps;
     return steps.filter(
       (s) =>
-        s.id.toLowerCase().includes(trimmed) ||
         s.title.toLowerCase().includes(trimmed) ||
-        s.scene.toLowerCase().includes(trimmed),
+        s.description.toLowerCase().includes(trimmed),
     );
   }, [steps, trimmed]);
 
@@ -134,7 +133,7 @@ function PickerSheet({
       <View
         style={[
           styles.sheet,
-          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 },
+          { paddingTop: 16, paddingBottom: insets.bottom + 12 },
         ]}
       >
         <View style={styles.sheetHeader}>
@@ -152,7 +151,7 @@ function PickerSheet({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Filtrar por título, id ou cena"
+            placeholder="Filtrar passos"
             placeholderTextColor="#475569"
             style={styles.searchInput}
             autoCorrect={false}
@@ -201,11 +200,10 @@ const PickerRow = memo(function PickerRow({
       </View>
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle} numberOfLines={1}>
-          {step.id} — {step.title}
+          {step.title}
         </Text>
-        <Text style={styles.rowMeta} numberOfLines={1}>
-          {step.scene}
-          {step.highlight ? ` · ${step.highlight}` : ""}
+        <Text style={styles.rowMeta} numberOfLines={2}>
+          {step.description}
         </Text>
       </View>
       <IconChevronRight size={16} color="#64748B" />
@@ -216,7 +214,7 @@ const PickerRow = memo(function PickerRow({
 const styles = StyleSheet.create({
   fab: {
     position: "absolute",
-    right: 12,
+    left: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -279,9 +277,9 @@ const styles = StyleSheet.create({
     height: ROW_HEIGHT,
   },
   rowCurrent: { backgroundColor: "#1E293B", borderWidth: 1, borderColor: "#FCD34D" },
-  rowIndex: { width: 32, alignItems: "flex-end" },
+  rowIndex: { width: 32, alignItems: "flex-end", alignSelf: "flex-start", paddingTop: 1 },
   rowIndexText: { color: "#64748B", fontSize: 12, fontWeight: "700" },
   rowBody: { flex: 1 },
   rowTitle: { color: "#F8FAFC", fontSize: 14, fontWeight: "600" },
-  rowMeta: { color: "#94A3B8", fontSize: 11, marginTop: 2 },
+  rowMeta: { color: "#94A3B8", fontSize: 12, lineHeight: 16, marginTop: 3 },
 });

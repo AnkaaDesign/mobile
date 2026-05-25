@@ -58,6 +58,11 @@ android/.gradle/
 android/build/
 android/local.properties
 android/app/debug.keystore
+# Release signing keystore (EAS-generated) — keep secrets out of git
+android/app/ankaa-release.jks
+*.jks
+*.keystore
+credentials.json
 android/gradle/wrapper/gradle-wrapper.jar
 
 # iOS

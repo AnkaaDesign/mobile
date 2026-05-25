@@ -1,10 +1,12 @@
 import {
   IconBell,
   IconBrandWhatsapp,
+  IconBuildingFactory2,
   IconChevronDown,
   IconDeviceMobile,
+  IconInfoCircle,
   IconMail,
-  IconPackage,
+  IconSearch,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react-native";
@@ -80,7 +82,7 @@ const SECTIONS: {
   {
     id: "task",
     title: "Produção",
-    icon: IconPackage,
+    icon: IconBuildingFactory2,
     items: [
       { label: "Tarefa atribuída", selected: [true, true, false, false] },
       { label: "Status alterado", selected: [true, false, false, false] },
@@ -149,6 +151,16 @@ export function NotifPrefsScene(_props: SceneProps) {
             );
           })}
         </View>
+      </View>
+
+      {/* Search */}
+      <View
+        style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
+      >
+        <IconSearch size={18} color={colors.mutedForeground} />
+        <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
+          Buscar notificação...
+        </Text>
       </View>
 
       {/* Accordion sections */}
@@ -248,6 +260,21 @@ export function NotifPrefsScene(_props: SceneProps) {
           </View>
         );
       })}
+
+      {/* Info card */}
+      <View
+        style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      >
+        <IconInfoCircle size={20} color={colors.primary} />
+        <View style={styles.infoText}>
+          <Text style={[styles.infoTitle, { color: colors.foreground }]}>
+            Alterações são salvas automaticamente
+          </Text>
+          <Text style={[styles.infoDescription, { color: colors.mutedForeground }]}>
+            Suas preferências são atualizadas imediatamente ao alternar os canais.
+          </Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -263,12 +290,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
   },
   legend: {
     flexDirection: "row",
@@ -278,6 +305,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   legendLabel: {
     fontSize: 13,
@@ -294,12 +327,36 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   legendText: {
-    fontSize: 12,
+    fontSize: 13,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  searchPlaceholder: {
+    fontSize: 14,
   },
   sectionCard: {
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -356,5 +413,30 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
+  },
+  infoCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    // Matches the real `Card` (shadow.md).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  infoText: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  infoDescription: {
+    fontSize: 12,
   },
 });

@@ -458,6 +458,13 @@ export const moneySchema = z
     { message: "Valor deve ter no máximo 2 casas decimais" }
   );
 
+// Unit price validation (non-negative with up to 3 decimal places).
+// Supplier quotes are often per-cento/dúzia, needing finer precision than money.
+export const unitPriceSchema = z
+  .number()
+  .min(0, { message: "Valor deve ser maior ou igual a 0" })
+  .transform((val) => Math.round(val * 1000) / 1000); // Round to 3 decimal places
+
 // Positive quantity validation
 export const quantitySchema = z.number().positive({ message: "Quantidade deve ser positiva" });
 

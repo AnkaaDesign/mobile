@@ -5,7 +5,7 @@ import {
   TASK_QUOTE_STATUS,
   TASK_QUOTE_STATUS_LABELS,
 } from '@/constants'
-import { formatCurrency } from '@/utils/formatters'
+import { formatCurrency, formatDate } from '@/utils/formatters'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
 
@@ -34,6 +34,27 @@ function getQuoteStatusBadge(status: string | undefined | null): { variant: stri
     default:
       return { variant: 'secondary' }
   }
+}
+
+/**
+ * Find the most urgent (earliest) installment due date across all customer
+ * configs, considering only OVERDUE or PENDING installments. Mirrors the web
+ * `findCurrentInstallmentDueDate` helper. Returns the raw dueDate string or null.
+ */
+function findCurrentInstallmentDueDate(task: BillingTask): string | null {
+  const configs = task.quote?.customerConfigs
+  if (!configs || configs.length === 0) return null
+  let earliest: string | null = null
+  for (const config of configs) {
+    for (const installment of config.installments || []) {
+      if (installment.status !== 'OVERDUE' && installment.status !== 'PENDING') continue
+      if (!installment.dueDate) continue
+      if (!earliest || new Date(installment.dueDate).getTime() < new Date(earliest).getTime()) {
+        earliest = installment.dueDate
+      }
+    }
+  }
+  return earliest
 }
 
 const styles = StyleSheet.create({
@@ -69,6 +90,7 @@ interface BillingTask {
     statusOrder?: number | null;
     customerConfigs?: Array<{
       customer?: { id?: string; fantasyName?: string | null; corporateName?: string | null } | null;
+      installments?: Array<{ id?: string; dueDate?: string | null; status?: string | null }> | null;
     }> | null;
   } | null;
 }
@@ -116,6 +138,13 @@ export const billingListConfig: ListConfig<BillingTask> = {
                   id: true,
                   fantasyName: true,
                   corporateName: true,
+                },
+              },
+              installments: {
+                select: {
+                  id: true,
+                  dueDate: true,
+                  status: true,
                 },
               },
             },
@@ -205,6 +234,17 @@ export const billingListConfig: ListConfig<BillingTask> = {
           return formatCurrency(Number(task.quote.total))
         },
         style: { fontWeight: '500' },
+      },
+      {
+        key: 'currentInstallmentDueDate',
+        label: 'VENCIMENTO',
+        sortable: false,
+        width: 1.2,
+        align: 'left',
+        render: (task: BillingTask) => {
+          if (task.quote?.status !== 'DUE') return '-'
+          return formatDate(findCurrentInstallmentDueDate(task))
+        },
       },
       {
         key: 'quote.statusOrder',

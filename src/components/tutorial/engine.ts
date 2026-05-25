@@ -9,7 +9,8 @@
  * index, mirror the step's scene/state/highlight into the store, the stage
  * re-renders, and the slot's onLayout fires the spotlight rect.
  *
- * The only async surface is the showcase auto-advance timer.
+ * The tour is fully manual: no step advances on its own. The only timer is
+ * the interactive "stuck recovery" fallback that surfaces a skip affordance.
  */
 import { tutorialStorage } from "./tutorial-storage";
 import { useTutorialStore } from "./engine-store";
@@ -31,7 +32,6 @@ function computeUserContext(user: any): TutorialUserContext {
 
 export class TutorialEngine {
   private destroyed = false;
-  private autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
   private stuckTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private deps: TutorialEngineDeps) {}
@@ -133,12 +133,9 @@ export class TutorialEngine {
     store.setInteractiveStuck(false);
     store.setAwaitingAction(step.kind === "interactive");
 
-    if (step.kind === "showcase" && step.autoAdvanceMs) {
-      this.autoAdvanceTimer = setTimeout(() => {
-        this.autoAdvanceTimer = null;
-        this.next();
-      }, step.autoAdvanceMs);
-    }
+    // Fully manual tour: nothing advances on its own. Showcase/narration steps
+    // wait for the user to tap "Continuar"; interactive steps wait for the user
+    // to perform the highlighted action. (No auto-advance timer.)
 
     if (step.kind === "interactive") {
       this.stuckTimer = setTimeout(() => {
@@ -149,10 +146,6 @@ export class TutorialEngine {
   }
 
   private clearTimers(): void {
-    if (this.autoAdvanceTimer != null) {
-      clearTimeout(this.autoAdvanceTimer);
-      this.autoAdvanceTimer = null;
-    }
     if (this.stuckTimer != null) {
       clearTimeout(this.stuckTimer);
       this.stuckTimer = null;

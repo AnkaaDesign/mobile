@@ -25,6 +25,7 @@ import type { User } from "./user";
 export interface OrderSchedule extends BaseEntity {
   name: string | null;
   description: string | null;
+  supplierId: string | null;
   frequency: SCHEDULE_FREQUENCY;
   frequencyCount: number;
   isActive: boolean;
@@ -112,6 +113,7 @@ export interface OrderItem extends BaseEntity {
 export interface Order extends BaseEntity {
   description: string;
   forecast: Date | null;
+  freight: number;
   status: ORDER_STATUS;
   statusOrder: number; // Status numeric order for sorting: 1=Created, 2=PartiallyFulfilled, 3=Fulfilled, 4=Overdue, 5=PartiallyReceived, 6=Received, 7=Cancelled
   budgetIds?: string[];

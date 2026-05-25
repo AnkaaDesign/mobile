@@ -7,8 +7,20 @@ import {
 } from "@tabler/icons-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { fontWeight, spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 
+/**
+ * Fake bottom tab bar.
+ *
+ * NOTE: the real Ankaa app navigates via a RIGHT-side Drawer
+ * (`src/navigation/privilege-optimized-full-fixed.tsx`) and renders NO bottom
+ * tab bar, so the tutorial Stage (`fake-stage.tsx`) does not mount this
+ * component. It is retained for the `SCENE_TAB` mapping contract and as an
+ * optional bottom-nav affordance. When shown, it uses the real palette: active
+ * tab tinted with the primary (#15803d), inactive with mutedForeground, on the
+ * scene background with a 1px top border in the dedicated chrome border tone.
+ */
 type TabId = "inicio" | "pessoal" | "estoque" | "producao" | "rh";
 
 interface Props {
@@ -25,15 +37,17 @@ const TABS: { id: TabId; label: string; icon: typeof IconHome }[] = [
 
 export function FakeTabBar({ active }: Props) {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  // Dedicated chrome border tone (matches the fake header / drawer seam).
+  const chromeBorder = isDark ? "#3a3a3a" : "#e3e3e3";
   return (
     <View
       style={[
         styles.root,
         {
-          paddingBottom: insets.bottom + 4,
+          paddingBottom: insets.bottom + spacing.xs,
           backgroundColor: colors.background,
-          borderTopColor: colors.border,
+          borderTopColor: chromeBorder,
         },
       ]}
     >
@@ -61,17 +75,17 @@ export function FakeTabBar({ active }: Props) {
 const styles = StyleSheet.create({
   root: {
     flexDirection: "row",
-    paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
+    gap: spacing.xxs,
   },
   label: {
     fontSize: 10,
-    fontWeight: "500",
+    fontWeight: fontWeight.medium,
   },
 });

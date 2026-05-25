@@ -116,10 +116,20 @@ export function TutorialTooltip() {
         : "centered";
 
   const pinToTop = !!step.tooltipPinToScreenTop;
-  const isCentered = mode === "centered" || pinToTop || !rect;
+  const pinToBottom = !!step.tooltipPinToScreenBottom;
+  const isCentered = mode === "centered" || pinToTop || pinToBottom || !rect;
   const isPanelContext = step.dimBackground === false || pinToTop;
-  const panelAnchor: "top" | "bottom" =
-    pinToTop || step.placement === "top" ? "top" : "bottom";
+
+  // Vertical alignment for full-screen (non-anchored) tooltips. Rule: whenever
+  // the tooltip is NOT anchored next to a specific component, it sits at the
+  // bottom of the screen — never floating in the center. Only steps that
+  // explicitly ask for the top (placement "top" or pinned) anchor to the top;
+  // `tooltipPinToScreenBottom` always lands at the bottom regardless of the
+  // (now-detached) anchor rect.
+  const centeredWrapStyle =
+    !pinToBottom && (pinToTop || step.placement === "top")
+      ? styles.topWrap
+      : styles.bottomWrap;
   const anchoredPos =
     !isCentered && rect
       ? computeAnchoredPosition(
@@ -159,17 +169,17 @@ export function TutorialTooltip() {
         }
       : null;
 
+  const offsetStyle = step.tooltipOffsetY
+    ? { transform: [{ translateY: step.tooltipOffsetY }] }
+    : null;
+
   return (
     <View
       pointerEvents="box-none"
       style={[
         StyleSheet.absoluteFill,
-        isCentered &&
-          (isPanelContext
-            ? panelAnchor === "top"
-              ? styles.topWrap
-              : styles.bottomWrap
-            : styles.centerWrap),
+        styles.layer,
+        isCentered && centeredWrapStyle,
         isCentered && {
           paddingTop: insets.top + 24,
           paddingBottom: insets.bottom + 24,
@@ -189,6 +199,7 @@ export function TutorialTooltip() {
           { width: TOOLTIP_WIDTH },
           step.celebrate && styles.tooltipCelebrate,
           cardStyle,
+          offsetStyle,
         ]}
         pointerEvents="auto"
       >
@@ -246,6 +257,14 @@ export function TutorialTooltip() {
 }
 
 const styles = StyleSheet.create({
+  // Tutorial stage layering (must stay consistent across overlays):
+  //   spotlight dim … zIndex 10000 / elevation 1000
+  //   tooltip card  … zIndex 10001 / elevation 1001  ← always above the dim
+  //   dev picker    … zIndex 20000 / elevation 2000
+  // Without this, the spotlight's full-screen scrim renders on top of the
+  // tooltip (zIndex/elevation beat JSX order in RN), dimming the card and
+  // swallowing taps on the Continue button — see welcome step regression.
+  layer: { zIndex: 10001, elevation: 1001 },
   centerWrap: { justifyContent: "center", alignItems: "center" },
   topWrap: { justifyContent: "flex-start", alignItems: "center" },
   bottomWrap: { justifyContent: "flex-end", alignItems: "center" },

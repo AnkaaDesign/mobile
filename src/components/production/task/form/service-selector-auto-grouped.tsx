@@ -7,6 +7,8 @@ import { useTheme } from "@/lib/theme";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, USER_STATUS, SECTOR_PRIVILEGES } from "@/constants/enums";
 import { SERVICE_ORDER_TYPE_LABELS, SERVICE_ORDER_STATUS_LABELS } from "@/constants/enum-labels";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
+import { getBadgeVariant } from "@/constants/badge-colors";
+import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getUsers } from "@/api-client";
 import type { User } from "@/types";
@@ -30,7 +32,46 @@ interface ServiceSelectorAutoGroupedProps {
   error?: string;
   userPrivilege?: string;
   currentUserId?: string;
+  isTeamLeader?: boolean;
   onProductionReorder?: (descriptions: string[]) => void;
+}
+
+/**
+ * Returns an action-oriented label for a status option in the status combobox.
+ * - When current === target: the option is the current state → show its state name.
+ * - Otherwise: the option is a transition → show an action verb (mirrors web).
+ */
+function getStatusOptionLabel(
+  current: string,
+  target: string,
+  userPrivilege?: string,
+): string {
+  if (current === target) return SERVICE_ORDER_STATUS_LABELS[target as SERVICE_ORDER_STATUS] ?? target;
+
+  switch (target) {
+    case SERVICE_ORDER_STATUS.IN_PROGRESS:
+      if (current === SERVICE_ORDER_STATUS.PAUSED) return "Continuar";
+      if (current === SERVICE_ORDER_STATUS.COMPLETED) return "Reabrir";
+      if (current === SERVICE_ORDER_STATUS.WAITING_APPROVE) {
+        // Designers withdraw their own submission; others (admin) reprove.
+        return userPrivilege === SECTOR_PRIVILEGES.DESIGNER ? "Retirar Envio" : "Reprovar";
+      }
+      return "Iniciar";
+    case SERVICE_ORDER_STATUS.PAUSED:
+      return "Pausar";
+    case SERVICE_ORDER_STATUS.WAITING_APPROVE:
+      return "Enviar para Aprovação";
+    case SERVICE_ORDER_STATUS.COMPLETED:
+      if (current === SERVICE_ORDER_STATUS.WAITING_APPROVE) return "Aprovar";
+      return "Concluir";
+    case SERVICE_ORDER_STATUS.CANCELLED:
+      return "Cancelar";
+    case SERVICE_ORDER_STATUS.PENDING:
+      if (current === SERVICE_ORDER_STATUS.CANCELLED) return "Restaurar";
+      return "Voltar para Pendente";
+    default:
+      return SERVICE_ORDER_STATUS_LABELS[target as SERVICE_ORDER_STATUS] ?? target;
+  }
 }
 
 export function ServiceSelectorAutoGrouped({
@@ -40,6 +81,7 @@ export function ServiceSelectorAutoGrouped({
   error,
   userPrivilege,
   currentUserId,
+  isTeamLeader = false,
   onProductionReorder,
 }: ServiceSelectorAutoGroupedProps) {
   const { colors } = useTheme();
@@ -304,6 +346,7 @@ export function ServiceSelectorAutoGrouped({
                   isGrouped={true}
                   userPrivilege={userPrivilege}
                   currentUserId={currentUserId}
+                  isTeamLeader={isTeamLeader}
                   allowedServiceOrderTypes={visibleServiceOrderTypes}
                   showDragHandle={!disabled}
                   onDrag={drag}
@@ -330,6 +373,7 @@ export function ServiceSelectorAutoGrouped({
                 isGrouped={true}
                 userPrivilege={userPrivilege}
                 currentUserId={currentUserId}
+                isTeamLeader={isTeamLeader}
                 allowedServiceOrderTypes={visibleServiceOrderTypes}
               />
             ))}
@@ -384,6 +428,7 @@ export function ServiceSelectorAutoGrouped({
               isGrouped={false}
               userPrivilege={userPrivilege}
               currentUserId={currentUserId}
+              isTeamLeader={isTeamLeader}
               allowedServiceOrderTypes={visibleServiceOrderTypes}
             />
           ))}
@@ -424,6 +469,7 @@ interface ServiceRowProps {
   initialAssignedUser?: User;
   userPrivilege?: string;
   currentUserId?: string;
+  isTeamLeader?: boolean;
   allowedServiceOrderTypes: string[];
   showDragHandle?: boolean;
   onDrag?: () => void;
@@ -444,6 +490,8 @@ function ServiceRow({
   isGrouped,
   initialAssignedUser,
   userPrivilege,
+  currentUserId,
+  isTeamLeader = false,
   allowedServiceOrderTypes,
   showDragHandle,
   onDrag,
@@ -455,52 +503,199 @@ function ServiceRow({
     text: service.observation || '',
   });
 
-  // Determine which status options are available based on type and user privilege
-  // IMPORTANT: WAITING_APPROVE status is ONLY available for ARTWORK service orders
-  // This is because only artwork has the designer → admin approval workflow
+  // Determine which status options are available based on the CURRENT status, type and
+  // user privilege. This is a strict state-machine (ported from web): transitions are only
+  // valid from the current state. PAUSED is only reachable from IN_PROGRESS; resume
+  // (→ IN_PROGRESS) is only offered from PAUSED; etc.
   const getAvailableStatuses = useMemo(() => {
+    const currentStatus = service.status || SERVICE_ORDER_STATUS.PENDING;
+
+    // New service orders (no id, or a temp id) always start as PENDING.
+    const isNewServiceOrder =
+      !service.id || (typeof service.id === "string" && service.id.startsWith("temp-"));
+    if (isNewServiceOrder) {
+      return [SERVICE_ORDER_STATUS.PENDING];
+    }
+
     const isArtworkType = service.type === SERVICE_ORDER_TYPE.ARTWORK;
+    const isAdmin = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+    const isDesigner = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+    // Sector team leader (production): start, voltar para pendente, concluir — NOT pause/cancel.
+    const isProductionSectorLeader =
+      userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && isTeamLeader;
+    // Production manager: full set including pause and cancel for PRODUCTION/LOGISTIC SOs.
+    const isProductionManager = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
+    // "Em Negociação" (Commercial) auto-completes when the quote is approved — hide manual Concluir.
+    const isAutoCompletingTask =
+      service.type === SERVICE_ORDER_TYPE.COMMERCIAL && service.description === "Em Negociação";
 
-    // Admin can set any status, but WAITING_APPROVE only for ARTWORK
-    if (userPrivilege === SECTOR_PRIVILEGES.ADMIN) {
-      if (isArtworkType) {
-        // ARTWORK: All statuses including WAITING_APPROVE (approval workflow)
-        return [
-          SERVICE_ORDER_STATUS.PENDING,
-          SERVICE_ORDER_STATUS.IN_PROGRESS,
-          SERVICE_ORDER_STATUS.WAITING_APPROVE,
-          SERVICE_ORDER_STATUS.COMPLETED,
-          SERVICE_ORDER_STATUS.CANCELLED,
-        ];
-      } else {
-        // Non-ARTWORK: All statuses EXCEPT WAITING_APPROVE (simple workflow)
-        return [
-          SERVICE_ORDER_STATUS.PENDING,
-          SERVICE_ORDER_STATUS.IN_PROGRESS,
-          SERVICE_ORDER_STATUS.COMPLETED,
-          SERVICE_ORDER_STATUS.CANCELLED,
-        ];
+    const buildStatuses = (): string[] => {
+      switch (currentStatus) {
+        // ── PENDING ────────────────────────────────────────────────────────
+        case SERVICE_ORDER_STATUS.PENDING:
+          if (isAdmin || isProductionManager)
+            return [
+              SERVICE_ORDER_STATUS.PENDING,
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.CANCELLED,
+            ];
+          return [SERVICE_ORDER_STATUS.PENDING, SERVICE_ORDER_STATUS.IN_PROGRESS];
+
+        // ── IN_PROGRESS ─────────────────────────────────────────────────────
+        case SERVICE_ORDER_STATUS.IN_PROGRESS:
+          if (isAdmin) {
+            return isArtworkType
+              ? [
+                  SERVICE_ORDER_STATUS.PENDING,
+                  SERVICE_ORDER_STATUS.IN_PROGRESS,
+                  SERVICE_ORDER_STATUS.PAUSED,
+                  SERVICE_ORDER_STATUS.WAITING_APPROVE,
+                  SERVICE_ORDER_STATUS.COMPLETED,
+                  SERVICE_ORDER_STATUS.CANCELLED,
+                ]
+              : [
+                  SERVICE_ORDER_STATUS.PENDING,
+                  SERVICE_ORDER_STATUS.IN_PROGRESS,
+                  SERVICE_ORDER_STATUS.PAUSED,
+                  SERVICE_ORDER_STATUS.COMPLETED,
+                  SERVICE_ORDER_STATUS.CANCELLED,
+                ];
+          }
+          if (isArtworkType && isDesigner)
+            return [
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.PAUSED,
+              SERVICE_ORDER_STATUS.WAITING_APPROVE,
+            ];
+          if (isProductionManager)
+            return [
+              SERVICE_ORDER_STATUS.PENDING,
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.PAUSED,
+              SERVICE_ORDER_STATUS.COMPLETED,
+              SERVICE_ORDER_STATUS.CANCELLED,
+            ];
+          if (isProductionSectorLeader)
+            return [
+              SERVICE_ORDER_STATUS.PENDING,
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.COMPLETED,
+            ];
+          return [
+            SERVICE_ORDER_STATUS.IN_PROGRESS,
+            SERVICE_ORDER_STATUS.PAUSED,
+            SERVICE_ORDER_STATUS.COMPLETED,
+          ];
+
+        // ── PAUSED ──────────────────────────────────────────────────────────
+        case SERVICE_ORDER_STATUS.PAUSED:
+          if (isAdmin) {
+            return isArtworkType
+              ? [
+                  SERVICE_ORDER_STATUS.PENDING,
+                  SERVICE_ORDER_STATUS.IN_PROGRESS,
+                  SERVICE_ORDER_STATUS.PAUSED,
+                  SERVICE_ORDER_STATUS.WAITING_APPROVE,
+                  SERVICE_ORDER_STATUS.COMPLETED,
+                  SERVICE_ORDER_STATUS.CANCELLED,
+                ]
+              : [
+                  SERVICE_ORDER_STATUS.PENDING,
+                  SERVICE_ORDER_STATUS.IN_PROGRESS,
+                  SERVICE_ORDER_STATUS.PAUSED,
+                  SERVICE_ORDER_STATUS.COMPLETED,
+                  SERVICE_ORDER_STATUS.CANCELLED,
+                ];
+          }
+          if (isArtworkType && isDesigner)
+            return [
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.PAUSED,
+              SERVICE_ORDER_STATUS.WAITING_APPROVE,
+            ];
+          if (isProductionManager)
+            return [
+              SERVICE_ORDER_STATUS.PENDING,
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.PAUSED,
+              SERVICE_ORDER_STATUS.COMPLETED,
+              SERVICE_ORDER_STATUS.CANCELLED,
+            ];
+          if (isProductionSectorLeader)
+            return [
+              SERVICE_ORDER_STATUS.PENDING,
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.PAUSED,
+              SERVICE_ORDER_STATUS.COMPLETED,
+            ];
+          return [
+            SERVICE_ORDER_STATUS.IN_PROGRESS,
+            SERVICE_ORDER_STATUS.PAUSED,
+            SERVICE_ORDER_STATUS.COMPLETED,
+          ];
+
+        // ── WAITING_APPROVE ─────────────────────────────────────────────────
+        case SERVICE_ORDER_STATUS.WAITING_APPROVE:
+          if (isAdmin)
+            return [
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.WAITING_APPROVE,
+              SERVICE_ORDER_STATUS.COMPLETED,
+              SERVICE_ORDER_STATUS.CANCELLED,
+            ];
+          if (isDesigner)
+            return [SERVICE_ORDER_STATUS.IN_PROGRESS, SERVICE_ORDER_STATUS.WAITING_APPROVE];
+          return [SERVICE_ORDER_STATUS.WAITING_APPROVE];
+
+        // ── COMPLETED ───────────────────────────────────────────────────────
+        case SERVICE_ORDER_STATUS.COMPLETED:
+          if (isAdmin || isProductionManager)
+            return [
+              SERVICE_ORDER_STATUS.IN_PROGRESS,
+              SERVICE_ORDER_STATUS.COMPLETED,
+              SERVICE_ORDER_STATUS.CANCELLED,
+            ];
+          return [SERVICE_ORDER_STATUS.COMPLETED];
+
+        // ── WAITING_ARTWORK ─────────────────────────────────────────────────
+        // "Em Negociação" reaches this when the quote is budget-approved but no
+        // artwork is uploaded yet. Manual overrides mirror the IN_PROGRESS branch.
+        case SERVICE_ORDER_STATUS.WAITING_ARTWORK:
+          if (isAdmin || isProductionManager)
+            return [
+              SERVICE_ORDER_STATUS.PENDING,
+              SERVICE_ORDER_STATUS.WAITING_ARTWORK,
+              SERVICE_ORDER_STATUS.PAUSED,
+              SERVICE_ORDER_STATUS.COMPLETED,
+              SERVICE_ORDER_STATUS.CANCELLED,
+            ];
+          return [
+            SERVICE_ORDER_STATUS.WAITING_ARTWORK,
+            SERVICE_ORDER_STATUS.PAUSED,
+            SERVICE_ORDER_STATUS.COMPLETED,
+          ];
+
+        // ── CANCELLED ───────────────────────────────────────────────────────
+        case SERVICE_ORDER_STATUS.CANCELLED:
+          if (isAdmin || isProductionManager)
+            return [SERVICE_ORDER_STATUS.PENDING, SERVICE_ORDER_STATUS.CANCELLED];
+          return [SERVICE_ORDER_STATUS.CANCELLED];
+
+        default:
+          return [SERVICE_ORDER_STATUS.PENDING, SERVICE_ORDER_STATUS.IN_PROGRESS];
       }
-    }
+    };
 
-    // ARTWORK type has special two-step approval - designer can only go to WAITING_APPROVE
-    if (isArtworkType && userPrivilege === SECTOR_PRIVILEGES.DESIGNER) {
-      return [
-        SERVICE_ORDER_STATUS.PENDING,
-        SERVICE_ORDER_STATUS.IN_PROGRESS,
-        SERVICE_ORDER_STATUS.WAITING_APPROVE,
-        // Note: No COMPLETED - designer must submit for admin approval
-        // Note: No CANCELLED - only admin can cancel
-      ];
-    }
+    const statuses = buildStatuses();
+    return isAutoCompletingTask
+      ? statuses.filter((s) => s !== SERVICE_ORDER_STATUS.COMPLETED)
+      : statuses;
+  }, [userPrivilege, isTeamLeader, service.type, service.status, service.description, service.id]);
 
-    // For other users/types, return simple workflow statuses (no WAITING_APPROVE, no CANCELLED)
-    return [
-      SERVICE_ORDER_STATUS.PENDING,
-      SERVICE_ORDER_STATUS.IN_PROGRESS,
-      SERVICE_ORDER_STATUS.COMPLETED,
-    ];
-  }, [userPrivilege, service.type]);
+  // PRODUCTION sector users who are NOT team leaders see the status as a read-only badge
+  // (they cannot change service-order status). Everyone else gets the editable combobox.
+  const showStatusAsReadOnly =
+    userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && !isTeamLeader;
 
   // Get description options from enums based on service type
   const descriptionOptions = useMemo(() => {
@@ -702,21 +897,35 @@ function ServiceRow({
               />
             </View>
 
-            {/* Status */}
+            {/* Status — read-only badge for PRODUCTION non-leaders, editable combobox otherwise */}
             <View style={styles.statusContainer}>
-              <Combobox
-                value={service.status || SERVICE_ORDER_STATUS.PENDING}
-                onValueChange={(value) => onStatusChange(index, value as string)}
-                disabled={disabled}
-                options={getAvailableStatuses.map((status) => ({
-                  value: status,
-                  label: SERVICE_ORDER_STATUS_LABELS[status as keyof typeof SERVICE_ORDER_STATUS_LABELS],
-                }))}
-                placeholder="Status"
-                searchable={false}
-                clearable={false}
-                size="sm"
-              />
+              {showStatusAsReadOnly ? (
+                <View style={styles.statusBadgeWrapper}>
+                  <Badge
+                    variant={getBadgeVariant(service.status || SERVICE_ORDER_STATUS.PENDING, "SERVICE_ORDER")}
+                    size="sm"
+                  >
+                    {SERVICE_ORDER_STATUS_LABELS[
+                      (service.status || SERVICE_ORDER_STATUS.PENDING) as keyof typeof SERVICE_ORDER_STATUS_LABELS
+                    ]}
+                  </Badge>
+                </View>
+              ) : (
+                <Combobox
+                  value={service.status || SERVICE_ORDER_STATUS.PENDING}
+                  onValueChange={(value) => onStatusChange(index, value as string)}
+                  disabled={disabled}
+                  options={getAvailableStatuses.map((status) => ({
+                    value: status,
+                    // Action-verb labels relative to the current status (mirrors web).
+                    label: getStatusOptionLabel(service.status || SERVICE_ORDER_STATUS.PENDING, status, userPrivilege),
+                  }))}
+                  placeholder="Status"
+                  searchable={false}
+                  clearable={false}
+                  size="sm"
+                />
+              )}
             </View>
           </View>
         </View>
@@ -848,6 +1057,11 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     width: 100,
+  },
+  statusBadgeWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 36,
   },
   observationButton: {
     width: 36,

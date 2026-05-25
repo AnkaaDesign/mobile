@@ -1289,6 +1289,26 @@ export const taskCreateSchema = z
     quote: taskQuoteCreateNestedSchema.optional(), // One-to-one quote with status and items
   })
   .superRefine((data, ctx) => {
+    // Require at least one of: customer, serialNumber, plate, or name (mirrors web).
+    // On create, identifying info can also come from the batch arrays (plates/serialNumbers)
+    // or the truck.plate field, so any of these satisfies the requirement.
+    const hasCustomer = !!data.customerId;
+    const hasSerialNumber =
+      !!data.serialNumber ||
+      (Array.isArray(data.serialNumbers) && data.serialNumbers.length > 0);
+    const hasPlate =
+      !!data.truck?.plate ||
+      (Array.isArray(data.plates) && data.plates.length > 0);
+    const hasName = !!data.name;
+
+    if (!hasCustomer && !hasSerialNumber && !hasPlate && !hasName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Pelo menos um dos seguintes campos deve ser preenchido: Cliente, Número de série, Placa ou Nome",
+        path: ["name"],
+      });
+    }
+
     if (data.entryDate && data.term && data.term <= data.entryDate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -1348,6 +1368,9 @@ export const taskUpdateSchema = z
     startedAt: nullableDate.optional(),
     finishedAt: nullableDate.optional(),
     forecastDate: nullableDate.optional(),
+    // Reason captured when rescheduling an existing forecast date (mirrors web task-edit-form).
+    // The API persists it to TaskForecastHistory; only sent when forecastDate actually changes.
+    forecastReason: z.string().max(500, "Motivo muito longo (máximo 500 caracteres)").nullable().optional(),
     cleared: z.boolean().optional(),
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),

@@ -34,6 +34,7 @@ import { MeusEmprestimosScene } from "./meus-emprestimos";
 import { MinhasMovimentacoesScene } from "./minhas-movimentacoes";
 import { MeuBonusScene } from "./meu-bonus";
 import { MeuBonusHistoricoScene } from "./meu-bonus-historico";
+import { MeuBonusSimulacaoScene } from "./meu-bonus-simulacao";
 import { MeuPessoalScene } from "./meu-pessoal";
 import { PreferenciasScene } from "./preferencias";
 import { NotifPrefsScene } from "./notif-prefs";
@@ -63,6 +64,7 @@ export const SCENES: Record<SceneId, SceneComponent> = {
   "minhas-movimentacoes": MinhasMovimentacoesScene,
   "meu-bonus": MeuBonusScene,
   "meu-bonus-historico": MeuBonusHistoricoScene,
+  "meu-bonus-simulacao": MeuBonusSimulacaoScene,
   "meu-pessoal": MeuPessoalScene,
   preferencias: PreferenciasScene,
   "notif-prefs": NotifPrefsScene,
@@ -97,6 +99,7 @@ export const SCENE_TAB: Record<SceneId, "inicio" | "pessoal" | "estoque" | "prod
   "minhas-movimentacoes": "pessoal",
   "meu-bonus": "pessoal",
   "meu-bonus-historico": "pessoal",
+  "meu-bonus-simulacao": "pessoal",
   "meu-pessoal": null,
   preferencias: "pessoal",
   "notif-prefs": null,
@@ -131,6 +134,7 @@ export const SCENE_HEADER: Record<SceneId, { title: string; showBack: boolean }>
   "minhas-movimentacoes": { title: "Minhas Movimentações", showBack: true },
   "meu-bonus": { title: "Meu Bônus", showBack: true },
   "meu-bonus-historico": { title: "Histórico de Bônus", showBack: true },
+  "meu-bonus-simulacao": { title: "Simulação", showBack: true },
   "meu-pessoal": { title: "Meu Pessoal", showBack: false },
   preferencias: { title: "Preferências", showBack: true },
   "notif-prefs": { title: "Notificações", showBack: true },

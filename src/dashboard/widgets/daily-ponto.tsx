@@ -813,15 +813,20 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         count={display.showCount && !isLoading ? filteredSorted.length : null}
         onRefresh={refetch}
         refreshing={isRefetching}
+        fixedHeader={
+          <>
+            {display.showSearchBox && (
+              <WidgetTableSearch
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Buscar colaborador, setor ou cargo..."
+              />
+            )}
+            <WidgetTableHeader columns={cols} density={density} />
+          </>
+        }
       >
         <WidgetTableContainer>
-          {display.showSearchBox && (
-            <WidgetTableSearch
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Buscar colaborador, setor ou cargo..."
-            />
-          )}
           <View
             style={{
               flex: 1,
@@ -848,10 +853,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 </Text>
               </WidgetTableMessage>
             ) : (
-              <>
-                <WidgetTableHeader columns={cols} density={density} />
-                {renderRowsBody()}
-              </>
+              renderRowsBody()
             )}
           </View>
         </WidgetTableContainer>

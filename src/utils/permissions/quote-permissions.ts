@@ -14,7 +14,11 @@ export function canCreateQuote(userRole: string): boolean {
 }
 
 export function canEditQuote(userRole: string): boolean {
-  return [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL].includes(userRole as SECTOR_PRIVILEGES);
+  return [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+  ].includes(userRole as SECTOR_PRIVILEGES);
 }
 
 export function canApproveQuote(userRole: string): boolean {
@@ -60,9 +64,11 @@ export function canUpdateQuoteStatus(userRole: string): boolean {
 const VALID_TRANSITIONS: Record<TASK_QUOTE_STATUS, TASK_QUOTE_STATUS[]> = {
   PENDING: ['BUDGET_APPROVED'],
   BUDGET_APPROVED: ['COMMERCIAL_APPROVED', 'PENDING'],
-  COMMERCIAL_APPROVED: ['BILLING_APPROVED', 'BUDGET_APPROVED'],
-  BILLING_APPROVED: ['UPCOMING'],
-  UPCOMING: ['PARTIAL', 'DUE', 'BILLING_APPROVED'],
+  // COMMERCIAL_APPROVED -> PENDING allows cancel/reject back to pending.
+  COMMERCIAL_APPROVED: ['BILLING_APPROVED', 'BUDGET_APPROVED', 'PENDING'],
+  // BILLING_APPROVED -> SETTLED supports prepayment + stuck-quote recovery.
+  BILLING_APPROVED: ['UPCOMING', 'SETTLED'],
+  UPCOMING: ['PARTIAL', 'DUE', 'BILLING_APPROVED', 'SETTLED'],
   DUE: ['PARTIAL', 'SETTLED', 'UPCOMING'],
   PARTIAL: ['SETTLED', 'DUE', 'UPCOMING'],
   // SETTLED -> PARTIAL is intentionally allowed to handle payment reversal
@@ -84,6 +90,11 @@ export function getAvailableQuoteStatusTransitions(
   // COMMERCIAL cannot set BILLING_APPROVED
   if (userRole === SECTOR_PRIVILEGES.COMMERCIAL) {
     return transitions.filter((s) => s !== 'BILLING_APPROVED');
+  }
+
+  // FINANCIAL cannot set COMMERCIAL_APPROVED (that step belongs to the commercial sector)
+  if (userRole === SECTOR_PRIVILEGES.FINANCIAL) {
+    return transitions.filter((s) => s !== 'COMMERCIAL_APPROVED');
   }
 
   return transitions;

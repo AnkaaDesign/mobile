@@ -21,6 +21,5 @@ export const historicoSteps: TutorialStep[] = [
     title: "Tarefas concluídas",
     description: "Todas as tarefas finalizadas aparecem aqui, ordenadas por data.",
     placement: "center",
-    autoAdvanceMs: 3000,
   },
 ];

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
+import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useController } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -96,8 +96,11 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
     // Track if we're syncing to prevent infinite loops
     const isSyncingToForm = useRef<boolean>(false);
 
-    // Sync FROM local state TO form field when airbrushings change
-    useState(() => {
+    // Sync FROM local state TO form field whenever airbrushings change.
+    // NOTE: previously this used `useState(() => {...})`, which only ran ONCE on mount and
+    // never re-synced edits/additions to the form — a real bug. A useEffect keyed on the
+    // local airbrushings state keeps the `airbrushings` form field current.
+    useEffect(() => {
       isSyncingToForm.current = true;
 
       const formValue = airbrushings.map((airbrushing) => ({
@@ -120,10 +123,12 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
         onAirbrushingsCountChange(airbrushings.length);
       }
 
-      setTimeout(() => {
+      const t = setTimeout(() => {
         isSyncingToForm.current = false;
       }, 0);
-    });
+      return () => clearTimeout(t);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [airbrushings]);
 
     const addAirbrushing = useCallback(() => {
       const newAirbrushing: AirbrushingItem = {

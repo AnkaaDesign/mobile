@@ -25,6 +25,7 @@ import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/war
 import type { Warning } from "@/types";
 import { useWarningMutations } from "@/hooks/useWarning";
 import { WARNING_SEVERITY, WARNING_CATEGORY } from "@/constants";
+import { getUsers } from "@/api-client";
 
 interface WarningFormProps {
   mode: "create" | "update";
@@ -57,34 +58,6 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useWarningMutations();
-
-  // Async data loading functions
-  const loadCollaboratorOptions = useCallback(async () => {
-    // TODO: Implement proper user loading with pagination
-    // For now, returning empty results to allow compilation
-    return {
-      data: [],
-      hasMore: false,
-    };
-  }, []);
-
-  const loadSupervisorOptions = useCallback(async () => {
-    // TODO: Implement proper user loading with pagination
-    // For now, returning empty results to allow compilation
-    return {
-      data: [],
-      hasMore: false,
-    };
-  }, []);
-
-  const loadWitnessOptions = useCallback(async () => {
-    // TODO: Implement proper user loading with pagination and filtering
-    // For now, returning empty results to allow compilation
-    return {
-      data: [],
-      hasMore: false,
-    };
-  }, []);
 
   // Default values for create mode
   const createDefaults: WarningCreateFormData = {
@@ -126,6 +99,79 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  // Async user loaders mirror the web form (collaborator-select / supervisor-select /
+  // witness-multi-select): fetch active users, search by name, paginated.
+  const buildUserQuery = useCallback(
+    (searchTerm: string, page: number, excludeIds: string[] = []) => {
+      const pageSize = 50;
+      const validExcludeIds = excludeIds.filter((id) => id && id.trim() !== "");
+      const where: any = { isActive: true };
+      if (validExcludeIds.length > 0) {
+        where.id = { notIn: validExcludeIds };
+      }
+      if (searchTerm && searchTerm.trim()) {
+        where.OR = [
+          { name: { contains: searchTerm.trim(), mode: "insensitive" } },
+          { email: { contains: searchTerm.trim(), mode: "insensitive" } },
+        ];
+      }
+      return {
+        take: pageSize,
+        skip: (page - 1) * pageSize,
+        where,
+        orderBy: { name: "asc" as const },
+        include: { position: true },
+      };
+    },
+    []
+  );
+
+  const mapUserToOption = useCallback(
+    (user: any): ComboboxOption => ({
+      value: user.id,
+      label: user.name + (user.position ? ` - ${user.position.name}` : ""),
+    }),
+    []
+  );
+
+  const loadCollaboratorOptions = useCallback(
+    async (searchTerm: string, page: number = 1) => {
+      const response = await getUsers(buildUserQuery(searchTerm, page) as any);
+      return {
+        data: (response.data || []).map(mapUserToOption),
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    },
+    [buildUserQuery, mapUserToOption]
+  );
+
+  const loadSupervisorOptions = useCallback(
+    async (searchTerm: string, page: number = 1) => {
+      const response = await getUsers(buildUserQuery(searchTerm, page) as any);
+      return {
+        data: (response.data || []).map(mapUserToOption),
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    },
+    [buildUserQuery, mapUserToOption]
+  );
+
+  const loadWitnessOptions = useCallback(
+    async (searchTerm: string, page: number = 1) => {
+      // Exclude the selected collaborator and supervisor, like the web form.
+      const excludeIds = [
+        form.getValues("collaboratorId"),
+        form.getValues("supervisorId"),
+      ].filter((id): id is string => Boolean(id));
+      const response = await getUsers(buildUserQuery(searchTerm, page, excludeIds) as any);
+      return {
+        data: (response.data || []).map(mapUserToOption),
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    },
+    [buildUserQuery, mapUserToOption, form]
+  );
 
   const handleSubmit = async (data: WarningCreateFormData | WarningUpdateFormData) => {
     try {
@@ -349,6 +395,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                       async
                       queryFn={loadCollaboratorOptions as any}
                       initialOptions={initialCollaboratorOptions}
+                      minSearchLength={0}
                       value={value || ""}
                       onValueChange={onChange}
                       placeholder="Selecione o colaborador"
@@ -374,6 +421,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                       async
                       queryFn={loadSupervisorOptions as any}
                       initialOptions={initialSupervisorOptions}
+                      minSearchLength={0}
                       value={value || ""}
                       onValueChange={onChange}
                       placeholder="Selecione o supervisor"
@@ -402,6 +450,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                     mode="multiple"
                     queryFn={loadWitnessOptions as any}
                     initialOptions={initialWitnessOptions}
+                    minSearchLength={0}
                     value={value || []}
                     onValueChange={onChange}
                     placeholder="Selecione as testemunhas"

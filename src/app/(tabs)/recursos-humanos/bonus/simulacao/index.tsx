@@ -2,15 +2,17 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
 import { IconCalculator, IconChevronLeft, IconChevronRight } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
 import { ThemedView, ThemedText, EmptyState, Combobox } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useUsers, usePositions, useScreenReady} from '@/hooks';
+import { bonusKeys } from "@/hooks/queryKeys";
 import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
-import { calculateBonusForPosition } from "@/utils/bonus";
 import { USER_STATUS } from "@/constants";
 import { bonusService } from "@/api-client";
+import type { SimulateResponse } from "@/api-client/services/bonus";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,17 +138,51 @@ export default function BonusSimulationScreen() {
     }
   }, [eligibleUsers]);
 
-  // Recalculate bonuses when task quantity or users change
+  // Bonus calculation runs server-side via POST /bonus/simulate — the mobile
+  // app NEVER recomputes the formula locally. Sending year/month makes the API
+  // inject the saved period reajuste so values match the real bonus.
+  const simulationInput = useMemo(
+    () =>
+      simulatedUsers.length === 0
+        ? null
+        : {
+            averageTasksPerUser: eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0,
+            users: simulatedUsers.map(u => ({
+              id: u.id,
+              name: u.name,
+              positionName: u.position,
+              performanceLevel: u.performanceLevel,
+            })),
+            year: periodYear,
+            month: periodMonth,
+          },
+    [simulatedUsers, taskQuantity, eligibleUserCount, periodYear, periodMonth],
+  );
+
+  const { data: simulation } = useQuery({
+    queryKey: [...bonusKeys.all, 'simulate', simulationInput],
+    queryFn: async () => {
+      const response = await bonusService.simulate(simulationInput!);
+      const data = (response.data as any)?.data ?? response.data;
+      return data as SimulateResponse;
+    },
+    enabled: simulationInput !== null,
+    staleTime: 1000 * 5,
+  });
+
+  // Sync server-computed bonuses back into the rows for display/sort/total.
   useEffect(() => {
-    if (simulatedUsers.length === 0) return;
-
-    const averagePerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
-
-    setSimulatedUsers(prev => prev.map(user => ({
-      ...user,
-      bonusAmount: calculateBonusForPosition(user.position, user.performanceLevel, averagePerUser),
-    })));
-  }, [taskQuantity, eligibleUserCount, simulatedUsers.length]);
+    if (!simulation?.users) return;
+    const byId = new Map<string, number>();
+    for (const u of simulation.users) if (u.id) byId.set(u.id, u.bonus);
+    setSimulatedUsers(prev => {
+      const next = prev.map(u => {
+        const newBonus = byId.get(u.id) ?? 0;
+        return Math.abs(u.bonusAmount - newBonus) < 0.005 ? u : { ...u, bonusAmount: newBonus };
+      });
+      return next.some((u, i) => u !== prev[i]) ? next : prev;
+    });
+  }, [simulation]);
 
   // Handle task input change (Brazilian format with comma)
   const handleTaskInputChange = useCallback((value: string | number | null) => {
@@ -181,34 +217,22 @@ export default function BonusSimulationScreen() {
     }
   }, []);
 
-  // Handle position change for a user
+  // Handle position change for a user — bonus is recomputed server-side by the
+  // simulationInput memo + query reacting to this state change.
   const handlePositionChange = useCallback((userId: string, newPosition: string) => {
-    const averagePerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
+    setSimulatedUsers(prev => prev.map(user =>
+      user.id === userId ? { ...user, position: newPosition } : user
+    ));
+  }, []);
 
-    setSimulatedUsers(prev => prev.map(user => {
-      if (user.id !== userId) return user;
-      return {
-        ...user,
-        position: newPosition,
-        bonusAmount: calculateBonusForPosition(newPosition, user.performanceLevel, averagePerUser),
-      };
-    }));
-  }, [taskQuantity, eligibleUserCount]);
-
-  // Handle performance level change for a user
+  // Handle performance level change for a user — see note above; no local math.
   const handlePerformanceLevelChange = useCallback((userId: string, delta: number) => {
-    const averagePerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
-
     setSimulatedUsers(prev => prev.map(user => {
       if (user.id !== userId) return user;
       const newLevel = Math.max(0, Math.min(5, user.performanceLevel + delta));
-      return {
-        ...user,
-        performanceLevel: newLevel,
-        bonusAmount: calculateBonusForPosition(user.position, newLevel, averagePerUser),
-      };
+      return { ...user, performanceLevel: newLevel };
     }));
-  }, [taskQuantity, eligibleUserCount]);
+  }, []);
 
   // Restore original task quantity
   const handleRestoreTaskQuantity = useCallback(() => {

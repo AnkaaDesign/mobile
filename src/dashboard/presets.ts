@@ -430,12 +430,11 @@ function lowStockSnapshot(title = "Estoque Baixo"): WidgetInstance {
 // ============================================================
 // PRODUCTION
 // ----------------------------------------------------------------
-// Layout mirrors kennedy.ankaa@gmail.com's saved mobile dashboard
-// (2026-05-11) with one tweak: Meu Ponto comes BEFORE Em Produção,
-// so a worker checking their phone sees their own ponto before the
-// production queue. Configs reflect the user's hand-tuned values
-// (compact density on top row, full deadline-color palette + cell
-// modes on the task table).
+// Layout mirrors Pedro Antônio de Oliveira's saved mobile dashboard
+// (2026-05-24) — the config a real production-sector worker hand-tuned
+// and uses day-to-day: Recent Messages, their own Ponto, and the
+// Produtividade chart. This is the canonical PRODUCTION default per the
+// user's direction. (Replaced the older kennedy.ankaa@gmail.com layout.)
 // ============================================================
 function productionLayout(): DashboardLayout {
   presetCounter = 0;
@@ -443,28 +442,20 @@ function productionLayout(): DashboardLayout {
     version: DASHBOARD_LAYOUT_VERSION,
     updatedAt: new Date().toISOString(),
     items: [
-      makeInstance("home.favorites", 1, 2, {
-        title: "Favoritos",
-        accent: { icon: "Star", color: "blue", borderColor: "blue" },
-        density: "compact",
-        display: { showCount: false, showHeader: true },
-        itemsPerRow: 1,
-        itemsPerColumn: 4,
-      }),
-      makeInstance("home.recent-messages", 2, 2, {
+      makeInstance("home.recent-messages", 3, 1, {
         title: "Mensagens Recentes",
         accent: { icon: "Message", color: "indigo", borderColor: "indigo" },
         density: "compact",
-        display: { showHeader: true },
+        display: { showHeader: true, showViewAll: false },
         showCount: false,
-        itemsPerRow: 1,
-        itemsPerColumn: 3,
+        itemsPerRow: 3,
+        itemsPerColumn: 1,
       }),
-      makeInstance("home.time-entries", 3, 2, {
+      makeInstance("home.time-entries", 3, 1, {
         title: "Meu Ponto",
         accent: { icon: "Clock", color: "teal", borderColor: "none" },
         display: {
-          density: "comfortable",
+          density: "compact",
           striping: true,
           gridLines: true,
           showRowDot: false,
@@ -476,83 +467,17 @@ function productionLayout(): DashboardLayout {
           showColumnHeaders: true,
         },
         showHeader: true,
+        showViewAll: false,
       }),
-      makeInstance("table.tasks", 3, 3, {
-        title: "Em Produção",
-        accent: { icon: "ClipboardText", color: "blue", borderColor: "blue" },
-        columns: ["task", "status", "term"],
-        columnLabels: {},
-        sort: { key: "forecastDate", direction: "asc" },
-        sorts: [{ key: "term", direction: "asc" }],
-        limit: 25,
-        showHeader: true,
-        showPaintDot: true,
-        termCriticalHours: 4,
-        display: {
-          density: "comfortable",
-          striping: true,
-          gridLines: true,
-          showCount: true,
-          layoutMode: "flat",
-          showRowDot: false,
-          stickyHeader: true,
-          showSearchBox: false,
-          hoverHighlight: true,
-          refetchInterval: "0",
-          showViewAllLink: true,
-          emptyStateMessage: "",
-          showColumnHeaders: true,
-        },
-        filters: {
-          status: [TASK_STATUS.IN_PRODUCTION],
-          hasTruck: "any",
-          hasBudget: "any",
-          hasOpenSO: "any",
-          isOverdue: "any",
-          sectorIds: [],
-          termRange: { to: null, from: null },
-          entryRange: { to: null, from: null },
-          termPreset: "any",
-          assigneeIds: [],
-          commissions: [],
-          customerIds: [],
-          hasArtworks: "any",
-          isCompleted: "any",
-          createdRange: { to: null, from: null },
-          createdPreset: "any",
-          defaultSearch: "",
-          finishedRange: { to: null, from: null },
-          forecastRange: { to: null, from: null },
-          quoteStatuses: [],
-          finishedPreset: "any",
-          forecastPreset: "any",
-          hasObservation: "any",
-          implementTypes: [],
-          isCommissioned: "any",
-          truckCategories: [],
-          serviceOrderTypes: [],
-        },
-        behavior: { viewAllRouteOverride: "" },
-        cellModes: {
-          paint: "swatch-name",
-          status: "badge",
-          serviceOrder: "progress-bar",
-        },
-        deadlineColors: {
-          bold: true,
-          enabled: true,
-          termOnTrackColor: "green-500",
-          termOverdueColor: "red-500",
-          termCriticalColor: "amber-500",
-          termCriticalHours: 4,
-          forecastNoticeDays: 10,
-          forecastNoticeColor: "yellow-500",
-          forecastWarningDays: 7,
-          forecastCriticalDays: 3,
-          forecastWarningColor: "orange-500",
-          forecastCriticalColor: "red-500",
-        },
-        rowClickTarget: "task",
+      makeInstance("production.productivity", 3, 2, {
+        title: "Produtividade",
+        accent: { icon: "ChartBar", color: "blue" },
+        goal: { enabled: true },
+        chart: { type: "bar" },
+        metric: { yAxisMode: "count" },
+        period: { preset: "current-year", xAxisMode: "month" },
+        display: { showHeader: true, showSummary: false },
+        filters: { sectorIds: [] },
       }),
     ],
   };

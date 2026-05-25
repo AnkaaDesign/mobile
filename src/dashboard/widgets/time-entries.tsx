@@ -227,6 +227,9 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         bodyMaxHeight={computeBodyMaxHeight(size.rows)}
         accentColor={accent.hex}
         borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
+        fixedHeader={
+          <WidgetTableHeader columns={TIME_ENTRY_COLUMNS} density={density} />
+        }
       >
         {/* Rendered inside WidgetCard's bodyMaxHeight ScrollView, so the table
          *  scrolls within the tile and never overlaps the footer. Content is
@@ -266,7 +269,6 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
               </WidgetTableMessage>
             ) : (
               <>
-            <WidgetTableHeader columns={TIME_ENTRY_COLUMNS} density={density} />
             {entries.map((e, i) => {
               const weekendTone = e.isSunday || e.isSaturday;
               const punches = [e.entrada1, e.saida1, e.entrada2, e.saida2];

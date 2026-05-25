@@ -16,8 +16,15 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
   const { colors } = useTheme();
 
   // Calculate values from order items
-  const subtotal = order.items?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-  const total = subtotal;
+  // Mirror order-items-card.tsx / list config: per item, (orderedQuantity × price) + ICMS + IPI
+  const subtotal =
+    order.items?.reduce((sum, item) => {
+      const lineSubtotal = (item.orderedQuantity || 0) * (item.price || 0);
+      const icmsAmount = lineSubtotal * ((item.icms || 0) / 100);
+      const ipiAmount = lineSubtotal * ((item.ipi || 0) / 100);
+      return sum + lineSubtotal + icmsAmount + ipiAmount;
+    }, 0) || 0;
+  const total = subtotal + (order.freight || 0);
 
   return (
     <DetailCard title="Resumo Financeiro" icon="receipt">
@@ -29,6 +36,16 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
           </View>
           <ThemedText style={styles.value}>{formatCurrency(subtotal)}</ThemedText>
         </View>
+
+        {(order.freight || 0) > 0 && (
+          <View style={styles.row}>
+            <View style={styles.labelContainer}>
+              <IconCoin size={14} color={colors.foreground} />
+              <ThemedText style={styles.label}>Frete:</ThemedText>
+            </View>
+            <ThemedText style={styles.value}>{formatCurrency(order.freight || 0)}</ThemedText>
+          </View>
+        )}
 
         <View style={StyleSheet.flatten([styles.row, styles.totalRow])}>
           <ThemedText style={styles.totalLabel}>Total:</ThemedText>

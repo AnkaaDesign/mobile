@@ -80,6 +80,11 @@ function StageBody() {
         onOpenDrawer={handleTap}
         onOpenNotifications={handleTap}
       />
+      {/* Scene body. The real navigator's sceneContainerStyle adds horizontal
+          padding (iOS 16 / Android 12) around UNPADDED screens, but every
+          tutorial scene already self-pads to mirror its real screen, so we keep
+          this wrapper edge-to-edge to avoid double-padding. Background is
+          colors.background (= the real sceneBackground #e8e8e8 / #1c1c1c). */}
       <View style={{ flex: 1 }}>
         {SceneComponent ? <SceneComponent state={sceneState} /> : null}
       </View>

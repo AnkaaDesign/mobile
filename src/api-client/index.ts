@@ -69,6 +69,7 @@ export * from "./preferences";
 export * from "./profile";
 export * from "./warning";
 export * from "./sector";
+export * from "./goal";
 export * from "./serviceOrder";
 export * from "./supplier";
 export * from "./task";

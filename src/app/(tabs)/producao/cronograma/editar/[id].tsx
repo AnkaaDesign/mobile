@@ -616,6 +616,16 @@ function EditScheduleInner() {
       }
     }
 
+    // Attach the forecast reschedule reason when the forecast date was changed on a task
+    // that already had one (mirrors web task-edit-form). Captured in DatesSection; the API
+    // persists it to TaskForecastHistory. Only sent alongside an actual forecastDate change.
+    if (processed.forecastDate && originalTask.forecastDate) {
+      const reason = typeof formData.forecastReason === 'string' ? formData.forecastReason.trim() : '';
+      if (reason) {
+        processed.forecastReason = reason;
+      }
+    }
+
     // Process negotiatingWith (embedded object)
     if (formData.negotiatingWith !== undefined) {
       const orig = originalTask.negotiatingWith || { name: null, phone: null };

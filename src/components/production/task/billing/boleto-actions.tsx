@@ -1,10 +1,15 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity, Alert, Linking } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { useRegenerateBoleto, useCancelBoleto, useMarkBoletoPaid } from "@/hooks/useInvoice";
-import { getCurrentApiUrl } from "@/api-client";
+import { getCurrentApiUrl, uploadSingleFile } from "@/api-client";
+import { ThemedText } from "@/components/ui/themed-text";
+import { Modal, ModalContent, ModalHeader, ModalFooter } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import {
   IconFileDownload,
   IconCopy,
@@ -22,23 +27,39 @@ const PAYMENT_METHODS = [
   { key: "OTHER", label: "Outro" },
 ];
 
+const RECEIPT_ACCEPTED_TYPES = ["image/*", "application/pdf"];
+const RECEIPT_MAX_FILES = 20;
+
 interface BoletoActionsProps {
   installmentId: string;
   bankSlip: BankSlip | null | undefined;
+  /** Installment status — gates mark-as-paid (ACTIVE|OVERDUE|PENDING). */
+  installmentStatus?: string | null;
 }
 
-export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
+export function BoletoActions({ installmentId, bankSlip, installmentStatus }: BoletoActionsProps) {
   const { colors } = useTheme();
   const regenerateBoleto = useRegenerateBoleto();
   const cancelBoleto = useCancelBoleto();
   const markPaid = useMarkBoletoPaid();
 
-  if (!bankSlip) return null;
+  // Mark-paid modal state
+  const [showMarkPaidModal, setShowMarkPaidModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [receiptItems, setReceiptItems] = useState<FilePickerItem[]>([]);
+  const [observations, setObservations] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
 
-  const isActive = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
-  const canRegenerate = bankSlip.status === "ERROR" || bankSlip.status === "REJECTED";
-  const canCancel = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
-  const canMarkPaid = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
+  const slipStatus = bankSlip?.status;
+  const isActive = slipStatus === "ACTIVE" || slipStatus === "OVERDUE";
+  const canRegenerate = slipStatus === "ERROR" || slipStatus === "REJECTED";
+  const canCancel = slipStatus === "ACTIVE" || slipStatus === "OVERDUE";
+  // Allow mark-as-paid whenever the installment itself is unpaid: ACTIVE, OVERDUE or
+  // PENDING. PENDING covers the no-bank-slip flow (PIX/transfer) where no boleto exists.
+  const canMarkPaid =
+    installmentStatus === "ACTIVE" ||
+    installmentStatus === "OVERDUE" ||
+    installmentStatus === "PENDING";
 
   const handleViewPdf = async () => {
     try {
@@ -51,7 +72,7 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
   };
 
   const handleCopyBarcode = async () => {
-    if (!bankSlip.digitableLine) return;
+    if (!bankSlip?.digitableLine) return;
     try {
       await Clipboard.setStringAsync(bankSlip.digitableLine);
       Alert.alert("Sucesso", "Linha digitavel copiada");
@@ -61,7 +82,7 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
   };
 
   const handleCopyPix = async () => {
-    if (!bankSlip.pixQrCode) return;
+    if (!bankSlip?.pixQrCode) return;
     try {
       await Clipboard.setStringAsync(bankSlip.pixQrCode);
       Alert.alert("Sucesso", "Codigo PIX copiado");
@@ -79,14 +100,17 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
         {
           text: "Confirmar",
           onPress: () => {
-            regenerateBoleto.mutate(installmentId, {
-              onSuccess: () => {
-                Alert.alert("Sucesso", "Boleto regenerado com sucesso");
+            regenerateBoleto.mutate(
+              { installmentId },
+              {
+                onSuccess: () => {
+                  Alert.alert("Sucesso", "Boleto regenerado com sucesso");
+                },
+                onError: () => {
+                  Alert.alert("Erro", "Erro ao regenerar boleto");
+                },
               },
-              onError: () => {
-                Alert.alert("Erro", "Erro ao regenerar boleto");
-              },
-            });
+            );
           },
         },
       ],
@@ -120,36 +144,89 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
     );
   };
 
-  const handleMarkPaid = () => {
-    // Show payment method selection
-    Alert.alert(
-      "Marcar como Pago",
-      "O boleto sera cancelado no banco e a parcela sera marcada como paga.\n\nSelecione o metodo de pagamento:",
-      [
-        ...PAYMENT_METHODS.map((method) => ({
-          text: method.label,
-          onPress: () => {
-            markPaid.mutate(
-              { installmentId, paymentMethod: method.key },
-              {
-                onSuccess: () => {
-                  Alert.alert("Sucesso", `Parcela marcada como paga via ${method.label}`);
-                },
-                onError: () => {
-                  Alert.alert("Erro", "Erro ao marcar parcela como paga");
-                },
-              },
-            );
-          },
-        })),
-        { text: "Cancelar", style: "cancel" },
-      ],
-    );
+  const resetMarkPaidState = () => {
+    setPaymentMethod("");
+    setReceiptItems([]);
+    setObservations("");
   };
+
+  const closeMarkPaidModal = () => {
+    setShowMarkPaidModal(false);
+    resetMarkPaidState();
+  };
+
+  /** Upload picked receipt files and return their file IDs. */
+  const uploadReceipts = async (): Promise<string[]> => {
+    const toUpload = receiptItems.filter((f) => !f.uploaded && !f.id);
+    const ids: string[] = [];
+    for (const item of toUpload) {
+      const response = await fetch(item.uri);
+      const blob = await response.blob();
+      const file = new File([blob], item.name, {
+        type: item.type || item.mimeType || "application/octet-stream",
+      });
+      const result = await uploadSingleFile(file, {
+        fileContext: "receipt",
+        entityType: "installment",
+        entityId: installmentId,
+      });
+      const uploadedId = result.data?.id ?? result.id;
+      if (result.success && uploadedId) {
+        ids.push(uploadedId);
+      } else {
+        throw new Error(`Falha ao enviar ${item.name}`);
+      }
+    }
+    // Include any previously-uploaded receipts the user kept.
+    const keptIds = receiptItems
+      .filter((f) => (f.uploaded || f.id) && f.id)
+      .map((f) => f.id as string);
+    return [...keptIds, ...ids];
+  };
+
+  const handleConfirmMarkPaid = async () => {
+    if (!paymentMethod) {
+      Alert.alert("Atencao", "Selecione o metodo de pagamento.");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const receiptFileIds = receiptItems.length > 0 ? await uploadReceipts() : [];
+      const trimmedObservations = observations.trim();
+      markPaid.mutate(
+        {
+          installmentId,
+          paymentMethod,
+          receiptFileIds: receiptFileIds.length > 0 ? receiptFileIds : undefined,
+          observations: trimmedObservations ? trimmedObservations : undefined,
+        },
+        {
+          onSuccess: () => {
+            closeMarkPaidModal();
+            Alert.alert("Sucesso", "Parcela marcada como paga");
+          },
+          onError: () => {
+            Alert.alert("Erro", "Erro ao marcar parcela como paga");
+          },
+        },
+      );
+    } catch {
+      Alert.alert("Erro", "Erro ao enviar os comprovantes");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // No actions to show at all → render nothing (e.g. PAID/CANCELLED with no slip).
+  const hasAnyAction =
+    isActive || canRegenerate || canCancel || canMarkPaid;
+  if (!hasAnyAction) return null;
+
+  const isProcessing = markPaid.isPending || isUploading;
 
   return (
     <View style={styles.container}>
-      {(bankSlip.pdfFileId || bankSlip.digitableLine) && isActive && (
+      {(bankSlip?.pdfFileId || bankSlip?.digitableLine) && isActive && (
         <TouchableOpacity
           onPress={handleViewPdf}
           style={[styles.actionButton, { backgroundColor: colors.muted }]}
@@ -159,7 +236,7 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
         </TouchableOpacity>
       )}
 
-      {bankSlip.digitableLine && isActive && (
+      {bankSlip?.digitableLine && isActive && (
         <TouchableOpacity
           onPress={handleCopyBarcode}
           style={[styles.actionButton, { backgroundColor: colors.muted }]}
@@ -169,7 +246,7 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
         </TouchableOpacity>
       )}
 
-      {bankSlip.pixQrCode && isActive && (
+      {bankSlip?.pixQrCode && isActive && (
         <TouchableOpacity
           onPress={handleCopyPix}
           style={[styles.actionButton, { backgroundColor: colors.muted }]}
@@ -196,7 +273,7 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
 
       {canMarkPaid && (
         <TouchableOpacity
-          onPress={handleMarkPaid}
+          onPress={() => setShowMarkPaidModal(true)}
           disabled={markPaid.isPending}
           style={[
             styles.actionButton,
@@ -223,6 +300,98 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
           <IconX size={16} color={colors.destructive} />
         </TouchableOpacity>
       )}
+
+      {/* Mark as Paid Modal — payment method + optional receipts + observations */}
+      <Modal
+        visible={showMarkPaidModal}
+        onClose={closeMarkPaidModal}
+        animationType="slide"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
+              Marcar como Pago
+            </ThemedText>
+            <ThemedText style={[styles.modalDescription, { color: colors.mutedForeground }]}>
+              O boleto sera cancelado no banco e a parcela sera marcada como paga.
+            </ThemedText>
+          </ModalHeader>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Payment method */}
+            <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+              Metodo de Pagamento
+            </ThemedText>
+            <View style={styles.methodRow}>
+              {PAYMENT_METHODS.map((method) => {
+                const selected = paymentMethod === method.key;
+                return (
+                  <TouchableOpacity
+                    key={method.key}
+                    onPress={() => setPaymentMethod(method.key)}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.methodChip,
+                      {
+                        backgroundColor: selected ? colors.primary : colors.muted,
+                        borderColor: selected ? colors.primary : colors.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.methodChipText,
+                        { color: selected ? colors.primaryForeground : colors.foreground },
+                      ]}
+                    >
+                      {method.label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Receipts */}
+            <View style={styles.fieldSpacing}>
+              <FilePicker
+                label="Comprovantes (opcional)"
+                value={receiptItems}
+                onChange={setReceiptItems}
+                maxFiles={RECEIPT_MAX_FILES}
+                acceptedFileTypes={RECEIPT_ACCEPTED_TYPES}
+                showVideoCamera={false}
+                placeholder="Adicionar comprovantes (PDF ou imagens)"
+              />
+            </View>
+
+            {/* Observations */}
+            <View style={styles.fieldSpacing}>
+              <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+                Observacoes (opcional)
+              </ThemedText>
+              <Textarea
+                value={observations}
+                onChangeText={setObservations}
+                placeholder="Detalhes adicionais sobre o pagamento..."
+                numberOfLines={3}
+              />
+            </View>
+          </ScrollView>
+
+          <ModalFooter>
+            <Button variant="outline" onPress={closeMarkPaidModal} disabled={isProcessing}>
+              Cancelar
+            </Button>
+            <Button
+              onPress={handleConfirmMarkPaid}
+              disabled={isProcessing || !paymentMethod}
+              loading={isProcessing}
+            >
+              {isProcessing ? "Processando..." : "Confirmar Pagamento"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </View>
   );
 }
@@ -243,5 +412,36 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  modalTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  modalDescription: {
+    fontSize: fontSize.sm,
+    marginTop: spacing.xs,
+  },
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    marginBottom: spacing.sm,
+  },
+  fieldSpacing: {
+    marginTop: spacing.md,
+  },
+  methodRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  methodChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  methodChipText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
   },
 });

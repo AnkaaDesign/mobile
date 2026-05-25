@@ -200,62 +200,17 @@ export function canCompleteArtworkServiceOrder(user: User | null): boolean {
 }
 
 /**
- * Get allowed status transitions for a user editing a specific service order
- * Returns array of statuses the user is allowed to set
+ * Get allowed status transitions for a user editing a specific service order.
  *
- * Status availability by service order type:
- * - ARTWORK: PENDING, IN_PROGRESS, WAITING_APPROVE, COMPLETED (approval workflow)
- * - PRODUCTION, FINANCIAL, COMMERCIAL, LOGISTIC: PENDING, IN_PROGRESS, COMPLETED (simple workflow)
+ * SOURCE OF TRUTH: this lives in `@/utils/permissions/service-order-permissions.ts`
+ * (signature: (sectorPrivilege, serviceOrderType, isTeamLeader?)), which matches web.
+ * The previous User-based copy here diverged (omitted PAUSED for ARTWORK and lacked
+ * team-leader PAUSED gating) and has been removed to keep a single source of truth.
  *
- * IMPORTANT:
- * - CANCELLED is available to users who can cancel (ADMIN, COMMERCIAL, FINANCIAL)
- * - WAITING_APPROVE is ONLY for ARTWORK (designer → admin approval workflow)
- * - DESIGNER can only set WAITING_APPROVE, not COMPLETED (admin approves)
- * - Users who can EDIT the SO type get base statuses even if they can't cancel
+ * The TASK DETAIL services card now drives its status dropdown from the web
+ * state-machine inline (see task-services-card.tsx), and the standalone SO detail
+ * card consumes the service-order-permissions.ts helpers directly.
  */
-export function getAllowedServiceOrderStatuses(
-  user: User | null,
-  serviceOrderType: SERVICE_ORDER_TYPE,
-  currentStatus: string
-): string[] {
-  if (!user) return [];
-
-  // Check if user can edit this type at all
-  if (!canEditServiceOrderOfType(user, serviceOrderType)) return [];
-
-  const canCancel = canCancelServiceOrder(user);
-
-  // ARTWORK has special approval workflow with WAITING_APPROVE status
-  if (serviceOrderType === SERVICE_ORDER_TYPE.ARTWORK) {
-    const artworkStatuses = ['PENDING', 'IN_PROGRESS', 'WAITING_APPROVE', 'COMPLETED'];
-
-    // Users who can cancel get CANCELLED status option
-    if (canCancel) {
-      // DESIGNER cannot set COMPLETED (only WAITING_APPROVE for admin approval)
-      if (user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) {
-        return [...artworkStatuses.filter(s => s !== 'COMPLETED'), 'CANCELLED'];
-      }
-      return [...artworkStatuses, 'CANCELLED'];
-    }
-
-    // DESIGNER cannot set COMPLETED (only WAITING_APPROVE for admin approval)
-    if (user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) {
-      return artworkStatuses.filter(s => s !== 'COMPLETED');
-    }
-
-    return artworkStatuses;
-  }
-
-  // PRODUCTION, COMMERCIAL, LOGISTIC: Simple workflow without WAITING_APPROVE
-  const simpleStatuses = ['PENDING', 'IN_PROGRESS', 'PAUSED', 'COMPLETED'];
-
-  // Users who can cancel get CANCELLED status option
-  if (canCancel) {
-    return [...simpleStatuses, 'CANCELLED'];
-  }
-
-  return simpleStatuses;
-}
 
 // =====================
 // TASK PERMISSIONS
