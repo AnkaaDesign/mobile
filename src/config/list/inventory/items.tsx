@@ -17,7 +17,7 @@ import {
   ABC_CATEGORY_LABELS,
   XYZ_CATEGORY_LABELS,
 } from '@/constants'
-import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { canEditItems, canDeleteItems } from '@/utils/permissions/entity-permissions'
 import { determineStockLevel } from '@/utils'
 import { ThemedText } from '@/components/ui/themed-text'
 import { isTabletWidth } from '@/lib/table-utils'
@@ -60,6 +60,8 @@ export const itemsListConfig: ListConfig<Item> = {
 
   query: {
     hook: 'useItemsInfiniteMobile',
+    mutationsHook: 'useItemMutations',
+    batchMutationsHook: 'useItemBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     // Use optimized select for 60% less data transfer
@@ -350,6 +352,7 @@ export const itemsListConfig: ListConfig<Item> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditItems,
         onPress: (item, router) => {
           router.push(`/estoque/produtos/editar/${item.id}`)
         },
@@ -359,6 +362,7 @@ export const itemsListConfig: ListConfig<Item> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteItems,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (item) => `Deseja excluir o produto "${item.name}"?`,
@@ -641,7 +645,7 @@ export const itemsListConfig: ListConfig<Item> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'item' : 'itens'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ itemIds: Array.from(ids) })
         },
       },
     ],

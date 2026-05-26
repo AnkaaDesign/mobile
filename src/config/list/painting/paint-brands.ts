@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintBrand } from '@/types'
-import { canEditPaints } from '@/utils/permissions/entity-permissions'
+import { canEditPaints, canDeletePaints } from '@/utils/permissions/entity-permissions'
 
 export const paintBrandsListConfig: ListConfig<PaintBrand> = {
   key: 'painting-paint-brands',
@@ -8,6 +8,8 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
 
   query: {
     hook: 'usePaintBrandsInfiniteMobile',
+    mutationsHook: 'usePaintBrandMutations',
+    batchMutationsHook: 'usePaintBrandBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -66,6 +68,7 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPaints,
         onPress: (brand, router) => {
           router.push(`/pintura/marcas-de-tinta/editar/${brand.id}`)
         },
@@ -75,6 +78,7 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePaints,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (brand) => `Deseja excluir a marca "${brand.name}"?`,
@@ -137,7 +141,7 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'marca de tinta' : 'marcas de tinta'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ paintBrandIds: Array.from(ids) })
         },
       },
     ],

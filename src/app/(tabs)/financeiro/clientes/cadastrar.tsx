@@ -217,7 +217,7 @@ function FinancialCustomerCreateScreenInner() {
         Alert.alert("Erro", "Erro ao criar cliente");
       }
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao criar cliente. Tente novamente.");
+      // API client interceptor already shows the error toast
     } finally {
       setIsSubmitting(false);
     }
@@ -479,7 +479,7 @@ function FinancialCustomerCreateScreenInner() {
                       if (result?.data?.id) {
                         setValue("economicActivityId", result.data.id, { shouldDirty: true, shouldValidate: true });
                       }
-                      Alert.alert("Sucesso", result.message || "Atividade econômica configurada com sucesso");
+                      // API client interceptor already shows the success toast
                     } catch (error: any) {
                       // API client already shows error alert
                     }

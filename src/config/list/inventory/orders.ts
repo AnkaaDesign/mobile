@@ -4,7 +4,7 @@ import {
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
 } from '@/constants'
-import { canEditOrders } from '@/utils/permissions/entity-permissions'
+import { canEditOrders, canDeleteOrders } from '@/utils/permissions/entity-permissions'
 import { isTabletWidth } from '@/lib/table-utils'
 
 
@@ -14,6 +14,8 @@ export const ordersListConfig: ListConfig<Order> = {
 
   query: {
     hook: 'useOrdersInfiniteMobile',
+    mutationsHook: 'useOrderMutations',
+    batchMutationsHook: 'useOrderBatchMutations',
     defaultSort: { field: 'status', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -144,6 +146,7 @@ export const ordersListConfig: ListConfig<Order> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditOrders,
         onPress: (order, router) => {
           router.push(`/estoque/pedidos/editar/${order.id}`)
         },
@@ -153,6 +156,7 @@ export const ordersListConfig: ListConfig<Order> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteOrders,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (order) => `Deseja excluir o pedido "${order.description}"?`,
@@ -299,7 +303,7 @@ export const ordersListConfig: ListConfig<Order> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'pedido' : 'pedidos'}?`,
         },
         onPress: async (ids, helpers) => {
-          await helpers?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await helpers?.batchDeleteAsync?.({ orderIds: Array.from(ids) })
         },
       },
     ],

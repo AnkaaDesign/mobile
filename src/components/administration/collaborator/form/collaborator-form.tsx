@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -368,8 +368,8 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
         onSuccess?.();
         nav.replace(mobileRoute(routes.administration.collaborators.details(user.id)));
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o colaborador");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     }
   };
 

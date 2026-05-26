@@ -263,7 +263,7 @@ function LayoutOnlyEditInner() {
           console.log('[Layout] Auto-created truck:', activeTruckId);
         } catch (error) {
           console.error('[Layout] Failed to auto-create truck:', error);
-          Alert.alert("Erro", "Não foi possível criar o caminhão automaticamente.");
+          // Error toast is handled by the api-client interceptor.
           setIsSubmitting(false);
           return;
         }

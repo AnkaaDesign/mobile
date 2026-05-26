@@ -179,12 +179,12 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
       // Send notification via admin endpoint
       await adminSendNotification(payload);
 
-      Alert.alert("Sucesso", scheduleLater ? "Notificação agendada com sucesso" : "Notificação enviada com sucesso");
+      // Success toast is shown automatically by the axios response interceptor.
       onSuccess?.();
       nav.goBack();
     } catch (error: any) {
       console.error("Error sending notification:", error);
-      Alert.alert("Erro", error?.message || "Erro ao enviar notificação");
+      // Error toast is shown automatically by the axios response interceptor.
     } finally {
       setIsSending(false);
     }

@@ -12,8 +12,10 @@ import { type FilePickerItem } from "@/components/ui/file-picker";
 import { MultiStepFormContainer } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTaskDetail, useTaskMutations } from "@/hooks/useTask";
-import { useTaskQuoteByTask } from "@/hooks/useTaskQuote";
+import { useTaskQuoteByTask, taskQuoteKeys } from "@/hooks/useTaskQuote";
+import { taskKeys } from "@/hooks/queryKeys";
 import { taskQuoteService } from "@/api-client/task-quote";
 import { uploadSingleFile } from "@/api-client/file";
 import type { TASK_QUOTE_STATUS } from "@/types/task-quote";
@@ -106,6 +108,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
 
   // Task mutations for saving
   const { updateAsync } = useTaskMutations();
+  const queryClient = useQueryClient();
 
   // Form setup
   const methods = useForm<WizardFormData>({
@@ -394,6 +397,14 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       // statusReason is captured UI-side only (the API ignores it on every
       // quote path); never forward it in the payload.
       delete (quotePayload as any).statusReason;
+      // "Keep approval, don't reset": status rides INLINE with the value update
+      // on the non-locked path, so the backend skips its auto-revert-to-PENDING
+      // (it only reverts when no status is sent) — editing a price keeps the
+      // existing approval. targetStatus is also used by the locked path below,
+      // which must route status through the dedicated /status endpoint.
+      const targetStatus = (quotePayload as any).status as
+        | TASK_QUOTE_STATUS
+        | undefined;
       quotePayload.subtotal = toNumber(quotePayload.subtotal) ?? 0;
       quotePayload.total = toNumber(quotePayload.total) ?? 0;
       quotePayload.guaranteeYears = toNumber(quotePayload.guaranteeYears);
@@ -450,8 +461,6 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         !!existingStatus && BILLING_LOCKED_STATUSES.includes(existingStatus);
 
       if (isQuoteLocked && existingQuote?.id) {
-        const targetStatus = data.quote.status as TASK_QUOTE_STATUS | undefined;
-
         // Resolve the layout file id for the locked path. Mirror web: upload a
         // new layout via the dedicated file endpoint first, then persist its id.
         // We cannot use the nested task.update multipart path here because that
@@ -494,6 +503,10 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
           await taskQuoteService.updateStatus(existingQuote.id, targetStatus);
         }
 
+        // Refresh quote + task caches so the reverted/advanced status shows.
+        queryClient.invalidateQueries({ queryKey: taskQuoteKeys.all });
+        queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+
         methods.reset();
         setCurrentStep(1);
         setLayoutFiles([]);
@@ -522,7 +535,8 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         newLayoutFiles.length > 0 ||
         layoutRemoved ||
         Boolean(
-          dq.expiresAt ||
+          dq.status ||
+            dq.expiresAt ||
             dq.subtotal ||
             dq.total ||
             dq.guaranteeYears ||
@@ -555,6 +569,11 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         });
       }
 
+      // Refresh quote + task caches so the saved status/values are reflected
+      // (the task-update mutation alone does not invalidate task-quote queries).
+      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.all });
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+
       methods.reset();
       setCurrentStep(1);
       setLayoutFiles([]);
@@ -574,7 +593,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
     } finally {
       setIsSaving(false);
     }
-  }, [getValues, taskId, updateAsync, router, methods, layoutFiles, existingQuote]);
+  }, [getValues, taskId, updateAsync, router, methods, layoutFiles, existingQuote, queryClient]);
 
   // Handle cancel
   const handleCancel = useCallback(() => {

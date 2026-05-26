@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Position } from '@/types'
+import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
 
 export const positionsListConfig: ListConfig<Position> = {
   key: 'hr-positions',
@@ -7,6 +8,8 @@ export const positionsListConfig: ListConfig<Position> = {
 
   query: {
     hook: 'usePositionsInfiniteMobile',
+    mutationsHook: 'usePositionMutations',
+    batchMutationsHook: 'usePositionBatchMutations',
     defaultSort: { field: 'hierarchy', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -103,6 +106,7 @@ export const positionsListConfig: ListConfig<Position> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditHrEntities,
         onPress: (position, router) => {
           router.push(`/recursos-humanos/cargos/editar/${position.id}`)
         },
@@ -112,6 +116,7 @@ export const positionsListConfig: ListConfig<Position> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteHrEntities,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (position) => `Deseja excluir o cargo "${position.name}"?`,
@@ -193,7 +198,7 @@ export const positionsListConfig: ListConfig<Position> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'cargo' : 'cargos'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ positionIds: Array.from(ids) })
         },
       },
     ],

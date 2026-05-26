@@ -38,26 +38,16 @@ function CreateServiceOrderInner() {
       const result = await nav.withLoading(async () => createAsync(data));
 
       if (result?.data) {
-        Alert.alert("Sucesso", "Ordem de serviço criada com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              nav.replace(
-                mobileRoute(
-                  routes.production.serviceOrders.details(result.data?.id || ""),
-                ),
-              );
-            },
-          },
-        ]);
+        nav.replace(
+          mobileRoute(
+            routes.production.serviceOrders.details(result.data?.id || ""),
+          ),
+        );
       } else {
         Alert.alert("Erro", "Erro ao criar ordem de serviço");
       }
-    } catch (error: any) {
-      Alert.alert(
-        "Erro",
-        error.message || "Erro ao criar ordem de serviço. Tente novamente.",
-      );
+    } catch {
+      // Error toast is handled by the api-client interceptor.
     }
   };
 

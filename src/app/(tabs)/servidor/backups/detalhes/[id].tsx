@@ -40,10 +40,10 @@ export default function BackupDetailsScreen() {
             try {
               setIsRestoring(true);
               await nav.withLoading(async () => restore.mutateAsync({ id: id as string }));
-              Alert.alert("Sucesso", "Backup restaurado com sucesso");
+              // API client interceptor already shows the success toast
               nav.goBack();
             } catch {
-              Alert.alert("Erro", "Falha ao restaurar backup");
+              // API client interceptor already shows the error toast
             } finally {
               setIsRestoring(false);
             }
@@ -65,10 +65,10 @@ export default function BackupDetailsScreen() {
           onPress: async () => {
             try {
               await nav.withLoading(async () => deleteBackup.mutateAsync(id as string));
-              Alert.alert("Sucesso", "Backup excluído com sucesso");
+              // API client interceptor already shows the success toast
               nav.dismissTo(mobileRoute(routes.server.backups.list));
             } catch {
-              Alert.alert("Erro", "Falha ao excluir backup");
+              // API client interceptor already shows the error toast
             }
           },
         },

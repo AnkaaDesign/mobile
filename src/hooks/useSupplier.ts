@@ -383,17 +383,30 @@ export function useBatchDeleteSuppliers() {
 // CONVENIENCE MUTATION HOOKS
 // -------------------------------------
 export function useSupplierMutations() {
+  const createMutation = useCreateSupplier();
+  const deleteMutation = useDeleteSupplier();
   return {
-    create: useCreateSupplier(),
+    create: createMutation,
     update: useUpdateSupplier,
-    delete: useDeleteSupplier(),
+    delete: deleteMutation,
+    // Callable async forms consumed by the config-driven list framework (useList),
+    // which resolves `deleteAsync || delete`. Without these the swipe Delete no-ops.
+    createAsync: createMutation.mutateAsync,
+    deleteAsync: deleteMutation.mutateAsync,
   };
 }
 
 export function useSupplierBatchMutations() {
+  const batchCreateMutation = useBatchCreateSuppliers();
+  const batchUpdateMutation = useBatchUpdateSuppliers();
+  const batchDeleteMutation = useBatchDeleteSuppliers();
   return {
-    create: useBatchCreateSuppliers(),
-    update: useBatchUpdateSuppliers(),
-    delete: useBatchDeleteSuppliers(),
+    create: batchCreateMutation,
+    update: batchUpdateMutation,
+    delete: batchDeleteMutation,
+    // Callable async forms consumed by the list framework (useList).
+    batchCreateAsync: batchCreateMutation.mutateAsync,
+    batchUpdateAsync: batchUpdateMutation.mutateAsync,
+    batchDeleteAsync: batchDeleteMutation.mutateAsync,
   };
 }

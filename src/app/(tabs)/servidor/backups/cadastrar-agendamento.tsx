@@ -116,10 +116,10 @@ export default function CreateBackupScheduleScreen() {
         autoDelete: form.autoDelete.enabled ? form.autoDelete : undefined,
       });
 
-      Alert.alert("Sucesso", "Agendamento criado com sucesso");
+      // API client interceptor already shows the success toast
       nav.goBack();
     } catch {
-      Alert.alert("Erro", "Falha ao criar agendamento");
+      // API client interceptor already shows the error toast
     } finally {
       setIsSubmitting(false);
     }

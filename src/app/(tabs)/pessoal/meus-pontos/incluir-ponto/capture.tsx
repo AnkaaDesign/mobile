@@ -287,8 +287,7 @@ export default function IncluirPontoCaptureScreen() {
         submittedRef.current = false;
       }
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e?.message || "Erro ao incluir ponto.";
-      Alert.alert("Erro", msg);
+      // API client interceptor already shows the error toast
       submittedRef.current = false;
     }
   }, [coords, config, photoBase64, address, foraDoPerimetro, deviceId, createMutation, nav]);

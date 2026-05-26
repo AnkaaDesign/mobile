@@ -506,12 +506,7 @@ export function BudgetCreateWizard() {
       // Post-submit
       if (successCount > 0) {
         queryClient.invalidateQueries({ queryKey: taskQuoteKeys.all });
-        Alert.alert(
-          "Sucesso",
-          successCount === 1
-            ? "Orçamento criado com sucesso!"
-            : `${successCount} orçamentos criados com sucesso!`,
-        );
+        // API client interceptor already shows the success toast per created task/quote
         if (firstCreatedTaskId) {
           router.replace(`/(tabs)/financeiro/orcamento/detalhes/${firstCreatedTaskId}` as any);
         } else {

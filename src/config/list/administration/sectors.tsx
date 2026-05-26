@@ -1,7 +1,7 @@
 import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { Sector } from '@/types'
-import { canEditHrEntities } from '@/utils/permissions/entity-permissions'
+import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants/enums'
 import { SECTOR_PRIVILEGES_LABELS } from '@/constants/enum-labels'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,8 @@ export const sectorsListConfig: ListConfig<Sector> = {
 
   query: {
     hook: 'useSectorsInfiniteMobile',
+    mutationsHook: 'useSectorMutations',
+    batchMutationsHook: 'useSectorBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -110,6 +112,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditHrEntities,
         onPress: (sector, router) => {
           router.push(`/administracao/setores/editar/${sector.id}`)
         },
@@ -119,6 +122,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteHrEntities,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (sector) => `Deseja excluir o setor "${sector.name}"?`,
@@ -193,7 +197,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'setor' : 'setores'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ sectorIds: Array.from(ids) })
         },
       },
     ],

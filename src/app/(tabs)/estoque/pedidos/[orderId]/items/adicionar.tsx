@@ -130,8 +130,8 @@ function AddOrderItemScreenInner() {
     try {
       await create(data);
     } catch (error) {
+      // Error toast is shown automatically by the API client interceptor
       console.error("Error creating order item:", error);
-      Alert.alert("Erro", "Não foi possível adicionar o item ao pedido. Tente novamente.");
     }
   };
 

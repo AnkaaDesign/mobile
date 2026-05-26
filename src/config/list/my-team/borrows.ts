@@ -4,6 +4,7 @@ import {
   BORROW_STATUS,
   BORROW_STATUS_LABELS,
 } from '@/constants'
+import { canEditBorrows } from '@/utils/permissions/entity-permissions'
 
 
 export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
@@ -12,6 +13,8 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
 
   query: {
     hook: 'useTeamStaffBorrowsInfiniteMobile',
+    mutationsHook: 'useBorrowMutations',
+    batchMutationsHook: 'useBorrowBatchMutations',
     defaultSort: { field: 'status', direction: 'asc' },
     pageSize: 20,
     select: {
@@ -205,6 +208,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditBorrows,
         onPress: (borrow, router) => {
           router.push(`/estoque/emprestimos/editar/${borrow.id}` as any)
         },
@@ -215,6 +219,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         label: 'Devolver',
         icon: 'check',
         variant: 'default',
+        canPerform: canEditBorrows,
         confirm: {
           title: 'Confirmar Devolução',
           message: (borrow) => `Confirma a devolução do item "${borrow.item?.name}"?`,
@@ -235,6 +240,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         label: 'Marcar como Perdido',
         icon: 'alert-circle',
         variant: 'destructive',
+        canPerform: canEditBorrows,
         confirm: {
           title: 'Confirmar Perda',
           message: (borrow) => `Tem certeza que deseja marcar o item "${borrow.item?.name}" como perdido? Esta ação é irreversível.`,

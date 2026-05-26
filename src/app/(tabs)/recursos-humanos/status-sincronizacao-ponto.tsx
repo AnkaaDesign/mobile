@@ -210,8 +210,8 @@ export default function SyncStatusScreen() {
                   type: triggerType as any,
                 });
                 await loadSyncData();
-              } catch (error) {
-                Alert.alert("Erro", "Não foi possível executar a ação solicitada.");
+              } catch {
+                // Error toast is shown automatically by the axios response interceptor.
               }
             },
           },

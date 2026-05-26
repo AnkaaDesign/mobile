@@ -153,7 +153,8 @@ function SupplierCreateScreenInner() {
         }
       }
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao criar fornecedor. Tente novamente.");
+      // Error toast is shown automatically by the API client interceptor
+      console.error("Error creating supplier:", error);
     } finally {
       setIsSubmitting(false);
     }

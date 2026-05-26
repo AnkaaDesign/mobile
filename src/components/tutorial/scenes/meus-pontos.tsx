@@ -201,19 +201,19 @@ export function MeusPontosScene(_props: SceneProps) {
         </Pressable>
 
         <Pressable
-          ref={slot.registerRef("pessoalPontosJustifyButton") as any}
-          onLayout={slot.register("pessoalPontosJustifyButton")}
-          style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-        >
-          <IconCalendarOff size={20} color={colors.foreground} />
-        </Pressable>
-
-        <Pressable
           ref={slot.registerRef("pessoalPontosAdjustButton") as any}
           onLayout={slot.register("pessoalPontosAdjustButton")}
           style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
           <IconClockEdit size={20} color={colors.foreground} />
+        </Pressable>
+
+        <Pressable
+          ref={slot.registerRef("pessoalPontosJustifyButton") as any}
+          onLayout={slot.register("pessoalPontosJustifyButton")}
+          style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
+          <IconCalendarOff size={20} color={colors.foreground} />
         </Pressable>
 
         <Pressable

@@ -371,8 +371,8 @@ function CustomerEditScreenInner() {
       } else {
         Alert.alert("Erro", "Erro ao atualizar cliente");
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao atualizar cliente. Tente novamente.");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     } finally {
       setIsSubmitting(false);
     }
@@ -778,7 +778,7 @@ function CustomerEditScreenInner() {
                       if (result?.data?.id) {
                         setValue("economicActivityId", result.data.id, { shouldDirty: true, shouldValidate: true });
                       }
-                      Alert.alert("Sucesso", result.message || "Atividade econômica configurada com sucesso");
+                      // Success toast is shown automatically by the axios response interceptor.
                     } catch (error: any) {
                       // API client already shows error alert
                     }

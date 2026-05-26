@@ -494,16 +494,9 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
         },
       });
 
-      Alert.alert(
-        "Campos copiados com sucesso",
-        `${fieldsToSubmit.length} campo(s) copiado(s) de "${sourceTask.name}"`,
-        [{ text: "OK", onPress: () => nav.goBack() }],
-      );
-    } catch (error: any) {
-      Alert.alert(
-        "Erro ao copiar campos",
-        error.message || "Não foi possível copiar os campos. Tente novamente.",
-      );
+      nav.goBack();
+    } catch {
+      // Error toast is handled by the api-client interceptor.
     }
   }, [sourceTask, selectedFields, copyMutation, taskId, nav]);
 

@@ -90,7 +90,7 @@ function CreateAutomaticOrderScreenInner() {
       try {
         await createOrderSchedule(data);
       } catch (error) {
-        Alert.alert("Erro", "Não foi possível criar o agendamento automático. Tente novamente.");
+        // Error toast is shown automatically by the API client interceptor
         console.error("Error creating order schedule:", error);
       } finally {
         setIsSubmitting(false);

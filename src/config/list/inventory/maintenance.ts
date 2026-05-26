@@ -1,7 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Maintenance } from '@/types'
 import { MAINTENANCE_STATUS } from '@/constants/enums'
-import { canEditMaintenance } from '@/utils/permissions/entity-permissions'
+import { canEditMaintenance, canDeleteMaintenance } from '@/utils/permissions/entity-permissions'
 
 
 const STATUS_LABELS: Record<string, string> = {
@@ -18,6 +18,8 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
 
   query: {
     hook: 'useMaintenanceInfiniteMobile',
+    mutationsHook: 'useMaintenanceMutations',
+    batchMutationsHook: 'useMaintenanceBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -115,6 +117,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditMaintenance,
         onPress: (maintenance, router) => {
           router.push(`/estoque/manutencao/editar/${maintenance.id}`)
         },
@@ -124,6 +127,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteMaintenance,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (maintenance) => `Deseja excluir a manutenção "${maintenance.name}"?`,
@@ -239,7 +243,11 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
           message: (count) => `Iniciar ${count} ${count === 1 ? 'manutenção' : 'manutenções'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchUpdate?.({ ids: Array.from(ids), status: 'IN_PROGRESS', startedAt: new Date() })
+          const maintenances = Array.from(ids).map((id) => ({
+            id,
+            data: { status: MAINTENANCE_STATUS.IN_PROGRESS, startedAt: new Date() },
+          }))
+          await mutations?.batchUpdateAsync?.({ maintenances })
         },
       },
       {
@@ -252,7 +260,11 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
           message: (count) => `Concluir ${count} ${count === 1 ? 'manutenção' : 'manutenções'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchUpdate?.({ ids: Array.from(ids), status: 'COMPLETED', finishedAt: new Date() })
+          const maintenances = Array.from(ids).map((id) => ({
+            id,
+            data: { status: MAINTENANCE_STATUS.COMPLETED, finishedAt: new Date() },
+          }))
+          await mutations?.batchUpdateAsync?.({ maintenances })
         },
       },
       {
@@ -265,7 +277,11 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
           message: (count) => `Cancelar ${count} ${count === 1 ? 'manutenção' : 'manutenções'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchUpdate?.({ ids: Array.from(ids), status: 'CANCELLED' })
+          const maintenances = Array.from(ids).map((id) => ({
+            id,
+            data: { status: MAINTENANCE_STATUS.CANCELLED },
+          }))
+          await mutations?.batchUpdateAsync?.({ maintenances })
         },
       },
       {
@@ -278,7 +294,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'manutenção' : 'manutenções'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ maintenanceIds: Array.from(ids) })
         },
       },
     ],

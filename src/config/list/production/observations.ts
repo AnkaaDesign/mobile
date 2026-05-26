@@ -10,6 +10,8 @@ export const observationsListConfig: ListConfig<Observation> = {
 
   query: {
     hook: 'useObservationsInfiniteMobile',
+    mutationsHook: 'useObservationMutations',
+    batchMutationsHook: 'useObservationBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -175,7 +177,7 @@ export const observationsListConfig: ListConfig<Observation> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'observação' : 'observações'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ observationIds: Array.from(ids) })
         },
       },
     ],

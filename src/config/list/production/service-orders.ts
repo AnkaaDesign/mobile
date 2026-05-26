@@ -12,6 +12,8 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
 
   query: {
     hook: 'useServiceOrdersInfiniteMobile',
+    mutationsHook: 'useServiceOrderMutations',
+    batchMutationsHook: 'useServiceOrderBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 40,
     include: {
@@ -230,7 +232,9 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
         },
         onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for new status
-          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({
+            serviceOrders: Array.from(ids).map((id) => ({ id, data: {} })),
+          })
         },
       },
       {
@@ -243,7 +247,7 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'ordem' : 'ordens'} de serviço?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ serviceOrderIds: Array.from(ids) })
         },
       },
     ],

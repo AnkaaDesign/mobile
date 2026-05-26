@@ -1,7 +1,7 @@
 import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
-import { canEditUsers } from '@/utils/permissions/entity-permissions'
+import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
 import { USER_STATUS } from '@/constants/enums'
 import { Badge } from '@/components/ui/badge'
 import { getBadgeVariant } from '@/constants/badge-colors'
@@ -19,6 +19,8 @@ export const collaboratorsListConfig: ListConfig<User> = {
 
   query: {
     hook: 'useUsersInfiniteMobile',
+    mutationsHook: 'useUserMutations',
+    batchMutationsHook: 'useUserBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     // Use optimized select for better performance - fetches only required fields
@@ -324,6 +326,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditUsers,
         onPress: (user, router) => {
           router.push(`/administracao/colaboradores/editar/${user.id}`)
         },
@@ -333,6 +336,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteUsers,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (user) => `Deseja excluir o colaborador "${user.name}"?`,
@@ -496,7 +500,9 @@ export const collaboratorsListConfig: ListConfig<User> = {
           message: (count) => `Ativar ${count} ${count === 1 ? 'colaborador' : 'colaboradores'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchUpdate?.({ ids: Array.from(ids), status: 'ACTIVE' })
+          await mutations?.batchUpdateAsync?.({
+            users: Array.from(ids).map((id) => ({ id, data: { status: 'ACTIVE' } })),
+          })
         },
       },
       {
@@ -509,7 +515,9 @@ export const collaboratorsListConfig: ListConfig<User> = {
           message: (count) => `Desativar ${count} ${count === 1 ? 'colaborador' : 'colaboradores'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchUpdate?.({ ids: Array.from(ids), status: 'INACTIVE' })
+          await mutations?.batchUpdateAsync?.({
+            users: Array.from(ids).map((id) => ({ id, data: { status: 'INACTIVE' } })),
+          })
         },
       },
       {
@@ -522,7 +530,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'colaborador' : 'colaboradores'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ userIds: Array.from(ids) })
         },
       },
     ],

@@ -122,8 +122,8 @@ function EditOrderItemScreenInner() {
     try {
       await update({ id: id!, data });
     } catch (_error) {
-      console.error("Error updating order item:", error);
-      Alert.alert("Erro", "Não foi possível atualizar o item. Tente novamente.");
+      // Error toast is shown automatically by the API client interceptor
+      console.error("Error updating order item:", _error);
     }
   };
 
@@ -146,7 +146,7 @@ function EditOrderItemScreenInner() {
     try {
       await refetch();
     } catch (_error) {
-      Alert.alert("Erro", "Não foi possível recarregar os dados.");
+      // Error toast is shown automatically by the API client interceptor
     }
   };
 

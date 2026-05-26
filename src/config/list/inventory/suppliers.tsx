@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Supplier } from '@/types'
-import { canEditSuppliers } from '@/utils/permissions/entity-permissions'
+import { canEditSuppliers, canDeleteSuppliers } from '@/utils/permissions/entity-permissions'
 import { formatBrazilianPhone, formatCNPJ, getFileUrl } from '@/utils'
 import { isTabletWidth } from '@/lib/table-utils'
 import { extendedColors } from '@/lib/theme/extended-colors'
@@ -44,6 +44,8 @@ export const suppliersListConfig: ListConfig<Supplier> = {
 
   query: {
     hook: 'useSuppliersInfiniteMobile',
+    mutationsHook: 'useSupplierMutations',
+    batchMutationsHook: 'useSupplierBatchMutations',
     defaultSort: { field: 'fantasyName', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -208,6 +210,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditSuppliers,
         onPress: (supplier, router) => {
           router.push(`/estoque/fornecedores/editar/${supplier.id}`)
         },
@@ -217,6 +220,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteSuppliers,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (supplier) => `Deseja excluir o fornecedor "${supplier.fantasyName}"?`,
@@ -322,7 +326,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'fornecedor' : 'fornecedores'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ supplierIds: Array.from(ids) })
         },
       },
     ],

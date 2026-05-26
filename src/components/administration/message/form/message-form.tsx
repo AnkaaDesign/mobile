@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -335,21 +335,23 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
         payload.endsAt = data.endDate.toISOString();
       }
 
+      let didSubmit = false;
       if (mode === "create") {
         await createMessage(payload);
-        Alert.alert("Sucesso", "Mensagem criada com sucesso", [
-          { text: "OK", onPress: () => { onSuccess?.(); nav.goBack(); } },
-        ]);
+        didSubmit = true;
       } else if (message?.id) {
         await updateMessage(message.id, payload);
-        Alert.alert("Sucesso", "Mensagem atualizada com sucesso", [
-          { text: "OK", onPress: () => { onSuccess?.(); nav.goBack(); } },
-        ]);
+        didSubmit = true;
       }
 
       queryClient.invalidateQueries({ queryKey: messageKeys.all });
-    } catch (error: any) {
-      Alert.alert("Erro", error?.message || `Erro ao ${mode === "create" ? "criar" : "atualizar"} mensagem`);
+
+      if (didSubmit) {
+        onSuccess?.();
+        nav.goBack();
+      }
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     } finally {
       setIsSubmitting(false);
     }

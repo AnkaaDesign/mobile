@@ -85,8 +85,8 @@ function CreateCuttingScreenInner() {
       } else {
         nav.goBack();
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error?.message || "Não foi possível criar o recorte. Tente novamente.");
+    } catch {
+      // Error toast is handled by the api-client interceptor.
     } finally {
       setIsSubmitting(false);
     }

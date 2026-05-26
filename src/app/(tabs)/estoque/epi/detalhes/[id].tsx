@@ -111,7 +111,7 @@ function PpeDetailBody({
                 );
                 await refetch();
               } catch {
-                Alert.alert("Erro", "Não foi possível alterar o status");
+                // Error toast is shown automatically by the API client interceptor
               }
             },
           },

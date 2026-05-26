@@ -2,14 +2,14 @@ import type { TutorialStep } from "../engine-types";
 
 /**
  * The "Meus Pontos" (espelho de ponto) hub is the launchpad for three guided
- * sub-flows: Incluir Ponto, Justificar Ausência and Ajustar Ponto. The steps
+ * sub-flows: Incluir Ponto, Ajustar Ponto and Justificar Ausência. The steps
  * here are split into four arrays so steps/index.ts can interleave the hub
  * tour with each sub-flow: the user always TAPS a toolbar button to leave the
  * hub, the sub-flow runs, and its closing "Voltar" step brings them back here
  * before the next entry step nudges them to the following button.
  *
  * Toolbar order, left-to-right: month selector → Incluir Ponto →
- * Justificar Ausência → Ajustar Ponto → Visibilidade de colunas.
+ * Ajustar Ponto → Justificar Ausência → Visibilidade de colunas.
  */
 
 // Hub intro + the first sub-flow entry (Incluir Ponto).
@@ -119,22 +119,7 @@ export const meusPontosIntroSteps: TutorialStep[] = [
   },
 ];
 
-// Back on the hub after Incluir Ponto — tap to open Justificar Ausência.
-export const meusPontosJustifyEntrySteps: TutorialStep[] = [
-  {
-    id: "pessoal-pontos-justify-entry",
-    kind: "interactive",
-    scene: "meus-pontos",
-    highlight: "pessoalPontosJustifyButton",
-    title: "Justificar ausência",
-    description: "Toque em \"Justificar Ausência\" para registrar uma justificativa de um dia ou período de falta.",
-    expectedAction: "tap",
-    placement: "bottom",
-    pulseTarget: true,
-  },
-];
-
-// Back on the hub after Justificar — tap to open Ajustar Ponto.
+// Back on the hub after Incluir Ponto — tap to open Ajustar Ponto.
 export const meusPontosAjustarEntrySteps: TutorialStep[] = [
   {
     id: "pessoal-pontos-ajustar-entry",
@@ -143,6 +128,21 @@ export const meusPontosAjustarEntrySteps: TutorialStep[] = [
     highlight: "pessoalPontosAdjustButton",
     title: "Ajustar ponto",
     description: "Toque em \"Ajustar Ponto\" para solicitar correções nas batidas de um dia.",
+    expectedAction: "tap",
+    placement: "bottom",
+    pulseTarget: true,
+  },
+];
+
+// Back on the hub after Ajustar Ponto — tap to open Justificar Ausência.
+export const meusPontosJustifyEntrySteps: TutorialStep[] = [
+  {
+    id: "pessoal-pontos-justify-entry",
+    kind: "interactive",
+    scene: "meus-pontos",
+    highlight: "pessoalPontosJustifyButton",
+    title: "Justificar ausência",
+    description: "Toque em \"Justificar Ausência\" para registrar uma justificativa de um dia ou período de falta.",
     expectedAction: "tap",
     placement: "bottom",
     pulseTarget: true,

@@ -164,14 +164,11 @@ function OrderScheduleEditScreenInner() {
       setIsSubmitting(true);
       try {
         await updateSchedule.mutateAsync(data);
-        Alert.alert("Sucesso", "Agendamento atualizado com sucesso", [
-          { text: "OK", onPress: () => goBack() },
-        ]);
+        // Success toast is shown automatically by the API client interceptor
+        goBack();
       } catch (error: any) {
-        Alert.alert(
-          "Erro",
-          error?.message || "Erro ao atualizar agendamento"
-        );
+        // Error toast is shown automatically by the API client interceptor
+        console.error("Error updating order schedule:", error);
       } finally {
         setIsSubmitting(false);
       }

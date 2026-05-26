@@ -78,13 +78,6 @@ export function SectorSelectModal({
 
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
 
-      Alert.alert(
-        "Sucesso",
-        selectedSectorId
-          ? `Setor da tarefa "${task.name}" atualizado com sucesso!`
-          : `Setor da tarefa "${task.name}" removido com sucesso!`
-      );
-
       if (response.data) {
         onSuccess?.(response.data);
       }

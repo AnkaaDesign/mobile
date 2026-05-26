@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -85,8 +85,8 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
         onSuccess?.();
         nav.replace(mobileRoute(routes.administration.sectors.details(sector.id)));
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o setor");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     }
   };
 

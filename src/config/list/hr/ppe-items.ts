@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Item } from '@/types'
 import { PPE_TYPE } from '@/constants/enums'
+import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 const PPE_TYPE_LABELS: Record<string, string> = {
   SHIRT: 'Camisa',
@@ -19,6 +20,10 @@ export const ppeItemsListConfig: ListConfig<Item> = {
 
   query: {
     hook: 'usePpeInfiniteMobile',
+    // PPE config is stored in the Item model; this list fetches Item rows,
+    // so Item mutations are the correct hooks (usePpeConfig* is retired/commented out).
+    mutationsHook: 'useItemMutations',
+    batchMutationsHook: 'useItemBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -184,6 +189,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         onPress: (item, router) => {
           router.push(`/recursos-humanos/epi/editar/${item.id}`)
         },
@@ -193,6 +199,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePpeDeliveries,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (item) => `Deseja excluir o EPI "${item.name}"?`,
@@ -309,7 +316,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ itemIds: Array.from(ids) })
         },
       },
     ],

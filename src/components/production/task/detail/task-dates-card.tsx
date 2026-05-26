@@ -181,7 +181,7 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
         <DetailField
           label="Entrada"
           icon="calendar"
-          value={formatDate(task.entryDate)}
+          value={formatDateTime(task.entryDate)}
         />
       )}
 
@@ -197,7 +197,7 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
                 styles.value,
                 { color: isOverdue ? colors.destructive : colors.foreground },
               ]}>
-                {formatDate(task.term)}
+                {formatDateTime(task.term)}
               </ThemedText>
               {isOverdue && (
                 <View style={[styles.overdueBadge, { backgroundColor: colors.destructive + '15' }]}>

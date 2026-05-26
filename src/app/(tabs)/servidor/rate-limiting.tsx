@@ -104,11 +104,11 @@ export default function RateLimitingScreen() {
               const response = await apiClient.delete("/system/throttler/keys");
 
               if (response.data.success) {
-                Alert.alert("Sucesso", "Todas as chaves foram limpas");
+                // API client interceptor already shows the success toast
                 fetchData(false);
               }
             } catch (error: any) {
-              Alert.alert("Erro", "Falha ao limpar chaves");
+              // API client interceptor already shows the error toast
             } finally {
               setIsClearing(false);
             }
@@ -133,11 +133,11 @@ export default function RateLimitingScreen() {
               const response = await apiClient.delete("/system/throttler/blocked-keys");
 
               if (response.data.success) {
-                Alert.alert("Sucesso", "Chaves desbloqueadas com sucesso");
+                // API client interceptor already shows the success toast
                 fetchData(false);
               }
             } catch (error: any) {
-              Alert.alert("Erro", "Falha ao desbloquear chaves");
+              // API client interceptor already shows the error toast
             } finally {
               setIsClearing(false);
             }

@@ -6,7 +6,7 @@ import type { Item } from '@/types'
 import { ITEM_CATEGORY_TYPE, STOCK_LEVEL } from '@/constants'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/utils/route-mapper'
-import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { canEditItems, canDeleteItems } from '@/utils/permissions/entity-permissions'
 import { determineStockLevel } from '@/utils'
 import { ThemedText } from '@/components/ui/themed-text'
 
@@ -48,6 +48,8 @@ export const ppeItemsListConfig: ListConfig<Item> = {
 
   query: {
     hook: 'useItemsInfiniteMobile',
+    mutationsHook: 'useItemMutations',
+    batchMutationsHook: 'useItemBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -174,6 +176,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditItems,
         onPress: (item, router) => {
           router.push(routeToMobilePath(routes.inventory.ppe.edit(item.id)) as any)
         },
@@ -183,6 +186,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteItems,
         confirm: {
           title: 'Excluir EPI',
           message: 'Tem certeza que deseja excluir este EPI?',
@@ -379,7 +383,9 @@ export const ppeItemsListConfig: ListConfig<Item> = {
           message: (count) => `Deseja ativar ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
         onPress: async (ids, { batchUpdateAsync } = {}) => {
-          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: true })
+          await batchUpdateAsync?.({
+            items: Array.from(ids).map((id) => ({ id, data: { isActive: true } })),
+          })
         },
       },
       {
@@ -392,7 +398,9 @@ export const ppeItemsListConfig: ListConfig<Item> = {
           message: (count) => `Deseja desativar ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
         onPress: async (ids, { batchUpdateAsync } = {}) => {
-          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: false })
+          await batchUpdateAsync?.({
+            items: Array.from(ids).map((id) => ({ id, data: { isActive: false } })),
+          })
         },
       },
       {
@@ -405,7 +413,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
           message: (count) => `Deseja excluir permanentemente ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ itemIds: Array.from(ids) })
         },
       },
     ],

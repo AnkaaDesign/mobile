@@ -1,6 +1,6 @@
 import type { ListConfig, ActionMutationsContext } from '@/components/list/types'
 import type { ItemBrand } from '@/types'
-import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { canEditItems, canDeleteItems } from '@/utils/permissions/entity-permissions'
 
 export const brandsListConfig: ListConfig<ItemBrand> = {
   key: 'inventory-brands',
@@ -8,6 +8,8 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
 
   query: {
     hook: 'useItemBrandsInfiniteMobile',
+    mutationsHook: 'useItemBrandMutations',
+    batchMutationsHook: 'useItemBrandBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     // Use select to fetch only fields needed for list display
@@ -72,6 +74,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditItems,
         onPress: (brand, router) => {
           router.push(`/estoque/produtos/marcas/editar/${brand.id}`)
         },
@@ -81,6 +84,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteItems,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (brand) => `Deseja excluir a marca "${brand.name}"?`,
@@ -153,7 +157,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'marca' : 'marcas'}?`,
         },
         onPress: async (ids, utils) => {
-          await utils?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await utils?.batchDeleteAsync?.({ itemBrandIds: Array.from(ids) })
         },
       },
     ],

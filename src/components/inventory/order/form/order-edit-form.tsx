@@ -55,6 +55,7 @@ const orderEditFormSchema = z.object({
   forecast: z.date().optional().nullable(),
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
   freight: z.number().min(0, "Frete deve ser maior ou igual a 0").optional().nullable(),
+  discount: z.number().min(0).max(100).optional().nullable(),
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
   paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
@@ -153,6 +154,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       forecast: null,
       notes: "",
       freight: null,
+      discount: null,
       paymentMethod: null,
       paymentPix: null,
       paymentDueDays: null,
@@ -221,6 +223,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       forecast: order.forecast ? new Date(order.forecast) : null,
       notes: order.notes || "",
       freight: (order as any).freight ?? 0,
+      discount: (order as any).discount ?? 0,
       paymentMethod: (order.paymentMethod as any) || null,
       paymentPix: order.paymentPix || null,
       paymentDueDays: order.paymentDueDays || null,
@@ -349,11 +352,15 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   // Freight value (carried in form data)
   const freightValue = (multiStepForm.formData.freight as number | null | undefined) || 0;
 
-  // Calculate totals for review (unified: inventory + temporary, with taxes + freight)
+  // Discount value (percentage, carried in form data)
+  const discountValue = (multiStepForm.formData.discount as number | null | undefined) || 0;
+
+  // Calculate totals for review (unified: inventory + temporary, with taxes - discount + freight)
   const totals = useMemo(() => {
     const invItems = multiStepForm.getSelectedItemsWithData();
 
     let subtotal = 0;
+    let goodsSubtotal = 0;
     let totalQuantity = 0;
 
     invItems.forEach((item) => {
@@ -361,24 +368,29 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       const icms = itemIcms[item.id] || 0;
       const ipi = itemIpi[item.id] || 0;
       subtotal += lineSubtotal + lineSubtotal * (icms / 100) + lineSubtotal * (ipi / 100);
+      goodsSubtotal += lineSubtotal;
       totalQuantity += item.quantity;
     });
 
     temporaryItems.forEach((item) => {
       const lineSubtotal = item.price * item.quantity;
       subtotal += lineSubtotal + lineSubtotal * ((item.icms || 0) / 100) + lineSubtotal * ((item.ipi || 0) / 100);
+      goodsSubtotal += lineSubtotal;
       totalQuantity += item.quantity;
     });
 
-    const total = subtotal + freightValue;
+    const discountAmount = goodsSubtotal * (discountValue / 100);
+    const total = subtotal - discountAmount + freightValue;
 
     return {
       itemCount: invItems.length + temporaryItems.length,
       totalQuantity,
       subtotal,
+      goodsSubtotal,
+      discountAmount,
       total,
     };
-  }, [multiStepForm, temporaryItems, itemIcms, itemIpi, freightValue]);
+  }, [multiStepForm, temporaryItems, itemIcms, itemIpi, freightValue, discountValue]);
 
   // Temporary item handlers
   const handleAddTemporaryItem = useCallback(() => {
@@ -472,6 +484,9 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       if (freightValue !== ((order as any)?.freight ?? 0)) {
         changedData.freight = freightValue;
       }
+      if (discountValue !== ((order as any)?.discount ?? 0)) {
+        changedData.discount = discountValue;
+      }
       if (multiStepForm.formData.paymentMethod !== order?.paymentMethod) {
         changedData.paymentMethod = multiStepForm.formData.paymentMethod || undefined;
       }
@@ -553,7 +568,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       }
     } catch (error) {
       console.error("Error updating order:", error);
-      Alert.alert("Erro", "Falha ao atualizar pedido");
     }
   }, [
     orderId,
@@ -563,6 +577,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     itemIcms,
     itemIpi,
     freightValue,
+    discountValue,
     forecastDate,
     budgetFiles,
     invoiceFiles,
@@ -1219,7 +1234,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                   control={form.control}
                   name="freight"
                   render={({ field: { value } }) => (
-                    <View style={styles.lastFieldGroup}>
+                    <View style={styles.fieldGroup}>
                       <Label>Frete</Label>
                       <Input
                         type="currency"
@@ -1229,6 +1244,32 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                       />
                       <ThemedText style={styles.helpText}>
                         Valor do frete somado ao total do pedido
+                      </ThemedText>
+                    </View>
+                  )}
+                />
+
+                {/* Discount */}
+                <Controller
+                  control={form.control}
+                  name="discount"
+                  render={({ field: { value } }) => (
+                    <View style={styles.lastFieldGroup}>
+                      <Label>Desconto (%)</Label>
+                      <Input
+                        type="percentage"
+                        min={0}
+                        max={100}
+                        value={(value as number | null | undefined) ?? 0}
+                        onChange={(val) => {
+                          const num = typeof val === "number" ? val : 0;
+                          const clamped = Math.min(100, Math.max(0, num));
+                          handleFormChange("discount", clamped);
+                        }}
+                        editable={!isSubmitting}
+                      />
+                      <ThemedText style={styles.helpText}>
+                        Percentual de desconto aplicado sobre o subtotal
                       </ThemedText>
                     </View>
                   )}
@@ -1363,6 +1404,16 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                     {formatCurrency(totals.subtotal)}
                   </ThemedText>
                 </View>
+                {totals.discountAmount > 0 && (
+                  <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
+                    <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                      Desconto ({discountValue}%)
+                    </ThemedText>
+                    <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
+                      - {formatCurrency(totals.discountAmount)}
+                    </ThemedText>
+                  </View>
+                )}
                 {freightValue > 0 && (
                   <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
                     <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>

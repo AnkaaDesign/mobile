@@ -5,7 +5,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Activity } from '@/types'
 import { ACTIVITY_OPERATION, ACTIVITY_REASON } from '@/constants/enums'
 import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '@/constants/enum-labels'
-import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { canEditItems, canDeleteItems } from '@/utils/permissions/entity-permissions'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
 import { isTabletWidth } from '@/lib/table-utils'
@@ -30,6 +30,8 @@ export const activitiesListConfig: ListConfig<Activity> = {
 
   query: {
     hook: 'useActivitiesInfiniteMobile',
+    mutationsHook: 'useActivityMutations',
+    batchMutationsHook: 'useActivityBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 20,
     // Use optimized select - only fetch fields displayed in list columns
@@ -161,6 +163,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditItems,
         onPress: (activity, router) => {
           router.push(`/estoque/movimentacoes/editar/${activity.id}`)
         },
@@ -170,6 +173,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteItems,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (activity) => `Deseja excluir esta movimentação?`,
@@ -339,7 +343,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'movimentação' : 'movimentações'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ activityIds: Array.from(ids) })
         },
       },
     ],

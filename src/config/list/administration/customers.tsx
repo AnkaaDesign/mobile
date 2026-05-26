@@ -4,7 +4,7 @@ import {
   BRAZILIAN_STATES,
   BRAZILIAN_STATE_NAMES,
 } from '@/constants'
-import { canEditCustomers } from '@/utils/permissions/entity-permissions'
+import { canEditCustomers, canDeleteCustomers } from '@/utils/permissions/entity-permissions'
 import { formatCNPJ, formatCPF, formatBrazilianPhone, getFileUrl } from '@/utils'
 import { extendedColors } from '@/lib/theme/extended-colors'
 import { fontWeight } from '@/constants/design-system'
@@ -80,6 +80,8 @@ export const customersListConfig: ListConfig<Customer> = {
 
   query: {
     hook: 'useCustomersInfiniteMobile',
+    mutationsHook: 'useCustomerMutations',
+    batchMutationsHook: 'useCustomerBatchMutations',
     defaultSort: { field: 'fantasyName', direction: 'asc' },
     pageSize: 25,
     // Use select to fetch only the fields needed for the list view
@@ -327,6 +329,7 @@ export const customersListConfig: ListConfig<Customer> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditCustomers,
         onPress: (customer, router) => {
           router.push(`/administracao/clientes/editar/${customer.id}`)
         },
@@ -336,6 +339,7 @@ export const customersListConfig: ListConfig<Customer> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteCustomers,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (customer) => `Deseja excluir o cliente "${customer.fantasyName}"?`,
@@ -423,7 +427,7 @@ export const customersListConfig: ListConfig<Customer> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'cliente' : 'clientes'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ customerIds: Array.from(ids) })
         },
       },
     ],

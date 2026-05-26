@@ -6,6 +6,7 @@ import {
 } from '@/constants'
 import { getUserStatusBadgeText } from '@/utils/user'
 import { formatCPF, formatBrazilianPhone} from '@/utils'
+import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
 
 export const employeesListConfig: ListConfig<User> = {
   key: 'hr-employees',
@@ -13,6 +14,8 @@ export const employeesListConfig: ListConfig<User> = {
 
   query: {
     hook: 'useUsersInfiniteMobile',
+    mutationsHook: 'useUserMutations',
+    batchMutationsHook: 'useUserBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     // Use optimized select for better performance - fetches only fields needed for HR employee list
@@ -333,6 +336,7 @@ export const employeesListConfig: ListConfig<User> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditUsers,
         onPress: (employee, router) => {
           router.push(`/recursos-humanos/funcionarios/editar/${employee.id}`)
         },
@@ -342,6 +346,7 @@ export const employeesListConfig: ListConfig<User> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteUsers,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (employee) => `Deseja excluir o funcionário "${employee.name}"?`,
@@ -517,7 +522,7 @@ export const employeesListConfig: ListConfig<User> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'funcionário' : 'funcionários'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ userIds: Array.from(ids) })
         },
       },
     ],

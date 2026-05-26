@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintFormulaComponent } from '@/types'
-import { canEditPaintFormulas } from '@/utils/permissions/entity-permissions'
+import { canEditPaintFormulas, canDeletePaintFormulas } from '@/utils/permissions/entity-permissions'
 
 
 /**
@@ -16,6 +16,8 @@ export function createFormulaComponentsListConfig(
 
     query: {
       hook: 'usePaintFormulaComponentsInfinite',
+      mutationsHook: 'usePaintFormulaComponentMutations',
+      batchMutationsHook: 'usePaintFormulaComponentBatchMutations',
       defaultSort: { field: 'ratio', direction: 'desc' },
       pageSize: 25,
       include: {
@@ -114,6 +116,7 @@ export function createFormulaComponentsListConfig(
           label: 'Editar',
           icon: 'pencil',
           variant: 'default',
+          canPerform: canEditPaintFormulas,
           onPress: (component, router) => {
             router.push(`/pintura/formulas/${formulaId}/componentes/editar/${component.id}`)
           },
@@ -123,6 +126,7 @@ export function createFormulaComponentsListConfig(
           label: 'Excluir',
           icon: 'trash',
           variant: 'destructive',
+          canPerform: canDeletePaintFormulas,
           confirm: {
             title: 'Remover Componente',
             message: (component) => {
@@ -267,7 +271,7 @@ export function createFormulaComponentsListConfig(
               `Deseja excluir ${count} ${count === 1 ? 'componente' : 'componentes'}?`,
           },
           onPress: async (ids, mutations) => {
-            await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+            await mutations?.batchDeleteAsync?.({ paintFormulaComponentIds: Array.from(ids) })
           },
         },
       ],

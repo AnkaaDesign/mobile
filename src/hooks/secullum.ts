@@ -701,15 +701,17 @@ export const useInclusaoPontoConfig = (options?: { enabled?: boolean }) => {
 };
 
 /**
- * Loads the user's last 10 inclusão pendências. When `pollWhilePending` is
- * true, refetches every 4 seconds so long as any record has status=0
- * (Em processamento) — used right after a submission so the UI transitions
- * to Aceita/Rejeitada without a manual refresh.
+ * Loads the user's last 10 inclusão pendências.
+ *
+ * The "auto-refresh while Em processamento (status=0)" behaviour is driven by
+ * the list screen itself (a refetch() interval), NOT by a React Query
+ * `refetchInterval` here — the internal interval path is focus/AppState-gated
+ * and wasn't firing reliably on device, leaving freshly-included pontos stuck
+ * on "Processando" until a manual pull. We keep staleTime:0 + refetchOnMount/
+ * refetchOnWindowFocus so each refetch (and re-entry to the screen) surfaces
+ * the freshest state.
  */
-export const useInclusaoPontoPendencias = (options?: {
-  enabled?: boolean;
-  pollWhilePending?: boolean;
-}) => {
+export const useInclusaoPontoPendencias = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: inclusaoPontoKeys.pendencias(),
     queryFn: async () => {
@@ -717,20 +719,7 @@ export const useInclusaoPontoPendencias = (options?: {
       return res.data;
     },
     enabled: options?.enabled !== false,
-    // Drop staleTime so each poll surfaces the freshest state immediately and
-    // the next interval tick isn't held off as "still fresh".
     staleTime: 0,
-    // Poll every 2.5s while ANY entry is Em processamento (status=0). 4s felt
-    // too sluggish given face-recognition usually finishes in 5-15s. Keep
-    // polling in the background so a brief app-switch doesn't pause it.
-    refetchInterval: (query) => {
-      if (!options?.pollWhilePending) return false;
-      const data = query.state.data;
-      const list = data?.data ?? [];
-      const hasPending = list.some((p) => p.status === 0);
-      return hasPending ? 2500 : false;
-    },
-    refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });

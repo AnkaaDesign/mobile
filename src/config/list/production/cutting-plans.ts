@@ -20,6 +20,8 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
 
   query: {
     hook: 'useCutsInfiniteMobile',
+    mutationsHook: 'useCutMutations',
+    batchMutationsHook: 'useCutBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     where: {
@@ -271,8 +273,10 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           title: 'Confirmar Início',
           message: (count) => `Iniciar ${count} ${count === 1 ? 'plano' : 'planos'}?`,
         },
-        onPress: async (ids, { batchUpdate } = {}) => {
-          await batchUpdate?.({ ids: Array.from(ids), status: 'CUTTING', startedAt: new Date() })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({
+            cuts: Array.from(ids).map((id) => ({ id, status: 'CUTTING', startedAt: new Date() })),
+          })
         },
       },
       {
@@ -284,8 +288,10 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           title: 'Confirmar Conclusão',
           message: (count) => `Concluir ${count} ${count === 1 ? 'plano' : 'planos'}?`,
         },
-        onPress: async (ids, { batchUpdate } = {}) => {
-          await batchUpdate?.({ ids: Array.from(ids), status: 'COMPLETED', completedAt: new Date() })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({
+            cuts: Array.from(ids).map((id) => ({ id, status: 'COMPLETED', completedAt: new Date() })),
+          })
         },
       },
       {
@@ -298,7 +304,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'plano' : 'planos'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ cutIds: Array.from(ids) })
         },
       },
     ],

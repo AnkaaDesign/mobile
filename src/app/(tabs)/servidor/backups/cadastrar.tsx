@@ -104,10 +104,10 @@ export default function CreateBackupScreen() {
         encrypted: form.encrypted,
         autoDelete: form.autoDelete.enabled ? form.autoDelete : undefined,
       });
-      Alert.alert("Sucesso", "Backup criado com sucesso");
+      // API client interceptor already shows the success toast
       nav.goBack();
     } catch {
-      Alert.alert("Erro", "Falha ao criar backup");
+      // API client interceptor already shows the error toast
     } finally {
       setIsSubmitting(false);
     }

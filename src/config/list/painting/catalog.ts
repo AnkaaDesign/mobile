@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Paint } from '@/types'
-import { canEditPaints } from '@/utils/permissions/entity-permissions'
+import { canEditPaints, canDeletePaints } from '@/utils/permissions/entity-permissions'
 
 
 export const catalogListConfig: ListConfig<Paint> = {
@@ -9,6 +9,8 @@ export const catalogListConfig: ListConfig<Paint> = {
 
   query: {
     hook: 'usePaintsInfiniteMobile',
+    mutationsHook: 'usePaintMutations',
+    batchMutationsHook: 'usePaintBatchMutations',
     defaultSort: { field: 'colorOrder', direction: 'asc' },
     pageSize: 25,
     // NOTE: Don't pass include here - the backend's getDefaultInclude() already provides
@@ -136,6 +138,7 @@ export const catalogListConfig: ListConfig<Paint> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPaints,
         onPress: (paint, router) => {
           router.push(`/pintura/catalogo/editar/${paint.id}`)
         },
@@ -145,6 +148,7 @@ export const catalogListConfig: ListConfig<Paint> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePaints,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (paint) => `Deseja excluir a tinta "${paint.name}"?`,
@@ -308,7 +312,7 @@ export const catalogListConfig: ListConfig<Paint> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tinta' : 'tintas'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ paintIds: Array.from(ids) })
         },
       },
     ],

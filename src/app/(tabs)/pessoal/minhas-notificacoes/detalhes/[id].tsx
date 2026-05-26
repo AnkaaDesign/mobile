@@ -64,7 +64,7 @@ export default function MyNotificationDetailsScreen() {
               await deleteNotification(notification.id);
               nav.goBack();
             } catch {
-              Alert.alert("Erro", "Não foi possível excluir a notificação");
+              // API client interceptor already shows the error toast
             }
           },
         },
@@ -96,7 +96,7 @@ export default function MyNotificationDetailsScreen() {
       }
       await query.refetch();
     } catch {
-      Alert.alert("Erro", "Não foi possível atualizar o status da notificação");
+      // API client interceptor already shows the error toast
     }
   }, [notification, currentUser?.id, query]);
 

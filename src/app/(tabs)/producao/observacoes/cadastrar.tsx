@@ -94,27 +94,13 @@ function CreateObservationScreenInner() {
     try {
       const result = await createAsync(data);
 
-      Alert.alert(
-        "Sucesso",
-        "Observação criada com sucesso!",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              if (result?.data?.id) {
-                nav.dismissTo(mobileRoute(routes.production.observations.details(result.data.id)));
-              } else {
-                nav.goBack();
-              }
-            },
-          },
-        ]
-      );
-    } catch (error: any) {
-      Alert.alert(
-        "Erro",
-        error?.message || "Não foi possível criar a observação. Tente novamente."
-      );
+      if (result?.data?.id) {
+        nav.dismissTo(mobileRoute(routes.production.observations.details(result.data.id)));
+      } else {
+        nav.goBack();
+      }
+    } catch {
+      // Error toast is handled by the api-client interceptor.
     } finally {
       setIsSubmitting(false);
     }

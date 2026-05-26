@@ -277,17 +277,6 @@ export default function MeusPontosScreen() {
             <IconMapPinPlus size={20} color={colors.foreground} />
           </TouchableOpacity>
 
-          {/* Justificar Ausência shortcut */}
-          <TouchableOpacity
-            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() =>
-              nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia"))
-            }
-            accessibilityLabel="Justificar Ausência"
-          >
-            <IconCalendarOff size={20} color={colors.foreground} />
-          </TouchableOpacity>
-
           {/* Ajustar Ponto shortcut */}
           <TouchableOpacity
             style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -297,6 +286,17 @@ export default function MeusPontosScreen() {
             accessibilityLabel="Ajustar Ponto"
           >
             <IconClockEdit size={20} color={colors.foreground} />
+          </TouchableOpacity>
+
+          {/* Justificar Ausência shortcut */}
+          <TouchableOpacity
+            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() =>
+              nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia"))
+            }
+            accessibilityLabel="Justificar Ausência"
+          >
+            <IconCalendarOff size={20} color={colors.foreground} />
           </TouchableOpacity>
 
           {/* Column Visibility Button - matches month selector height */}

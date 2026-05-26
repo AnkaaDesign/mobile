@@ -1,7 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintFormula } from '@/types'
 import { SECTOR_PRIVILEGES } from '@/constants/enums'
-import { canEditPaintFormulas } from '@/utils/permissions/entity-permissions'
+import { canEditPaintFormulas, canDeletePaintFormulas } from '@/utils/permissions/entity-permissions'
 
 // Helper function to check if user is NOT a warehouse user
 const canViewPrices = (user: any) => user?.sector?.privileges !== SECTOR_PRIVILEGES.WAREHOUSE
@@ -13,6 +13,8 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
 
   query: {
     hook: 'usePaintFormulasInfiniteMobile',
+    mutationsHook: 'usePaintFormulaMutations',
+    batchMutationsHook: 'usePaintFormulaBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     sortOptions: [
@@ -141,6 +143,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPaintFormulas,
         onPress: (formula, router) => {
           if (formula.id) {
             router.push(`/pintura/formulas/editar/${formula.id}`)
@@ -152,6 +155,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePaintFormulas,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (formula) => {
@@ -316,7 +320,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'fórmula' : 'fórmulas'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ paintFormulaIds: Array.from(ids) })
         },
       },
     ],

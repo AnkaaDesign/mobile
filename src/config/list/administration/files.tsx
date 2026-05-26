@@ -55,6 +55,8 @@ export const filesListConfig: ListConfig<File> = {
 
   query: {
     hook: 'useFilesInfiniteMobile',
+    mutationsHook: 'useFileMutations',
+    batchMutationsHook: 'useFileBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
   },
@@ -310,7 +312,7 @@ export const filesListConfig: ListConfig<File> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'arquivo' : 'arquivos'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ fileIds: Array.from(ids) })
         },
       },
     ],

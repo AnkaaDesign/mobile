@@ -24,7 +24,13 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
       const ipiAmount = lineSubtotal * ((item.ipi || 0) / 100);
       return sum + lineSubtotal + icmsAmount + ipiAmount;
     }, 0) || 0;
-  const total = subtotal + (order.freight || 0);
+  // Goods subtotal (before taxes) — discount percentage applies to this base only
+  const goodsSubtotal =
+    order.items?.reduce((sum, item) => {
+      return sum + (item.orderedQuantity || 0) * (item.price || 0);
+    }, 0) || 0;
+  const discountAmount = goodsSubtotal * ((order.discount || 0) / 100);
+  const total = subtotal + (order.freight || 0) - discountAmount;
 
   return (
     <DetailCard title="Resumo Financeiro" icon="receipt">
@@ -44,6 +50,16 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
               <ThemedText style={styles.label}>Frete:</ThemedText>
             </View>
             <ThemedText style={styles.value}>{formatCurrency(order.freight || 0)}</ThemedText>
+          </View>
+        )}
+
+        {(order.discount || 0) > 0 && (
+          <View style={styles.row}>
+            <View style={styles.labelContainer}>
+              <IconCoin size={14} color={colors.foreground} />
+              <ThemedText style={styles.label}>Desconto ({order.discount}%):</ThemedText>
+            </View>
+            <ThemedText style={styles.value}>- {formatCurrency(discountAmount)}</ThemedText>
           </View>
         )}
 

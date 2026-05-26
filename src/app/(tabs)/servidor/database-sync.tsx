@@ -69,10 +69,7 @@ export default function DatabaseSyncScreen() {
               const response = await apiClient.post("/server/database/sync");
 
               if (response.data.success) {
-                Alert.alert(
-                  "Sucesso",
-                  "Sincronização iniciada com sucesso"
-                );
+                // API client interceptor already shows the success toast
                 // Refresh status after a short delay
                 setTimeout(() => fetchSyncStatus(false), 2000);
               } else {

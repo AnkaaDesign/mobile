@@ -26,6 +26,8 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
 
   query: {
     hook: 'useDeploymentsInfiniteMobile',
+    mutationsHook: 'useDeploymentMutations',
+    batchMutationsHook: 'useDeploymentBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 20,
     include: {

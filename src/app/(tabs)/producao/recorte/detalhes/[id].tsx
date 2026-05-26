@@ -138,7 +138,6 @@ export default function CuttingDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              Alert.alert("Sucesso", "Recorte excluído com sucesso");
               nav.goBack();
             } catch (_error) {
               // API client already shows error alert
@@ -186,7 +185,6 @@ export default function CuttingDetailsScreen() {
               }
 
               await update({ id: cut.id, data: updateData });
-              Alert.alert("Sucesso", "Status atualizado com sucesso");
             } catch (_error) {
               // API client already shows error alert
             }

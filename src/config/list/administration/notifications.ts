@@ -24,6 +24,8 @@ export const notificationsListConfig: ListConfig<Notification> = {
 
   query: {
     hook: 'useAdminNotificationsInfiniteMobile',
+    mutationsHook: 'useNotificationMutations',
+    batchMutationsHook: 'useNotificationBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -230,7 +232,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'notificação' : 'notificações'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ notificationIds: Array.from(ids) })
         },
       },
     ],

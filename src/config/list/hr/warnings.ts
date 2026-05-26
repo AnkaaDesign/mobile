@@ -2,6 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Warning } from '@/types'
 import { WARNING_SEVERITY, WARNING_CATEGORY } from '@/constants/enums'
 import { WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from '@/constants/enum-labels'
+import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
 
 export const warningsListConfig: ListConfig<Warning> = {
   key: 'hr-warnings',
@@ -9,6 +10,8 @@ export const warningsListConfig: ListConfig<Warning> = {
 
   query: {
     hook: 'useWarningsInfiniteMobile',
+    mutationsHook: 'useWarningMutations',
+    batchMutationsHook: 'useWarningBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -92,6 +95,7 @@ export const warningsListConfig: ListConfig<Warning> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditHrEntities,
         onPress: (warning, router) => {
           router.push(`/recursos-humanos/advertencias/editar/${warning.id}`)
         },
@@ -101,6 +105,7 @@ export const warningsListConfig: ListConfig<Warning> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteHrEntities,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (warning) => `Deseja excluir esta advertência?`,
@@ -293,7 +298,7 @@ export const warningsListConfig: ListConfig<Warning> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'advertência' : 'advertências'}?`,
         },
         onPress: async (ids, actions) => {
-          await actions?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await actions?.batchDeleteAsync?.({ warningIds: Array.from(ids) })
         },
       },
     ],

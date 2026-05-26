@@ -43,14 +43,7 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
         {
           text: "Confirmar",
           onPress: () => {
-            emitNfse.mutate(invoiceId, {
-              onSuccess: () => {
-                Alert.alert("Sucesso", "NFS-e sera emitida em instantes");
-              },
-              onError: () => {
-                Alert.alert("Erro", "Erro ao emitir NFS-e");
-              },
-            });
+            emitNfse.mutate(invoiceId);
           },
         },
       ],
@@ -74,10 +67,6 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
         onSuccess: () => {
           setShowCancelModal(false);
           setCancelReason("");
-          Alert.alert("Sucesso", "NFS-e cancelada com sucesso");
-        },
-        onError: () => {
-          Alert.alert("Erro", "Erro ao cancelar NFS-e");
         },
       },
     );

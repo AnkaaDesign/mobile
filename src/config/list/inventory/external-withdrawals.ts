@@ -1,7 +1,7 @@
 import type { ListConfig, ActionMutationsContext } from '@/components/list/types'
 import type { ExternalWithdrawal } from '@/types'
 import { EXTERNAL_WITHDRAWAL_STATUS } from '@/constants/enums'
-import { canEditExternalWithdrawals } from '@/utils/permissions/entity-permissions'
+import { canEditExternalWithdrawals, canDeleteExternalWithdrawals } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -19,6 +19,8 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
 
   query: {
     hook: 'useExternalWithdrawalsInfiniteMobile',
+    mutationsHook: 'useExternalWithdrawalMutations',
+    batchMutationsHook: 'useExternalWithdrawalBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -111,6 +113,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditExternalWithdrawals,
         visible: (withdrawal) => withdrawal.status === 'PENDING',
         onPress: (withdrawal, router) => {
           router.push(`/estoque/retiradas-externas/editar/${withdrawal.id}`)
@@ -121,6 +124,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteExternalWithdrawals,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (withdrawal) => `Deseja excluir a retirada de "${withdrawal.withdrawerName}"?`,
@@ -226,7 +230,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'retirada' : 'retiradas'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ externalWithdrawalIds: Array.from(ids) })
         },
       },
     ],

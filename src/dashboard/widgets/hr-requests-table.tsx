@@ -398,10 +398,9 @@ function HrRequestsTableRender({
       },
       {
         onSuccess: () => {
-          notify.success("Requisição aprovada");
+          // API client interceptor already shows the success toast
           setOpenRequest(null);
         },
-        onError: () => notify.error("Não foi possível aprovar a requisição"),
       },
     );
   };
@@ -423,12 +422,11 @@ function HrRequestsTableRender({
       },
       {
         onSuccess: () => {
-          notify.success("Requisição rejeitada");
+          // API client interceptor already shows the success toast
           setRejectTarget(null);
           setRejectReason("");
           setOpenRequest(null);
         },
-        onError: () => notify.error("Não foi possível rejeitar a requisição"),
         onSettled: () => undefined,
       },
     );

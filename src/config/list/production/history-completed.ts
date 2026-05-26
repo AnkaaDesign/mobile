@@ -19,6 +19,8 @@ export const historyCompletedListConfig: ListConfig<Task> = {
 
   query: {
     hook: 'useTasksInfiniteMobile',
+    mutationsHook: 'useTaskMutations',
+    batchMutationsHook: 'useTaskBatchMutations',
     defaultSort: { field: 'finishedAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -455,7 +457,9 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         },
         onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for new status
-          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({
+            tasks: Array.from(ids).map((id) => ({ id, data: {} })),
+          })
         },
       },
       {
@@ -469,7 +473,9 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         },
         onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for sector
-          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({
+            tasks: Array.from(ids).map((id) => ({ id, data: {} })),
+          })
         },
       },
       {
@@ -482,7 +488,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ taskIds: Array.from(ids) })
         },
       },
     ],

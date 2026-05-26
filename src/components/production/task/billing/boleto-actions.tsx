@@ -100,17 +100,7 @@ export function BoletoActions({ installmentId, bankSlip, installmentStatus }: Bo
         {
           text: "Confirmar",
           onPress: () => {
-            regenerateBoleto.mutate(
-              { installmentId },
-              {
-                onSuccess: () => {
-                  Alert.alert("Sucesso", "Boleto regenerado com sucesso");
-                },
-                onError: () => {
-                  Alert.alert("Erro", "Erro ao regenerar boleto");
-                },
-              },
-            );
+            regenerateBoleto.mutate({ installmentId });
           },
         },
       ],
@@ -127,17 +117,7 @@ export function BoletoActions({ installmentId, bankSlip, installmentStatus }: Bo
           text: "Confirmar Cancelamento",
           style: "destructive",
           onPress: () => {
-            cancelBoleto.mutate(
-              { installmentId },
-              {
-                onSuccess: () => {
-                  Alert.alert("Sucesso", "Boleto cancelado com sucesso");
-                },
-                onError: () => {
-                  Alert.alert("Erro", "Erro ao cancelar boleto");
-                },
-              },
-            );
+            cancelBoleto.mutate({ installmentId });
           },
         },
       ],
@@ -203,10 +183,6 @@ export function BoletoActions({ installmentId, bankSlip, installmentStatus }: Bo
         {
           onSuccess: () => {
             closeMarkPaidModal();
-            Alert.alert("Sucesso", "Parcela marcada como paga");
-          },
-          onError: () => {
-            Alert.alert("Erro", "Erro ao marcar parcela como paga");
           },
         },
       );

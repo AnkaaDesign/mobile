@@ -1,7 +1,7 @@
 import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
-import { canEditUsers } from '@/utils/permissions/entity-permissions'
+import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants/enums'
 import { SECTOR_PRIVILEGES_LABELS } from '@/constants/enum-labels'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +26,8 @@ export const usersListConfig: ListConfig<User> = {
 
   query: {
     hook: 'useUsersInfiniteMobile',
+    mutationsHook: 'useUserMutations',
+    batchMutationsHook: 'useUserBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     // Use optimized select for 50% less data transfer
@@ -282,6 +284,7 @@ export const usersListConfig: ListConfig<User> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditUsers,
         onPress: (user, router) => {
           router.push(`/administracao/usuarios/editar/${user.id}`)
         },
@@ -291,6 +294,7 @@ export const usersListConfig: ListConfig<User> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteUsers,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (user) => `Deseja excluir o usuário "${user.name}"?`,
@@ -443,7 +447,9 @@ export const usersListConfig: ListConfig<User> = {
           message: (count) => `Verificar ${count} ${count === 1 ? 'usuário' : 'usuários'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchUpdate?.({ ids: Array.from(ids), verified: true })
+          await mutations?.batchUpdateAsync?.({
+            users: Array.from(ids).map((id) => ({ id, data: { verified: true } })),
+          })
         },
       },
       {
@@ -456,7 +462,9 @@ export const usersListConfig: ListConfig<User> = {
           message: (count) => `Forçar alteração de senha para ${count} ${count === 1 ? 'usuário' : 'usuários'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchUpdate?.({ ids: Array.from(ids), requirePasswordChange: true })
+          await mutations?.batchUpdateAsync?.({
+            users: Array.from(ids).map((id) => ({ id, data: { requirePasswordChange: true } })),
+          })
         },
       },
       {
@@ -469,7 +477,7 @@ export const usersListConfig: ListConfig<User> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'usuário' : 'usuários'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ userIds: Array.from(ids) })
         },
       },
     ],

@@ -265,7 +265,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn("[quick-budget] submit failed", err);
-      Alert.alert("Erro", "Não foi possível criar o orçamento. Tente novamente.");
+      // API client interceptor already shows the error toast
     }
   };
 

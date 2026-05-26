@@ -17,6 +17,8 @@ export const historyCancelledListConfig: ListConfig<Task> = {
 
   query: {
     hook: 'useTasksInfiniteMobile',
+    mutationsHook: 'useTaskMutations',
+    batchMutationsHook: 'useTaskBatchMutations',
     defaultSort: { field: 'updatedAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -413,7 +415,9 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         onPress: async (ids, mutations) => {
           // Implementation would need to prompt for sector
           if (mutations?.batchUpdateAsync) {
-            await mutations.batchUpdateAsync({ ids: Array.from(ids), data: {} })
+            await mutations.batchUpdateAsync({
+              tasks: Array.from(ids).map((id) => ({ id, data: {} })),
+            })
           }
         },
       },
@@ -428,7 +432,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         },
         onPress: async (ids, mutations) => {
           if (mutations?.batchDeleteAsync) {
-            await mutations.batchDeleteAsync({ ids: Array.from(ids) })
+            await mutations.batchDeleteAsync({ taskIds: Array.from(ids) })
           }
         },
       },

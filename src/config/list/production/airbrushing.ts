@@ -17,6 +17,8 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
 
   query: {
     hook: 'useAirbrushingsInfiniteMobile',
+    mutationsHook: 'useAirbrushingMutations',
+    batchMutationsHook: 'useAirbrushingBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -284,7 +286,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'aerografia' : 'aerografias'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ airbrushingIds: Array.from(ids) })
         },
       },
     ],

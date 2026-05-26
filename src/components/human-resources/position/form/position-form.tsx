@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -75,8 +75,8 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
         onSuccess?.();
         nav.replace(mobileRoute(routes.humanResources.positions.details(position.id)));
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o cargo");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     }
   };
 

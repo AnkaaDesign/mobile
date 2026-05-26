@@ -141,14 +141,11 @@ function OrderScheduleCreateScreenInner() {
       setIsSubmitting(true);
       try {
         await createSchedule.mutateAsync(data);
-        Alert.alert("Sucesso", "Agendamento criado com sucesso", [
-          { text: "OK", onPress: () => goBack() },
-        ]);
+        // Success toast is shown automatically by the API client interceptor
+        goBack();
       } catch (error: any) {
-        Alert.alert(
-          "Erro",
-          error?.message || "Erro ao criar agendamento"
-        );
+        // Error toast is shown automatically by the API client interceptor
+        console.error("Error creating order schedule:", error);
       } finally {
         setIsSubmitting(false);
       }

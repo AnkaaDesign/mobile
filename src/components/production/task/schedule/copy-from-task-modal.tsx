@@ -29,7 +29,6 @@ import {
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { useTasks, useCopyFromTask } from "@/hooks";
-import { Alert } from "react-native";
 
 export interface CopyFromTaskModalProps {
   open: boolean;
@@ -332,11 +331,10 @@ export function CopyFromTaskModal({
         },
       });
 
-      Alert.alert("Sucesso", "Campos copiados com sucesso!");
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao copiar campos");
+    } catch {
+      // Error toast is handled by the api-client interceptor.
     }
   }, [sourceTask, selectedFields, userPrivilege, copyMutation, targetTask.id, onOpenChange, onSuccess]);
 

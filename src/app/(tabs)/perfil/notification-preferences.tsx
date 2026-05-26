@@ -313,7 +313,7 @@ export default function NotificationPreferencesScreen() {
       }
     } catch (error: any) {
       console.error("[NotificationPreferences] Error loading:", error);
-      Alert.alert("Erro", "Falha ao carregar preferências de notificação");
+      // API client interceptor already shows the error toast
       setConfigurations(null);
       setPreferences({});
       setOriginalPreferences({});
@@ -390,7 +390,7 @@ export default function NotificationPreferencesScreen() {
           ...prev,
           [configKey]: originalPreferences[configKey] || [],
         }));
-        Alert.alert("Erro", "Falha ao salvar preferência");
+        // API client interceptor already shows the error toast
       } finally {
         setSavingKeys((prev) => {
           const newSet = new Set(prev);
@@ -428,7 +428,7 @@ export default function NotificationPreferencesScreen() {
                 }
               } catch (error: any) {
                 console.error("[NotificationPreferences] Error resetting:", error);
-                Alert.alert("Erro", "Falha ao restaurar preferência");
+                // API client interceptor already shows the error toast
               } finally {
                 setSavingKeys((prev) => {
                   const newSet = new Set(prev);

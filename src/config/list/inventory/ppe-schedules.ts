@@ -3,7 +3,7 @@ import type { PpeDeliverySchedule } from '@/types'
 import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from '@/constants/enums'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/utils/route-mapper'
-import { canEditPpeDeliveries } from '@/utils/permissions/entity-permissions'
+import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 const FREQUENCY_LABELS: Record<string, string> = {
   ONCE: 'Uma Vez',
@@ -32,6 +32,8 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
 
   query: {
     hook: 'usePpeSchedulesInfiniteMobile',
+    mutationsHook: 'usePpeDeliveryScheduleMutations',
+    batchMutationsHook: 'usePpeDeliveryScheduleBatchMutations',
     defaultSort: { field: 'nextRun', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -129,6 +131,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         onPress: (schedule, router) => {
           router.push(routeToMobilePath(routes.inventory.ppe.schedules.edit(schedule.id)) as any)
         },
@@ -138,6 +141,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         label: 'Ativar',
         icon: 'check',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         confirm: {
           title: 'Ativar Agendamento',
           message: 'Tem certeza que deseja ativar este agendamento?',
@@ -154,6 +158,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         label: 'Desativar',
         icon: 'x',
         variant: 'destructive',
+        canPerform: canEditPpeDeliveries,
         confirm: {
           title: 'Desativar Agendamento',
           message: 'Tem certeza que deseja desativar este agendamento?',
@@ -170,6 +175,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePpeDeliveries,
         confirm: {
           title: 'Excluir Agendamento',
           message: 'Tem certeza que deseja excluir este agendamento?',
@@ -346,7 +352,11 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           message: (count) => `Deseja ativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
         onPress: async (ids, { batchUpdateAsync } = {}) => {
-          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: true })
+          const ppeDeliverySchedules = Array.from(ids).map((id) => ({
+            id,
+            data: { isActive: true },
+          }))
+          await batchUpdateAsync?.({ ppeDeliverySchedules })
         },
       },
       {
@@ -359,7 +369,11 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           message: (count) => `Deseja desativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
         onPress: async (ids, { batchUpdateAsync } = {}) => {
-          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: false })
+          const ppeDeliverySchedules = Array.from(ids).map((id) => ({
+            id,
+            data: { isActive: false },
+          }))
+          await batchUpdateAsync?.({ ppeDeliverySchedules })
         },
       },
       {
@@ -372,7 +386,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           message: (count) => `Deseja excluir permanentemente ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ ppeScheduleIds: Array.from(ids) })
         },
       },
     ],

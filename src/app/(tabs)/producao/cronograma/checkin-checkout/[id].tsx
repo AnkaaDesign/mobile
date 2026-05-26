@@ -398,7 +398,7 @@ function CheckinCheckoutInner() {
       }
     } catch (error: any) {
       console.error('[CheckinCheckout] Error saving:', error)
-      Alert.alert('Erro', 'Ocorreu um erro ao salvar. Tente novamente.')
+      // Error toast is handled by the api-client interceptor.
     }
   }, [id, task, activeServiceOrders, checkinFilesByServiceOrder, checkoutFilesByServiceOrder, baseFiles, updateAsync, handleNavigateBack])
 

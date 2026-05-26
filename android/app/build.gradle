@@ -88,6 +88,14 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'com.ankaadesign.management'
+
+    // Skip the lintVitalRelease pass during release builds. It is not required to
+    // produce the APK and was OOMing inside third-party libraries' lint analysis.
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
     defaultConfig {
         applicationId 'com.ankaadesign.management'
         minSdkVersion rootProject.ext.minSdkVersion

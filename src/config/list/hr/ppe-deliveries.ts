@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PpeDelivery } from '@/types'
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants'
+import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = PPE_DELIVERY_STATUS_LABELS
 
@@ -10,6 +11,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
 
   query: {
     hook: 'usePpeDeliveriesInfiniteMobile',
+    mutationsHook: 'usePpeDeliveryMutations',
+    batchMutationsHook: 'usePpeDeliveryBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -138,6 +141,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         onPress: (delivery, router) => {
           router.push(`/recursos-humanos/epi/entregas/editar/${delivery.id}`)
         },
@@ -148,6 +152,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         label: 'Aprovar',
         icon: 'check',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         confirm: {
           title: 'Aprovar Entrega',
           message: 'Tem certeza que deseja aprovar esta entrega?',
@@ -164,6 +169,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         label: 'Reprovar',
         icon: 'x-circle',
         variant: 'destructive',
+        canPerform: canEditPpeDeliveries,
         confirm: {
           title: 'Reprovar Entrega',
           message: 'Tem certeza que deseja reprovar esta entrega?',
@@ -180,6 +186,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePpeDeliveries,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (delivery) =>
@@ -327,7 +334,12 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           message: (count) => `Aprovar ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchUpdateAsync?.({ ids: Array.from(ids), status: 'APPROVED' })
+          await context?.batchUpdateAsync?.({
+            ppeDeliveries: Array.from(ids).map((id) => ({
+              id,
+              data: { status: PPE_DELIVERY_STATUS.APPROVED },
+            })),
+          })
         },
       },
       {
@@ -340,7 +352,12 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           message: (count) => `Marcar ${count} ${count === 1 ? 'entrega' : 'entregas'} como entregue?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchUpdateAsync?.({ ids: Array.from(ids), status: 'DELIVERED', actualDeliveryDate: new Date() })
+          await context?.batchUpdateAsync?.({
+            ppeDeliveries: Array.from(ids).map((id) => ({
+              id,
+              data: { status: PPE_DELIVERY_STATUS.DELIVERED, actualDeliveryDate: new Date() },
+            })),
+          })
         },
       },
       {
@@ -353,7 +370,12 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           message: (count) => `Cancelar ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchUpdateAsync?.({ ids: Array.from(ids), status: 'CANCELLED' })
+          await context?.batchUpdateAsync?.({
+            ppeDeliveries: Array.from(ids).map((id) => ({
+              id,
+              data: { status: PPE_DELIVERY_STATUS.CANCELLED },
+            })),
+          })
         },
       },
       {
@@ -366,7 +388,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ ppeDeliveryIds: Array.from(ids) })
         },
       },
     ],

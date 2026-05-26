@@ -75,10 +75,10 @@ export default function SystemUsersScreen() {
             try {
               setDeletingUser(username);
               await deleteUser(username);
-              Alert.alert("Sucesso", "Usuário removido com sucesso");
+              // API client interceptor already shows the success toast
               refetch();
             } catch (_error) {
-              Alert.alert("Erro", "Falha ao remover usuário");
+              // API client interceptor already shows the error toast
             } finally {
               setDeletingUser(null);
             }

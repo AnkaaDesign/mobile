@@ -431,7 +431,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'empréstimo' : 'empréstimos'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ borrowIds: Array.from(ids) })
         },
       },
     ],

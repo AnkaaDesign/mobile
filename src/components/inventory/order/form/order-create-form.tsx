@@ -50,6 +50,7 @@ const orderCreateFormSchema = z.object({
   forecast: z.date().optional().nullable(),
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
   freight: z.number().min(0, "Frete deve ser maior ou igual a 0").optional().nullable(),
+  discount: z.number().min(0).max(100).optional().nullable(),
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
   paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
@@ -115,6 +116,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       forecast: null,
       notes: "",
       freight: null,
+      discount: null,
       paymentMethod: null,
       paymentPix: null,
       paymentDueDays: null,
@@ -226,11 +228,15 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   // Freight value (carried in form data)
   const freightValue = (multiStepForm.formData.freight as number | null | undefined) || 0;
 
-  // Calculate totals for review (unified: inventory + temporary, with taxes + freight)
+  // Discount value (percentage, carried in form data)
+  const discountValue = (multiStepForm.formData.discount as number | null | undefined) || 0;
+
+  // Calculate totals for review (unified: inventory + temporary, with taxes - discount + freight)
   const totals = useMemo(() => {
     const invItems = multiStepForm.getSelectedItemsWithData();
 
     let subtotal = 0;
+    let goodsSubtotal = 0;
     let totalQuantity = 0;
 
     invItems.forEach((item) => {
@@ -238,24 +244,29 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       const icms = itemIcms[item.id] || 0;
       const ipi = itemIpi[item.id] || 0;
       subtotal += lineSubtotal + lineSubtotal * (icms / 100) + lineSubtotal * (ipi / 100);
+      goodsSubtotal += lineSubtotal;
       totalQuantity += item.quantity;
     });
 
     temporaryItems.forEach((item) => {
       const lineSubtotal = item.price * item.quantity;
       subtotal += lineSubtotal + lineSubtotal * ((item.icms || 0) / 100) + lineSubtotal * ((item.ipi || 0) / 100);
+      goodsSubtotal += lineSubtotal;
       totalQuantity += item.quantity;
     });
 
-    const total = subtotal + freightValue;
+    const discountAmount = goodsSubtotal * (discountValue / 100);
+    const total = subtotal - discountAmount + freightValue;
 
     return {
       itemCount: invItems.length + temporaryItems.length,
       totalQuantity,
       subtotal,
+      goodsSubtotal,
+      discountAmount,
       total,
     };
-  }, [multiStepForm, temporaryItems, itemIcms, itemIpi, freightValue]);
+  }, [multiStepForm, temporaryItems, itemIcms, itemIpi, freightValue, discountValue]);
 
   // Temporary item handlers
   const handleAddTemporaryItem = useCallback(() => {
@@ -342,6 +353,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         forecast: forecastDate ?? null,
         notes: multiStepForm.formData.notes || undefined,
         freight: freightValue,
+        discount: discountValue,
         items: itemsData,
         paymentMethod: multiStepForm.formData.paymentMethod || undefined,
         paymentPix: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX ? multiStepForm.formData.paymentPix || undefined : undefined,
@@ -409,13 +421,11 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         }
       } catch (error) {
         console.error("Error uploading files or creating order:", error);
-        Alert.alert("Erro", "Falha ao fazer upload dos arquivos ou criar pedido");
       } finally {
         setIsUploadingFiles(false);
       }
     } catch (error) {
       console.error("Error creating order:", error);
-      Alert.alert("Erro", "Falha ao criar pedido");
     }
   }, [
     multiStepForm,
@@ -423,6 +433,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
     itemIcms,
     itemIpi,
     freightValue,
+    discountValue,
     forecastDate,
     budgetFiles,
     invoiceFiles,
@@ -1042,7 +1053,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                   control={form.control}
                   name="freight"
                   render={({ field: { value } }) => (
-                    <View style={styles.lastFieldGroup}>
+                    <View style={styles.fieldGroup}>
                       <Label>Frete</Label>
                       <Input
                         type="currency"
@@ -1052,6 +1063,32 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                       />
                       <ThemedText style={styles.helpText}>
                         Valor do frete somado ao total do pedido
+                      </ThemedText>
+                    </View>
+                  )}
+                />
+
+                {/* Discount */}
+                <Controller
+                  control={form.control}
+                  name="discount"
+                  render={({ field: { value } }) => (
+                    <View style={styles.lastFieldGroup}>
+                      <Label>Desconto (%)</Label>
+                      <Input
+                        type="percentage"
+                        min={0}
+                        max={100}
+                        value={(value as number | null | undefined) ?? 0}
+                        onChange={(val) => {
+                          const num = typeof val === "number" ? val : 0;
+                          const clamped = Math.min(100, Math.max(0, num));
+                          handleFormChange("discount", clamped);
+                        }}
+                        editable={!isSubmitting}
+                      />
+                      <ThemedText style={styles.helpText}>
+                        Percentual de desconto aplicado sobre o subtotal
                       </ThemedText>
                     </View>
                   )}
@@ -1186,6 +1223,16 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                     {formatCurrency(totals.subtotal)}
                   </ThemedText>
                 </View>
+                {totals.discountAmount > 0 && (
+                  <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
+                    <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                      Desconto ({discountValue}%)
+                    </ThemedText>
+                    <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
+                      - {formatCurrency(totals.discountAmount)}
+                    </ThemedText>
+                  </View>
+                )}
                 {freightValue > 0 && (
                   <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
                     <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>

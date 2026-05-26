@@ -467,7 +467,6 @@ export default function CatalogListScreen() {
           onPress: async () => {
             try {
               await deletePaint(paint.id);
-              Alert.alert("Sucesso", "Tinta excluída com sucesso");
             } catch (_error) {
               // API client already shows error alert
             }

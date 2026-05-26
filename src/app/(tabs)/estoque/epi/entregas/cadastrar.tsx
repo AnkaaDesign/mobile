@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -169,9 +168,6 @@ function CreatePPEDeliveryScreenInner() {
       });
       const newId = (result as any)?.data?.id || (result as any)?.id;
       return { id: newId ?? "" };
-    },
-    onError: (err: any) => {
-      Alert.alert("Erro", err?.message || "Ocorreu um erro ao criar a entrega de EPI");
     },
     successAction: "replace",
     successRoute: (result) =>

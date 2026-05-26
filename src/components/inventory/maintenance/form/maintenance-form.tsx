@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -108,7 +108,8 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
         nav.replace(mobileRoute(routes.inventory.maintenance.details(maintenance.id)));
       }
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar a manutenção");
+      // Error toast is shown automatically by the API client interceptor
+      console.error("Error saving maintenance:", error);
     }
   };
 

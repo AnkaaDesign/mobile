@@ -52,10 +52,10 @@ export function buildSteps(ctx: TutorialUserContext): TutorialStep[] {
     // "Voltar" step returns to the hub before the next entry step.
     ...meusPontosIntroSteps,
     ...incluirPontoSteps,
-    ...meusPontosJustifyEntrySteps,
-    ...justificarSteps,
     ...meusPontosAjustarEntrySteps,
     ...ajustarPontoSteps,
+    ...meusPontosJustifyEntrySteps,
+    ...justificarSteps,
     ...meusPontosOutroSteps,
     ...mensagensSteps,
     ...advertenciasSteps,

@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { OrderItem } from '@/types'
-import { canEditOrders } from '@/utils/permissions/entity-permissions'
+import { canEditOrders, canDeleteOrders } from '@/utils/permissions/entity-permissions'
 import { formatCurrency } from '@/utils'
 
 /**
@@ -32,6 +32,8 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
 
   query: {
     hook: 'useOrderItemsInfiniteMobile',
+    mutationsHook: 'useOrderItemMutations',
+    batchMutationsHook: 'useOrderItemBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -184,6 +186,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditOrders,
         onPress: (orderItem, router) => {
           router.push(`/estoque/pedidos/${orderItem.orderId}/items/editar/${orderItem.id}`)
         },
@@ -193,6 +196,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteOrders,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (orderItem) =>
@@ -325,7 +329,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'item' : 'itens'} do pedido?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ orderItemIds: Array.from(ids) })
         },
       },
     ],

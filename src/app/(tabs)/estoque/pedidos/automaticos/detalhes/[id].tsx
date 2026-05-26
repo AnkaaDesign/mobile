@@ -101,11 +101,8 @@ function AutomaticOrderDetailScreenInner() {
   });
 
   const { update: updateSchedule, delete: deleteSchedule } = useOrderScheduleMutations({
-    onUpdateSuccess: () => {
-      Alert.alert("Sucesso", "Agendamento atualizado com sucesso");
-    },
     onDeleteSuccess: () => {
-      Alert.alert("Sucesso", "Agendamento excluído com sucesso");
+      // Success toast is shown automatically by the API client interceptor
       goBack();
     },
   });
@@ -136,7 +133,7 @@ function AutomaticOrderDetailScreenInner() {
             try {
               await deleteSchedule(scheduleId);
             } catch (_error) {
-              Alert.alert("Erro", "Não foi possível excluir o agendamento. Tente novamente.");
+              // Error toast is shown automatically by the API client interceptor
             }
           },
         },
@@ -164,7 +161,7 @@ function AutomaticOrderDetailScreenInner() {
             try {
               await updateSchedule({ id: scheduleId, data: { isActive: newStatus } });
             } catch (_error) {
-              Alert.alert("Erro", `Não foi possível ${action} o agendamento. Tente novamente.`);
+              // Error toast is shown automatically by the API client interceptor
             }
           },
         },

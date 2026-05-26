@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintType } from '@/types'
-import { canEditPaints } from '@/utils/permissions/entity-permissions'
+import { canEditPaints, canDeletePaints } from '@/utils/permissions/entity-permissions'
 
 export const paintTypesListConfig: ListConfig<PaintType> = {
   key: 'painting-paint-types',
@@ -8,6 +8,8 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
 
   query: {
     hook: 'usePaintTypesInfiniteMobile',
+    mutationsHook: 'usePaintTypeMutations',
+    batchMutationsHook: 'usePaintTypeBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -85,6 +87,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPaints,
         onPress: (paintType, router) => {
           router.push(`/pintura/tipos-de-tinta/editar/${paintType.id}`)
         },
@@ -94,6 +97,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePaints,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (paintType) => `Deseja excluir o tipo de tinta "${paintType.name}"?`,
@@ -165,7 +169,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tipo de tinta' : 'tipos de tinta'}?`,
         },
         onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await mutations?.batchDeleteAsync?.({ paintTypeIds: Array.from(ids) })
         },
       },
     ],

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { Text } from "@/components/ui/text";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -103,8 +103,8 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
         onSuccess?.();
         nav.replace(mobileRoute(routes.humanResources.bonifications.details(bonus.id)));
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o bônus");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     }
   };
 

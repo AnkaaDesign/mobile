@@ -114,6 +114,7 @@ export interface Order extends BaseEntity {
   description: string;
   forecast: Date | null;
   freight: number;
+  discount: number;
   status: ORDER_STATUS;
   statusOrder: number; // Status numeric order for sorting: 1=Created, 2=PartiallyFulfilled, 3=Fulfilled, 4=Overdue, 5=PartiallyReceived, 6=Received, 7=Cancelled
   budgetIds?: string[];

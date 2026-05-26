@@ -93,14 +93,8 @@ function EditAutomaticOrderScreenInner() {
 
   const { update: updateOrderSchedule } = useOrderScheduleMutations({
     onUpdateSuccess: (_data) => {
-      Alert.alert("Sucesso", "Agendamento automático atualizado com sucesso", [
-        {
-          text: "OK",
-          onPress: () => {
-            nav.replace(mobileRoute(routes.inventory.orders.automatic.details(scheduleId)));
-          },
-        },
-      ]);
+      // Success toast is shown automatically by the API client interceptor
+      nav.replace(mobileRoute(routes.inventory.orders.automatic.details(scheduleId)));
     },
   });
 
@@ -128,7 +122,7 @@ function EditAutomaticOrderScreenInner() {
       try {
         await updateOrderSchedule({ id: scheduleId, data });
       } catch (error) {
-        Alert.alert("Erro", "Não foi possível atualizar o agendamento automático. Tente novamente.");
+        // Error toast is shown automatically by the API client interceptor
         console.error("Error updating order schedule:", error);
       } finally {
         setIsSubmitting(false);

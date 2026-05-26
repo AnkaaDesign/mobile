@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, Alert, TouchableOpacity, ScrollView } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -139,7 +139,6 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
       setServiceChanges({});
       onServicesUpdate?.();
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível atualizar as ordens de serviço");
       console.error("Error updating service orders:", error);
     } finally {
       setIsSaving(false);

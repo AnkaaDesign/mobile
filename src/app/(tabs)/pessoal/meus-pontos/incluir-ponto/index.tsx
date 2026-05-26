@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -86,12 +86,23 @@ const REJECTION_LABELS: Record<string, string> = {
   "Nenhuma pessoa encontrada na foto": "Nenhuma pessoa na foto",
 };
 
+// Compact a raw Secullum rejection reason for the status pill. Some reasons
+// carry a trailing "por <nome>" that varies per record — e.g.
+// "Batida já preenchida por Fulano de Tal" — which bloats the badge. Drop the
+// suffix so it reads simply "Batida já preenchida". (The full reason, with the
+// name, is still shown in the expanded "Motivo da rejeição" section.)
+function compactRejection(raw: string): string {
+  const m = raw.match(/^(Batida j[áa] preenchida)\b.*/i);
+  if (m) return m[1];
+  return REJECTION_LABELS[raw] ?? raw;
+}
+
 function statusLabel(p: Pick<Pendencia, "status" | "motivoRejeicao">): string {
   if (p.status === 0) return "Processando";
   if (p.status === 1) return "Aceita";
   const raw = (p.motivoRejeicao ?? "").trim();
   if (!raw) return "Rejeitada";
-  return REJECTION_LABELS[raw] ?? raw;
+  return compactRejection(raw);
 }
 
 // Mini map preview. Same OSM.de tile provider as the capture screen — light
@@ -132,10 +143,10 @@ export default function IncluirPontoListScreen() {
   const [manualRefreshing, setManualRefreshing] = useState(false);
 
   useInclusaoPontoConfig({ enabled: true });
-  const pendenciasQuery = useInclusaoPontoPendencias({
-    enabled: true,
-    pollWhilePending: true,
-  });
+  // We drive the "while processing" auto-refresh from the component (see the
+  // effect below) instead of the hook's internal refetchInterval, so we don't
+  // pass pollWhilePending here.
+  const pendenciasQuery = useInclusaoPontoPendencias({ enabled: true });
   const openComprovante = useOpenInclusaoPontoComprovante();
   const [loadingComprovanteId, setLoadingComprovanteId] = useState<number | null>(null);
 
@@ -153,6 +164,42 @@ export default function IncluirPontoListScreen() {
       ),
     [list],
   );
+
+  // Auto-refresh while any entry is still "Processando" (status 0). A freshly
+  // included ponto lands here as status 0 and Secullum resolves it to
+  // Aceita/Rejeitada asynchronously (face-recognition + geofence checks,
+  // usually 5-15s). We poll until every row reaches a terminal state so the
+  // user never has to pull-to-refresh.
+  //
+  // Why a self-scheduling loop instead of setInterval(refetch, ...):
+  // refetch() defaults to `cancelRefetch: true`, so a fixed-interval timer
+  // CANCELS the in-flight request on every tick. The Secullum round-trip
+  // routinely takes longer than a few seconds, so a plain interval kept
+  // aborting each poll before it could finish — nothing ever completed and the
+  // row stayed "Processando" until a manual pull (a single, un-cancelled
+  // request). Here we await each refetch fully, THEN schedule the next, and
+  // pass cancelRefetch:false so overlapping calls de-dupe rather than abort.
+  // We don't flip `manualRefreshing`, so these polls stay silent (no spinner).
+  const { refetch } = pendenciasQuery;
+  const hasPending = useMemo(() => list.some((p) => p.status === 0), [list]);
+
+  useEffect(() => {
+    if (!hasPending) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      try {
+        await refetch({ cancelRefetch: false });
+      } finally {
+        if (!cancelled) timeoutId = setTimeout(poll, 3000);
+      }
+    };
+    timeoutId = setTimeout(poll, 3000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [hasPending, refetch]);
 
   const goToCapture = useCallback(() => {
     nav.push(mobileRoute("/pessoal/meus-pontos/incluir-ponto/capture"));

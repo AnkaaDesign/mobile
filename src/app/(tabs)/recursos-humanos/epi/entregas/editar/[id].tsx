@@ -97,8 +97,8 @@ function EditHRPPEDeliveryScreenInner() {
         data: submitData,
       });
       nav.replace(mobileRoute(routes.humanResources.ppe.deliveries.details(id)));
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao atualizar a entrega de EPI");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     }
   };
 

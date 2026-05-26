@@ -3,7 +3,7 @@ import type { PpeDelivery } from '@/types'
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/utils/route-mapper'
-import { canEditPpeDeliveries } from '@/utils/permissions/entity-permissions'
+import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = PPE_DELIVERY_STATUS_LABELS
 
@@ -13,6 +13,8 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
 
   query: {
     hook: 'usePpeDeliveriesInfiniteMobile',
+    mutationsHook: 'usePpeDeliveryMutations',
+    batchMutationsHook: 'usePpeDeliveryBatchMutations',
     defaultSort: { field: 'actualDeliveryDate', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -121,6 +123,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         onPress: (delivery, router) => {
           router.push(routeToMobilePath(routes.inventory.ppe.deliveries.edit(delivery.id)) as any)
         },
@@ -131,6 +134,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         label: 'Entregar',
         icon: 'package',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         confirm: {
           title: 'Marcar como Entregue',
           message: 'Tem certeza que deseja marcar esta entrega como entregue?',
@@ -153,6 +157,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         label: 'Cancelar',
         icon: 'x',
         variant: 'destructive',
+        canPerform: canDeletePpeDeliveries,
         confirm: {
           title: 'Cancelar Entrega',
           message: 'Tem certeza que deseja cancelar esta entrega?',
@@ -308,7 +313,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
             id,
             data: { status: PPE_DELIVERY_STATUS.APPROVED },
           }))
-          await batchUpdateAsync?.({ deliveries: updates })
+          await batchUpdateAsync?.({ ppeDeliveries: updates })
         },
       },
       {
@@ -328,7 +333,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
               actualDeliveryDate: new Date(),
             },
           }))
-          await batchUpdateAsync?.({ deliveries: updates })
+          await batchUpdateAsync?.({ ppeDeliveries: updates })
         },
       },
       {
@@ -345,7 +350,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
             id,
             data: { status: PPE_DELIVERY_STATUS.CANCELLED },
           }))
-          await batchUpdateAsync?.({ deliveries: updates })
+          await batchUpdateAsync?.({ ppeDeliveries: updates })
         },
       },
     ],

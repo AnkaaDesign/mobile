@@ -112,10 +112,10 @@ function EditResponsibleScreenInner() {
       }
 
       await updateAsync({ id, data });
-      Alert.alert("Sucesso", "Responsável atualizado com sucesso!");
+      // Success toast is shown automatically by the axios response interceptor.
       nav.replace(mobileRoute(routes.administration.responsibles.details(id)));
-    } catch (error: any) {
-      Alert.alert("Erro", error?.message || "Erro ao atualizar responsável");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     } finally {
       setIsSubmitting(false);
     }

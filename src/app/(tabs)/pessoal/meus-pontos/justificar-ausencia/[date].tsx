@@ -365,21 +365,14 @@ export default function JustificarAusenciaFormScreen() {
 
       const ok = res?.data?.success ?? false;
       if (ok) {
-        Alert.alert("Solicitação enviada", "Sua solicitação foi enviada para aprovação.", [
-          { text: "OK", onPress: () => nav.goBack() },
-        ]);
+        // API client interceptor already shows the success toast
+        nav.goBack();
       } else {
         const message = res?.data?.message || "Falha ao enviar a solicitação.";
         Alert.alert("Erro", message);
       }
     } catch (err: any) {
-      const apiData = err?.response?.data;
-      const message =
-        apiData?.message ||
-        (Array.isArray(apiData?.validationErrors) && apiData.validationErrors[0]?.message) ||
-        err?.message ||
-        "Falha ao enviar a solicitação.";
-      Alert.alert("Erro", message);
+      // API client interceptor already shows the error toast
     }
   };
 

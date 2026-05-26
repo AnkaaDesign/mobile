@@ -97,15 +97,15 @@ function CreateResponsibleScreenInner() {
       const payload = { ...data, companyId: data.companyId || null };
 
       const result = await createAsync(payload);
-      Alert.alert("Sucesso", "Responsável cadastrado com sucesso!");
+      // Success toast is shown automatically by the axios response interceptor.
       const resultId = (result as any)?.data?.id || (result as any)?.id;
       if (resultId) {
         nav.replace(mobileRoute(routes.administration.responsibles.details(resultId)));
       } else {
         nav.replace(mobileRoute(routes.administration.responsibles.list));
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error?.message || "Erro ao cadastrar responsável");
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
     } finally {
       setIsSubmitting(false);
     }

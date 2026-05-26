@@ -49,11 +49,7 @@ export function InvoiceDetailModal({ invoice, visible, onClose }: InvoiceDetailM
               { id: invoice.id },
               {
                 onSuccess: () => {
-                  Alert.alert("Sucesso", "Fatura cancelada com sucesso");
                   onClose();
-                },
-                onError: () => {
-                  Alert.alert("Erro", "Erro ao cancelar fatura");
                 },
               },
             );

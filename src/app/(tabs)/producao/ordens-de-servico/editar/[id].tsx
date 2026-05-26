@@ -73,24 +73,14 @@ function EditServiceOrderInner() {
       );
 
       if (result?.data) {
-        Alert.alert("Sucesso", "Ordem de serviço atualizada com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              nav.replace(
-                mobileRoute(routes.production.serviceOrders.details(id!)),
-              );
-            },
-          },
-        ]);
+        nav.replace(
+          mobileRoute(routes.production.serviceOrders.details(id!)),
+        );
       } else {
         Alert.alert("Erro", "Erro ao atualizar ordem de serviço");
       }
-    } catch (error: any) {
-      Alert.alert(
-        "Erro",
-        error.message || "Erro ao atualizar ordem de serviço. Tente novamente.",
-      );
+    } catch {
+      // Error toast is handled by the api-client interceptor.
     }
   };
 

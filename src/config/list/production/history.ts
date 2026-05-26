@@ -26,6 +26,8 @@ export const historyListConfig: ListConfig<Task> = {
 
   query: {
     hook: 'useTasksInfiniteMobile',
+    mutationsHook: 'useTaskMutations',
+    batchMutationsHook: 'useTaskBatchMutations',
     defaultSort: { field: 'finishedAt', direction: 'desc' },
     pageSize: 25,
     // Use include for relations - scalar fields (including commission) are automatically included
@@ -499,7 +501,9 @@ export const historyListConfig: ListConfig<Task> = {
         onPress: async (ids, context) => {
           // Implementation would need to prompt for new status
           if (context?.batchUpdateAsync) {
-            await context.batchUpdateAsync({ ids: Array.from(ids), data: {} })
+            await context.batchUpdateAsync({
+              tasks: Array.from(ids).map((id) => ({ id, data: {} })),
+            })
           }
         },
       },
@@ -515,7 +519,9 @@ export const historyListConfig: ListConfig<Task> = {
         onPress: async (ids, context) => {
           // Implementation would need to prompt for sector
           if (context?.batchUpdateAsync) {
-            await context.batchUpdateAsync({ ids: Array.from(ids), data: {} })
+            await context.batchUpdateAsync({
+              tasks: Array.from(ids).map((id) => ({ id, data: {} })),
+            })
           }
         },
       },
@@ -530,7 +536,7 @@ export const historyListConfig: ListConfig<Task> = {
         },
         onPress: async (ids, context) => {
           if (context?.batchDeleteAsync) {
-            await context.batchDeleteAsync({ ids: Array.from(ids) })
+            await context.batchDeleteAsync({ taskIds: Array.from(ids) })
           }
         },
       },

@@ -92,9 +92,6 @@ function EditPPEDeliveryScreenInner() {
       await updateAsync({ id, data: submitData });
       return { id };
     },
-    onError: (err: any) => {
-      Alert.alert("Erro", err?.message || "Ocorreu um erro ao atualizar a entrega de EPI");
-    },
     successAction: "replace",
     successRoute: (result) =>
       mobileRoute(routes.inventory.ppe.deliveries.details(result.id)),

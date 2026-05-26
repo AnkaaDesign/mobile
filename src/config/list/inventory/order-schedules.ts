@@ -1,7 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { OrderSchedule } from '@/types'
 import { SCHEDULE_FREQUENCY } from '@/constants/enums'
-import { canEditOrders } from '@/utils/permissions/entity-permissions'
+import { canEditOrders, canDeleteOrders } from '@/utils/permissions/entity-permissions'
 
 
 const FREQUENCY_LABELS: Record<string, string> = {
@@ -25,6 +25,8 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
 
   query: {
     hook: 'useOrderSchedulesInfiniteMobile',
+    mutationsHook: 'useOrderScheduleMutations',
+    batchMutationsHook: 'useOrderScheduleBatchMutations',
     defaultSort: { field: 'nextRun', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -96,7 +98,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         icon: 'eye',
         variant: 'default',
         onPress: (schedule, router) => {
-          router.push(`/estoque/pedidos/automaticos/detalhes/${schedule.id}`)
+          router.push(`/estoque/pedidos/agendamentos/detalhes/${schedule.id}`)
         },
       },
       {
@@ -104,8 +106,9 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditOrders,
         onPress: (schedule, router) => {
-          router.push(`/estoque/pedidos/automaticos/editar/${schedule.id}`)
+          router.push(`/estoque/pedidos/agendamentos/editar/${schedule.id}`)
         },
       },
       {
@@ -113,6 +116,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteOrders,
         confirm: {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir este agendamento automático?`,
@@ -184,7 +188,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
   actions: {
     create: {
       label: 'Novo Pedido Automático',
-      route: '/estoque/pedidos/automaticos/cadastrar',
+      route: '/estoque/pedidos/agendamentos/cadastrar',
       canCreate: canEditOrders,
     },
     bulk: [
@@ -197,8 +201,12 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           title: 'Confirmar Ativação',
           message: (count) => `Ativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        onPress: async (ids, { batchUpdate } = {}) => {
-          await batchUpdate?.({ ids: Array.from(ids), isActive: true })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          const orderSchedules = Array.from(ids).map((id) => ({
+            id,
+            data: { isActive: true },
+          }))
+          await batchUpdateAsync?.({ orderSchedules })
         },
       },
       {
@@ -210,8 +218,12 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           title: 'Confirmar Desativação',
           message: (count) => `Desativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        onPress: async (ids, { batchUpdate } = {}) => {
-          await batchUpdate?.({ ids: Array.from(ids), isActive: false })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          const orderSchedules = Array.from(ids).map((id) => ({
+            id,
+            data: { isActive: false },
+          }))
+          await batchUpdateAsync?.({ orderSchedules })
         },
       },
       {
@@ -224,7 +236,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ orderScheduleIds: Array.from(ids) })
         },
       },
     ],

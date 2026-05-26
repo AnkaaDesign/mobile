@@ -360,10 +360,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "fingerprint",
         path: "/pessoal/meus-pontos",
         children: [
-          { id: "meus-pontos-incluir", title: "Incluir Ponto", icon: "plus", path: "/pessoal/meus-pontos/incluir-ponto" },
-          { id: "meus-pontos-justificar", title: "Justificar Ausência", icon: "calendar", path: "/pessoal/meus-pontos/justificar-ausencia" },
-          { id: "meus-pontos-ajustar", title: "Ajustar Ponto", icon: "clock", path: "/pessoal/meus-pontos/ajustar-ponto" },
-          { id: "meus-pontos-incluir-capture", title: "Nova Inclusão", icon: "plus", path: "/pessoal/meus-pontos/incluir-ponto/capture", isDynamic: true },
+          { id: "meus-pontos-incluir", title: "Incluir Ponto", icon: "map-pin-plus", path: "/pessoal/meus-pontos/incluir-ponto" },
+          { id: "meus-pontos-ajustar", title: "Ajustar Ponto", icon: "clock-edit", path: "/pessoal/meus-pontos/ajustar-ponto" },
+          { id: "meus-pontos-justificar", title: "Justificar Ausência", icon: "calendar-off", path: "/pessoal/meus-pontos/justificar-ausencia" },
         ],
       },
       {
@@ -1039,7 +1038,17 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "meus-epis-solicitar-production", title: "Solicitar EPI", icon: "plus", path: "/pessoal/meus-epis/request", isDynamic: true },
         ],
       },
-      { id: "meus-pontos-production", title: "Meus Pontos", icon: "fingerprint", path: "/pessoal/meus-pontos" },
+      {
+        id: "meus-pontos-production",
+        title: "Meus Pontos",
+        icon: "fingerprint",
+        path: "/pessoal/meus-pontos",
+        children: [
+          { id: "meus-pontos-incluir-production", title: "Incluir Ponto", icon: "map-pin-plus", path: "/pessoal/meus-pontos/incluir-ponto" },
+          { id: "meus-pontos-ajustar-production", title: "Ajustar Ponto", icon: "clock-edit", path: "/pessoal/meus-pontos/ajustar-ponto" },
+          { id: "meus-pontos-justificar-production", title: "Justificar Ausência", icon: "calendar-off", path: "/pessoal/meus-pontos/justificar-ausencia" },
+        ],
+      },
       {
         id: "minhas-advertencias-production",
         title: "Minhas Advertencias",

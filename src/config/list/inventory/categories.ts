@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { ItemCategory } from '@/types'
-import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { canEditItems, canDeleteItems } from '@/utils/permissions/entity-permissions'
 
 export const categoriesListConfig: ListConfig<ItemCategory> = {
   key: 'inventory-categories',
@@ -8,6 +8,8 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
 
   query: {
     hook: 'useItemCategoriesInfiniteMobile',
+    mutationsHook: 'useItemCategoryMutations',
+    batchMutationsHook: 'useItemCategoryBatchMutations',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     // Use select to fetch only fields needed for list display
@@ -81,6 +83,7 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditItems,
         onPress: (category, router) => {
           router.push(`/estoque/produtos/categorias/editar/${category.id}`)
         },
@@ -90,6 +93,7 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteItems,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (category) => `Deseja excluir a categoria "${category.name}"?`,
@@ -153,7 +157,7 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'categoria' : 'categorias'}?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ itemCategoryIds: Array.from(ids) })
         },
       },
     ],

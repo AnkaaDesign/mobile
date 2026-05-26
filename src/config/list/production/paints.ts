@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { TaskPaint } from '@/types'
-import { canEditPaints } from '@/utils/permissions/entity-permissions'
+import { canEditPaints, canDeletePaints } from '@/utils/permissions/entity-permissions'
 
 export const paintsListConfig: ListConfig<TaskPaint> = {
   key: 'production-paints',
@@ -8,6 +8,8 @@ export const paintsListConfig: ListConfig<TaskPaint> = {
 
   query: {
     hook: 'usePaintsInfiniteMobile',
+    mutationsHook: 'usePaintMutations',
+    batchMutationsHook: 'usePaintBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -114,6 +116,7 @@ export const paintsListConfig: ListConfig<TaskPaint> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPaints,
         onPress: (paint, router) => {
           router.push(`/producao/tintas/editar/${paint.id}`)
         },
@@ -123,6 +126,7 @@ export const paintsListConfig: ListConfig<TaskPaint> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePaints,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (paint) => `Deseja excluir esta tinta?`,
@@ -210,7 +214,7 @@ export const paintsListConfig: ListConfig<TaskPaint> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tinta' : 'tintas'}?`,
         },
         onPress: async (ids, { batchDeleteAsync } = {}) => {
-          await batchDeleteAsync?.({ ids: Array.from(ids) })
+          await batchDeleteAsync?.({ paintIds: Array.from(ids) })
         },
       },
     ],

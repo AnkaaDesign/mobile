@@ -279,7 +279,7 @@ function FinancialCustomerEditScreenInner() {
         Alert.alert("Erro", "Erro ao atualizar cliente");
       }
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao atualizar cliente. Tente novamente.");
+      // API client interceptor already shows the error toast
     } finally {
       setIsSubmitting(false);
     }

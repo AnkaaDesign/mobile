@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PpeSize } from '@/types'
+import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 export const ppeSizesListConfig: ListConfig<PpeSize> = {
   key: 'hr-ppe-sizes',
@@ -7,6 +8,8 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
 
   query: {
     hook: 'usePpeSizesInfiniteMobile',
+    mutationsHook: 'usePpeSizeMutations',
+    batchMutationsHook: 'usePpeSizeBatchMutations',
     defaultSort: { field: 'user', direction: 'asc' },
     pageSize: 25,
     include: {
@@ -120,6 +123,7 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditPpeDeliveries,
         onPress: (size, router) => {
           router.push(`/recursos-humanos/epi/tamanhos/editar/${size.id}`)
         },
@@ -129,6 +133,7 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeletePpeDeliveries,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (size) => `Deseja excluir os tamanhos de "${size.user?.name || 'funcionário'}"?`,
@@ -238,7 +243,7 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'registro' : 'registros'} de tamanho?`,
         },
         onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+          await context?.batchDeleteAsync?.({ ppeSizeIds: Array.from(ids) })
         },
       },
     ],

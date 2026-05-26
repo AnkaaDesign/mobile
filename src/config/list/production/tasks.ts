@@ -146,6 +146,10 @@ export const tasksListConfig: ListConfig<Task> = {
           id: true,
           plate: true,
           chassisNumber: true,
+          // Needed for the "Editar/Adicionar Medidas" swipe label to reflect existing layouts
+          leftSideLayoutId: true,
+          rightSideLayoutId: true,
+          backSideLayoutId: true,
         },
       },
       serviceOrders: {
@@ -156,6 +160,14 @@ export const tasksListConfig: ListConfig<Task> = {
           status: true,
           statusOrder: true,
           assignedToId: true,
+        },
+      },
+      // Quote - needed for the price column and the dynamic Orçamento/Faturamento swipe label + route
+      quote: {
+        select: {
+          id: true,
+          status: true,
+          total: true,
         },
       },
       createdBy: {
