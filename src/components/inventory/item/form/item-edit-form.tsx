@@ -5,7 +5,7 @@ import { useEditForm, useKeyboardAwareScroll } from "@/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { itemUpdateSchema, type ItemUpdateFormData } from '../../../../schemas';
 import type { Item } from '../../../../types';
-import { useItemCategories } from "@/hooks";
+import { useItemCategories, useCanViewPrices } from "@/hooks";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { FormProvider } from "react-hook-form";
 import { useTheme } from "@/lib/theme";
@@ -43,6 +43,7 @@ interface ItemEditFormProps {
 
 export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEditFormProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(item.categoryId);
   const [isPPE, setIsPPE] = useState(false);
 
@@ -195,9 +196,9 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           </FormCard>
 
           {/* Pricing */}
-          <FormCard title="Preço e Impostos" icon="IconCurrencyReal">
+          <FormCard title={canViewPrices ? "Preço e Impostos" : "Impostos"} icon="IconCurrencyReal">
             <View style={styles.fieldGroup}>
-              <PriceInput disabled={isSubmitting} />
+              {canViewPrices && <PriceInput disabled={isSubmitting} />}
               <View style={styles.fieldRow}>
                 <View style={styles.halfField}>
                   <IcmsInput disabled={isSubmitting} required={false} priceFieldName="price" />

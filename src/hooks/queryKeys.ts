@@ -538,6 +538,8 @@ export const orderScheduleKeys = {
 
   // Specialized queries
   active: (filters?: Partial<OrderScheduleGetManyFormData>) => (filters ? (["orderSchedules", "active", filters] as const) : (["orderSchedules", "active"] as const)),
+  projections: () => ["orderSchedules", "projection"] as const,
+  projection: (id: string) => ["orderSchedules", "projection", id] as const,
 };
 
 // =====================================================

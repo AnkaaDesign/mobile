@@ -17,6 +17,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getItems } from "@/api-client";
 import { formatNumber, formatCurrency } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 
 interface OrderMultiItemSelectorProps {
   value?: string[];
@@ -51,6 +52,7 @@ export function OrderMultiItemSelector({
   showInactive = false,
 }: OrderMultiItemSelectorProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Async query function for items with advanced filters
   const queryItems = useCallback(async (searchTerm: string, page = 1) => {
@@ -108,7 +110,7 @@ export function OrderMultiItemSelector({
           value: item.id,
           description: [
             `Estoque: ${stockInfo}`,
-            priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
+            canViewPrices && priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
             supplier ? `Fornecedor: ${supplier}` : null,
           ].filter(Boolean).join(" | "),
           metadata: {
@@ -137,7 +139,7 @@ export function OrderMultiItemSelector({
         total: 0,
       };
     }
-  }, [categoryIds, brandIds, supplierIds, showInactive]);
+  }, [categoryIds, brandIds, supplierIds, showInactive, canViewPrices]);
 
   // Custom render for option to show stock, price, and supplier info
   const renderOption = useCallback((option: ComboboxOption) => {
@@ -189,7 +191,7 @@ export function OrderMultiItemSelector({
               {formatNumber(metadata.quantity)}
             </ThemedText>
           </Badge>
-          {metadata.price && (
+          {canViewPrices && metadata.price && (
             <Badge variant="outline" style={styles.priceBadge}>
               <ThemedText style={styles.priceBadgeText}>
                 {formatCurrency(metadata.price)}
@@ -199,7 +201,7 @@ export function OrderMultiItemSelector({
         </View>
       </View>
     );
-  }, [colors]);
+  }, [colors, canViewPrices]);
 
   return (
     <View style={styles.container}>

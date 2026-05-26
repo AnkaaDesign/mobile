@@ -55,9 +55,9 @@ function EditAutomaticOrderScreenInner() {
     nav.goBack({ fallback: mobileRoute(routes.inventory.orders.automatic.root) });
 
   const include: OrderScheduleInclude = {
-    weeklyConfig: { include: { daysOfWeek: true } },
-    monthlyConfig: { include: { occurrences: true } },
-    yearlyConfig: { include: { monthlyConfigs: true } },
+    weeklyConfig: true,
+    monthlyConfig: true,
+    yearlyConfig: true,
   };
 
   const {

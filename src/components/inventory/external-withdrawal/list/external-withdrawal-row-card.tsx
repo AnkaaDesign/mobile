@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ExternalWithdrawal } from '@/types';
 import { useTheme } from '@/lib/theme';
 import { formatDate, formatCurrency } from '@/utils';
+import { useCanViewPrices } from '@/hooks';
 import { ExternalWithdrawalStatusBadge } from '../common/external-withdrawal-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from '@/constants';
@@ -18,6 +19,7 @@ interface ExternalWithdrawalRowCardProps {
 export const ExternalWithdrawalRowCard = React.memo<ExternalWithdrawalRowCardProps>(
   ({ withdrawal, onPress, isActive = false }) => {
     const { colors } = useTheme();
+    const canViewPrices = useCanViewPrices();
     const router = useRouter();
 
     // Calculate total value for chargeable withdrawals
@@ -93,7 +95,7 @@ export const ExternalWithdrawalRowCard = React.memo<ExternalWithdrawalRowCardPro
         </View>
 
         {/* Total Value (for chargeable) */}
-        {withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && totalValue > 0 && (
+        {canViewPrices && withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && totalValue > 0 && (
           <View style={styles.row}>
             <View style={styles.valueContainer}>
               <Icon name="currency-real" size={14} color={colors.mutedForeground} />

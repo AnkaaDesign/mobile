@@ -6,6 +6,7 @@ import { spacing, borderRadius } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE } from "@/constants";
 
 import { formatCurrency } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ export function ExternalWithdrawalItemCard({
   onRemove,
 }: ExternalWithdrawalItemCardProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Calculate final stock after withdrawal
   const finalStock = currentStock - quantity;
@@ -93,7 +95,7 @@ export function ExternalWithdrawalItemCard({
           </View>
 
           {/* Price Info (for CHARGEABLE only) */}
-          {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
+          {canViewPrices && type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
             <View style={styles.priceInfo}>
               <Text style={styles.priceText}>
                 Preço item: {formatCurrency(itemPrice ?? 0)}
@@ -133,7 +135,7 @@ export function ExternalWithdrawalItemCard({
         </View>
 
         {/* Price Input (only for CHARGEABLE) */}
-        {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && onPriceChange && (
+        {canViewPrices && type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && onPriceChange && (
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Preço unitário</Text>
             <Input

@@ -7,6 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { ORDER_STATUS, ORDER_STATUS_LABELS } from "@/constants";
 import { formatDate, formatCurrency } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import type { OrderGetManyFormData } from '../../../../schemas';
 
 interface OrderFilterTagsProps {
@@ -25,6 +26,7 @@ export const OrderFilterTags: React.FC<OrderFilterTagsProps> = ({
   onClearAll,
 }) => {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Helper to remove a specific filter
   const removeFilter = (key: keyof OrderGetManyFormData, value?: any) => {
@@ -96,7 +98,7 @@ export const OrderFilterTags: React.FC<OrderFilterTagsProps> = ({
   }
 
   // Price range tag
-  if (filters.totalPrice?.gte !== undefined || filters.totalPrice?.lte !== undefined) {
+  if (canViewPrices && (filters.totalPrice?.gte !== undefined || filters.totalPrice?.lte !== undefined)) {
     const min = filters.totalPrice.gte ? formatCurrency(filters.totalPrice.gte) : "";
     const max = filters.totalPrice.lte ? formatCurrency(filters.totalPrice.lte) : "";
     tags.push({

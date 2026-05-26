@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconPackage, IconTags, IconRuler, IconCoins, IconCal
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useItemBrands, useItemCategories, useSuppliers } from "@/hooks";
+import { useItemBrands, useItemCategories, useSuppliers, useCanViewPrices } from "@/hooks";
 import {
   MEASURE_UNIT,
   MEASURE_TYPE,
@@ -76,6 +76,7 @@ export function ItemFilterDrawerContent({
   onClose,
 }: ItemFilterDrawerContentProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const insets = useSafeAreaInsets();
   const handleClose = onClose || (() => {});
 
@@ -521,6 +522,7 @@ export function ItemFilterDrawerContent({
             </View>
           </View>
 
+          {canViewPrices && (
           <View style={styles.rangeGroup}>
             <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
               Preço Total (R$)
@@ -561,6 +563,7 @@ export function ItemFilterDrawerContent({
               />
             </View>
           </View>
+          )}
 
           <View style={styles.rangeGroup}>
             <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>

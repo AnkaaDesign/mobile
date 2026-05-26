@@ -13,7 +13,7 @@ import { formatNumberWithDecimals, formatCurrency } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import type { PaintFormula, Item } from "../../../types";
 import { IconAlertTriangle, IconCheck, IconX, IconAlertCircle, IconLoader2, IconCurrencyDollar, IconAdjustments, IconCalculator } from "@tabler/icons-react-native";
-import { usePaintProductionMutations, useKeyboardAwareScroll } from "@/hooks";
+import { usePaintProductionMutations, useKeyboardAwareScroll, useCanViewPrices } from "@/hooks";
 import { useItems } from "../../../hooks";
 // import { showToast } from "@/components/ui/toast";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
@@ -51,6 +51,7 @@ interface ComponentCalculation {
 export function MobilePaintFormulaCalculator({ formula, allowPriceVisibility = true }: MobilePaintFormulaCalculatorProps) {
   const { colors } = useTheme();
   const nav = useNav();
+  const canViewPrices = useCanViewPrices();
   const { createAsync: createProduction } = usePaintProductionMutations();
 
   // Keyboard-aware scrolling
@@ -60,8 +61,11 @@ export function MobilePaintFormulaCalculator({ formula, allowPriceVisibility = t
   const [desiredVolume, setDesiredVolume] = useState("2000");
   const [showPrices, setShowPrices] = useState(false);
 
+  // Warehouse users can never see prices, regardless of the prop or toggle.
+  const priceVisibilityAllowed = allowPriceVisibility && canViewPrices;
+
   // Effective price visibility: user must have permission AND toggle must be on
-  const effectiveShowPrices = allowPriceVisibility && showPrices;
+  const effectiveShowPrices = priceVisibilityAllowed && showPrices;
   const [isProducing, setIsProducing] = useState(false);
   const [selectedComponents, setSelectedComponents] = useState<string[]>([]);
 
@@ -416,7 +420,7 @@ export function MobilePaintFormulaCalculator({ formula, allowPriceVisibility = t
             {/* Icon Action Buttons */}
             <View style={styles.actionButtons}>
               {/* Price toggle - only show if user has permission */}
-              {allowPriceVisibility && (
+              {priceVisibilityAllowed && (
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => setShowPrices(!showPrices)}

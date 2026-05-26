@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from "@/hooks";
+import { usePaintFormulaComponent, usePaintFormulaComponentMutations, useCanViewPrices } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
@@ -61,6 +61,7 @@ export default function ComponentDetailsScreen() {
 
 function ComponentBody({ component }: { component: any }) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   return (
     <View style={styles.body}>
       {/* Ratio Card */}
@@ -157,7 +158,7 @@ function ComponentBody({ component }: { component: any }) {
               </View>
             )}
 
-            {component.formula.pricePerLiter && (
+            {canViewPrices && component.formula.pricePerLiter && (
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>Preço por Litro:</ThemedText>
                 <ThemedText style={styles.infoValue}>

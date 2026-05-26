@@ -4,7 +4,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderItemMutations, useItems, useOrder } from "@/hooks";
+import { useOrderItemMutations, useItems, useOrder, useCanViewPrices } from "@/hooks";
 import { orderItemCreateSchema } from '../../../../../../schemas';
 import type { OrderItemCreateFormData } from '../../../../../../schemas';
 import { ThemedView, ThemedText, ErrorScreen, Button } from "@/components/ui";
@@ -37,6 +37,7 @@ function AddOrderItemScreenInner() {
   const nav = useNav();
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const insets = useSafeAreaInsets();
 
   const goBack = () =>
@@ -256,7 +257,7 @@ function AddOrderItemScreenInner() {
                       <ThemedText style={styles.itemInfoValue}>{selectedItem.brand.name}</ThemedText>
                     </View>
                   )}
-                  {selectedItem.prices?.[0]?.value && (
+                  {canViewPrices && selectedItem.prices?.[0]?.value && (
                     <View style={styles.itemInfoRow}>
                       <ThemedText style={styles.itemInfoLabel}>Preço Atual:</ThemedText>
                       <ThemedText style={StyleSheet.flatten([styles.itemInfoValue, { color: colors.primary }])}>
@@ -282,7 +283,9 @@ function AddOrderItemScreenInner() {
 
           {/* Quantity and Price */}
           <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Quantidade e Preço</ThemedText>
+            <ThemedText style={styles.sectionTitle}>
+              {canViewPrices ? "Quantidade e Preço" : "Quantidade"}
+            </ThemedText>
 
             <View style={styles.formRow}>
               <View style={styles.formGroup}>
@@ -309,35 +312,37 @@ function AddOrderItemScreenInner() {
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Controller
-                  control={control}
-                  name="price"
-                  rules={{
-                    required: "Preço unitário é obrigatório",
-                    min: { value: 0, message: "Preço deve ser maior ou igual a 0" },
-                  }}
-                  render={({ field: { value, onChange } }) => (
-                    <ThemedTextInput
-                      label="Preço Unitário *"
-                      placeholder="0,00"
-                      value={value ? formatCurrency(value).replace("R$ ", "") : ""}
-                      onChangeText={(text) => {
-                        // Parse currency input
-                        const cleanText = text.replace(/[^\d,]/g, "");
-                        const numericValue = parseFloat(cleanText.replace(",", ".")) || 0;
-                        onChange(numericValue);
-                      }}
-                      keyboardType="numeric"
-                      error={errors.price?.message}
-                    />
-                  )}
-                />
-              </View>
+              {canViewPrices && (
+                <View style={styles.formGroup}>
+                  <Controller
+                    control={control}
+                    name="price"
+                    rules={{
+                      required: "Preço unitário é obrigatório",
+                      min: { value: 0, message: "Preço deve ser maior ou igual a 0" },
+                    }}
+                    render={({ field: { value, onChange } }) => (
+                      <ThemedTextInput
+                        label="Preço Unitário *"
+                        placeholder="0,00"
+                        value={value ? formatCurrency(value).replace("R$ ", "") : ""}
+                        onChangeText={(text) => {
+                          // Parse currency input
+                          const cleanText = text.replace(/[^\d,]/g, "");
+                          const numericValue = parseFloat(cleanText.replace(",", ".")) || 0;
+                          onChange(numericValue);
+                        }}
+                        keyboardType="numeric"
+                        error={errors.price?.message}
+                      />
+                    )}
+                  />
+                </View>
+              )}
             </View>
 
             {/* Total Price Display */}
-            {totalPrice > 0 && (
+            {canViewPrices && totalPrice > 0 && (
               <View style={styles.totalContainer}>
                 <ThemedText style={styles.totalLabel}>Total:</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.totalValue, { color: colors.primary }])}>
@@ -348,60 +353,62 @@ function AddOrderItemScreenInner() {
           </Card>
 
           {/* Additional Fields */}
-          <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Informações Adicionais</ThemedText>
+          {canViewPrices && (
+            <Card style={styles.card}>
+              <ThemedText style={styles.sectionTitle}>Informações Adicionais</ThemedText>
 
-            <View style={styles.formRow}>
-              <View style={styles.formGroup}>
-                <Controller
-                  control={control}
-                  name="icms"
-                  rules={{
-                    min: { value: 0, message: "ICMS deve ser entre 0 e 100%" },
-                    max: { value: 100, message: "ICMS deve ser entre 0 e 100%" },
-                  }}
-                  render={({ field: { value, onChange } }) => (
-                    <ThemedTextInput
-                      label="ICMS (%)"
-                      placeholder="0,00"
-                      value={value?.toString() || ""}
-                      onChangeText={(text) => {
-                        const numericValue = parseFloat(text) || 0;
-                        onChange(numericValue);
-                      }}
-                      keyboardType="numeric"
-                      error={errors.icms?.message}
-                    />
-                  )}
-                />
+              <View style={styles.formRow}>
+                <View style={styles.formGroup}>
+                  <Controller
+                    control={control}
+                    name="icms"
+                    rules={{
+                      min: { value: 0, message: "ICMS deve ser entre 0 e 100%" },
+                      max: { value: 100, message: "ICMS deve ser entre 0 e 100%" },
+                    }}
+                    render={({ field: { value, onChange } }) => (
+                      <ThemedTextInput
+                        label="ICMS (%)"
+                        placeholder="0,00"
+                        value={value?.toString() || ""}
+                        onChangeText={(text) => {
+                          const numericValue = parseFloat(text) || 0;
+                          onChange(numericValue);
+                        }}
+                        keyboardType="numeric"
+                        error={errors.icms?.message}
+                      />
+                    )}
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Controller
+                    control={control}
+                    name="ipi"
+                    rules={{
+                      min: { value: 0, message: "IPI deve ser entre 0 e 100%" },
+                      max: { value: 100, message: "IPI deve ser entre 0 e 100%" },
+                    }}
+                    render={({ field: { value, onChange } }) => (
+                      <ThemedTextInput
+                        label="IPI (%)"
+                        placeholder="0,00"
+                        value={value?.toString() || ""}
+                        onChangeText={(text) => {
+                          const numericValue = parseFloat(text) || 0;
+                          onChange(numericValue);
+                        }}
+                        keyboardType="numeric"
+                        error={errors.ipi?.message}
+                      />
+                    )}
+                  />
+                </View>
               </View>
 
-              <View style={styles.formGroup}>
-                <Controller
-                  control={control}
-                  name="ipi"
-                  rules={{
-                    min: { value: 0, message: "IPI deve ser entre 0 e 100%" },
-                    max: { value: 100, message: "IPI deve ser entre 0 e 100%" },
-                  }}
-                  render={({ field: { value, onChange } }) => (
-                    <ThemedTextInput
-                      label="IPI (%)"
-                      placeholder="0,00"
-                      value={value?.toString() || ""}
-                      onChangeText={(text) => {
-                        const numericValue = parseFloat(text) || 0;
-                        onChange(numericValue);
-                      }}
-                      keyboardType="numeric"
-                      error={errors.ipi?.message}
-                    />
-                  )}
-                />
-              </View>
-            </View>
-
-          </Card>
+            </Card>
+          )}
         </ScrollView>
 
         {/* Action Buttons */}
@@ -434,6 +441,7 @@ interface ItemOptionProps {
 
 const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected }) => {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const item = option.item;
 
   return (
@@ -448,7 +456,7 @@ const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected }) => {
         <ThemedText style={StyleSheet.flatten([styles.itemOptionName, isSelected && { fontWeight: "600" }])}>
           {item?.name}
         </ThemedText>
-        {item?.prices?.[0]?.value && (
+        {canViewPrices && item?.prices?.[0]?.value && (
           <ThemedText style={StyleSheet.flatten([styles.itemOptionPrice, { color: colors.primary }])}>
             {formatCurrency(item.prices[0].value)}
           </ThemedText>

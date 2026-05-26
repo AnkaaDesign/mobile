@@ -5,7 +5,7 @@ import { IconSearch, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE } from "@/constants";
-import { useItems } from "@/hooks";
+import { useItems, useCanViewPrices } from "@/hooks";
 import type { Item } from "@/types";
 
 import { formatCurrency, formatQuantity } from "@/utils";
@@ -76,6 +76,7 @@ export function ExternalWithdrawalItemSelector({
   onTotalRecordsChange,
 }: ExternalWithdrawalItemSelectorProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
@@ -228,7 +229,7 @@ export function ExternalWithdrawalItemSelector({
               <Text style={styles.itemStockText}>
                 Estoque: {formatQuantity(item.quantity)}
               </Text>
-              {item.prices?.[0]?.value && (
+              {canViewPrices && item.prices?.[0]?.value && (
                 <Text style={styles.itemPriceText}>
                   {formatCurrency(item.prices[0].value)}
                 </Text>
@@ -251,7 +252,7 @@ export function ExternalWithdrawalItemSelector({
               />
             </View>
 
-            {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && onPriceChange && (
+            {canViewPrices && type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && onPriceChange && (
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputLabel}>Preço Unit.</Text>
                 <Input
@@ -275,6 +276,7 @@ export function ExternalWithdrawalItemSelector({
     onQuantityChange,
     onPriceChange,
     colors,
+    canViewPrices,
   ]);
 
   const totalPages = Math.ceil(apiTotalRecords / pageSize);

@@ -103,10 +103,13 @@ function OrderScheduleEditScreenInner() {
     error,
   } = useOrderSchedule(scheduleId, {
     enabled: !!scheduleId,
+    // Recurrence lives in scalar columns on each config (e.g.
+    // monthlyConfig.occurrence + dayOfWeek). `true` returns them; the old nested
+    // includes referenced non-existent relations and made Prisma throw.
     include: {
-      weeklyConfig: { include: { daysOfWeek: true } },
-      monthlyConfig: { include: { occurrences: true } },
-      yearlyConfig: { include: { monthlyConfigs: true } },
+      weeklyConfig: true,
+      monthlyConfig: true,
+      yearlyConfig: true,
     },
   });
 

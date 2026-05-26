@@ -13,6 +13,7 @@ import {
   getBadgeVariant,
 } from "@/constants";
 import { formatDateTime, formatCurrency } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 
 interface ExternalWithdrawalInfoCardProps {
   withdrawal: ExternalWithdrawal;
@@ -20,6 +21,7 @@ interface ExternalWithdrawalInfoCardProps {
 
 export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInfoCardProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Get badge variant from centralized configuration
   const statusBadgeVariant = getBadgeVariant(withdrawal.status, "EXTERNAL_WITHDRAWAL");
@@ -70,7 +72,7 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
           }
         />
 
-        {withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
+        {canViewPrices && withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
           <DetailField
             label="Valor Total"
             icon="currency-real"

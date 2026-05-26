@@ -6,6 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { formatCurrency } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 
 import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
@@ -32,6 +33,7 @@ export function ExternalWithdrawalSummaryCards({
   totalPrice = 0,
 }: ExternalWithdrawalSummaryCardsProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Calculate totals
   const totalItems = selectedItems.size;
@@ -155,7 +157,7 @@ export function ExternalWithdrawalSummaryCards({
       </Card>
 
       {/* Total Calculation Card (for CHARGEABLE only) */}
-      {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
+      {canViewPrices && type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={styles.headerLeft}>

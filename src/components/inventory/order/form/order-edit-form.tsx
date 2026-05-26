@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useSuppliers, useItems, useOrderMutations, useOrder } from "@/hooks";
+import { useSuppliers, useItems, useOrderMutations, useOrder, useCanViewPrices } from "@/hooks";
 import { getUsers, getSuppliers } from "@/api-client";
 import { useMultiStepForm } from "@/hooks";
 import {
@@ -88,6 +88,7 @@ const STEPS: FormStep[] = [
 
 export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess }) => {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const nav = useNav();
   const goBack = () =>
     nav.goBack({
@@ -859,7 +860,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               onQuantityChange={multiStepForm.setItemQuantity}
               onPriceChange={multiStepForm.setItemPrice}
               showQuantityInput
-              showPriceInput
+              showPriceInput={canViewPrices}
               minQuantity={1}
               showSelectedOnly={multiStepForm.showSelectedOnly}
               searchTerm={multiStepForm.searchTerm}
@@ -1013,36 +1014,40 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                                 editable={!isSubmitting}
                               />
                             </View>
-                            <View style={styles.priceField}>
-                              <View style={styles.labelRow}>
-                                <Label style={{ marginBottom: 0 }}>Preço</Label>
-                                <Text style={styles.requiredAsterisk}> *</Text>
-                              </View>
-                              <Input
-                                type="currency"
-                                value={item.price}
-                                onChange={(val) => handleUpdateTemporaryItem(item.id, "price", typeof val === "number" ? val : 0)}
-                                editable={!isSubmitting}
-                              />
-                            </View>
-                            <View style={styles.smallField}>
-                              <Label>ICMS %</Label>
-                              <Input
-                                value={String(item.icms)}
-                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
-                                keyboardType="numeric"
-                                editable={!isSubmitting}
-                              />
-                            </View>
-                            <View style={styles.smallField}>
-                              <Label>IPI %</Label>
-                              <Input
-                                value={String(item.ipi)}
-                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
-                                keyboardType="numeric"
-                                editable={!isSubmitting}
-                              />
-                            </View>
+                            {canViewPrices && (
+                              <>
+                                <View style={styles.priceField}>
+                                  <View style={styles.labelRow}>
+                                    <Label style={{ marginBottom: 0 }}>Preço</Label>
+                                    <Text style={styles.requiredAsterisk}> *</Text>
+                                  </View>
+                                  <Input
+                                    type="currency"
+                                    value={item.price}
+                                    onChange={(val) => handleUpdateTemporaryItem(item.id, "price", typeof val === "number" ? val : 0)}
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.smallField}>
+                                  <Label>ICMS %</Label>
+                                  <Input
+                                    value={String(item.icms)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.smallField}>
+                                  <Label>IPI %</Label>
+                                  <Input
+                                    value={String(item.ipi)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                              </>
+                            )}
                           </View>
                         </View>
                       </ReanimatedSwipeableRow>
@@ -1230,50 +1235,54 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                 )}
 
                 {/* Freight */}
-                <Controller
-                  control={form.control}
-                  name="freight"
-                  render={({ field: { value } }) => (
-                    <View style={styles.fieldGroup}>
-                      <Label>Frete</Label>
-                      <Input
-                        type="currency"
-                        value={(value as number | null | undefined) ?? 0}
-                        onChange={(val) => handleFormChange("freight", typeof val === "number" ? val : 0)}
-                        editable={!isSubmitting}
-                      />
-                      <ThemedText style={styles.helpText}>
-                        Valor do frete somado ao total do pedido
-                      </ThemedText>
-                    </View>
-                  )}
-                />
+                {canViewPrices && (
+                  <Controller
+                    control={form.control}
+                    name="freight"
+                    render={({ field: { value } }) => (
+                      <View style={styles.fieldGroup}>
+                        <Label>Frete</Label>
+                        <Input
+                          type="currency"
+                          value={(value as number | null | undefined) ?? 0}
+                          onChange={(val) => handleFormChange("freight", typeof val === "number" ? val : 0)}
+                          editable={!isSubmitting}
+                        />
+                        <ThemedText style={styles.helpText}>
+                          Valor do frete somado ao total do pedido
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
 
                 {/* Discount */}
-                <Controller
-                  control={form.control}
-                  name="discount"
-                  render={({ field: { value } }) => (
-                    <View style={styles.lastFieldGroup}>
-                      <Label>Desconto (%)</Label>
-                      <Input
-                        type="percentage"
-                        min={0}
-                        max={100}
-                        value={(value as number | null | undefined) ?? 0}
-                        onChange={(val) => {
-                          const num = typeof val === "number" ? val : 0;
-                          const clamped = Math.min(100, Math.max(0, num));
-                          handleFormChange("discount", clamped);
-                        }}
-                        editable={!isSubmitting}
-                      />
-                      <ThemedText style={styles.helpText}>
-                        Percentual de desconto aplicado sobre o subtotal
-                      </ThemedText>
-                    </View>
-                  )}
-                />
+                {canViewPrices && (
+                  <Controller
+                    control={form.control}
+                    name="discount"
+                    render={({ field: { value } }) => (
+                      <View style={styles.lastFieldGroup}>
+                        <Label>Desconto (%)</Label>
+                        <Input
+                          type="percentage"
+                          min={0}
+                          max={100}
+                          value={(value as number | null | undefined) ?? 0}
+                          onChange={(val) => {
+                            const num = typeof val === "number" ? val : 0;
+                            const clamped = Math.min(100, Math.max(0, num));
+                            handleFormChange("discount", clamped);
+                          }}
+                          editable={!isSubmitting}
+                        />
+                        <ThemedText style={styles.helpText}>
+                          Percentual de desconto aplicado sobre o subtotal
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
               </CardContent>
             </Card>
 
@@ -1291,9 +1300,11 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                   <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, width: 50, textAlign: "center" }]}>
                     QTD
                   </ThemedText>
-                  <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, width: 80, textAlign: "right" }]}>
-                    PREÇO
-                  </ThemedText>
+                  {canViewPrices && (
+                    <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, width: 80, textAlign: "right" }]}>
+                      PREÇO
+                    </ThemedText>
+                  )}
                 </View>
 
                 {/* Table Body - unified list (inventory + temporary) */}
@@ -1329,36 +1340,40 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                             {formatQuantity(item.quantity)}
                           </ThemedText>
                         </View>
-                        <View style={styles.itemPrice}>
-                          <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
-                            {formatCurrency(item.price || 0)}
-                          </ThemedText>
-                        </View>
+                        {canViewPrices && (
+                          <View style={styles.itemPrice}>
+                            <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                              {formatCurrency(item.price || 0)}
+                            </ThemedText>
+                          </View>
+                        )}
                         {/* Per-item ICMS / IPI editing */}
-                        <View style={styles.taxEditRow}>
-                          <View style={styles.smallField}>
-                            <Label>ICMS %</Label>
-                            <Input
-                              value={String(itemIcms[item.id] ?? 0)}
-                              onChangeText={(val) =>
-                                setItemIcms((prev) => ({ ...prev, [item.id]: Number(val) || 0 }))
-                              }
-                              keyboardType="numeric"
-                              editable={!isSubmitting}
-                            />
+                        {canViewPrices && (
+                          <View style={styles.taxEditRow}>
+                            <View style={styles.smallField}>
+                              <Label>ICMS %</Label>
+                              <Input
+                                value={String(itemIcms[item.id] ?? 0)}
+                                onChangeText={(val) =>
+                                  setItemIcms((prev) => ({ ...prev, [item.id]: Number(val) || 0 }))
+                                }
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                            <View style={styles.smallField}>
+                              <Label>IPI %</Label>
+                              <Input
+                                value={String(itemIpi[item.id] ?? 0)}
+                                onChangeText={(val) =>
+                                  setItemIpi((prev) => ({ ...prev, [item.id]: Number(val) || 0 }))
+                                }
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
                           </View>
-                          <View style={styles.smallField}>
-                            <Label>IPI %</Label>
-                            <Input
-                              value={String(itemIpi[item.id] ?? 0)}
-                              onChangeText={(val) =>
-                                setItemIpi((prev) => ({ ...prev, [item.id]: Number(val) || 0 }))
-                              }
-                              keyboardType="numeric"
-                              editable={!isSubmitting}
-                            />
-                          </View>
-                        </View>
+                        )}
                       </View>
                     ))}
                     {temporaryItems.map((item, index) => (
@@ -1385,53 +1400,59 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                             {formatQuantity(item.quantity)}
                           </ThemedText>
                         </View>
-                        <View style={styles.itemPrice}>
-                          <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
-                            {formatCurrency(item.price)}
-                          </ThemedText>
-                        </View>
+                        {canViewPrices && (
+                          <View style={styles.itemPrice}>
+                            <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                              {formatCurrency(item.price)}
+                            </ThemedText>
+                          </View>
+                        )}
                       </View>
                     ))}
                   </>
                 )}
 
                 {/* Table Footer */}
-                <View style={[styles.tableFooterRow, { borderTopColor: colors.border, backgroundColor: colors.muted }]}>
-                  <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
-                    Subtotal ({totals.totalQuantity} unidades)
-                  </ThemedText>
-                  <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
-                    {formatCurrency(totals.subtotal)}
-                  </ThemedText>
-                </View>
-                {totals.discountAmount > 0 && (
-                  <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
-                    <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
-                      Desconto ({discountValue}%)
-                    </ThemedText>
-                    <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
-                      - {formatCurrency(totals.discountAmount)}
-                    </ThemedText>
-                  </View>
+                {canViewPrices && (
+                  <>
+                    <View style={[styles.tableFooterRow, { borderTopColor: colors.border, backgroundColor: colors.muted }]}>
+                      <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                        Subtotal ({totals.totalQuantity} unidades)
+                      </ThemedText>
+                      <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
+                        {formatCurrency(totals.subtotal)}
+                      </ThemedText>
+                    </View>
+                    {totals.discountAmount > 0 && (
+                      <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
+                        <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                          Desconto ({discountValue}%)
+                        </ThemedText>
+                        <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
+                          - {formatCurrency(totals.discountAmount)}
+                        </ThemedText>
+                      </View>
+                    )}
+                    {freightValue > 0 && (
+                      <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
+                        <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                          Frete
+                        </ThemedText>
+                        <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
+                          {formatCurrency(freightValue)}
+                        </ThemedText>
+                      </View>
+                    )}
+                    <View style={[styles.tableFooterRow, { borderTopColor: colors.border, marginTop: 0 }]}>
+                      <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                        Total
+                      </ThemedText>
+                      <ThemedText style={[styles.tableFooterValue, { color: colors.primary }]}>
+                        {formatCurrency(totals.total)}
+                      </ThemedText>
+                    </View>
+                  </>
                 )}
-                {freightValue > 0 && (
-                  <View style={[styles.tableFooterRow, { borderTopWidth: 0, marginTop: 0 }]}>
-                    <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
-                      Frete
-                    </ThemedText>
-                    <ThemedText style={[styles.tableFooterValue, { color: colors.foreground }]}>
-                      {formatCurrency(freightValue)}
-                    </ThemedText>
-                  </View>
-                )}
-                <View style={[styles.tableFooterRow, { borderTopColor: colors.border, marginTop: 0 }]}>
-                  <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
-                    Total
-                  </ThemedText>
-                  <ThemedText style={[styles.tableFooterValue, { color: colors.primary }]}>
-                    {formatCurrency(totals.total)}
-                  </ThemedText>
-                </View>
               </CardContent>
             </Card>
 

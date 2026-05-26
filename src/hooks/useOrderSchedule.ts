@@ -1,6 +1,6 @@
 // packages/hooks/src/useOrderSchedule.ts
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getOrderSchedules,
   getOrderSchedule,
@@ -10,6 +10,8 @@ import {
   batchCreateOrderSchedules,
   batchUpdateOrderSchedules,
   batchDeleteOrderSchedules,
+  getOrderScheduleProjection,
+  triggerOrderSchedule,
 } from '@/api-client';
 import type {
   OrderScheduleGetManyFormData,
@@ -18,6 +20,7 @@ import type {
   OrderScheduleBatchCreateFormData,
   OrderScheduleBatchUpdateFormData,
   OrderScheduleBatchDeleteFormData,
+  OrderScheduleTriggerFormData,
 } from '@/schemas';
 import type {
   OrderScheduleGetManyResponse,
@@ -28,6 +31,8 @@ import type {
   OrderScheduleBatchCreateResponse,
   OrderScheduleBatchUpdateResponse,
   OrderScheduleBatchDeleteResponse,
+  OrderScheduleProjectionResponse,
+  OrderScheduleTriggerResponse,
 } from '@/types';
 import { orderScheduleKeys, orderKeys, supplierKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
@@ -88,6 +93,23 @@ export const useActiveOrderSchedules = createSpecializedQueryHook<Partial<OrderS
   queryFn: (filters) => getOrderSchedules({ ...filters, isActive: true }),
   staleTime: 1000 * 60 * 10, // 10 minutes
 });
+
+// =====================================================
+// OrderSchedule Projection (auto-creation preview)
+// =====================================================
+
+// Fetches the per-item projection (quantities/totals for "today" vs the
+// scheduled date) plus meta (gap, interval, coverage, scheduled date).
+export const useOrderScheduleProjection = (id: string, options?: { enabled?: boolean }) => {
+  const { enabled = true } = options || {};
+
+  return useQuery<OrderScheduleProjectionResponse>({
+    queryKey: orderScheduleKeys.projection(id),
+    queryFn: () => getOrderScheduleProjection(id),
+    staleTime: 1000 * 60 * 2, // 2 minutes - projections are time-sensitive
+    enabled: enabled && !!id,
+  });
+};
 
 // =====================================================
 // Custom OrderSchedule Mutations with Enhanced Invalidation
@@ -163,6 +185,34 @@ export const useOrderScheduleMutations = (options?: {
     updateMutation,
     deleteMutation,
   };
+};
+
+// =====================================================
+// OrderSchedule Manual Trigger (auto-creation)
+// =====================================================
+
+// Triggers a schedule manually with a cascade strategy (GAP_ONLY / GAP_PLUS_CYCLE).
+// Invalidates schedule detail/list, projection and order keys on success so the
+// freshly created order and advanced nextRun are reflected immediately.
+export const useTriggerOrderSchedule = (options?: {
+  onSuccess?: (data: OrderScheduleTriggerResponse, variables: { id: string; cascadeMode: OrderScheduleTriggerFormData["cascadeMode"] }) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, cascadeMode }: { id: string; cascadeMode: OrderScheduleTriggerFormData["cascadeMode"] }) =>
+      triggerOrderSchedule(id, { cascadeMode }),
+    onSuccess: (data, variables) => {
+      // Order schedule queries (detail + list + active)
+      queryClient.invalidateQueries({ queryKey: orderScheduleKeys.all });
+      queryClient.invalidateQueries({ queryKey: orderScheduleKeys.active() });
+      // Projection for this schedule
+      queryClient.invalidateQueries({ queryKey: orderScheduleKeys.projection(variables.id) });
+      // Orders (a new order may have been created)
+      queryClient.invalidateQueries({ queryKey: orderKeys.all });
+      options?.onSuccess?.(data, variables);
+    },
+  });
 };
 
 export const useOrderScheduleBatchMutations = (options?: {

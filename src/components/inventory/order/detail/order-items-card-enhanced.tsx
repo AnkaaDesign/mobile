@@ -12,7 +12,7 @@ import { formatCurrencyPrecise } from "@/utils/format-standard";
 import type { OrderItem } from '../../../../types';
 import { IconCheck, IconX, IconClock, IconDeviceFloppy, IconReload, IconShoppingCart, IconTruck, IconAlertCircle } from "@tabler/icons-react-native";
 import { ORDER_STATUS } from "@/constants";
-import { useOrderItemBatchMutations, useOrderItemSpecializedBatchMutations } from "@/hooks";
+import { useOrderItemBatchMutations, useOrderItemSpecializedBatchMutations, useCanViewPrices } from "@/hooks";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
@@ -42,6 +42,7 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
   onOrderUpdate
 }) => {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const [itemChanges, setItemChanges] = useState<ItemChanges>({});
   const [selectedItems, setSelectedItems] = useState<SelectedItems>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -327,8 +328,8 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
                 <th>Código</th>
                 <th>Nome</th>
                 <th class="text-center">Quantidade</th>
-                <th class="text-right">Preço Unit.</th>
-                <th class="text-right">Total</th>
+                ${canViewPrices ? `<th class="text-right">Preço Unit.</th>
+                <th class="text-right">Total</th>` : ''}
               </tr>
             </thead>
             <tbody>
@@ -337,8 +338,8 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
                   <td>${item.item?.uniCode || '-'}</td>
                   <td class="font-medium">${item.item?.name || 'Item desconhecido'}</td>
                   <td class="text-center">${item.orderedQuantity.toLocaleString('pt-BR')}</td>
-                  <td class="text-right">${formatCurrencyPrecise(item.unitPrice || 0)}</td>
-                  <td class="text-right">${formatCurrencyPrecise((item.unitPrice || 0) * item.orderedQuantity)}</td>
+                  ${canViewPrices ? `<td class="text-right">${formatCurrencyPrecise(item.unitPrice || 0)}</td>
+                  <td class="text-right">${formatCurrencyPrecise((item.unitPrice || 0) * item.orderedQuantity)}</td>` : ''}
                 </tr>
               `).join('')}
             </tbody>
@@ -358,7 +359,7 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
       Alert.alert("Erro", "Não foi possível gerar o PDF");
       console.error("Error generating PDF:", error);
     }
-  }, [items, orderDescription]);
+  }, [items, orderDescription, canViewPrices]);
 
   const getItemStatus = (item: OrderItem) => {
     const currentValues = getItemValue(item);
@@ -602,16 +603,18 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
                   </View>
                 </View>
 
-                <View style={styles.priceInfo}>
-                  <ThemedText style={styles.priceLabel}>Preço Unit:</ThemedText>
-                  <ThemedText style={styles.priceValue}>
-                    {formatCurrency(orderItem.unitPrice || 0)}
-                  </ThemedText>
-                  <ThemedText style={styles.priceLabel}>Total:</ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.priceValue, styles.totalPrice])}>
-                    {formatCurrency((orderItem.unitPrice || 0) * orderItem.orderedQuantity)}
-                  </ThemedText>
-                </View>
+                {canViewPrices && (
+                  <View style={styles.priceInfo}>
+                    <ThemedText style={styles.priceLabel}>Preço Unit:</ThemedText>
+                    <ThemedText style={styles.priceValue}>
+                      {formatCurrency(orderItem.unitPrice || 0)}
+                    </ThemedText>
+                    <ThemedText style={styles.priceLabel}>Total:</ThemedText>
+                    <ThemedText style={StyleSheet.flatten([styles.priceValue, styles.totalPrice])}>
+                      {formatCurrency((orderItem.unitPrice || 0) * orderItem.orderedQuantity)}
+                    </ThemedText>
+                  </View>
+                )}
               </View>
             </View>
           );

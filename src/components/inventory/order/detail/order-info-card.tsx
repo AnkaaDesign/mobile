@@ -9,6 +9,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey } from "@/utils";
 import type { Order } from "../../../../types";
 import { PAYMENT_METHOD_LABELS } from "@/constants";
+import { useCanViewPrices } from "@/hooks";
 
 interface OrderInfoCardProps {
   order: Order;
@@ -16,6 +17,7 @@ interface OrderInfoCardProps {
 
 export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Check if order has temporary items
   const hasTemporaryItems = order.items?.some((item) => item.temporaryItemDescription);
@@ -126,15 +128,17 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
         />
 
         {/* Total Value */}
-        <DetailField
-          label="Valor Total"
-          icon="coins"
-          value={
-            <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
-              {formatCurrency(orderTotal)}
-            </ThemedText>
-          }
-        />
+        {canViewPrices && (
+          <DetailField
+            label="Valor Total"
+            icon="coins"
+            value={
+              <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
+                {formatCurrency(orderTotal)}
+              </ThemedText>
+            }
+          />
+        )}
 
         {/* Forecast */}
         <DetailField

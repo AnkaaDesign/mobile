@@ -6,6 +6,7 @@ import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { useCanViewPrices } from "@/hooks";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 
@@ -19,6 +20,7 @@ interface ItemCardProps {
 
 export function ItemCard({ item, onPress, showActions: _showActions = true, variant = "default" }: ItemCardProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   const currentPrice = item.prices?.[0]?.value || 0;
 
@@ -77,7 +79,7 @@ export function ItemCard({ item, onPress, showActions: _showActions = true, vari
               </View>
             )}
 
-            {currentPrice > 0 && (
+            {canViewPrices && currentPrice > 0 && (
               <View style={styles.detailRow}>
                 <ThemedText style={styles.label}>Preço:</ThemedText>
                 <ThemedText style={styles.price}>{formatCurrency(currentPrice)}</ThemedText>

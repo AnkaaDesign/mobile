@@ -6,6 +6,7 @@ import { Icon } from '@/components/ui/icon';
 import { useTheme } from '@/lib/theme';
 import { ExternalWithdrawal } from '@/types';
 import { formatDate, formatCurrency } from '@/utils';
+import { useCanViewPrices } from '@/hooks';
 import {
   EXTERNAL_WITHDRAWAL_STATUS_LABELS,
   EXTERNAL_WITHDRAWAL_TYPE,
@@ -29,6 +30,7 @@ type ExportMode = 'current' | 'all' | 'selected';
 export const ExternalWithdrawalExport = React.memo<ExternalWithdrawalExportProps>(
   ({ visible, onClose, data, totalCount, selectedCount = 0, onFetchAll }) => {
     const { colors } = useTheme();
+    const canViewPrices = useCanViewPrices();
     const [isExporting, setIsExporting] = useState(false);
 
     const generateCSV = useCallback((items: ExternalWithdrawal[]): string => {
@@ -37,7 +39,7 @@ export const ExternalWithdrawalExport = React.memo<ExternalWithdrawalExportProps
         'Status',
         'Tipo',
         'Itens',
-        'Valor Total',
+        ...(canViewPrices ? ['Valor Total'] : []),
         'Data de Criação',
         'Observações',
       ];
@@ -57,7 +59,7 @@ export const ExternalWithdrawalExport = React.memo<ExternalWithdrawalExportProps
           `"${EXTERNAL_WITHDRAWAL_STATUS_LABELS[withdrawal.status]}"`,
           `"${EXTERNAL_WITHDRAWAL_TYPE_LABELS[withdrawal.type]}"`,
           itemCount,
-          totalValue > 0 ? formatCurrency(totalValue) : '-',
+          ...(canViewPrices ? [totalValue > 0 ? formatCurrency(totalValue) : '-'] : []),
           formatDate(withdrawal.createdAt),
           `"${withdrawal.notes || '-'}"`,
         ];
@@ -70,7 +72,7 @@ export const ExternalWithdrawalExport = React.memo<ExternalWithdrawalExportProps
 
       // Add UTF-8 BOM for proper Excel encoding
       return '\uFEFF' + csvContent;
-    }, []);
+    }, [canViewPrices]);
 
     const generateJSON = useCallback((items: ExternalWithdrawal[]): string => {
       const exportData = items.map((withdrawal) => {
@@ -89,20 +91,20 @@ export const ExternalWithdrawalExport = React.memo<ExternalWithdrawalExportProps
           status: EXTERNAL_WITHDRAWAL_STATUS_LABELS[withdrawal.status],
           type: EXTERNAL_WITHDRAWAL_TYPE_LABELS[withdrawal.type],
           itemCount,
-          totalValue: totalValue > 0 ? totalValue : null,
+          ...(canViewPrices ? { totalValue: totalValue > 0 ? totalValue : null } : {}),
           createdAt: withdrawal.createdAt,
           notes: withdrawal.notes,
           items: withdrawal.items?.map((item) => ({
             itemName: item.item?.name,
             withdrawedQuantity: item.withdrawedQuantity,
             returnedQuantity: item.returnedQuantity,
-            price: item.price,
+            ...(canViewPrices ? { price: item.price } : {}),
           })),
         };
       });
 
       return JSON.stringify(exportData, null, 2);
-    }, []);
+    }, [canViewPrices]);
 
     const saveAndShareFile = useCallback(
       async (content: string, format: ExportFormat) => {

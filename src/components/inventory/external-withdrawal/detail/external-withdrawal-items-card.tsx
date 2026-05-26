@@ -7,6 +7,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconArrowBack, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react-native";
 import type { ExternalWithdrawalItem } from "@/types";
 import { formatCurrency } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_STATUS } from "@/constants";
 
 interface ExternalWithdrawalItemsCardProps {
@@ -17,6 +18,7 @@ interface ExternalWithdrawalItemsCardProps {
 
 export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalStatus }: ExternalWithdrawalItemsCardProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   const isReturnable = withdrawalType === EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE;
   const isDelivered = withdrawalStatus === EXTERNAL_WITHDRAWAL_STATUS.DELIVERED;
@@ -191,7 +193,7 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalS
                 )}
 
                 {/* Price */}
-                {withdrawalItem.price !== null && withdrawalItem.price !== undefined && (
+                {canViewPrices && withdrawalItem.price !== null && withdrawalItem.price !== undefined && (
                   <View style={styles.detailRow}>
                     <View style={styles.detailLeft}>
                       <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
@@ -205,7 +207,7 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalS
                 )}
 
                 {/* Total Price */}
-                {withdrawalItem.price !== null && withdrawalItem.price !== undefined && (
+                {canViewPrices && withdrawalItem.price !== null && withdrawalItem.price !== undefined && (
                   <View style={[styles.detailRow, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.xs, marginTop: spacing.xs }]}>
                     <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground, fontWeight: fontWeight.semibold }]}>
                       Total

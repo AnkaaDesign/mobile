@@ -7,6 +7,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
 import type { Order } from '../../../../types';
 import { IconCoin } from "@tabler/icons-react-native";
+import { useCanViewPrices } from "@/hooks";
 
 interface OrderSummaryCardProps {
   order: Order;
@@ -14,6 +15,7 @@ interface OrderSummaryCardProps {
 
 export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Calculate values from order items
   // Mirror order-items-card.tsx / list config: per item, (orderedQuantity × price) + ICMS + IPI
@@ -31,6 +33,8 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
     }, 0) || 0;
   const discountAmount = goodsSubtotal * ((order.discount || 0) / 100);
   const total = subtotal + (order.freight || 0) - discountAmount;
+
+  if (!canViewPrices) return null;
 
   return (
     <DetailCard title="Resumo Financeiro" icon="receipt">

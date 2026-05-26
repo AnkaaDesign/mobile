@@ -6,6 +6,7 @@ import type { Item } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { useCanViewPrices } from "@/hooks";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -469,6 +470,7 @@ export const ItemTable = React.memo<ItemTableProps>(
     disableVirtualization = false,
   }) => {
     const { colors, isDark } = useTheme();
+    const canViewPrices = useCanViewPrices();
     const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
@@ -512,8 +514,10 @@ export const ItemTable = React.memo<ItemTableProps>(
         createdAt: 1.2,
       };
 
-      // Filter to visible columns
-      const visible = allColumns.filter((col) => visibleColumns.has(col.key));
+      // Filter to visible columns. Warehouse users never see monetary columns.
+      const visible = allColumns.filter(
+        (col) => visibleColumns.has(col.key) && (canViewPrices || (col.key !== "price" && col.key !== "totalPrice")),
+      );
 
       // Calculate total ratio
       const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
@@ -524,7 +528,7 @@ export const ItemTable = React.memo<ItemTableProps>(
         const width = Math.floor((availableWidth * ratio) / totalRatio);
         return { ...col, width };
       });
-    }, [allColumns, visibleColumns]);
+    }, [allColumns, visibleColumns, canViewPrices]);
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {

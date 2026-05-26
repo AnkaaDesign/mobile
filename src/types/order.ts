@@ -426,6 +426,56 @@ export type OrderScheduleCreateResponse = BaseCreateResponse<OrderSchedule>;
 export type OrderScheduleUpdateResponse = BaseUpdateResponse<OrderSchedule>;
 export type OrderScheduleDeleteResponse = BaseDeleteResponse;
 
+// =====================
+// OrderSchedule Projection & Trigger (auto-creation)
+// =====================
+
+// Cascade strategy for a manual trigger.
+// - GAP_ONLY: bridge — covers only the gap until the next scheduled run; nextRun unchanged.
+// - GAP_PLUS_CYCLE: pull-forward — covers the gap plus a full cycle; nextRun advances one interval.
+export type OrderScheduleCascadeMode = "GAP_ONLY" | "GAP_PLUS_CYCLE";
+
+export interface OrderScheduleProjectionItem {
+  itemId: string;
+  itemName: string;
+  unitPrice: number;
+  quantityToday: number;
+  quantityScheduled: number;
+  totalToday: number;
+  totalScheduled: number;
+  reasonToday: string | null;
+  reasonScheduled: string | null;
+  skipped: boolean;
+}
+
+export interface OrderScheduleProjectionMeta {
+  nextRun: Date | string | null;
+  scheduledDate: Date | string | null;
+  gapDays: number;
+  intervalDays: number | null;
+  coverageDays: number;
+  totalToday: number;
+  totalScheduled: number;
+}
+
+export interface OrderScheduleProjection {
+  items: OrderScheduleProjectionItem[];
+  meta: OrderScheduleProjectionMeta;
+}
+
+export type OrderScheduleProjectionResponse = BaseGetUniqueResponse<OrderScheduleProjection>;
+
+export interface OrderScheduleTriggerResult {
+  order: Order;
+  cascadeMode: OrderScheduleCascadeMode;
+  coverageDays: number;
+  gapDays: number;
+  intervalDays: number | null;
+  nextRun: Date | string | null;
+}
+
+export type OrderScheduleTriggerResponse = BaseCreateResponse<OrderScheduleTriggerResult | null>;
+
 // OrderRule responses
 export type OrderRuleGetUniqueResponse = BaseGetUniqueResponse<OrderRule>;
 export type OrderRuleGetManyResponse = BaseGetManyResponse<OrderRule>;

@@ -5,6 +5,7 @@ import { exportData } from '@/lib/export-utils';
 import type { Order } from '@/types';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils';
 import { ORDER_STATUS_LABELS } from '@/constants';
+import { useCanViewPrices } from '@/hooks';
 
 interface OrderExportProps {
   orders: Order[];
@@ -16,6 +17,8 @@ interface OrderExportProps {
  * Provides CSV and JSON export functionality for order lists
  */
 export const OrderExport: React.FC<OrderExportProps> = ({ orders, disabled = false }) => {
+  const canViewPrices = useCanViewPrices();
+
   const handleExport = async (format: ExportFormat) => {
     const columns: ExportColumn<Order>[] = [
       {
@@ -50,23 +53,25 @@ export const OrderExport: React.FC<OrderExportProps> = ({ orders, disabled = fal
         getValue: (order) => (order.forecast ? order.forecast.toISOString() : null),
         format: (value) => (value ? formatDate(new Date(value)) : '-'),
       },
-      {
-        key: 'total',
-        label: 'VALOR TOTAL',
-        getValue: (order) => {
-          if (order.items && order.items.length > 0) {
-            const total = order.items.reduce((sum, item) => {
-              const subtotal = item.orderedQuantity * item.price;
-              const icmsAmount = subtotal * (item.icms / 100);
-              const ipiAmount = subtotal * (item.ipi / 100);
-              return sum + subtotal + icmsAmount + ipiAmount;
-            }, 0);
-            return total;
-          }
-          return 0;
-        },
-        format: (value) => formatCurrency(value as number),
-      },
+      ...(canViewPrices
+        ? [{
+            key: 'total',
+            label: 'VALOR TOTAL',
+            getValue: (order: Order) => {
+              if (order.items && order.items.length > 0) {
+                const total = order.items.reduce((sum, item) => {
+                  const subtotal = item.orderedQuantity * item.price;
+                  const icmsAmount = subtotal * (item.icms / 100);
+                  const ipiAmount = subtotal * (item.ipi / 100);
+                  return sum + subtotal + icmsAmount + ipiAmount;
+                }, 0);
+                return total;
+              }
+              return 0;
+            },
+            format: (value: unknown) => formatCurrency(value as number),
+          } as ExportColumn<Order>]
+        : []),
       {
         key: 'createdAt',
         label: 'CRIADO EM',

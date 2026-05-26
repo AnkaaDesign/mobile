@@ -7,11 +7,11 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPaint, IconCurrencyDollar, IconWeight, IconFlask } from "@tabler/icons-react-native";
 import type { PaintProduction } from "@/types";
-import { PAINT_FINISH_LABELS, routes, SECTOR_PRIVILEGES } from "@/constants";
+import { PAINT_FINISH_LABELS, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { formatCurrency } from "@/utils";
-import { useAuth } from "@/contexts/auth-context";
+import { useCanViewPrices } from "@/hooks";
 
 interface PaintFormulaCardProps {
   production: PaintProduction;
@@ -19,9 +19,8 @@ interface PaintFormulaCardProps {
 
 export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
   const { colors } = useTheme();
-  const { user } = useAuth();
   const nav = useNav();
-  const isWarehouseUser = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
+  const canViewPrices = useCanViewPrices();
   const formula = production.formula;
   const paint = formula?.paint;
 
@@ -79,7 +78,7 @@ export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
               {/* Metrics Grid */}
               <View style={styles.metricsGrid}>
                 {/* Price per Liter - Hidden for warehouse users */}
-                {!isWarehouseUser && (
+                {canViewPrices && (
                   <View style={[styles.metricItem, { backgroundColor: colors.muted + "50" }]}>
                     <View style={styles.metricHeader}>
                       <IconCurrencyDollar size={14} color={colors.mutedForeground} />

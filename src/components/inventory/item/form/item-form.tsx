@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, FormProvider, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { itemCreateSchema, itemUpdateSchema, type ItemCreateFormData, type ItemUpdateFormData } from '../../../../schemas';
-import { useItemCategories, useKeyboardAwareScroll } from "@/hooks";
+import { useItemCategories, useKeyboardAwareScroll, useCanViewPrices } from "@/hooks";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
@@ -59,6 +59,7 @@ type ItemFormProps = CreateItemFormProps | UpdateItemFormProps;
 
 export function ItemForm(props: ItemFormProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory, initialBrand, initialSupplier } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
   const [isPPE, setIsPPE] = useState(false);
@@ -251,9 +252,9 @@ export function ItemForm(props: ItemFormProps) {
             </FormCard>
 
             {/* Pricing */}
-            <FormCard title="Preço e Taxas" icon="IconCurrencyReal">
+            <FormCard title={canViewPrices ? "Preço e Taxas" : "Taxas"} icon="IconCurrencyReal">
               <View style={styles.fieldGroup}>
-                <PriceInput disabled={isSubmitting} />
+                {canViewPrices && <PriceInput disabled={isSubmitting} />}
                 <View style={styles.fieldRow}>
                   <View style={styles.halfField}>
                     <IcmsInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />

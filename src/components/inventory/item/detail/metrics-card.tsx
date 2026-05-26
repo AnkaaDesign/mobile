@@ -23,6 +23,7 @@ import {
   XYZ_CATEGORY_LABELS,
   ACTIVITY_OPERATION,
 } from "@/constants";
+import { useCanViewPrices } from "@/hooks";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 
@@ -41,6 +42,7 @@ const STOCK_STATUS_COLORS: Record<STOCK_LEVEL, string> = {
 
 export function MetricsCard({ item }: MetricsCardProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   const metrics = useMemo(() => {
     const activities = item.activities || [];
@@ -91,6 +93,7 @@ export function MetricsCard({ item }: MetricsCardProps) {
   return (
     <DetailCard title="Métricas e Análises" icon="chart-line">
       {/* Financial Metrics */}
+      {canViewPrices && (
       <View style={styles.section}>
         <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
           Métricas Financeiras
@@ -127,6 +130,7 @@ export function MetricsCard({ item }: MetricsCardProps) {
           </View>
         </View>
       </View>
+      )}
 
       {/* Movement Summary */}
       <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>

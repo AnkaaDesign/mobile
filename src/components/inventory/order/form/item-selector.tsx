@@ -17,6 +17,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getItems } from "@/api-client";
 import { formatCurrency } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import type { Item } from "@/types";
 
 interface OrderItemSelectorProps {
@@ -54,6 +55,7 @@ export function OrderItemSelector({
   showInactive = false,
 }: OrderItemSelectorProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Memoize initialOptions with stable dependency
   const initialOptions = useMemo(() => {
@@ -68,7 +70,7 @@ export function OrderItemSelector({
       label: initialItem.uniCode ? `${initialItem.uniCode} - ${initialItem.name}` : initialItem.name,
       description: [
         `Estoque: ${stockInfo}`,
-        priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
+        canViewPrices && priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
         supplier ? `Fornecedor: ${supplier}` : null,
       ].filter(Boolean).join(" | "),
       metadata: {
@@ -80,7 +82,7 @@ export function OrderItemSelector({
         isActive: initialItem.isActive,
       },
     }];
-  }, [initialItem?.id]);
+  }, [initialItem?.id, canViewPrices]);
 
   // Async query function for Combobox with pagination and advanced filters
   const queryFn = useCallback(async (searchTerm: string, page: number = 1) => {
@@ -164,7 +166,7 @@ export function OrderItemSelector({
           label: item.uniCode ? `${item.uniCode} - ${item.name}` : item.name,
           description: [
             `Estoque: ${stockInfo}`,
-            priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
+            canViewPrices && priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
             supplier ? `Fornecedor: ${supplier}` : null,
           ].filter(Boolean).join(" | "),
           metadata: {
@@ -182,7 +184,7 @@ export function OrderItemSelector({
       hasMore,
       total,
     };
-  }, [categoryIds, brandIds, supplierIds, showInactive]);
+  }, [categoryIds, brandIds, supplierIds, showInactive, canViewPrices]);
 
   // Custom render function for item options
   const renderItemOption = useCallback((option: ComboboxOption) => {
@@ -229,7 +231,7 @@ export function OrderItemSelector({
               {metadata.quantity || 0}
             </ThemedText>
           </Badge>
-          {metadata.price && (
+          {canViewPrices && metadata.price && (
             <Badge variant="outline" style={styles.priceBadge}>
               <ThemedText style={styles.priceBadgeText}>
                 {formatCurrency(metadata.price)}
@@ -239,7 +241,7 @@ export function OrderItemSelector({
         </View>
       </View>
     );
-  }, [colors]);
+  }, [colors, canViewPrices]);
 
   return (
     <View style={styles.container}>

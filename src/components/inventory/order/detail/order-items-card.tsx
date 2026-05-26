@@ -6,6 +6,7 @@ import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatQuantity, formatTaxPercentage } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import type { Order, OrderItem } from "../../../../types";
 import {
   IconCheck,
@@ -28,6 +29,7 @@ interface ItemStatusInfo {
 
 export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const items = order?.items || [];
 
   // Calculate summary statistics
@@ -134,14 +136,16 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
           </View>
 
           {/* Total Value */}
-          <View style={styles.summaryItem}>
-            <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
-              Valor Total
-            </ThemedText>
-            <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
-              {formatCurrency(summary.totalValue)}
-            </ThemedText>
-          </View>
+          {canViewPrices && (
+            <View style={styles.summaryItem}>
+              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                Valor Total
+              </ThemedText>
+              <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
+                {formatCurrency(summary.totalValue)}
+              </ThemedText>
+            </View>
+          )}
         </View>
 
         {/* Progress Bar */}
@@ -240,42 +244,44 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
                 </View>
 
                 {/* Right Column - Prices */}
-                <View style={styles.detailColumn}>
-                  <View style={styles.detailRow}>
-                    <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                      Preço:
-                    </ThemedText>
-                    <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                      {formatCurrency(orderItem.price)}
-                    </ThemedText>
-                  </View>
-                  {(orderItem.icms > 0 || orderItem.ipi > 0) && (
-                    <View style={styles.taxRow}>
-                      {orderItem.icms > 0 && (
-                        <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
-                          <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
-                            ICMS: {formatTaxPercentage(orderItem.icms)}
-                          </ThemedText>
-                        </View>
-                      )}
-                      {orderItem.ipi > 0 && (
-                        <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
-                          <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
-                            IPI: {formatTaxPercentage(orderItem.ipi)}
-                          </ThemedText>
-                        </View>
-                      )}
+                {canViewPrices && (
+                  <View style={styles.detailColumn}>
+                    <View style={styles.detailRow}>
+                      <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                        Preço:
+                      </ThemedText>
+                      <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                        {formatCurrency(orderItem.price)}
+                      </ThemedText>
                     </View>
-                  )}
-                  <View style={styles.detailRow}>
-                    <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                      Total:
-                    </ThemedText>
-                    <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
-                      {formatCurrency(itemTotal)}
-                    </ThemedText>
+                    {(orderItem.icms > 0 || orderItem.ipi > 0) && (
+                      <View style={styles.taxRow}>
+                        {orderItem.icms > 0 && (
+                          <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
+                            <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
+                              ICMS: {formatTaxPercentage(orderItem.icms)}
+                            </ThemedText>
+                          </View>
+                        )}
+                        {orderItem.ipi > 0 && (
+                          <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
+                            <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
+                              IPI: {formatTaxPercentage(orderItem.ipi)}
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    <View style={styles.detailRow}>
+                      <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                        Total:
+                      </ThemedText>
+                      <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
+                        {formatCurrency(itemTotal)}
+                      </ThemedText>
+                    </View>
                   </View>
-                </View>
+                )}
               </View>
             </View>
           );

@@ -12,6 +12,7 @@ import { useNav } from "@/contexts/nav";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useCanViewPrices } from "@/hooks";
 
 interface PaintFormulasCardProps {
   paint: Paint;
@@ -31,11 +32,13 @@ export function PaintFormulasCard({ paint, canNavigate = true }: PaintFormulasCa
   const { colors } = useTheme();
   const { user } = useAuth();
   const nav = useNav();
+  const canViewPrices = useCanViewPrices();
   const userPrivilege = user?.sector?.privileges;
 
-  const canSeePrices = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+  const canSeePrices = canViewPrices && (
+    userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
     userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-    userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+    userPrivilege === SECTOR_PRIVILEGES.FINANCIAL);
 
   const hasFormulas = paint.formulas && paint.formulas.length > 0;
 

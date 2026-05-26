@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { routes, DASHBOARD_TIME_PERIOD } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useInventoryDashboard } from "@/hooks/dashboard";
+import { useCanViewPrices } from "@/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
 import { formatCurrency } from "@/utils";
@@ -13,6 +14,7 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function EstoqueScreen() {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
@@ -237,12 +239,15 @@ export default function EstoqueScreen() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {[
               { title: "Total de Itens", value: data?.overview?.totalItems?.value || 0, icon: "package", color: "#3b82f6" },
-              { title: "Valor Total", value: formatCurrency(data?.overview?.totalValue?.value || 0), icon: "currency-dollar", color: "#22c55e" },
+              // Monetary metric hidden for warehouse users.
+              ...(canViewPrices
+                ? [{ title: "Valor Total", value: formatCurrency(data?.overview?.totalValue?.value || 0), icon: "currency-dollar", color: "#22c55e" }]
+                : []),
               { title: "Itens Críticos", value: data?.overview?.criticalItems?.value || 0, icon: "alert-triangle", color: "#ef4444", badge: (data?.overview?.criticalItems?.value || 0) > 0 },
               { title: "Estoque Baixo", value: data?.overview?.lowStockItems?.value || 0, icon: "trending-down", color: "#f97316" },
               { title: "Reordenar", value: data?.overview?.itemsNeedingReorder?.value || 0, icon: "refresh", color: "#8b5cf6" },
               { title: "Excesso", value: data?.overview?.overstockedItems?.value || 0, icon: "package", color: "#06b6d4" },
-            ].map((metric) => (
+            ].map((metric: any) => (
               <View
                 key={metric.title}
                 style={{

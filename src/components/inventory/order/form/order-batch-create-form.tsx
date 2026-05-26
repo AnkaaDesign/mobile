@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useSuppliers, useMultiStepForm } from "@/hooks";
+import { useSuppliers, useMultiStepForm, useCanViewPrices } from "@/hooks";
 import type { FormStep } from "@/components/ui/form-steps";
 import { formatCurrency, formatQuantity } from "@/utils";
 import {
@@ -58,6 +58,7 @@ export function OrderBatchCreateForm({
   isSubmitting = false,
 }: OrderBatchCreateFormProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   // Local state for date (since it's a Date object)
@@ -402,12 +403,14 @@ export function OrderBatchCreateForm({
                   </View>
                 </View>
 
-                <View style={styles.totalSection}>
-                  <ThemedText style={styles.summaryLabel}>Valor Total</ThemedText>
-                  <ThemedText style={styles.totalValue}>
-                    {formatCurrency(totals.subtotal)}
-                  </ThemedText>
-                </View>
+                {canViewPrices && (
+                  <View style={styles.totalSection}>
+                    <ThemedText style={styles.summaryLabel}>Valor Total</ThemedText>
+                    <ThemedText style={styles.totalValue}>
+                      {formatCurrency(totals.subtotal)}
+                    </ThemedText>
+                  </View>
+                )}
 
                 {multiStepForm.formData.notes && (
                   <View style={styles.summarySection}>
@@ -439,12 +442,16 @@ export function OrderBatchCreateForm({
                           Item #{index + 1}
                         </ThemedText>
                         <ThemedText style={styles.reviewItemDetails}>
-                          {formatQuantity(item.quantity)}x @ {formatCurrency(item.price || 0)}
+                          {canViewPrices
+                            ? `${formatQuantity(item.quantity)}x @ ${formatCurrency(item.price || 0)}`
+                            : `${formatQuantity(item.quantity)}x`}
                         </ThemedText>
                       </View>
-                      <ThemedText style={styles.reviewItemTotal}>
-                        {formatCurrency((item.price || 0) * item.quantity)}
-                      </ThemedText>
+                      {canViewPrices && (
+                        <ThemedText style={styles.reviewItemTotal}>
+                          {formatCurrency((item.price || 0) * item.quantity)}
+                        </ThemedText>
+                      )}
                     </View>
                   ))}
                 </View>

@@ -10,7 +10,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { useTheme } from "@/lib/theme";
-import { useOrderItem, useOrderItemMutations } from "@/hooks";
+import { useOrderItem, useOrderItemMutations, useCanViewPrices } from "@/hooks";
 import { mobileRoute } from "@/constants/routes.types";
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -23,6 +23,7 @@ export default function OrderItemDetailScreen() {
     id: string;
   }>();
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const { deleteMutation } = useOrderItemMutations();
 
   const query = useOrderItem(id as string, {
@@ -183,40 +184,42 @@ export default function OrderItemDetailScreen() {
               </View>
             </Card>
 
-            <Card style={styles.card}>
-              <View
-                style={[styles.header, { borderBottomColor: colors.border }]}
-              >
-                <View style={styles.headerLeft}>
-                  <IconCurrency size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.title}>Preços</ThemedText>
+            {canViewPrices && (
+              <Card style={styles.card}>
+                <View
+                  style={[styles.header, { borderBottomColor: colors.border }]}
+                >
+                  <View style={styles.headerLeft}>
+                    <IconCurrency size={20} color={colors.mutedForeground} />
+                    <ThemedText style={styles.title}>Preços</ThemedText>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.content}>
-                <PriceRow
-                  label="Preço Unitário"
-                  value={formatCurrency(orderItem.price ?? 0)}
-                />
-                <PriceRow
-                  label="Quantidade"
-                  value={formatQuantity(orderItem.orderedQuantity ?? 0)}
-                />
-                <View style={[styles.priceRow, styles.totalRow]}>
-                  <ThemedText style={[styles.priceLabel, styles.totalLabel]}>
-                    Total
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.priceValue,
-                      styles.totalValue,
-                      { color: colors.primary },
-                    ]}
-                  >
-                    {formatCurrency(totalPrice)}
-                  </ThemedText>
+                <View style={styles.content}>
+                  <PriceRow
+                    label="Preço Unitário"
+                    value={formatCurrency(orderItem.price ?? 0)}
+                  />
+                  <PriceRow
+                    label="Quantidade"
+                    value={formatQuantity(orderItem.orderedQuantity ?? 0)}
+                  />
+                  <View style={[styles.priceRow, styles.totalRow]}>
+                    <ThemedText style={[styles.priceLabel, styles.totalLabel]}>
+                      Total
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.priceValue,
+                        styles.totalValue,
+                        { color: colors.primary },
+                      ]}
+                    >
+                      {formatCurrency(totalPrice)}
+                    </ThemedText>
+                  </View>
                 </View>
-              </View>
-            </Card>
+              </Card>
+            )}
 
             <Card style={styles.card}>
               <View

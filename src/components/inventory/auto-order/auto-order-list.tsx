@@ -31,6 +31,7 @@ import {
   borderRadius,
 } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import {
   useAutoOrderAnalysis,
   type AutoOrderRecommendation,
@@ -56,6 +57,7 @@ const URGENCY_VARIANT: Record<
 
 export function AutoOrderList() {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const { data, isLoading, isRefetching, refetch, isError } =
     useAutoOrderAnalysis({ minStockCriteria: "all" });
 
@@ -165,11 +167,13 @@ export function AutoOrderList() {
             valueColor="#dc2626"
             colors={colors}
           />
-          <SummaryStat
-            label="Custo Est."
-            value={formatCurrency(data.data.summary.totalEstimatedCost ?? 0)}
-            colors={colors}
-          />
+          {canViewPrices && (
+            <SummaryStat
+              label="Custo Est."
+              value={formatCurrency(data.data.summary.totalEstimatedCost ?? 0)}
+              colors={colors}
+            />
+          )}
         </View>
       )}
 
@@ -211,6 +215,7 @@ interface SupplierGroupProps {
 
 function SupplierGroup({ group }: SupplierGroupProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const [open, setOpen] = useState(true);
 
   const headerCount = group.itemCount;
@@ -234,7 +239,8 @@ function SupplierGroup({ group }: SupplierGroupProps) {
             style={[styles.groupMeta, { color: colors.mutedForeground }]}
             numberOfLines={1}
           >
-            {headerCount} {headerCount === 1 ? "item" : "itens"} • {headerCost}
+            {headerCount} {headerCount === 1 ? "item" : "itens"}
+            {canViewPrices ? ` • ${headerCost}` : ""}
           </ThemedText>
         </View>
         {open ? (

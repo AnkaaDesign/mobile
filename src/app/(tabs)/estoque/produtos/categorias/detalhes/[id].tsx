@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useItemCategory, useScreenReady } from "@/hooks";
+import { useItemCategory, useScreenReady, useCanViewPrices } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +38,7 @@ import { TouchableOpacity } from "react-native";
 export default function CategoryDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -341,6 +342,7 @@ export default function CategoryDetailScreen() {
                       <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>Total de Produtos</ThemedText>
                       <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>{statistics.totalItems}</ThemedText>
                     </View>
+                    {canViewPrices && (
                     <View
                       style={[
                         styles.statCard,
@@ -353,6 +355,7 @@ export default function CategoryDetailScreen() {
                       <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: isDark ? "#60a5fa" : "#2563eb" }])}>Valor Total</ThemedText>
                       <ThemedText style={StyleSheet.flatten([styles.statValue, { color: isDark ? "#60a5fa" : "#2563eb" }])}>{formatCurrency(statistics.totalValue)}</ThemedText>
                     </View>
+                    )}
                   </View>
 
                   {/* Stock Level Summary */}
@@ -450,7 +453,7 @@ export default function CategoryDetailScreen() {
                                     <ThemedText style={StyleSheet.flatten([styles.stockQuantity, { color: colors.foreground }])}>{quantity.toLocaleString("pt-BR")} un</ThemedText>
                                   </View>
 
-                                  {item.totalPrice && item.totalPrice > 0 && (
+                                  {canViewPrices && item.totalPrice && item.totalPrice > 0 && (
                                     <ThemedText style={StyleSheet.flatten([styles.itemPrice, { color: colors.mutedForeground }])}>{formatCurrency(item.totalPrice)}</ThemedText>
                                   )}
                                 </View>

@@ -73,6 +73,16 @@ export function usePrivileges() {
   const isBasic = user ? !user.sector || user.sector.privileges === SECTOR_PRIVILEGES.BASIC : false;
 
   /**
+   * Whether the current user is allowed to view monetary information
+   * (prices, costs, totals, monetary values).
+   *
+   * WAREHOUSE users manage inventory but must NOT see any monetary values.
+   * Every other privilege (including ADMIN, FINANCIAL, COMMERCIAL, etc.) keeps access.
+   * Defaults to `false` while the user is still loading so prices never flash.
+   */
+  const canViewPrices = !!user && user.sector?.privileges !== SECTOR_PRIVILEGES.WAREHOUSE;
+
+  /**
    * Backend controller pattern shortcuts
    * Common privilege combinations used in the backend
    */
@@ -146,6 +156,7 @@ export function usePrivileges() {
     isProductionManager,
     isMaintenance,
     isBasic,
+    canViewPrices,
 
     // Backend pattern shortcuts
     canManageWarehouse,
@@ -200,5 +211,20 @@ export const privilegeUtils = {
     TASK_CREATION: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
   } as const,
 };
+
+/**
+ * Convenience hook returning whether the current user may view monetary
+ * information (prices, costs, totals, monetary values).
+ *
+ * Single source of truth for hiding money from WAREHOUSE users across the app.
+ * Use this to gate price columns, detail rows, form inputs, totals, etc.
+ *
+ * @example
+ * const canViewPrices = useCanViewPrices();
+ * {canViewPrices && <PriceRow />}
+ */
+export function useCanViewPrices(): boolean {
+  return usePrivileges().canViewPrices;
+}
 
 export default usePrivileges;

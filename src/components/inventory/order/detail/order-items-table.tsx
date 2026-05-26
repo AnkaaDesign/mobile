@@ -9,6 +9,7 @@ import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import { StockStatusIndicator } from "@/components/inventory/item/list/stock-status-indicator";
 import type { Order, Item } from "@/types";
 import {
@@ -22,6 +23,7 @@ interface OrderItemsTableProps {
 
 export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
   const { colors, isDark } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const items = order?.items || [];
 
   // Calculate summary statistics
@@ -90,14 +92,16 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
               {formatQuantity(summary.totalReceived)}
             </ThemedText>
           </View>
-          <View style={styles.summaryItem}>
-            <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
-              Valor Total
-            </ThemedText>
-            <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
-              {formatCurrency(summary.totalValue)}
-            </ThemedText>
-          </View>
+          {canViewPrices && (
+            <View style={styles.summaryItem}>
+              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                Valor Total
+              </ThemedText>
+              <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
+                {formatCurrency(summary.totalValue)}
+              </ThemedText>
+            </View>
+          )}
         </View>
 
         {/* Progress Bar */}

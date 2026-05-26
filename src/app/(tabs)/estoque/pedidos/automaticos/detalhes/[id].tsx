@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, Alert, Pressable , StyleSheet} from "react-native";
+import { View, ScrollView, Alert, Pressable , StyleSheet, ActivityIndicator} from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
   IconEdit,
@@ -10,10 +10,19 @@ import {
   IconClock,
   IconPackage,
   IconHistory,
+  IconBolt,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderSchedule, useOrderScheduleMutations, useOrders, useScreenReady} from '@/hooks';
+import {
+  useOrderSchedule,
+  useOrderScheduleMutations,
+  useOrderScheduleProjection,
+  useTriggerOrderSchedule,
+  useOrders,
+  useScreenReady,
+} from '@/hooks';
 import type { OrderScheduleInclude } from '../../../../../../schemas';
+import type { OrderScheduleCascadeMode } from "@/types";
 import {
   ThemedView,
   ThemedText,
@@ -37,6 +46,7 @@ import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { formatDateTime, formatDate } from "@/utils";
+import { formatCurrency } from "@/utils/number";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,6 +67,7 @@ function AutomaticOrderDetailScreenInner() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showCascadeSheet, setShowCascadeSheet] = useState(false);
 
   const scheduleId = params.id!;
   const goBack = () =>
@@ -70,9 +81,9 @@ function AutomaticOrderDetailScreenInner() {
   const canDelete = deletePriv.allowed;
 
   const include: OrderScheduleInclude = {
-    weeklyConfig: { include: { daysOfWeek: true } },
-    monthlyConfig: { include: { occurrences: true } },
-    yearlyConfig: { include: { monthlyConfigs: true } },
+    weeklyConfig: true,
+    monthlyConfig: true,
+    yearlyConfig: true,
     order: true,
   };
 
@@ -89,6 +100,16 @@ function AutomaticOrderDetailScreenInner() {
 
   const schedule = response?.data;
 
+  // Fetch the auto-creation projection (per-item quantities/totals for today vs scheduled date)
+  const {
+    data: projectionResponse,
+    isLoading: isProjectionLoading,
+  } = useOrderScheduleProjection(scheduleId);
+
+  const projection = projectionResponse?.data;
+  const projectionItems = projection?.items ?? [];
+  const projectionMeta = projection?.meta;
+
   // Fetch orders created from this schedule
   const {
     data: ordersResponse,
@@ -98,6 +119,16 @@ function AutomaticOrderDetailScreenInner() {
     },
     orderBy: { createdAt: "desc" },
     take: 10, // Show last 10 orders
+  });
+
+  const { mutate: triggerSchedule, isPending: isTriggering } = useTriggerOrderSchedule({
+    onSuccess: (data) => {
+      // Success toast is shown automatically by the API client interceptor
+      if (!data?.data) {
+        Alert.alert("Nada a pedir", "Nenhum item precisa ser pedido neste momento.");
+      }
+      refetch();
+    },
   });
 
   const { update: updateSchedule, delete: deleteSchedule } = useOrderScheduleMutations({
@@ -194,6 +225,22 @@ function AutomaticOrderDetailScreenInner() {
     );
   }, [canEdit, scheduleId, nav]);
 
+  // Open the cascade-mode chooser for a real "Disparar agora" trigger.
+  const handleOpenTrigger = useCallback(() => {
+    if (!canEdit) {
+      Alert.alert("Sem permissão", "Você não tem permissão para disparar agendamentos automáticos");
+      return;
+    }
+    setShowCascadeSheet(true);
+  }, [canEdit]);
+
+  const handleTrigger = useCallback(
+    (cascadeMode: OrderScheduleCascadeMode) => {
+      triggerSchedule({ id: scheduleId, cascadeMode });
+    },
+    [triggerSchedule, scheduleId],
+  );
+
   if (isLoading) {
     return (
       <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
@@ -255,12 +302,22 @@ function AutomaticOrderDetailScreenInner() {
     );
   }
 
+  const gapDays = projectionMeta?.gapDays ?? 0;
+  const intervalDays = projectionMeta?.intervalDays ?? null;
+
   const actionSheetItems: ActionSheetItem[] = [
     {
       id: "edit",
       label: "Editar",
       icon: "edit",
       onPress: handleEdit,
+      disabled: !canEdit,
+    },
+    {
+      id: "trigger",
+      label: "Disparar agora",
+      icon: "bolt",
+      onPress: handleOpenTrigger,
       disabled: !canEdit,
     },
     {
@@ -286,6 +343,26 @@ function AutomaticOrderDetailScreenInner() {
       destructive: true,
     },
   ];
+
+  // Cascade-mode chooser options derived from projection meta.
+  const cascadeSheetItems: ActionSheetItem[] = [];
+  if (gapDays > 0) {
+    cascadeSheetItems.push({
+      id: "gap-only",
+      label: `Cobrir até o próximo disparo (${gapDays} dias)`,
+      icon: "calendar",
+      onPress: () => handleTrigger("GAP_ONLY"),
+    });
+  }
+  cascadeSheetItems.push({
+    id: "gap-plus-cycle",
+    label:
+      intervalDays != null
+        ? `Cobrir disparo + ciclo (${gapDays}+${intervalDays} dias)`
+        : "Cobrir disparo + ciclo completo",
+    icon: "refresh",
+    onPress: () => handleTrigger("GAP_PLUS_CYCLE"),
+  });
 
   return (
     <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
@@ -342,27 +419,127 @@ function AutomaticOrderDetailScreenInner() {
           </View>
         </Card>
 
-        {/* Items */}
+        {/* Projection Summary */}
+        {projectionMeta && (
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconCalendar size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Previsão do Disparo Automático</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              {projectionMeta.scheduledDate && (
+                <InfoRow
+                  label="Data prevista do disparo"
+                  value={formatDate(projectionMeta.scheduledDate)}
+                />
+              )}
+              <InfoRow label="Intervalo até o disparo" value={`${projectionMeta.gapDays} dias`} />
+              {projectionMeta.intervalDays != null && (
+                <InfoRow label="Ciclo" value={`${projectionMeta.intervalDays} dias`} />
+              )}
+              <View style={styles.summaryTotals}>
+                <View style={styles.summaryTotalBlock}>
+                  <ThemedText style={[styles.summaryTotalLabel, { color: colors.mutedForeground }]}>
+                    Total hoje
+                  </ThemedText>
+                  <ThemedText style={[styles.summaryTotalValue, { color: colors.foreground }]}>
+                    {formatCurrency(projectionMeta.totalToday)}
+                  </ThemedText>
+                </View>
+                <View style={styles.summaryTotalBlock}>
+                  <ThemedText style={[styles.summaryTotalLabel, { color: colors.mutedForeground }]}>
+                    Total na data
+                  </ThemedText>
+                  <ThemedText style={[styles.summaryTotalValue, { color: colors.primary }]}>
+                    {formatCurrency(projectionMeta.totalScheduled)}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+          </Card>
+        )}
+
+        {/* Items Projection */}
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={styles.headerLeft}>
               <IconPackage size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Itens ({schedule?.items?.length || 0})</ThemedText>
+              <ThemedText style={styles.title}>
+                Itens ({projectionItems.length || schedule?.items?.length || 0})
+              </ThemedText>
             </View>
           </View>
           <View style={styles.content}>
-            {/* Note: OrderSchedule.items is string[] but ItemsList expects OrderItem[]. Need to fetch actual items or modify component */}
-            <ThemedText style={{ color: colors.mutedForeground, fontStyle: 'italic' }}>
-              {schedule?.items?.length || 0} itens configurados
-            </ThemedText>
-            {schedule?.items && schedule.items.length > 0 && (
-              <View style={{ marginTop: 8 }}>
-                {schedule.items.map((itemId) => (
-                  <ThemedText key={itemId} style={{ color: colors.foreground, marginVertical: 2 }}>
-                    • Item ID: {itemId}
-                  </ThemedText>
-                ))}
+            {isProjectionLoading ? (
+              <View style={styles.projectionLoading}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <ThemedText style={{ color: colors.mutedForeground }}>
+                  Calculando previsões...
+                </ThemedText>
               </View>
+            ) : projectionItems.length > 0 ? (
+              <View style={styles.content}>
+                {projectionItems.map((item, index) => {
+                  const isLast = index === projectionItems.length - 1;
+                  const muted = item.skipped || (item.quantityToday <= 0 && item.quantityScheduled <= 0);
+                  return (
+                    <View
+                      key={item.itemId}
+                      style={[
+                        styles.projectionRow,
+                        !isLast && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
+                      ]}
+                    >
+                      <ThemedText
+                        style={[styles.projectionItemName, { color: muted ? colors.mutedForeground : colors.foreground }]}
+                        numberOfLines={2}
+                      >
+                        {item.itemName}
+                      </ThemedText>
+                      {muted ? (
+                        <View>
+                          <ThemedText style={[styles.projectionMutedValue, { color: colors.mutedForeground }]}>
+                            —
+                          </ThemedText>
+                          {(item.reasonScheduled || item.reasonToday) && (
+                            <ThemedText
+                              style={[styles.projectionReason, { color: colors.mutedForeground }]}
+                              numberOfLines={2}
+                            >
+                              {item.reasonScheduled || item.reasonToday}
+                            </ThemedText>
+                          )}
+                        </View>
+                      ) : (
+                        <View style={styles.projectionGrid}>
+                          <View style={styles.projectionCell}>
+                            <ThemedText style={[styles.projectionCellLabel, { color: colors.mutedForeground }]}>
+                              Hoje
+                            </ThemedText>
+                            <ThemedText style={[styles.projectionCellValue, { color: colors.foreground }]}>
+                              {item.quantityToday} un · {formatCurrency(item.totalToday)}
+                            </ThemedText>
+                          </View>
+                          <View style={styles.projectionCell}>
+                            <ThemedText style={[styles.projectionCellLabel, { color: colors.mutedForeground }]}>
+                              Na data
+                            </ThemedText>
+                            <ThemedText style={[styles.projectionCellValue, { color: colors.primary }]}>
+                              {item.quantityScheduled} un · {formatCurrency(item.totalScheduled)}
+                            </ThemedText>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <ThemedText style={{ color: colors.mutedForeground, fontStyle: 'italic' }}>
+                Nenhum item configurado
+              </ThemedText>
             )}
           </View>
         </Card>
@@ -439,6 +616,24 @@ function AutomaticOrderDetailScreenInner() {
         </Card>
 
         {/* Actions */}
+        {canEdit && (
+          <Button
+            variant="default"
+            style={[styles.actionButton, { marginBottom: 16 }]}
+            onPress={handleOpenTrigger}
+            disabled={isTriggering}
+          >
+            {isTriggering ? (
+              <ActivityIndicator size="small" color={colors.primaryForeground} />
+            ) : (
+              <IconBolt size={16} color={colors.primaryForeground} />
+            )}
+            <ThemedText style={{ color: colors.primaryForeground }}>
+              {isTriggering ? "Disparando..." : "Disparar agora"}
+            </ThemedText>
+          </Button>
+        )}
+
         <View style={styles.actionsContainer}>
           {canEdit && (
             <Button
@@ -473,6 +668,14 @@ function AutomaticOrderDetailScreenInner() {
         onClose={() => setShowActionSheet(false)}
         items={actionSheetItems}
         title="Ações do Agendamento"
+      />
+
+      <ActionSheet
+        visible={showCascadeSheet}
+        onClose={() => setShowCascadeSheet(false)}
+        items={cascadeSheetItems}
+        title="Disparar agora"
+        message="Escolha a estratégia de cobertura para este pedido automático."
       />
     </ThemedView>
   );
@@ -539,5 +742,56 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  projectionLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+  },
+  projectionRow: {
+    paddingVertical: 8,
+    gap: 4,
+  },
+  projectionItemName: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  projectionGrid: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  projectionCell: {
+    flex: 1,
+  },
+  projectionCellLabel: {
+    fontSize: 11,
+  },
+  projectionCellValue: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  projectionMutedValue: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  projectionReason: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  summaryTotals: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 4,
+  },
+  summaryTotalBlock: {
+    flex: 1,
+  },
+  summaryTotalLabel: {
+    fontSize: 11,
+  },
+  summaryTotalValue: {
+    fontSize: 18,
+    fontWeight: "700",
   },
 });

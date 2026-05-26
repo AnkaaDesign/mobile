@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, FlatList } from "react-native";
 import { Card } from "@/components/ui/card";
 import type { OrderItem } from '../../../../types';
 import { formatCurrency, formatQuantity } from '../../../../utils';
+import { useCanViewPrices } from "@/hooks";
 
 interface ItemsListProps {
   items: OrderItem[];
 }
 
 export function ItemsList({ items }: ItemsListProps) {
+  const canViewPrices = useCanViewPrices();
+
   const renderItem = ({ item }: { item: OrderItem }) => (
     <View style={styles.itemRow}>
       <View style={styles.itemInfo}>
@@ -23,7 +26,7 @@ export function ItemsList({ items }: ItemsListProps) {
         <Text style={styles.quantity}>
           {formatQuantity(item.orderedQuantity)} {item.item?.measureUnit || "un"}
         </Text>
-        {item.unitPrice && (
+        {canViewPrices && item.unitPrice && (
           <Text style={styles.price}>
             {formatCurrency(item.unitPrice)}
           </Text>
@@ -54,7 +57,7 @@ export function ItemsList({ items }: ItemsListProps) {
         }
       />
 
-      {items.length > 0 && (
+      {canViewPrices && items.length > 0 && (
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total:</Text>
           <Text style={styles.totalValue}>

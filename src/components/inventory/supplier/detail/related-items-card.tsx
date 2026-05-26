@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Item } from "@/types";
 import { formatCurrency, formatQuantity, determineStockLevel, getStockLevelTextColor } from "@/utils";
 import { STOCK_LEVEL_LABELS, routes } from "@/constants";
+import { useCanViewPrices } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 interface RelatedItemsCardProps {
@@ -17,6 +18,7 @@ interface RelatedItemsCardProps {
 }
 
 export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsCardProps) {
+  const canViewPrices = useCanViewPrices();
   const safeItems = items || [];
 
   const handleItemPress = (itemId: string) => {
@@ -130,9 +132,11 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
                   <Text className="text-sm font-medium text-muted-foreground">
                     Qtd: <Text className="text-foreground font-semibold">{formatQuantity(item.quantity)}</Text>
                   </Text>
-                  <Text className="text-sm font-semibold text-foreground">
-                    {formatCurrency(item.price || 0)}
-                  </Text>
+                  {canViewPrices && (
+                    <Text className="text-sm font-semibold text-foreground">
+                      {formatCurrency(item.price || 0)}
+                    </Text>
+                  )}
                 </View>
               </Pressable>
             );

@@ -11,6 +11,7 @@ import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PpeTableRowSwipe } from "./ppe-table-row-swipe";
 import { formatCurrency, formatQuantity } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
@@ -410,6 +411,7 @@ export const PpeTable = React.memo<PpeTableProps>(
     visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
+    const canViewPrices = useCanViewPrices();
     const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
@@ -422,8 +424,14 @@ export const PpeTable = React.memo<PpeTableProps>(
       return getDefaultVisibleColumns();
     }, [visibleColumnKeys]);
 
-    // Get all column definitions
-    const allColumns = useMemo(() => createColumnDefinitions(), []);
+    // Get all column definitions (hide monetary columns for users without price access)
+    const allColumns = useMemo(
+      () =>
+        createColumnDefinitions().filter(
+          (col) => canViewPrices || (col.key !== "price" && col.key !== "totalPrice"),
+        ),
+      [canViewPrices],
+    );
 
     // Build visible columns with dynamic widths
     const displayColumns = useMemo(() => {

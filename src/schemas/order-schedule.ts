@@ -801,6 +801,24 @@ export const orderScheduleQuerySchema = z.object({
 });
 
 // =====================
+// Manual Trigger (auto-creation) schema
+// =====================
+
+// Cascade strategy applied when a schedule is triggered manually.
+// - GAP_ONLY: bridge — covers only the gap until the next scheduled run.
+// - GAP_PLUS_CYCLE: pull-forward — covers the gap plus a full cycle (advances nextRun).
+export const ORDER_SCHEDULE_CASCADE_MODE = {
+  GAP_ONLY: "GAP_ONLY",
+  GAP_PLUS_CYCLE: "GAP_PLUS_CYCLE",
+} as const;
+
+export const orderScheduleTriggerSchema = z.object({
+  cascadeMode: z
+    .enum([ORDER_SCHEDULE_CASCADE_MODE.GAP_ONLY, ORDER_SCHEDULE_CASCADE_MODE.GAP_PLUS_CYCLE])
+    .default(ORDER_SCHEDULE_CASCADE_MODE.GAP_ONLY),
+});
+
+// =====================
 // Type Exports
 // =====================
 
@@ -811,6 +829,7 @@ export type OrderScheduleQueryFormData = z.infer<typeof orderScheduleQuerySchema
 
 export type OrderScheduleCreateFormData = z.infer<typeof orderScheduleCreateSchema>;
 export type OrderScheduleUpdateFormData = z.infer<typeof orderScheduleUpdateSchema>;
+export type OrderScheduleTriggerFormData = z.infer<typeof orderScheduleTriggerSchema>;
 
 export type OrderScheduleBatchCreateFormData = z.infer<typeof orderScheduleBatchCreateSchema>;
 export type OrderScheduleBatchUpdateFormData = z.infer<typeof orderScheduleBatchUpdateSchema>;

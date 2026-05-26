@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Supplier } from "@/types";
 import { formatCurrency, formatDate } from "@/utils";
 import { ORDER_STATUS, ORDER_STATUS_LABELS, routes } from "@/constants";
+import { useCanViewPrices } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 interface RelatedOrdersCardProps {
@@ -63,6 +64,7 @@ const ORDER_STATUS_CONFIG: Record<
 };
 
 export function RelatedOrdersCard({ supplier, className }: RelatedOrdersCardProps) {
+  const canViewPrices = useCanViewPrices();
   const orders = supplier.orders || [];
 
   // Sort orders by status priority (active orders first) and then by date
@@ -189,10 +191,12 @@ export function RelatedOrdersCard({ supplier, className }: RelatedOrdersCardProp
             <Text className="text-xl font-bold mt-1 text-yellow-800 dark:text-yellow-200">{statistics.activeOrders}</Text>
           </View>
 
-          <View className="flex-1 bg-blue-50/80 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200/40 dark:border-blue-700/40">
-            <Text className="text-xs font-medium text-blue-800 dark:text-blue-200">Valor</Text>
-            <Text className="text-lg font-bold mt-1 text-blue-800 dark:text-blue-200">{formatCurrency(statistics.totalValue)}</Text>
-          </View>
+          {canViewPrices && (
+            <View className="flex-1 bg-blue-50/80 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200/40 dark:border-blue-700/40">
+              <Text className="text-xs font-medium text-blue-800 dark:text-blue-200">Valor</Text>
+              <Text className="text-lg font-bold mt-1 text-blue-800 dark:text-blue-200">{formatCurrency(statistics.totalValue)}</Text>
+            </View>
+          )}
         </View>
 
         {/* Status Summary */}
@@ -251,7 +255,7 @@ export function RelatedOrdersCard({ supplier, className }: RelatedOrdersCardProp
                     <Text className="font-medium text-sm">{formatDate(order.createdAt)}</Text>
                   </View>
 
-                  {orderTotal > 0 && (
+                  {canViewPrices && orderTotal > 0 && (
                     <Text className="text-xs text-muted-foreground font-medium">{formatCurrency(orderTotal)}</Text>
                   )}
                 </View>

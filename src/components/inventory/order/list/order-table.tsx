@@ -12,6 +12,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderTableRowSwipe } from "./order-table-row-swipe";
 import { OrderStatusBadge } from "./order-status-badge";
 import { formatCurrency, formatDate } from "@/utils";
+import { useCanViewPrices } from "@/hooks";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 // Import default visible columns function
@@ -244,6 +245,7 @@ export const OrderTable = React.memo<OrderTableProps>(
     ListFooterComponent,
   }) => {
     const { colors, isDark } = useTheme();
+    const canViewPrices = useCanViewPrices();
     const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
@@ -256,8 +258,11 @@ export const OrderTable = React.memo<OrderTableProps>(
       return getDefaultVisibleColumns();
     }, [visibleColumnKeys]);
 
-    // Get all column definitions
-    const allColumns = useMemo(() => createColumnDefinitions(), []);
+    // Get all column definitions (hide monetary column for users without price access)
+    const allColumns = useMemo(
+      () => createColumnDefinitions().filter((col) => canViewPrices || col.key !== "totalPrice"),
+      [canViewPrices],
+    );
 
     // Build visible columns with dynamic widths
     const displayColumns = useMemo(() => {

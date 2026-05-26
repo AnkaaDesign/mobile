@@ -31,7 +31,6 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { IconCalendarPlus } from "@tabler/icons-react-native";
 import { OrderMultiItemSelector } from "@/components/inventory/order/form/multi-item-selector";
-import { CycleQuantityPreview } from "@/components/inventory/order-schedule/cycle-quantity-preview";
 
 const DAY_OF_WEEK_OPTIONS = [
   { label: "Domingo", value: "SUNDAY" },
@@ -536,15 +535,6 @@ function OrderScheduleCreateScreenInner() {
                 )}
               />
             </Card>
-
-            {/* Computed Quantity Preview */}
-            {watchedItems.length > 0 && (
-              <CycleQuantityPreview
-                itemIds={watchedItems}
-                frequency={watchedFrequency}
-                frequencyCount={watchedFrequencyCount}
-              />
-            )}
 
             {/* Actions */}
             <View style={styles.actionsRow}>

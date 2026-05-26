@@ -12,7 +12,7 @@ import { Icon } from "@/components/ui/icon";
 import { measureUtils, formatCurrency } from "@/utils";
 import { MEASURE_UNIT } from "@/constants";
 import type { PaintFormula, PaintFormulaComponent } from '../../../types';
-import { useKeyboardAwareScroll } from "@/hooks";
+import { useKeyboardAwareScroll, useCanViewPrices } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface MobileProductionCalculatorProps {
@@ -50,6 +50,7 @@ interface ProductionCalculation {
 export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalculationComplete }: MobileProductionCalculatorProps) {
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();
+  const canViewPrices = useCanViewPrices();
 
   const [targetWeight, setTargetWeight] = useState(1000); // Default 1kg
   const [targetWeightUnit, setTargetWeightUnit] = useState<MEASURE_UNIT>(MEASURE_UNIT.GRAM);
@@ -343,15 +344,19 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
                       </Text>
                     </View>
 
+                    {canViewPrices && (
                     <View className="bg-muted/30 rounded-lg p-3">
                       <Text className="text-xs text-muted-foreground mb-1">Custo Total</Text>
                       <Text className="text-sm font-medium text-primary">{formatCurrency(calculation.totalCost)}</Text>
                     </View>
+                    )}
 
+                    {canViewPrices && (
                     <View className="bg-muted/30 rounded-lg p-3">
                       <Text className="text-xs text-muted-foreground mb-1">Custo por Litro</Text>
                       <Text className="text-sm font-medium">{formatCurrency(calculation.pricePerLiter)}</Text>
                     </View>
+                    )}
                   </View>
                 </Card>
 
@@ -423,6 +428,7 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
                               </View>
 
                               {/* Cost */}
+                              {canViewPrices && (
                               <View className="bg-muted/30 rounded px-2 py-1">
                                 <View className="flex-row items-center gap-1">
                                   <Icon name="currency-dollar" size={12} className="text-muted-foreground" />
@@ -432,6 +438,7 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
                                   {formatCurrency(calc.totalCost)}
                                 </Badge>
                               </View>
+                              )}
                             </View>
 
                             <View className="mt-2">

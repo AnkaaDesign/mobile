@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconPackage, IconCurrency, IconCalendar } from "@tabler/icons-react-native";
-import { useOrderItem, useOrderItemMutations, useScreenReady} from '@/hooks';
+import { useOrderItem, useOrderItemMutations, useScreenReady, useCanViewPrices} from '@/hooks';
 import { orderItemUpdateSchema } from '../../../../../../../schemas';
 import type { OrderItemUpdateFormData } from '../../../../../../../schemas';
 import { ThemedView, ThemedText, ErrorScreen, Button } from "@/components/ui";
@@ -36,6 +36,7 @@ function EditOrderItemScreenInner() {
   const nav = useNav();
   const { orderId, id } = useLocalSearchParams<{ orderId: string; id: string }>();
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
   const insets = useSafeAreaInsets();
 
   const goBack = () =>
@@ -275,7 +276,9 @@ function EditOrderItemScreenInner() {
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
                 <IconCurrency size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Quantidade e Preço</ThemedText>
+                <ThemedText style={styles.title}>
+                  {canViewPrices ? "Quantidade e Preço" : "Quantidade"}
+                </ThemedText>
               </View>
             </View>
             <View style={styles.content}>
@@ -312,91 +315,95 @@ function EditOrderItemScreenInner() {
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Controller
-                  control={control}
-                  name="price"
-                  rules={{
-                    required: "Preço unitário é obrigatório",
-                    min: { value: 0, message: "Preço deve ser maior ou igual a 0" },
-                  }}
-                  render={({ field: { value, onChange } }) => (
-                    <ThemedTextInput
-                      label="Preço Unitário *"
-                      placeholder="0,00"
-                      value={value ? formatCurrency(value).replace("R$ ", "") : ""}
-                      onChangeText={(text) => {
-                        // Parse currency input
-                        const cleanText = text.replace(/[^\d,]/g, "");
-                        const numericValue = parseFloat(cleanText.replace(",", ".")) || 0;
-                        onChange(numericValue);
-                      }}
-                      keyboardType="numeric"
-                      error={errors.price?.message}
-                    />
-                  )}
-                />
-              </View>
+              {canViewPrices && (
+                <View style={styles.formGroup}>
+                  <Controller
+                    control={control}
+                    name="price"
+                    rules={{
+                      required: "Preço unitário é obrigatório",
+                      min: { value: 0, message: "Preço deve ser maior ou igual a 0" },
+                    }}
+                    render={({ field: { value, onChange } }) => (
+                      <ThemedTextInput
+                        label="Preço Unitário *"
+                        placeholder="0,00"
+                        value={value ? formatCurrency(value).replace("R$ ", "") : ""}
+                        onChangeText={(text) => {
+                          // Parse currency input
+                          const cleanText = text.replace(/[^\d,]/g, "");
+                          const numericValue = parseFloat(cleanText.replace(",", ".")) || 0;
+                          onChange(numericValue);
+                        }}
+                        keyboardType="numeric"
+                        error={errors.price?.message}
+                      />
+                    )}
+                  />
+                </View>
+              )}
             </View>
 
             {/* Taxes (ICMS / IPI) */}
-            <View style={styles.formRow}>
-              <View style={styles.formGroup}>
-                <Controller
-                  control={control}
-                  name="icms"
-                  rules={{
-                    min: { value: 0, message: "ICMS deve ser entre 0 e 100%" },
-                    max: { value: 100, message: "ICMS deve ser entre 0 e 100%" },
-                  }}
-                  render={({ field: { value, onChange } }) => (
-                    <ThemedTextInput
-                      label="ICMS (%)"
-                      placeholder="0,00"
-                      value={value?.toString() || ""}
-                      onChangeText={(text) => {
-                        if (text === "") {
-                          onChange(0);
-                          return;
-                        }
-                        const numericValue = parseFloat(text.replace(",", ".")) || 0;
-                        onChange(numericValue);
-                      }}
-                      keyboardType="numeric"
-                      error={errors.icms?.message}
-                    />
-                  )}
-                />
-              </View>
+            {canViewPrices && (
+              <View style={styles.formRow}>
+                <View style={styles.formGroup}>
+                  <Controller
+                    control={control}
+                    name="icms"
+                    rules={{
+                      min: { value: 0, message: "ICMS deve ser entre 0 e 100%" },
+                      max: { value: 100, message: "ICMS deve ser entre 0 e 100%" },
+                    }}
+                    render={({ field: { value, onChange } }) => (
+                      <ThemedTextInput
+                        label="ICMS (%)"
+                        placeholder="0,00"
+                        value={value?.toString() || ""}
+                        onChangeText={(text) => {
+                          if (text === "") {
+                            onChange(0);
+                            return;
+                          }
+                          const numericValue = parseFloat(text.replace(",", ".")) || 0;
+                          onChange(numericValue);
+                        }}
+                        keyboardType="numeric"
+                        error={errors.icms?.message}
+                      />
+                    )}
+                  />
+                </View>
 
-              <View style={styles.formGroup}>
-                <Controller
-                  control={control}
-                  name="ipi"
-                  rules={{
-                    min: { value: 0, message: "IPI deve ser entre 0 e 100%" },
-                    max: { value: 100, message: "IPI deve ser entre 0 e 100%" },
-                  }}
-                  render={({ field: { value, onChange } }) => (
-                    <ThemedTextInput
-                      label="IPI (%)"
-                      placeholder="0,00"
-                      value={value?.toString() || ""}
-                      onChangeText={(text) => {
-                        if (text === "") {
-                          onChange(0);
-                          return;
-                        }
-                        const numericValue = parseFloat(text.replace(",", ".")) || 0;
-                        onChange(numericValue);
-                      }}
-                      keyboardType="numeric"
-                      error={errors.ipi?.message}
-                    />
-                  )}
-                />
+                <View style={styles.formGroup}>
+                  <Controller
+                    control={control}
+                    name="ipi"
+                    rules={{
+                      min: { value: 0, message: "IPI deve ser entre 0 e 100%" },
+                      max: { value: 100, message: "IPI deve ser entre 0 e 100%" },
+                    }}
+                    render={({ field: { value, onChange } }) => (
+                      <ThemedTextInput
+                        label="IPI (%)"
+                        placeholder="0,00"
+                        value={value?.toString() || ""}
+                        onChangeText={(text) => {
+                          if (text === "") {
+                            onChange(0);
+                            return;
+                          }
+                          const numericValue = parseFloat(text.replace(",", ".")) || 0;
+                          onChange(numericValue);
+                        }}
+                        keyboardType="numeric"
+                        error={errors.ipi?.message}
+                      />
+                    )}
+                  />
+                </View>
               </View>
-            </View>
+            )}
 
             {/* Fulfillment and Receiving */}
             <View style={styles.formRow}>
@@ -448,22 +455,24 @@ function EditOrderItemScreenInner() {
             </View>
 
             {/* Total Price Display */}
-            <View style={styles.totalContainer}>
-              <View style={styles.totalRow}>
-                <ThemedText style={styles.totalLabel}>Total Original:</ThemedText>
-                <ThemedText style={styles.originalTotalValue}>
-                  {formatCurrency(originalTotalPrice)}
-                </ThemedText>
-              </View>
-              {totalPrice !== originalTotalPrice && (
+            {canViewPrices && (
+              <View style={styles.totalContainer}>
                 <View style={styles.totalRow}>
-                  <ThemedText style={styles.totalLabel}>Novo Total:</ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.totalValue, { color: colors.primary }])}>
-                    {formatCurrency(totalPrice)}
+                  <ThemedText style={styles.totalLabel}>Total Original:</ThemedText>
+                  <ThemedText style={styles.originalTotalValue}>
+                    {formatCurrency(originalTotalPrice)}
                   </ThemedText>
                 </View>
-              )}
-            </View>
+                {totalPrice !== originalTotalPrice && (
+                  <View style={styles.totalRow}>
+                    <ThemedText style={styles.totalLabel}>Novo Total:</ThemedText>
+                    <ThemedText style={StyleSheet.flatten([styles.totalValue, { color: colors.primary }])}>
+                      {formatCurrency(totalPrice)}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+            )}
             </View>
           </Card>
 

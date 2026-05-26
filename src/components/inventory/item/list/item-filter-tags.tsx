@@ -21,7 +21,7 @@ import {
   IconMinus,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useItemBrands, useItemCategories, useSuppliers } from "@/hooks";
+import { useItemBrands, useItemCategories, useSuppliers, useCanViewPrices } from "@/hooks";
 import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency } from "@/utils";
@@ -39,6 +39,7 @@ interface ItemFilterTagsProps {
 
 export function ItemFilterTags({ filters, searchText, onFilterChange, onSearchChange, onClearAll }: ItemFilterTagsProps) {
   const { colors } = useTheme();
+  const canViewPrices = useCanViewPrices();
 
   // Load filter options for label lookup
   const { data: brandsData } = useItemBrands({ limit: 100 });
@@ -335,7 +336,7 @@ export function ItemFilterTags({ filters, searchText, onFilterChange, onSearchCh
     }
 
     // Range filters
-    if (filters.totalPriceRange && (filters.totalPriceRange.min !== undefined || filters.totalPriceRange.max !== undefined)) {
+    if (canViewPrices && filters.totalPriceRange && (filters.totalPriceRange.min !== undefined || filters.totalPriceRange.max !== undefined)) {
       const { min, max } = filters.totalPriceRange;
       let rangeText = "Preço: ";
       if (min !== undefined && max !== undefined) {
