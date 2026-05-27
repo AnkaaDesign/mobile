@@ -1,23 +1,16 @@
+import React from 'react'
+import { View } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { OrderSchedule } from '@/types'
+import { ThemedText } from '@/components/ui/themed-text'
 import { SCHEDULE_FREQUENCY } from '@/constants/enums'
+import { SCHEDULE_FREQUENCY_LABELS } from '@/constants/enum-labels'
 import { canEditOrders, canDeleteOrders } from '@/utils/permissions/entity-permissions'
+import { ExpectedTotalCell } from '@/components/inventory/order/schedule/expected-total-context'
 
-
-const FREQUENCY_LABELS: Record<string, string> = {
-  ONCE: 'Uma Vez',
-  DAILY: 'Diário',
-  WEEKLY: 'Semanal',
-  BIWEEKLY: 'Quinzenal',
-  MONTHLY: 'Mensal',
-  BIMONTHLY: 'Bimestral',
-  QUARTERLY: 'Trimestral',
-  TRIANNUAL: 'Quadrimestral',
-  QUADRIMESTRAL: 'Quadrimestral',
-  SEMI_ANNUAL: 'Semestral',
-  ANNUAL: 'Anual',
-  CUSTOM: 'Personalizado',
-}
+// Use the canonical, shared frequency labels (same source as the create form and
+// detail badges) instead of a divergent local map.
+const FREQUENCY_LABELS: Record<string, string> = SCHEDULE_FREQUENCY_LABELS
 
 export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
   key: 'inventory-order-schedules',
@@ -42,8 +35,21 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (schedule) => FREQUENCY_LABELS[schedule.frequency] || schedule.frequency,
-        style: { fontWeight: '500' },
+        // Returns a node so each row can carry a "Preço esperado" secondary line.
+        // The expected total comes from a SINGLE batch request via context (see
+        // ExpectedTotalProvider) — never per-row. CellContent renders React
+        // elements as-is.
+        render: (schedule) =>
+          React.createElement(
+            View,
+            null,
+            React.createElement(
+              ThemedText,
+              { size: 'xs', weight: 'medium', numberOfLines: 1 },
+              FREQUENCY_LABELS[schedule.frequency] || schedule.frequency,
+            ),
+            React.createElement(ExpectedTotalCell, { scheduleId: schedule.id }),
+          ),
       },
       {
         key: 'frequencyCount',

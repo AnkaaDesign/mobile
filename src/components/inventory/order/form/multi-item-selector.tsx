@@ -12,7 +12,6 @@ import { View, StyleSheet } from "react-native";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getItems } from "@/api-client";
@@ -88,6 +87,7 @@ export function OrderMultiItemSelector({
           category: true,
           brand: true,
           supplier: true,
+          measures: true,
           prices: {
             orderBy: { createdAt: "desc" },
             take: 1,
@@ -104,6 +104,11 @@ export function OrderMultiItemSelector({
         const stockInfo = item.quantity || 0;
         const priceInfo = item.prices?.[0]?.value;
         const supplier = item.supplier?.fantasyName || item.supplier?.corporateName;
+        // Compact measures string: "5un × 10cm" (reused from the item-table style).
+        const measuresText =
+          item.measures && item.measures.length > 0
+            ? item.measures.map((m) => `${m.value ?? "-"}${m.unit ?? ""}`).join(" × ")
+            : null;
 
         return {
           label,
@@ -114,7 +119,11 @@ export function OrderMultiItemSelector({
             supplier ? `Fornecedor: ${supplier}` : null,
           ].filter(Boolean).join(" | "),
           metadata: {
+            uniCode: item.uniCode,
+            name: item.name,
             quantity: item.quantity,
+            reorderPoint: item.reorderPoint,
+            measures: measuresText,
             category: item.category,
             brand: item.brand,
             supplier: item.supplier,
@@ -141,7 +150,10 @@ export function OrderMultiItemSelector({
     }
   }, [categoryIds, brandIds, supplierIds, showInactive, canViewPrices]);
 
-  // Custom render for option to show stock, price, and supplier info
+  // Custom render for each selectable item row. Mobile uses a card/row layout
+  // (rather than a wide table), surfacing: name + uniCode (title/subtitle), a
+  // compact "marca · categoria · medidas" line, and a "preço · estoque · ponto
+  // de reposição" line. Selection behavior is unchanged (handled by Combobox).
   const renderOption = useCallback((option: ComboboxOption) => {
     if (!option.metadata) {
       return (
@@ -152,51 +164,70 @@ export function OrderMultiItemSelector({
     }
 
     const metadata = option.metadata;
-    const stockColor = metadata.quantity > 0
+    const quantity: number = metadata.quantity ?? 0;
+    const stockColor = quantity > 0
       ? colors.success
-      : metadata.quantity === 0
+      : quantity === 0
         ? colors.warning
         : colors.destructive;
 
+    // "marca · categoria · medidas"
+    const attributeParts = [
+      metadata.brand?.name,
+      metadata.category?.name,
+      metadata.measures ? `Medidas: ${metadata.measures}` : null,
+    ].filter(Boolean) as string[];
+
     return (
-      <View style={styles.optionContainer}>
-        <View style={styles.optionContent}>
-          <ThemedText style={styles.optionLabel} numberOfLines={1}>
-            {option.label}
+      <View style={styles.optionRow}>
+        {/* Title: item name */}
+        <ThemedText style={styles.optionLabel} numberOfLines={1}>
+          {metadata.name ?? option.label}
+        </ThemedText>
+
+        {/* Subtitle: uniCode */}
+        {metadata.uniCode && (
+          <ThemedText style={[styles.optionSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>
+            {metadata.uniCode}
           </ThemedText>
-          <View style={styles.optionDetails}>
-            {metadata.brand?.name && (
-              <ThemedText style={[styles.optionMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {metadata.brand.name}
+        )}
+
+        {/* Attributes line: marca · categoria · medidas */}
+        {attributeParts.length > 0 && (
+          <ThemedText style={[styles.optionMeta, { color: colors.mutedForeground }]} numberOfLines={2}>
+            {attributeParts.join("  ·  ")}
+          </ThemedText>
+        )}
+
+        {/* Metrics line: preço · estoque · ponto de reposição */}
+        <View style={styles.optionMetrics}>
+          {canViewPrices && metadata.price != null && (
+            <View style={styles.optionMetric}>
+              <ThemedText style={[styles.optionMetricLabel, { color: colors.mutedForeground }]}>
+                Preço
               </ThemedText>
-            )}
-            {metadata.category?.name && (
-              <ThemedText style={[styles.optionMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-                • {metadata.category.name}
-              </ThemedText>
-            )}
-            {metadata.supplier?.fantasyName && (
-              <ThemedText style={[styles.optionMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-                • {metadata.supplier.fantasyName}
-              </ThemedText>
-            )}
-          </View>
-        </View>
-        <View style={styles.optionBadges}>
-          <Badge
-            variant="secondary"
-            style={[styles.stockBadge, { backgroundColor: stockColor + '20', borderColor: stockColor }]}
-          >
-            <ThemedText style={[styles.stockBadgeText, { color: stockColor }]}>
-              {formatNumber(metadata.quantity)}
-            </ThemedText>
-          </Badge>
-          {canViewPrices && metadata.price && (
-            <Badge variant="outline" style={styles.priceBadge}>
-              <ThemedText style={styles.priceBadgeText}>
+              <ThemedText style={[styles.optionMetricValue, { color: colors.foreground }]}>
                 {formatCurrency(metadata.price)}
               </ThemedText>
-            </Badge>
+            </View>
+          )}
+          <View style={styles.optionMetric}>
+            <ThemedText style={[styles.optionMetricLabel, { color: colors.mutedForeground }]}>
+              Estoque
+            </ThemedText>
+            <ThemedText style={[styles.optionMetricValue, { color: stockColor }]}>
+              {formatNumber(quantity)}
+            </ThemedText>
+          </View>
+          {metadata.reorderPoint != null && (
+            <View style={styles.optionMetric}>
+              <ThemedText style={[styles.optionMetricLabel, { color: colors.mutedForeground }]}>
+                Ponto de reposição
+              </ThemedText>
+              <ThemedText style={[styles.optionMetricValue, { color: colors.foreground }]}>
+                {formatNumber(metadata.reorderPoint)}
+              </ThemedText>
+            </View>
           )}
         </View>
       </View>
@@ -259,43 +290,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.md,
   },
-  optionContent: {
-    flex: 1,
+  optionRow: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     gap: spacing.xs,
   },
   optionLabel: {
     fontSize: fontSize.base,
     fontWeight: "500",
   },
-  optionDetails: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    flexWrap: "wrap",
+  optionSubtitle: {
+    fontSize: fontSize.xs,
   },
   optionMeta: {
     fontSize: fontSize.xs,
   },
-  optionBadges: {
+  optionMetrics: {
     flexDirection: "row",
-    gap: spacing.xs,
-    alignItems: "center",
+    flexWrap: "wrap",
+    gap: spacing.lg,
+    marginTop: spacing.xs,
   },
-  stockBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderWidth: 1,
+  optionMetric: {
+    gap: 2,
   },
-  stockBadgeText: {
+  optionMetricLabel: {
     fontSize: fontSize.xs,
+  },
+  optionMetricValue: {
+    fontSize: fontSize.sm,
     fontWeight: "600",
-  },
-  priceBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  priceBadgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: "500",
   },
   errorText: {
     fontSize: fontSize.xs,

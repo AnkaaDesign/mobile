@@ -72,8 +72,6 @@ const MONTH_OCCURRENCE_OPTIONS = [
   { label: "Ultima", value: MONTH_OCCURRENCE.LAST },
 ];
 
-type MonthlyMode = "dayOfMonth" | "positional";
-
 export default function OrderScheduleCreateScreen() {
   return (
     <PrivilegeGate
@@ -92,7 +90,6 @@ function OrderScheduleCreateScreenInner() {
     nav.goBack({ fallback: mobileRoute(routes.inventory.orders.schedules.root) });
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [monthlyMode, setMonthlyMode] = useState<MonthlyMode>("dayOfMonth");
 
   const createSchedule = useCreateOrderSchedule();
 
@@ -111,6 +108,15 @@ function OrderScheduleCreateScreenInner() {
   const watchedFrequency = form.watch("frequency");
   const watchedFrequencyCount = form.watch("frequencyCount");
   const watchedItems = form.watch("items") || [];
+  const watchedDayOfMonth = form.watch("dayOfMonth");
+  const watchedMonthlySchedule = form.watch("monthlySchedule");
+
+  // Mutual-exclusion flags for the monthly day config: a filled fixed day
+  // disables the positional pair (occurrence + dayOfWeek) and vice-versa.
+  const fixedFilled =
+    watchedDayOfMonth != null && String(watchedDayOfMonth) !== "";
+  const positionalFilled =
+    !!watchedMonthlySchedule?.occurrence || !!watchedMonthlySchedule?.dayOfWeek;
 
   const frequencyGroups = useMemo(() => {
     const freq = watchedFrequency;
@@ -137,6 +143,46 @@ function OrderScheduleCreateScreenInner() {
 
   const handleSubmit = useCallback(
     async (data: OrderScheduleCreateFormData) => {
+      const freq = data.frequency;
+      const isMonthlyType =
+        freq === SCHEDULE_FREQUENCY.MONTHLY ||
+        freq === SCHEDULE_FREQUENCY.BIMONTHLY ||
+        freq === SCHEDULE_FREQUENCY.QUARTERLY ||
+        freq === SCHEDULE_FREQUENCY.TRIANNUAL ||
+        freq === SCHEDULE_FREQUENCY.QUADRIMESTRAL ||
+        freq === SCHEDULE_FREQUENCY.SEMI_ANNUAL;
+
+      const hasFixed = data.dayOfMonth != null && String(data.dayOfMonth) !== "";
+      const hasOccurrence = !!data.monthlySchedule?.occurrence;
+      const hasPosDayOfWeek = !!data.monthlySchedule?.dayOfWeek;
+      const hasAnyPositional = hasOccurrence || hasPosDayOfWeek;
+
+      // Enforce EITHER a fixed day-of-month OR a complete positional pair.
+      if (isMonthlyType) {
+        if (!hasFixed && !hasAnyPositional) {
+          Alert.alert(
+            "Validacao",
+            "Informe o dia do mes ou a ocorrencia + dia da semana",
+          );
+          return;
+        }
+        if (hasAnyPositional && !(hasOccurrence && hasPosDayOfWeek)) {
+          Alert.alert(
+            "Validacao",
+            "Selecione a ocorrencia e o dia da semana",
+          );
+          return;
+        }
+      }
+
+      // Normalize the payload to carry exactly one branch: a fixed dayOfMonth
+      // XOR a positional monthlySchedule.
+      if (hasFixed) {
+        data.monthlySchedule = undefined as any;
+      } else if (hasAnyPositional) {
+        data.dayOfMonth = undefined as any;
+      }
+
       setIsSubmitting(true);
       try {
         await createSchedule.mutateAsync(data);
@@ -263,11 +309,14 @@ function OrderScheduleCreateScreenInner() {
                 )}
               />
 
+              {/* Date-config fields for the selected frequency, reflowed into a
+                  single wrapping row. */}
+              <View style={styles.dateConfigRow}>
               <Controller
                 control={form.control}
                 name="frequencyCount"
                 render={({ field, fieldState }) => (
-                  <View style={styles.field}>
+                  <View style={[styles.field, styles.dateConfigItem]}>
                     <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                       Contagem
                     </ThemedText>
@@ -287,7 +336,7 @@ function OrderScheduleCreateScreenInner() {
                   control={form.control}
                   name="dayOfWeek"
                   render={({ field, fieldState }) => (
-                    <View style={styles.field}>
+                    <View style={[styles.field, styles.dateConfigItem]}>
                       <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                         Dia da Semana *
                       </ThemedText>
@@ -302,116 +351,76 @@ function OrderScheduleCreateScreenInner() {
                 />
               )}
 
+              {/* Monthly (non-ANNUAL) day config: fixed day-of-month AND the
+                  positional pair (occurrence + weekday) are shown together; filling
+                  one side disables the other (mutual exclusion). */}
               {frequencyGroups.needsDayOfMonth && (
-                <View style={styles.field}>
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    Configuracao do Mes *
-                  </ThemedText>
-                  <View style={styles.modeToggleRow}>
-                    <Button
-                      variant={monthlyMode === "dayOfMonth" ? "default" : "outline"}
-                      onPress={() => {
-                        setMonthlyMode("dayOfMonth");
-                        form.setValue("monthlySchedule", undefined);
-                      }}
-                      style={{ flex: 1 }}
-                    >
-                      <ThemedText
-                        style={{
-                          color:
-                            monthlyMode === "dayOfMonth"
-                              ? colors.primaryForeground
-                              : colors.foreground,
+                <Controller
+                  control={form.control}
+                  name="dayOfMonth"
+                  render={({ field, fieldState }) => (
+                    <View style={[styles.field, styles.dateConfigItem]}>
+                      <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                        Dia do Mes (1-31) *
+                      </ThemedText>
+                      <Input
+                        value={field.value != null ? String(field.value) : ""}
+                        onChangeText={(text: string) => {
+                          const num = parseInt(text);
+                          field.onChange(isNaN(num) ? undefined : Math.min(31, Math.max(1, num)));
                         }}
-                      >
-                        Dia fixo do mes
-                      </ThemedText>
-                    </Button>
-                    <Button
-                      variant={monthlyMode === "positional" ? "default" : "outline"}
-                      onPress={() => {
-                        setMonthlyMode("positional");
-                        form.setValue("dayOfMonth", undefined);
-                      }}
-                      style={{ flex: 1 }}
-                    >
-                      <ThemedText
-                        style={{
-                          color:
-                            monthlyMode === "positional"
-                              ? colors.primaryForeground
-                              : colors.foreground,
-                        }}
-                      >
-                        Dia da semana
-                      </ThemedText>
-                    </Button>
-                  </View>
-
-                  {monthlyMode === "dayOfMonth" ? (
-                    <Controller
-                      control={form.control}
-                      name="dayOfMonth"
-                      render={({ field, fieldState }) => (
-                        <View style={styles.field}>
-                          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                            Dia do Mes (1-31) *
-                          </ThemedText>
-                          <Input
-                            value={field.value != null ? String(field.value) : ""}
-                            onChangeText={(text: string) => {
-                              const num = parseInt(text);
-                              field.onChange(isNaN(num) ? undefined : Math.min(31, Math.max(1, num)));
-                            }}
-                            keyboardType="numeric"
-                            placeholder="Ex: 15"
-                            error={!!fieldState.error}
-                          />
-                        </View>
-                      )}
-                    />
-                  ) : (
-                    <>
-                      <Controller
-                        control={form.control}
-                        name="monthlySchedule.occurrence"
-                        render={({ field, fieldState }) => (
-                          <View style={styles.field}>
-                            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                              Ocorrencia *
-                            </ThemedText>
-                            <Select
-                              value={field.value || ""}
-                              onValueChange={field.onChange}
-                              options={MONTH_OCCURRENCE_OPTIONS}
-                              placeholder="Selecione a ocorrencia"
-                            />
-                          </View>
-                        )}
+                        keyboardType="numeric"
+                        placeholder="Ex: 15"
+                        disabled={positionalFilled}
+                        error={!!fieldState.error}
                       />
-                      <Controller
-                        control={form.control}
-                        name="monthlySchedule.dayOfWeek"
-                        render={({ field, fieldState }) => (
-                          <View style={styles.field}>
-                            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                              Dia da Semana *
-                            </ThemedText>
-                            <Select
-                              value={field.value || ""}
-                              onValueChange={field.onChange}
-                              options={DAY_OF_WEEK_OPTIONS}
-                              placeholder="Selecione o dia"
-                            />
-                          </View>
-                        )}
-                      />
-                      <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
-                        Exemplo: "Primeira Segunda-feira" ou "Ultima Sexta-feira" do mes
-                      </ThemedText>
-                    </>
+                    </View>
                   )}
-                </View>
+                />
+              )}
+
+              {frequencyGroups.needsDayOfMonth && (
+                <>
+                  <Controller
+                    control={form.control}
+                    name="monthlySchedule.occurrence"
+                    render={({ field, fieldState }) => (
+                      <View style={[styles.field, styles.dateConfigItem]}>
+                        <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                          Ocorrencia
+                        </ThemedText>
+                        <Select
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          options={MONTH_OCCURRENCE_OPTIONS}
+                          placeholder="Selecione a ocorrencia"
+                          disabled={fixedFilled}
+                        />
+                      </View>
+                    )}
+                  />
+                  <Controller
+                    control={form.control}
+                    name="monthlySchedule.dayOfWeek"
+                    render={({ field, fieldState }) => (
+                      <View style={[styles.field, styles.dateConfigItem]}>
+                        <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                          Dia da Semana
+                        </ThemedText>
+                        <Select
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          options={DAY_OF_WEEK_OPTIONS}
+                          placeholder="Selecione o dia"
+                          disabled={fixedFilled}
+                        />
+                      </View>
+                    )}
+                  />
+                  <ThemedText style={[styles.helperText, styles.dateConfigHelper, { color: colors.mutedForeground }]}>
+                    Informe o dia do mes OU a ocorrencia + dia da semana
+                  </ThemedText>
+                </>
               )}
 
               {frequencyGroups.needsMonth && (
@@ -420,7 +429,7 @@ function OrderScheduleCreateScreenInner() {
                     control={form.control}
                     name="dayOfMonth"
                     render={({ field, fieldState }) => (
-                      <View style={styles.field}>
+                      <View style={[styles.field, styles.dateConfigItem]}>
                         <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                           Dia do Mes (1-31) *
                         </ThemedText>
@@ -441,7 +450,7 @@ function OrderScheduleCreateScreenInner() {
                     control={form.control}
                     name="month"
                     render={({ field, fieldState }) => (
-                      <View style={styles.field}>
+                      <View style={[styles.field, styles.dateConfigItem]}>
                         <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                           Mes *
                         </ThemedText>
@@ -462,7 +471,7 @@ function OrderScheduleCreateScreenInner() {
                   control={form.control}
                   name="specificDate"
                   render={({ field, fieldState }) => (
-                    <View style={styles.field}>
+                    <View style={[styles.field, styles.dateConfigItem]}>
                       <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                         Data Especifica *
                       </ThemedText>
@@ -489,7 +498,7 @@ function OrderScheduleCreateScreenInner() {
                   control={form.control}
                   name="nextRun"
                   render={({ field, fieldState }) => (
-                    <View style={styles.field}>
+                    <View style={[styles.field, styles.dateConfigItem]}>
                       <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                         Primeira Execucao
                       </ThemedText>
@@ -510,6 +519,7 @@ function OrderScheduleCreateScreenInner() {
                   )}
                 />
               )}
+              </View>
             </Card>
 
             {/* Items */}
@@ -599,6 +609,22 @@ const styles = StyleSheet.create({
   field: {
     gap: 4,
   },
+  // Single wrapping row holding the frequency-specific date-config fields so the
+  // fields visible for the selected frequency sit horizontally and wrap on small
+  // screens. (Layout only — field names/validation unchanged.)
+  dateConfigRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  // Each field grows to fill the row but is allowed to wrap once it hits its
+  // minimum, keeping things readable on narrow devices.
+  dateConfigItem: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 140,
+    minWidth: 140,
+  },
   label: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
@@ -609,13 +635,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  modeToggleRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
   helperText: {
     fontSize: fontSize.xs,
+  },
+  // The mutual-exclusion helper sits on its own full-width line below the
+  // wrapping field row.
+  dateConfigHelper: {
+    flexBasis: "100%",
   },
   actionsRow: {
     flexDirection: "row",

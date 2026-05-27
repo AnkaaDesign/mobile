@@ -4,8 +4,10 @@
 // Mirrors the web service at /home/kennedy/Documents/repositories/web/src/services/api/auto-order.ts
 // but only exposes the analyze endpoint (mobile is recommendation-only per spec §10).
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/api-client/axiosClient";
+import { ITEM_CATEGORY_TYPE } from "@/constants/enums";
+import { itemKeys, orderKeys } from "./queryKeys";
 
 // =====================
 // Types
@@ -26,6 +28,9 @@ export interface AutoOrderRecommendation {
   supplierName: string | null;
   categoryId: string | null;
   categoryName: string | null;
+  /** Category type so the UI can branch on tool / electronic-tool / regular.
+   *  PPE never appears (excluded from the workflow for now). */
+  categoryType: ITEM_CATEGORY_TYPE | null;
   lastOrderDate: Date | null;
   daysSinceLastOrder: number | null;
   hasActivePendingOrder: boolean;
@@ -107,5 +112,39 @@ export function useAutoOrderAnalysis(params?: {
     queryKey: ["auto-order-analysis", params],
     queryFn: () => analyzeAutoOrders(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+// =====================
+// Order creation from recommendations
+// =====================
+
+export interface AutoOrderCreatePayload {
+  orders: Array<{
+    /** null / omitted = the "no supplier" group. */
+    supplierId?: string | null;
+    items: Array<{ itemId: string; quantity: number }>;
+  }>;
+}
+
+/** Create real orders from selected recommendations. The caller resolves the
+ *  grouping strategy (combined / per-supplier / per-item / per-category) into
+ *  `orders`; the API derives unit price + ICMS/IPI and persists each group. */
+export async function createOrdersFromAutoOrder(payload: AutoOrderCreatePayload) {
+  const response = await apiClient.post("/orders/auto/create", payload);
+  return response.data;
+}
+
+/** Mutation for creating orders from recommendations. The api-client
+ *  interceptor surfaces success/error toasts, so callers must not double-toast. */
+export function useCreateOrdersFromAutoOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createOrdersFromAutoOrder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auto-order-analysis"] });
+      queryClient.invalidateQueries({ queryKey: orderKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+    },
   });
 }

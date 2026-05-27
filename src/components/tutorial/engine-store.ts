@@ -30,7 +30,6 @@ export interface TutorialStoreActions {
   setActiveTargetRect(rect: TutorialTargetRect | null): void;
   setActiveSceneState(state: TutorialSceneState): void;
   setAwaitingAction(awaiting: boolean): void;
-  setInteractiveStuck(stuck: boolean): void;
   markCompleted(stepId: string): void;
   resetAll(): void;
 
@@ -51,7 +50,6 @@ const INITIAL: TutorialStoreState = {
   activeTargetId: null,
   activeTargetRect: null,
   activeSceneState: {},
-  interactiveStuck: false,
   runtimeStatus: "idle",
   isCelebrating: false,
   registeredSlots: new Map(),
@@ -74,7 +72,6 @@ export const useTutorialStore = create<TutorialStore>((set, get) => ({
   setActiveTargetRect: (activeTargetRect) => set({ activeTargetRect }),
   setActiveSceneState: (activeSceneState) => set({ activeSceneState }),
   setAwaitingAction: (awaitingAction) => set({ awaitingAction }),
-  setInteractiveStuck: (interactiveStuck) => set({ interactiveStuck }),
 
   markCompleted: (stepId) =>
     set((state) =>

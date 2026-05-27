@@ -5,7 +5,7 @@ export const homeSteps: TutorialStep[] = [
     id: "welcome",
     kind: "narration",
     scene: "home",
-    title: "Bem-vindo ao Ankaa!",
+    title: "Bem-vindo ao aplicativo Ankaa!",
     description: "Vamos te mostrar o app em poucos minutos. Você pode pular este tutorial a qualquer momento pelo X no canto.",
     placement: "bottom",
     ctaLabel: "Vamos lá",

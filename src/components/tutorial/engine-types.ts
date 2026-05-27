@@ -164,8 +164,6 @@ export interface TutorialEngineState {
   activeTargetId: string | null;
   /** Spotlight rect in absolute screen coords (from measureInWindow). */
   activeTargetRect: TutorialTargetRect | null;
-  /** Surfaces "Pular este passo" after STUCK_RECOVERY_MS without input. */
-  interactiveStuck: boolean;
   /** @deprecated kept for v4 compat */
   runtimeStatus: "idle" | "starting" | "running" | "stopping";
   /** @deprecated kept for v4 compat */
@@ -222,5 +220,4 @@ export const TUTORIAL_TIMINGS = {
   SHOWCASE_DEFAULT_MS: 2500,
   SPOTLIGHT_FADE_IN_MS: 160,
   SPOTLIGHT_FADE_OUT_MS: 120,
-  STUCK_RECOVERY_MS: 5000,
 } as const;

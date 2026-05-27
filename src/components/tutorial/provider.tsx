@@ -52,7 +52,6 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   const awaitingAction = useTutorialStore((s) => s.awaitingAction);
   const activeSlot = useTutorialStore((s) => s.activeSlot);
   const activeTargetRect = useTutorialStore((s) => s.activeTargetRect);
-  const interactiveStuck = useTutorialStore((s) => s.interactiveStuck);
 
   const currentStep = steps[currentStepIndex] ?? null;
   const totalSteps = steps.length;
@@ -96,7 +95,6 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       activeSlot,
       activeTargetId: activeSlot,
       activeTargetRect,
-      interactiveStuck,
       runtimeStatus: isActive ? "running" : "idle",
       isCelebrating: false,
       currentStep,
@@ -131,7 +129,6 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       awaitingAction,
       activeSlot,
       activeTargetRect,
-      interactiveStuck,
       currentStep,
       totalSteps,
       start,

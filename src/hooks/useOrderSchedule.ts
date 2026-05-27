@@ -12,6 +12,7 @@ import {
   batchDeleteOrderSchedules,
   getOrderScheduleProjection,
   triggerOrderSchedule,
+  getOrderScheduleExpectedTotals,
 } from '@/api-client';
 import type {
   OrderScheduleGetManyFormData,
@@ -33,6 +34,7 @@ import type {
   OrderScheduleBatchDeleteResponse,
   OrderScheduleProjectionResponse,
   OrderScheduleTriggerResponse,
+  OrderScheduleExpectedTotalsResponse,
 } from '@/types';
 import { orderScheduleKeys, orderKeys, supplierKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
@@ -108,6 +110,25 @@ export const useOrderScheduleProjection = (id: string, options?: { enabled?: boo
     queryFn: () => getOrderScheduleProjection(id),
     staleTime: 1000 * 60 * 2, // 2 minutes - projections are time-sensitive
     enabled: enabled && !!id,
+  });
+};
+
+// =====================================================
+// OrderSchedule Expected Totals (batch list projection)
+// =====================================================
+
+// Batch-fetches the projected total order cost ("expected total") for a set of
+// schedules when they next fire. Used by the schedule list to show a "Preço
+// esperado" per row from ONE request covering all visible ids. The query key
+// includes the sorted ids so identical id sets share a cache entry.
+export const useOrderScheduleExpectedTotals = (scheduleIds: string[]) => {
+  const sortedIds = [...scheduleIds].sort();
+
+  return useQuery<OrderScheduleExpectedTotalsResponse>({
+    queryKey: orderScheduleKeys.expectedTotals(sortedIds),
+    queryFn: () => getOrderScheduleExpectedTotals(sortedIds),
+    staleTime: 1000 * 60 * 2, // 2 minutes - projections are time-sensitive
+    enabled: sortedIds.length > 0,
   });
 };
 

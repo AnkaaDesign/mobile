@@ -540,6 +540,7 @@ export const orderScheduleKeys = {
   active: (filters?: Partial<OrderScheduleGetManyFormData>) => (filters ? (["orderSchedules", "active", filters] as const) : (["orderSchedules", "active"] as const)),
   projections: () => ["orderSchedules", "projection"] as const,
   projection: (id: string) => ["orderSchedules", "projection", id] as const,
+  expectedTotals: (ids: string[]) => ["orderSchedules", "expectedTotals", ids] as const,
 };
 
 // =====================================================

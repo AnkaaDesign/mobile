@@ -80,8 +80,7 @@ export function TutorialTooltip() {
   const currentIndex = useTutorialStore((s) => s.currentStepIndex);
   const totalSteps = useTutorialStore((s) => s.steps.length);
   const awaitingAction = useTutorialStore((s) => s.awaitingAction);
-  const interactiveStuck = useTutorialStore((s) => s.interactiveStuck);
-  const { next, skip, notifyAction } = useTutorial();
+  const { skip, notifyAction } = useTutorial();
   const insets = useSafeAreaInsets();
 
   const [measuredHeight, setMeasuredHeight] = useState(DEFAULT_TOOLTIP_HEIGHT);
@@ -143,7 +142,6 @@ export function TutorialTooltip() {
 
   const isInteractive = step.kind === "interactive";
   const showContinue = !isInteractive;
-  const showSkipStep = isInteractive && interactiveStuck;
   const continueLabel =
     step.ctaLabel ??
     (currentIndex === totalSteps - 1 ? "Concluir" : "Continuar");
@@ -221,7 +219,7 @@ export function TutorialTooltip() {
 
         {step.hint ? <Text style={styles.hint}>{step.hint}</Text> : null}
 
-        {isInteractive && awaitingAction && !interactiveStuck ? (
+        {isInteractive && awaitingAction ? (
           <View style={styles.interactiveCta}>
             <IconHandClick size={18} color="#FCD34D" />
             <Text style={styles.interactiveCtaText}>
@@ -240,16 +238,6 @@ export function TutorialTooltip() {
               <IconChevronRight size={16} color="#FFFFFF" />
             </Pressable>
           </Animated.View>
-        ) : null}
-
-        {showSkipStep ? (
-          <Pressable
-            onPress={() => next()}
-            style={styles.skipStepBtn}
-            hitSlop={8}
-          >
-            <Text style={styles.skipStepText}>Pular este passo</Text>
-          </Pressable>
         ) : null}
       </Animated.View>
     </View>
@@ -320,6 +308,4 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   advanceText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
-  skipStepBtn: { alignSelf: "center", paddingVertical: 10, paddingHorizontal: 14, marginTop: 4 },
-  skipStepText: { color: "#FCD34D", fontSize: 13, fontWeight: "600", textDecorationLine: "underline" },
 });

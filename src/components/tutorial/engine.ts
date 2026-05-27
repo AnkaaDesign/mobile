@@ -9,12 +9,13 @@
  * index, mirror the step's scene/state/highlight into the store, the stage
  * re-renders, and the slot's onLayout fires the spotlight rect.
  *
- * The tour is fully manual: no step advances on its own. The only timer is
- * the interactive "stuck recovery" fallback that surfaces a skip affordance.
+ * The tour is fully manual: no step advances on its own, and there are no
+ * timers. Showcase/narration steps wait for "Continuar"; interactive steps
+ * wait for the user to perform the highlighted action.
  */
 import { tutorialStorage } from "./tutorial-storage";
 import { useTutorialStore } from "./engine-store";
-import { TUTORIAL_TIMINGS, type TutorialStep, type TutorialUserContext } from "./engine-types";
+import { type TutorialStep, type TutorialUserContext } from "./engine-types";
 
 export interface TutorialEngineDeps {
   getUser: () => any;
@@ -32,7 +33,6 @@ function computeUserContext(user: any): TutorialUserContext {
 
 export class TutorialEngine {
   private destroyed = false;
-  private stuckTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private deps: TutorialEngineDeps) {}
 
@@ -56,26 +56,22 @@ export class TutorialEngine {
   }
 
   async stop(): Promise<void> {
-    this.clearTimers();
     useTutorialStore.getState().resetAll();
   }
 
   async skip(): Promise<void> {
-    this.clearTimers();
     useTutorialStore.getState().resetAll();
   }
 
   async complete(): Promise<void> {
     const user = this.deps.getUser();
     if (user?.id) await tutorialStorage.markCompleted(user.id);
-    this.clearTimers();
     useTutorialStore.getState().resetAll();
   }
 
   async reset(): Promise<void> {
     const user = this.deps.getUser();
     if (user?.id) await tutorialStorage.reset(user.id);
-    this.clearTimers();
     useTutorialStore.getState().resetAll();
   }
 
@@ -116,13 +112,11 @@ export class TutorialEngine {
 
   destroy(): void {
     this.destroyed = true;
-    this.clearTimers();
   }
 
   // ── internals ─────────────────────────────────────────────────────────
 
   private applyStep(index: number): void {
-    this.clearTimers();
     const store = useTutorialStore.getState();
     const step = store.steps[index];
     if (!step) return;
@@ -130,26 +124,12 @@ export class TutorialEngine {
     store.setCurrentStepIndex(index);
     store.setActiveSceneState(step.sceneState ?? {});
     store.setActiveSlot(step.highlight ?? null);
-    store.setInteractiveStuck(false);
     store.setAwaitingAction(step.kind === "interactive");
 
     // Fully manual tour: nothing advances on its own. Showcase/narration steps
     // wait for the user to tap "Continuar"; interactive steps wait for the user
-    // to perform the highlighted action. (No auto-advance timer.)
-
-    if (step.kind === "interactive") {
-      this.stuckTimer = setTimeout(() => {
-        this.stuckTimer = null;
-        useTutorialStore.getState().setInteractiveStuck(true);
-      }, TUTORIAL_TIMINGS.STUCK_RECOVERY_MS);
-    }
-  }
-
-  private clearTimers(): void {
-    if (this.stuckTimer != null) {
-      clearTimeout(this.stuckTimer);
-      this.stuckTimer = null;
-    }
+    // to perform the highlighted action. (No auto-advance or stuck-recovery
+    // timer — the user drives every transition.)
   }
 }
 

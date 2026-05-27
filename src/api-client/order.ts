@@ -57,6 +57,7 @@ import type {
   OrderScheduleBatchDeleteResponse,
   OrderScheduleProjectionResponse,
   OrderScheduleTriggerResponse,
+  OrderScheduleExpectedTotalsResponse,
 } from '../types';
 
 // =====================
@@ -264,6 +265,16 @@ export class OrderService {
     const response = await apiClient.post<OrderScheduleTriggerResponse>(`${this.schedulesBasePath}/${id}/trigger`, data);
     return response.data;
   }
+
+  // Batch-projects the expected total order cost for each schedule when it next
+  // fires. One request covers all visible ids (no per-row fan-out).
+  async getOrderScheduleExpectedTotals(scheduleIds: string[]): Promise<OrderScheduleExpectedTotalsResponse> {
+    const response = await apiClient.post<OrderScheduleExpectedTotalsResponse>(
+      `${this.schedulesBasePath}/expected-totals`,
+      { scheduleIds },
+    );
+    return response.data;
+  }
 }
 
 // =====================
@@ -315,3 +326,4 @@ export const finishOrderSchedule = (id: string) => orderService.finishOrderSched
 export const createOrderFromSchedule = (id: string) => orderService.createOrderFromSchedule(id);
 export const getOrderScheduleProjection = (id: string) => orderService.getOrderScheduleProjection(id);
 export const triggerOrderSchedule = (id: string, data: OrderScheduleTriggerFormData) => orderService.triggerOrderSchedule(id, data);
+export const getOrderScheduleExpectedTotals = (scheduleIds: string[]) => orderService.getOrderScheduleExpectedTotals(scheduleIds);

@@ -18,10 +18,14 @@ import {
   IconClock,
   IconRobot,
   IconAlertTriangle,
+  IconShoppingCartPlus,
 } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { NumberInput } from "@/components/ui/number-input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useTheme } from "@/lib/theme";
 import {
@@ -32,10 +36,14 @@ import {
 } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
 import { useCanViewPrices } from "@/hooks";
+import { ITEM_CATEGORY_TYPE } from "@/constants/enums";
+import { ITEM_CATEGORY_TYPE_LABELS } from "@/constants/enum-labels";
 import {
   useAutoOrderAnalysis,
+  useCreateOrdersFromAutoOrder,
   type AutoOrderRecommendation,
   type AutoOrderSupplierGroup,
+  type AutoOrderCreatePayload,
 } from "@/hooks/use-auto-order-analysis";
 
 const URGENCY_ORDER: Record<AutoOrderRecommendation["urgency"], number> = {
@@ -55,11 +63,36 @@ const URGENCY_VARIANT: Record<
   low: { variant: "outline", label: "BAIXO", color: "#737373" },
 };
 
+/** How to split the "no supplier" group into orders on creation. */
+type NoSupplierStrategy = "combined" | "per-item" | "by-category";
+
+const NO_SUPPLIER_STRATEGY_OPTIONS: { value: NoSupplierStrategy; label: string }[] = [
+  { value: "combined", label: "Único" },
+  { value: "per-item", label: "Por item" },
+  { value: "by-category", label: "Por categoria" },
+];
+
+const TOOL_TYPES: Array<ITEM_CATEGORY_TYPE | null> = [
+  ITEM_CATEGORY_TYPE.TOOL,
+  ITEM_CATEGORY_TYPE.ELECTRONIC_TOOL,
+];
+
+const groupKey = (supplierId: string | null) => supplierId || "no-supplier";
+
 export function AutoOrderList() {
   const { colors } = useTheme();
   const canViewPrices = useCanViewPrices();
   const { data, isLoading, isRefetching, refetch, isError } =
     useAutoOrderAnalysis({ minStockCriteria: "all" });
+
+  const { mutateAsync: createOrders, isPending: isCreating } =
+    useCreateOrdersFromAutoOrder();
+
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [noSupplierStrategy, setNoSupplierStrategy] =
+    useState<NoSupplierStrategy>("combined");
+  const [creatingKey, setCreatingKey] = useState<string | null>(null);
 
   const onRefresh = useCallback(() => {
     refetch();
@@ -89,6 +122,106 @@ export function AutoOrderList() {
         return aMin - bMin;
       });
   }, [data]);
+
+  // ---- Selection + quantity helpers ----
+
+  const getQty = useCallback(
+    (item: AutoOrderRecommendation) =>
+      quantities[item.itemId] ?? item.recommendedOrderQuantity,
+    [quantities],
+  );
+
+  const setItemQty = useCallback((itemId: string, value: number) => {
+    setQuantities((prev) => ({ ...prev, [itemId]: value }));
+  }, []);
+
+  const toggleItem = useCallback((itemId: string) => {
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }, []);
+
+  const toggleGroupAll = useCallback(
+    (group: AutoOrderSupplierGroup, checked: boolean) => {
+      setSelectedItems((prev) => {
+        const next = new Set(prev);
+        group.items.forEach((item) => {
+          if (checked) next.add(item.itemId);
+          else next.delete(item.itemId);
+        });
+        return next;
+      });
+    },
+    [],
+  );
+
+  const buildOrdersForGroup = useCallback(
+    (group: AutoOrderSupplierGroup): AutoOrderCreatePayload["orders"] => {
+      const selected = group.items.filter((item) =>
+        selectedItems.has(item.itemId),
+      );
+      if (selected.length === 0) return [];
+
+      const toLine = (item: AutoOrderRecommendation) => ({
+        itemId: item.itemId,
+        quantity: getQty(item),
+      });
+
+      if (group.supplierId) {
+        return [{ supplierId: group.supplierId, items: selected.map(toLine) }];
+      }
+
+      if (noSupplierStrategy === "per-item") {
+        return selected.map((item) => ({ supplierId: null, items: [toLine(item)] }));
+      }
+      if (noSupplierStrategy === "by-category") {
+        const byCategory = new Map<string, AutoOrderRecommendation[]>();
+        selected.forEach((item) => {
+          const key = item.categoryId ?? "no-category";
+          const arr = byCategory.get(key) ?? [];
+          arr.push(item);
+          byCategory.set(key, arr);
+        });
+        return Array.from(byCategory.values()).map((items) => ({
+          supplierId: null,
+          items: items.map(toLine),
+        }));
+      }
+      return [{ supplierId: null, items: selected.map(toLine) }];
+    },
+    [selectedItems, getQty, noSupplierStrategy],
+  );
+
+  const handleCreate = useCallback(
+    async (orders: AutoOrderCreatePayload["orders"], key: string) => {
+      if (orders.length === 0) return;
+      setCreatingKey(key);
+      try {
+        await createOrders({ orders });
+        const orderedIds = orders.flatMap((o) => o.items.map((i) => i.itemId));
+        setSelectedItems((prev) => {
+          const next = new Set(prev);
+          orderedIds.forEach((id) => next.delete(id));
+          return next;
+        });
+        setQuantities((prev) => {
+          const next = { ...prev };
+          orderedIds.forEach((id) => delete next[id]);
+          return next;
+        });
+      } catch {
+        // api-client interceptor surfaces the error toast; keep selection.
+      } finally {
+        setCreatingKey(null);
+      }
+    },
+    [createOrders],
+  );
+
+  const totalSelected = selectedItems.size;
 
   if (isLoading) {
     return (
@@ -130,7 +263,7 @@ export function AutoOrderList() {
               <ThemedText
                 style={[styles.subtitle, { color: colors.mutedForeground }]}
               >
-                Análise automática baseada em consumo e tendências
+                Selecione itens e gere pedidos com a quantidade recomendada
               </ThemedText>
             </View>
           </View>
@@ -151,6 +284,19 @@ export function AutoOrderList() {
             <IconRefresh size={18} color={colors.foreground} />
           </Pressable>
         </View>
+
+        <Button
+          variant="default"
+          onPress={() =>
+            handleCreate(sortedGroups.flatMap(buildOrdersForGroup), "all")
+          }
+          disabled={totalSelected === 0 || isCreating}
+          loading={isCreating && creatingKey === "all"}
+          icon={<IconShoppingCartPlus size={18} color="#fff" />}
+          style={styles.createAllBtn}
+        >
+          {totalSelected > 0 ? `Criar pedidos (${totalSelected})` : "Criar pedidos"}
+        </Button>
       </Card>
 
       {/* Summary */}
@@ -201,8 +347,20 @@ export function AutoOrderList() {
       {/* Supplier groups */}
       {sortedGroups.map((group) => (
         <SupplierGroup
-          key={group.supplierId ?? "no-supplier"}
+          key={groupKey(group.supplierId)}
           group={group}
+          selectedItems={selectedItems}
+          getQty={getQty}
+          onToggleItem={toggleItem}
+          onToggleGroupAll={toggleGroupAll}
+          onQtyChange={setItemQty}
+          noSupplierStrategy={noSupplierStrategy}
+          onStrategyChange={setNoSupplierStrategy}
+          onCreate={() =>
+            handleCreate(buildOrdersForGroup(group), groupKey(group.supplierId))
+          }
+          isCreating={isCreating}
+          creatingKey={creatingKey}
         />
       ))}
     </ScrollView>
@@ -211,15 +369,45 @@ export function AutoOrderList() {
 
 interface SupplierGroupProps {
   group: AutoOrderSupplierGroup;
+  selectedItems: Set<string>;
+  getQty: (item: AutoOrderRecommendation) => number;
+  onToggleItem: (itemId: string) => void;
+  onToggleGroupAll: (group: AutoOrderSupplierGroup, checked: boolean) => void;
+  onQtyChange: (itemId: string, value: number) => void;
+  noSupplierStrategy: NoSupplierStrategy;
+  onStrategyChange: (strategy: NoSupplierStrategy) => void;
+  onCreate: () => void;
+  isCreating: boolean;
+  creatingKey: string | null;
 }
 
-function SupplierGroup({ group }: SupplierGroupProps) {
+function SupplierGroup({
+  group,
+  selectedItems,
+  getQty,
+  onToggleItem,
+  onToggleGroupAll,
+  onQtyChange,
+  noSupplierStrategy,
+  onStrategyChange,
+  onCreate,
+  isCreating,
+  creatingKey,
+}: SupplierGroupProps) {
   const { colors } = useTheme();
   const canViewPrices = useCanViewPrices();
   const [open, setOpen] = useState(true);
 
   const headerCount = group.itemCount;
   const headerCost = formatCurrency(group.totalEstimatedCost ?? 0);
+  const isNoSupplier = !group.supplierId;
+  const key = groupKey(group.supplierId);
+
+  const selectedCount = group.items.filter((it) =>
+    selectedItems.has(it.itemId),
+  ).length;
+  const allSelected = group.items.length > 0 && selectedCount === group.items.length;
+  const someSelected = selectedCount > 0 && !allSelected;
 
   return (
     <Card style={styles.groupCard}>
@@ -228,6 +416,12 @@ function SupplierGroup({ group }: SupplierGroupProps) {
         onPress={() => setOpen((v) => !v)}
         accessibilityRole="button"
       >
+        <Checkbox
+          checked={allSelected}
+          indeterminate={someSelected}
+          onCheckedChange={(checked) => onToggleGroupAll(group, checked)}
+          accessibilityLabel="Selecionar todos do grupo"
+        />
         <View style={styles.groupHeaderText}>
           <ThemedText
             style={[styles.groupTitle, { color: colors.foreground }]}
@@ -252,13 +446,68 @@ function SupplierGroup({ group }: SupplierGroupProps) {
 
       {open && (
         <View style={styles.groupBody}>
+          {/* No-supplier split strategy */}
+          {isNoSupplier && (
+            <View style={styles.strategyRow}>
+              <ThemedText
+                style={[styles.strategyLabel, { color: colors.mutedForeground }]}
+              >
+                Criar como:
+              </ThemedText>
+              <View style={styles.strategyChips}>
+                {NO_SUPPLIER_STRATEGY_OPTIONS.map((opt) => {
+                  const active = noSupplierStrategy === opt.value;
+                  return (
+                    <Pressable
+                      key={opt.value}
+                      onPress={() => onStrategyChange(opt.value)}
+                      style={[
+                        styles.strategyChip,
+                        {
+                          borderColor: active ? colors.primary : colors.border,
+                          backgroundColor: active ? colors.primary + "20" : "transparent",
+                        },
+                      ]}
+                      accessibilityRole="button"
+                    >
+                      <ThemedText
+                        style={[
+                          styles.strategyChipText,
+                          { color: active ? colors.primary : colors.mutedForeground },
+                        ]}
+                      >
+                        {opt.label}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
           {group.items.map((item, idx) => (
             <RecommendationRow
               key={item.itemId}
               item={item}
               isLast={idx === group.items.length - 1}
+              selected={selectedItems.has(item.itemId)}
+              qty={getQty(item)}
+              onToggle={() => onToggleItem(item.itemId)}
+              onQtyChange={(v) => onQtyChange(item.itemId, v)}
             />
           ))}
+
+          <Button
+            variant="default"
+            size="sm"
+            onPress={onCreate}
+            disabled={selectedCount === 0 || isCreating}
+            loading={isCreating && creatingKey === key}
+            icon={<IconShoppingCartPlus size={16} color="#fff" />}
+            style={styles.groupCreateBtn}
+          >
+            {selectedCount > 0 ? `Criar pedido (${selectedCount})` : "Criar pedido"}
+          </Button>
         </View>
       )}
     </Card>
@@ -268,11 +517,23 @@ function SupplierGroup({ group }: SupplierGroupProps) {
 interface RecommendationRowProps {
   item: AutoOrderRecommendation;
   isLast: boolean;
+  selected: boolean;
+  qty: number;
+  onToggle: () => void;
+  onQtyChange: (value: number) => void;
 }
 
-function RecommendationRow({ item, isLast }: RecommendationRowProps) {
+function RecommendationRow({
+  item,
+  isLast,
+  selected,
+  qty,
+  onToggle,
+  onQtyChange,
+}: RecommendationRowProps) {
   const { colors } = useTheme();
   const urgency = URGENCY_VARIANT[item.urgency] ?? URGENCY_VARIANT.low;
+  const isTool = TOOL_TYPES.includes(item.categoryType);
 
   const TrendIcon =
     item.trend === "increasing"
@@ -291,16 +552,29 @@ function RecommendationRow({ item, isLast }: RecommendationRowProps) {
     <View
       style={[
         styles.itemRow,
+        selected && { backgroundColor: colors.primary + "10", borderRadius: borderRadius.sm },
         !isLast && { borderBottomColor: colors.border + "60", borderBottomWidth: 1 },
       ]}
     >
       <View style={styles.itemHeader}>
+        <Checkbox
+          checked={selected}
+          onCheckedChange={onToggle}
+          accessibilityLabel={`Selecionar ${item.itemName}`}
+        />
         <ThemedText
           style={[styles.itemName, { color: colors.foreground }]}
           numberOfLines={2}
         >
           {item.itemName}
         </ThemedText>
+        {isTool && (
+          <Badge variant="outline">
+            <ThemedText style={[styles.toolBadgeText, { color: colors.mutedForeground }]}>
+              {ITEM_CATEGORY_TYPE_LABELS[item.categoryType as ITEM_CATEGORY_TYPE]}
+            </ThemedText>
+          </Badge>
+        )}
         <Badge variant={urgency.variant}>
           <ThemedText style={styles.badgeText}>{urgency.label}</ThemedText>
         </Badge>
@@ -312,13 +586,23 @@ function RecommendationRow({ item, isLast }: RecommendationRowProps) {
           value={formatQuantity(item.currentStock)}
           colors={colors}
         />
-        <Metric
-          label="Recomendado"
-          value={formatQuantity(item.recommendedOrderQuantity)}
-          icon={<IconPackage size={12} color={colors.primary} />}
-          valueColor={colors.primary}
-          colors={colors}
-        />
+        <View style={[styles.metric, { backgroundColor: colors.muted + "30" }]}>
+          <ThemedText
+            style={[styles.metricLabel, { color: colors.mutedForeground }]}
+            numberOfLines={1}
+          >
+            Qtd. a pedir
+          </ThemedText>
+          <View style={styles.metricValueRow}>
+            <IconPackage size={12} color={colors.primary} />
+            <NumberInput
+              value={qty}
+              onChange={(v) => onQtyChange(v ?? 0)}
+              min={0}
+              style={styles.qtyInput}
+            />
+          </View>
+        </View>
         <Metric
           label="Dias até zerar"
           value={String(item.daysUntilStockout ?? "—")}
@@ -449,6 +733,7 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     padding: spacing.md,
+    gap: spacing.sm,
   },
   headerRow: {
     flexDirection: "row",
@@ -476,6 +761,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  createAllBtn: {
+    marginTop: spacing.xs,
   },
   summaryGrid: {
     flexDirection: "row",
@@ -514,6 +802,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: spacing.sm,
     padding: spacing.md,
     borderBottomWidth: 1,
   },
@@ -533,6 +822,29 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     gap: spacing.sm,
   },
+  strategyRow: {
+    gap: spacing.xs,
+  },
+  strategyLabel: {
+    fontSize: fontSize.xs,
+  },
+  strategyChips: {
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  strategyChip: {
+    paddingVertical: 6,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+  },
+  strategyChipText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  groupCreateBtn: {
+    marginTop: spacing.xs,
+  },
   itemRow: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
@@ -540,8 +852,7 @@ const styles = StyleSheet.create({
   },
   itemHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+    alignItems: "center",
     gap: spacing.sm,
   },
   itemName: {
@@ -553,6 +864,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
     color: "#fff",
+  },
+  toolBadgeText: {
+    fontSize: 10,
+    fontWeight: fontWeight.medium,
   },
   itemMetrics: {
     flexDirection: "row",
@@ -575,6 +890,11 @@ const styles = StyleSheet.create({
   metricValue: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+  },
+  qtyInput: {
+    flex: 1,
+    height: 32,
+    paddingVertical: 0,
   },
   itemFooter: {
     gap: 4,

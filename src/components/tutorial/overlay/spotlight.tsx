@@ -46,8 +46,7 @@ export function TutorialSpotlight() {
   const currentStep = useTutorialStore(
     (s) => s.steps[s.currentStepIndex] ?? null,
   );
-  const interactiveStuck = useTutorialStore((s) => s.interactiveStuck);
-  const { next, notifyAction } = useTutorial();
+  const { notifyAction } = useTutorial();
 
   const cx = useSharedValue(0);
   const cy = useSharedValue(0);
@@ -192,12 +191,7 @@ export function TutorialSpotlight() {
     >
       {dimEnabled ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={
-              isInteractive && interactiveStuck ? () => next() : undefined
-            }
-          >
+          <Pressable style={StyleSheet.absoluteFill}>
             <Animated.View style={[topStyle, { backgroundColor: dimColor }]} />
             <Animated.View style={[bottomStyle, { backgroundColor: dimColor }]} />
             <Animated.View style={[leftStyle, { backgroundColor: dimColor }]} />

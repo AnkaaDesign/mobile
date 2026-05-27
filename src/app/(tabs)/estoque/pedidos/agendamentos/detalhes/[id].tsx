@@ -12,6 +12,7 @@ import {
   IconHistory,
   IconRefresh,
   IconBolt,
+  IconDotsVertical,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -20,6 +21,7 @@ import {
   useOrderScheduleProjection,
   useTriggerOrderSchedule,
   useOrders,
+  useItems,
   useScreenReady,
 } from '@/hooks';
 import type { OrderScheduleInclude } from '../../../../../../schemas';
@@ -44,7 +46,7 @@ import { useTheme } from "@/lib/theme";
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
-import { formatDateTime, formatDate } from "@/utils";
+import { formatDateTime, formatDate, formatQuantity } from "@/utils";
 import { formatCurrency } from "@/utils/number";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
@@ -111,6 +113,22 @@ function OrderScheduleDetailsScreenInner() {
   const projectionItems = projection?.items ?? [];
   const projectionMeta = projection?.meta;
 
+  // Fetch the underlying items (stock + measures) for the projection rows. The
+  // projection only carries itemId/itemName, so we load each item's current
+  // quantity (Estoque) and measures (Medidas) and key them by id.
+  const projectionItemIds = projectionItems.map((item) => item.itemId);
+  const scheduleItemIds = schedule?.items ?? [];
+  const itemIds = projectionItemIds.length > 0 ? projectionItemIds : scheduleItemIds;
+  const { data: itemsResponse } = useItems(
+    {
+      where: { id: { in: itemIds } },
+      include: { measures: true },
+      take: itemIds.length || 1,
+    },
+    { enabled: itemIds.length > 0 },
+  );
+  const itemsById = new Map((itemsResponse?.data ?? []).map((item) => [item.id, item]));
+
   // Fetch orders created from this schedule
   const {
     data: ordersResponse,
@@ -124,8 +142,10 @@ function OrderScheduleDetailsScreenInner() {
 
   const { mutate: triggerSchedule, isPending: isTriggering } = useTriggerOrderSchedule({
     onSuccess: (data) => {
-      // Success toast is shown automatically by the API client interceptor
-      if (!data?.data) {
+      // Success toast is shown automatically by the API client interceptor.
+      // The trigger envelope carries an `order` that is null when nothing needed
+      // ordering, so gate the "Nada a pedir" message on the order id (matching web).
+      if (!data?.data?.order?.id) {
         Alert.alert("Nada a pedir", "Nenhum item precisa ser pedido neste momento.");
       }
       refetch();
@@ -237,20 +257,27 @@ function OrderScheduleDetailsScreenInner() {
     );
   }, [canEdit, scheduleId, nav]);
 
-  // Open the cascade-mode chooser for a real "Disparar agora" trigger.
+  // Whether the schedule can be executed right now (active, not finished, not already firing).
+  const canTrigger = canEdit && !!schedule?.isActive && !schedule?.finishedAt && !isTriggering;
+
+  // Open the cascade-mode chooser for a real "Executar agora" trigger.
   const handleOpenTrigger = useCallback(() => {
     if (!canEdit) {
-      Alert.alert("Sem permissão", "Você não tem permissão para disparar agendamentos");
+      Alert.alert("Sem permissão", "Você não tem permissão para executar agendamentos");
       return;
     }
+    if (isTriggering) return;
     setShowCascadeSheet(true);
-  }, [canEdit]);
+  }, [canEdit, isTriggering]);
 
   const handleTrigger = useCallback(
     (cascadeMode: OrderScheduleCascadeMode) => {
+      if (isTriggering) return;
+      // Close + lock the sheet on first selection so a double-tap can't fire two POSTs.
+      setShowCascadeSheet(false);
       triggerSchedule({ id: scheduleId, cascadeMode });
     },
-    [triggerSchedule, scheduleId],
+    [triggerSchedule, scheduleId, isTriggering],
   );
 
   if (isLoading) {
@@ -321,6 +348,9 @@ function OrderScheduleDetailsScreenInner() {
 
   const gapDays = projectionMeta?.gapDays ?? 0;
   const intervalDays = projectionMeta?.intervalDays ?? null;
+  // When due now / overdue there is no gap-only option (it would fall back to a
+  // full cycle), so the gap-only column + trigger option are hidden.
+  const hasGap = projectionMeta?.hasGap ?? gapDays > 0;
 
   const actionSheetItems: ActionSheetItem[] = [
     {
@@ -332,10 +362,10 @@ function OrderScheduleDetailsScreenInner() {
     },
     {
       id: "trigger",
-      label: "Disparar agora",
+      label: "Executar agora",
       icon: "bolt",
       onPress: handleOpenTrigger,
-      disabled: !canEdit,
+      disabled: !canTrigger,
     },
     {
       id: "toggle",
@@ -361,24 +391,31 @@ function OrderScheduleDetailsScreenInner() {
     },
   ];
 
-  // Cascade-mode chooser options derived from projection meta.
+  // Cascade-mode chooser options derived from projection meta. Each option shows
+  // its OWN actual total (gapOnlyTotal / gapPlusCycleTotal) — these equal the
+  // per-item column totals shown in the items list and the order that gets created.
+  const gapOnlyTotal = projectionMeta?.gapOnlyTotal ?? 0;
+  const gapPlusCycleTotal = projectionMeta?.gapPlusCycleTotal ?? 0;
+  const scheduledTotal = projectionMeta?.scheduledTotal ?? 0;
   const cascadeSheetItems: ActionSheetItem[] = [];
-  if (gapDays > 0) {
+  if (hasGap) {
     cascadeSheetItems.push({
       id: "gap-only",
-      label: `Cobrir até o próximo disparo (${gapDays} dias)`,
+      label: `Cobrir até a próxima execução (${gapDays} dias) · ${formatCurrency(gapOnlyTotal)}`,
       icon: "calendar",
       onPress: () => handleTrigger("GAP_ONLY"),
+      disabled: isTriggering,
     });
   }
   cascadeSheetItems.push({
     id: "gap-plus-cycle",
     label:
       intervalDays != null
-        ? `Cobrir disparo + ciclo (${gapDays}+${intervalDays} dias)`
-        : "Cobrir disparo + ciclo completo",
+        ? `Cobrir execução + ciclo (${gapDays}+${intervalDays} dias) · ${formatCurrency(gapPlusCycleTotal)}`
+        : `Cobrir execução + ciclo completo · ${formatCurrency(gapPlusCycleTotal)}`,
     icon: "refresh",
     onPress: () => handleTrigger("GAP_PLUS_CYCLE"),
+    disabled: isTriggering,
   });
 
   return (
@@ -435,6 +472,14 @@ function OrderScheduleDetailsScreenInner() {
                   <IconTrash size={18} color={colors.destructiveForeground} />
                 </Pressable>
               )}
+              {(canEdit || canDelete) && (
+                <Pressable
+                  onPress={() => setShowActionSheet(true)}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
+                >
+                  <IconDotsVertical size={18} color={colors.foreground} />
+                </Pressable>
+              )}
             </View>
           </View>
         </Card>
@@ -451,48 +496,6 @@ function OrderScheduleDetailsScreenInner() {
             <ScheduleInfoCard schedule={schedule} />
           </View>
         </Card>
-
-        {/* Projection Summary */}
-        {projectionMeta && (
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconCalendar size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Previsão do Disparo</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              {projectionMeta.scheduledDate && (
-                <InfoRow
-                  label="Data prevista do disparo"
-                  value={formatDate(projectionMeta.scheduledDate)}
-                />
-              )}
-              <InfoRow label="Intervalo até o disparo" value={`${projectionMeta.gapDays} dias`} />
-              {projectionMeta.intervalDays != null && (
-                <InfoRow label="Ciclo" value={`${projectionMeta.intervalDays} dias`} />
-              )}
-              <View style={styles.summaryTotals}>
-                <View style={styles.summaryTotalBlock}>
-                  <ThemedText style={[styles.summaryTotalLabel, { color: colors.mutedForeground }]}>
-                    Total hoje
-                  </ThemedText>
-                  <ThemedText style={[styles.summaryTotalValue, { color: colors.foreground }]}>
-                    {formatCurrency(projectionMeta.totalToday)}
-                  </ThemedText>
-                </View>
-                <View style={styles.summaryTotalBlock}>
-                  <ThemedText style={[styles.summaryTotalLabel, { color: colors.mutedForeground }]}>
-                    Total na data
-                  </ThemedText>
-                  <ThemedText style={[styles.summaryTotalValue, { color: colors.primary }]}>
-                    {formatCurrency(projectionMeta.totalScheduled)}
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-          </Card>
-        )}
 
         {/* Items Projection */}
         <Card style={styles.card}>
@@ -514,9 +517,27 @@ function OrderScheduleDetailsScreenInner() {
               </View>
             ) : projectionItems.length > 0 ? (
               <View style={styles.itemsList}>
+                {scheduledTotal > 0 && (
+                  <ThemedText
+                    style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 8 }}
+                    numberOfLines={2}
+                  >
+                    Próximo pedido automático (estimativa): {formatCurrency(scheduledTotal)}
+                  </ThemedText>
+                )}
                 {projectionItems.map((item, index) => {
                   const isLast = index === projectionItems.length - 1;
-                  const muted = item.skipped || (item.quantityToday <= 0 && item.quantityScheduled <= 0);
+                  const goOrder = item.quantityGapOnly > 0;
+                  const gpcOrder = item.quantityGapPlusCycle > 0;
+                  // Nothing to order in either trigger mode → single dash row.
+                  const muted = !goOrder && !gpcOrder;
+                  const sourceItem = itemsById.get(item.itemId);
+                  const measuresText =
+                    sourceItem?.measures && sourceItem.measures.length > 0
+                      ? sourceItem.measures
+                          .map((m) => `${m.value ?? "-"}${m.unit ?? ""}`)
+                          .join(" × ")
+                      : null;
                   return (
                     <View
                       key={item.itemId}
@@ -531,36 +552,48 @@ function OrderScheduleDetailsScreenInner() {
                       >
                         {item.itemName}
                       </ThemedText>
+                      {sourceItem && (
+                        <View style={styles.projectionMetaRow}>
+                          <ThemedText style={[styles.projectionMetaText, { color: colors.mutedForeground }]} numberOfLines={1}>
+                            Estoque: {formatQuantity(sourceItem.quantity ?? 0)}
+                          </ThemedText>
+                          <ThemedText style={[styles.projectionMetaText, { color: colors.mutedForeground }]} numberOfLines={1}>
+                            Medidas: {measuresText ?? "-"}
+                          </ThemedText>
+                        </View>
+                      )}
                       {muted ? (
                         <View>
                           <ThemedText style={[styles.projectionMutedValue, { color: colors.mutedForeground }]}>
                             —
                           </ThemedText>
-                          {(item.reasonScheduled || item.reasonToday) && (
+                          {(item.reasonGapPlusCycle || item.reasonGapOnly) && (
                             <ThemedText
                               style={[styles.projectionReason, { color: colors.mutedForeground }]}
                               numberOfLines={2}
                             >
-                              {item.reasonScheduled || item.reasonToday}
+                              {item.reasonGapPlusCycle || item.reasonGapOnly}
                             </ThemedText>
                           )}
                         </View>
                       ) : (
                         <View style={styles.projectionGrid}>
+                          {hasGap && (
+                            <View style={styles.projectionCell}>
+                              <ThemedText style={[styles.projectionCellLabel, { color: colors.mutedForeground }]}>
+                                Até a próxima
+                              </ThemedText>
+                              <ThemedText style={[styles.projectionCellValue, { color: colors.foreground }]}>
+                                {goOrder ? `${item.quantityGapOnly} un · ${formatCurrency(item.totalGapOnly)}` : "—"}
+                              </ThemedText>
+                            </View>
+                          )}
                           <View style={styles.projectionCell}>
                             <ThemedText style={[styles.projectionCellLabel, { color: colors.mutedForeground }]}>
-                              Hoje
-                            </ThemedText>
-                            <ThemedText style={[styles.projectionCellValue, { color: colors.foreground }]}>
-                              {item.quantityToday} un · {formatCurrency(item.totalToday)}
-                            </ThemedText>
-                          </View>
-                          <View style={styles.projectionCell}>
-                            <ThemedText style={[styles.projectionCellLabel, { color: colors.mutedForeground }]}>
-                              Na data
+                              + Ciclo completo
                             </ThemedText>
                             <ThemedText style={[styles.projectionCellValue, { color: colors.primary }]}>
-                              {item.quantityScheduled} un · {formatCurrency(item.totalScheduled)}
+                              {gpcOrder ? `${item.quantityGapPlusCycle} un · ${formatCurrency(item.totalGapPlusCycle)}` : "—"}
                             </ThemedText>
                           </View>
                         </View>
@@ -700,12 +733,12 @@ function OrderScheduleDetailsScreenInner() {
         </Card>
 
         {/* Action Buttons */}
-        {canEdit && (
+        {canEdit && schedule.isActive && !schedule.finishedAt && (
           <Button
             variant="default"
             style={styles.actionButtonFull}
             onPress={handleOpenTrigger}
-            disabled={isTriggering}
+            disabled={!canTrigger}
           >
             {isTriggering ? (
               <ActivityIndicator size="small" color={colors.primaryForeground} />
@@ -713,7 +746,7 @@ function OrderScheduleDetailsScreenInner() {
               <IconBolt size={16} color={colors.primaryForeground} />
             )}
             <ThemedText style={{ color: colors.primaryForeground }}>
-              {isTriggering ? "Disparando..." : "Disparar agora"}
+              {isTriggering ? "Executando..." : "Executar agora"}
             </ThemedText>
           </Button>
         )}
@@ -758,7 +791,7 @@ function OrderScheduleDetailsScreenInner() {
         visible={showCascadeSheet}
         onClose={() => setShowCascadeSheet(false)}
         items={cascadeSheetItems}
-        title="Disparar agora"
+        title="Executar agora"
         message="Escolha a estratégia de cobertura para este pedido."
       />
     </ThemedView>
@@ -890,20 +923,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     marginTop: 2,
   },
-  summaryTotals: {
+  projectionMetaRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
-    marginTop: spacing.xs,
   },
-  summaryTotalBlock: {
-    flex: 1,
-  },
-  summaryTotalLabel: {
+  projectionMetaText: {
     fontSize: fontSize.xs,
-  },
-  summaryTotalValue: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
   },
   actionsContainer: {
     flexDirection: "row",
