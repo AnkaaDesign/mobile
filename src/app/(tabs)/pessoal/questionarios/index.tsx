@@ -16,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { IconChevronRight, IconClipboardList } from "@tabler/icons-react-native";
 
 import { useMyQuestionnaireEntries } from "@/hooks/useQuestionnaire";
+import { useTheme } from "@/lib/theme";
 import type { QuestionnaireEntry, QuestionnaireEntryStatus } from "@/types";
 
 const STATUS_LABEL: Record<QuestionnaireEntryStatus, string> = {
@@ -37,6 +38,7 @@ const fmt = (d: any) =>
 
 export default function MyQuestionnairesScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { data, isLoading } = useMyQuestionnaireEntries();
   const entries = useMemo(() => (data?.data ?? []) as QuestionnaireEntry[], [data]);
   const pending = useMemo(() => entries.filter(isPending), [entries]);
@@ -55,18 +57,27 @@ export default function MyQuestionnairesScreen() {
 
   const goToEntry = (id: string) => router.push(`/pessoal/questionarios/preencher/${id}` as any);
 
+  // While loading or about to direct-open (single pending entry), render only a
+  // themed spinner — never the "Meus Questionários" heading, which would flash
+  // for a moment before the redirect.
+  if (isLoading || pending.length === 1) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-2">
-        <IconClipboardList size={22} color="#15803d" />
+        <IconClipboardList size={22} color={colors.primary} />
         <Text className="text-xl font-bold text-foreground">Meus Questionários</Text>
       </View>
 
-      {isLoading || pending.length === 1 ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator />
-        </View>
-      ) : pending.length === 0 ? (
+      {pending.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-center text-sm text-muted-foreground">Nenhum questionário aberto.</Text>
         </View>

@@ -1010,6 +1010,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     sortOrder: 50,
     children: [
       { id: "meus-feriados-production", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
+      { id: "meus-questionarios-production", title: "Questionários", icon: "clipboardList", path: "/pessoal/questionarios" },
       { id: "minhas-mensagens-production", title: "Minhas Mensagens", icon: "message", path: "/pessoal/minhas-mensagens" },
       {
         id: "meu-bonus-production",

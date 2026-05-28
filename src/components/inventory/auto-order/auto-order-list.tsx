@@ -72,10 +72,7 @@ const NO_SUPPLIER_STRATEGY_OPTIONS: { value: NoSupplierStrategy; label: string }
   { value: "by-category", label: "Por categoria" },
 ];
 
-const TOOL_TYPES: Array<ITEM_CATEGORY_TYPE | null> = [
-  ITEM_CATEGORY_TYPE.TOOL,
-  ITEM_CATEGORY_TYPE.ELECTRONIC_TOOL,
-];
+const TOOL_TYPES: Array<ITEM_CATEGORY_TYPE | null> = [ITEM_CATEGORY_TYPE.TOOL];
 
 const groupKey = (supplierId: string | null) => supplierId || "no-supplier";
 

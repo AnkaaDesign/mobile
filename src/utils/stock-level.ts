@@ -10,13 +10,13 @@ import { ITEM_CATEGORY_TYPE, STOCK_LEVEL } from "../constants";
 const STOCK_LEVEL_LOW_MULTIPLIER = 1.2;
 
 /** Target on-hand quantity for tool-type items (mirror of the API's
- *  TOOL_TARGET_MIN). Tools hold a fixed minimum; below it is CRITICAL. */
+ *  TOOL_TARGET_MIN). Tools hold a fixed minimum and reorder only once they run
+ *  out (target 1 → reorder at qty 0). */
 const TOOL_TARGET_MIN: Record<string, number> = {
-  [ITEM_CATEGORY_TYPE.TOOL]: 2,
-  [ITEM_CATEGORY_TYPE.ELECTRONIC_TOOL]: 1,
+  [ITEM_CATEGORY_TYPE.TOOL]: 1,
 };
 const isToolType = (t: ITEM_CATEGORY_TYPE | null): boolean =>
-  t === ITEM_CATEGORY_TYPE.TOOL || t === ITEM_CATEGORY_TYPE.ELECTRONIC_TOOL;
+  t === ITEM_CATEGORY_TYPE.TOOL;
 
 /**
  * Spec §15 band classifier. Active pending orders do NOT shift thresholds —
@@ -47,9 +47,8 @@ export function determineStockLevel(
 ): STOCK_LEVEL {
   if (!Number.isFinite(quantity)) return STOCK_LEVEL.OPTIMAL;
 
-  // Tool short-circuit (spec §15.2). Tools maintain a fixed target minimum:
-  //   regular tool    → target 2 (qty>=2 OPTIMAL, qty==1 CRITICAL, qty<=0 OUT)
-  //   electronic tool → target 1 (qty>=1 OPTIMAL,               qty<=0 OUT)
+  // Tool short-circuit (spec §15.2). Tools maintain a fixed target minimum and
+  // reorder only once they run out: qty>=1 OPTIMAL, qty<=0 OUT_OF_STOCK.
   if (isToolType(categoryType)) {
     if (quantity <= 0) return STOCK_LEVEL.OUT_OF_STOCK;
     const target = TOOL_TARGET_MIN[categoryType as string] ?? 0;

@@ -16,10 +16,12 @@ import {
   IconAlertTriangle,
   IconCoin,
   IconClock,
+  IconClipboardList,
   IconMessageCircle,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useMyQuestionnaireEntries } from "@/hooks/useQuestionnaire";
 import { USER_STATUS } from "@/constants";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
@@ -31,6 +33,7 @@ interface PersonalMenuItem {
   route: string;
   available: boolean;
   requiresBonifiable?: boolean;
+  requiresOpenQuestionnaire?: boolean;
 }
 
 export default function PessoalScreen() {
@@ -44,7 +47,28 @@ export default function PessoalScreen() {
   const isBonifiable = currentUser?.status === USER_STATUS.EFFECTED &&
     currentUser?.position?.bonifiable === true;
 
+  // Mirror the web sidebar gate (useMyPendingQuestionnaireEntries): show the
+  // Questionários entry to ANY sector, but only while the user has at least one
+  // non-submitted entry. Keep it visible while the queue is still unknown so it
+  // doesn't flash in after load.
+  const { data: questionnaireResp } = useMyQuestionnaireEntries();
+  const hasOpenQuestionnaire = useMemo(() => {
+    if (!questionnaireResp) return true;
+    return ((questionnaireResp.data ?? []) as { status: string }[]).some(
+      (e) => e.status !== "SUBMITTED",
+    );
+  }, [questionnaireResp]);
+
   const allMenuItems: PersonalMenuItem[] = [
+    {
+      id: "questionnaires",
+      title: "Questionários",
+      description: "Responder questionário",
+      icon: <IconClipboardList size={28} color={colors.primary} />,
+      route: "/(tabs)/pessoal/questionarios",
+      available: true,
+      requiresOpenQuestionnaire: true,
+    },
     {
       id: "holidays",
       title: "Meus Feriados",
@@ -118,10 +142,13 @@ export default function PessoalScreen() {
       if (item.requiresBonifiable && !isBonifiable) {
         return false;
       }
+      if (item.requiresOpenQuestionnaire && !hasOpenQuestionnaire) {
+        return false;
+      }
       return true;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBonifiable, colors.primary]);
+  }, [isBonifiable, hasOpenQuestionnaire, colors.primary]);
 
   const handleMenuPress = (item: PersonalMenuItem) => {
     if (item.available) {

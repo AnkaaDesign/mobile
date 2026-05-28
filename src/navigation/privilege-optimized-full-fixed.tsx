@@ -322,6 +322,8 @@ const ALL_ROUTES = [
   { name: "pessoal/meus-emprestimos/detalhes/[id]", title: "Detalhes do Empréstimo" },
   { name: "pessoal/minhas-movimentacoes/index", title: "Minhas Movimentações" },
   { name: "pessoal/minhas-movimentacoes/listar", title: "Minhas Movimentações" },
+  { name: "pessoal/questionarios/index", title: "Questionários" },
+  { name: "pessoal/questionarios/preencher/[id]", title: "Questionário" },
   { name: "pessoal/minhas-movimentacoes/detalhes/[id]", title: "Detalhes da Movimentação" },
   { name: "pessoal/minhas-advertencias/index", title: "Minhas Advertências" },
   { name: "pessoal/minhas-advertencias/detalhes/[id]", title: "Detalhes da Advertência" },
