@@ -652,6 +652,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
           {/* Position */}
           <FormFieldGroup
             label="Cargo"
+            required={mode === "create"}
             error={form.formState.errors.positionId?.message}
           >
             <Controller
@@ -665,7 +666,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
                   placeholder="Selecione o cargo"
                   disabled={isLoading}
                   searchable
-                  clearable
+                  clearable={mode !== "create"}
                   error={error?.message}
                 />
               )}
@@ -675,6 +676,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
           {/* Sector */}
           <FormFieldGroup
             label="Setor"
+            required={mode === "create"}
             error={form.formState.errors.sectorId?.message}
           >
             <Controller
@@ -688,7 +690,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
                   placeholder="Selecione o setor"
                   disabled={isLoading}
                   searchable
-                  clearable
+                  clearable={mode !== "create"}
                   error={error?.message}
                 />
               )}

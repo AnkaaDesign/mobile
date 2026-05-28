@@ -59,3 +59,4 @@ export { timeClockEntryBatchUpdateSchema, timeClockJustificationSchema, normaliz
 export type { SecullumTimeEntry, TimeClockEntryBatchUpdateFormData, TimeClockJustificationFormData } from "./time-clock";
 export * from "./supplier-extended";
 export * from "./invoice";
+export * from "./questionnaire";

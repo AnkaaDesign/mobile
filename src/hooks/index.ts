@@ -254,3 +254,4 @@ export * from "./use-invoices-infinite-mobile";
 // NOTE: query-error-monitor is NOT exported here to prevent module initialization issues
 // It should be imported directly when needed: import { queryErrorMonitor } from './query-error-monitor'
 // This prevents the monitor from being bundled with every hooks import, avoiding QueryClient race conditions
+export * from "./useQuestionnaire";

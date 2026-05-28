@@ -321,6 +321,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
+      // Questionarios - self-fill, visible to ALL users (no requiredPrivilege)
+      { id: "meus-questionarios", title: "Questionarios", icon: "clipboardList", path: "/pessoal/questionarios" },
       { id: "minhas-mensagens", title: "Minhas Mensagens", icon: "message", path: "/pessoal/minhas-mensagens" },
       {
         id: "meu-bonus",

@@ -138,3 +138,4 @@ export { ItemBrandService, itemBrandService } from "./item-brand";
 export { NfseService, nfseService, getNfseList, getNfseDetail, getNfsePdf as getElotechNfsePdf } from "./nfse";
 export * from "./select-patterns";
 export * from "./task-quote";
+export * from "./questionnaire-entry";
