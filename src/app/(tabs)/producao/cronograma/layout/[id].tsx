@@ -11,7 +11,8 @@ import { SimpleFormField } from "@/components/ui/simple-form-field";
 import { MultiStepFormContainer } from "@/components/forms";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { LayoutForm } from "@/components/production/layout/layout-form";
-import { useTaskDetail, useLayoutsByTruck, useLayoutMutations, useScreenReady} from '@/hooks';
+import { useTaskDetail, useLayoutsByTruck, useLayoutMutations, useScreenReady, layoutQueryKeys } from '@/hooks';
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useNav } from "@/contexts/nav";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
@@ -24,7 +25,7 @@ import { canEditLayoutForTask } from "@/utils/permissions/entity-permissions";
 import type { LayoutCreateFormData, TruckCreateFormData } from "@/schemas";
 import type { FormStep } from "@/components/ui/form-steps";
 import { Icon } from "@/components/ui/icon";
-import { truckService } from "@/api-client";
+import { truckService, layoutService, apiClient } from "@/api-client";
 
 const WIZARD_STEPS: FormStep[] = [
   { id: 1, name: "Motorista", description: "Lado esquerdo" },
@@ -45,7 +46,8 @@ function LayoutOnlyEditInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { createOrUpdateTruckLayout, isSavingTruckLayout } = useLayoutMutations();
+  const { isSavingTruckLayout } = useLayoutMutations();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch task details
@@ -269,31 +271,66 @@ function LayoutOnlyEditInner() {
         }
       }
 
-      // Save each modified side
-      const savePromises: Promise<any>[] = [];
+      // Build the batch body with ONLY the modified sides. The server sends a
+      // single consolidated notification for the whole batch instead of one
+      // notification per side (the old Promise.all fan-out behaviour).
+      const batchBody: { left?: any; right?: any; back?: any } = {};
+
+      // A NEW back-side photo (local file URI) cannot ride in the JSON batch
+      // body — it needs the multipart single-side endpoint. We upload it
+      // separately and keep it OUT of the batch.
+      const backLayout = layouts.back as any;
+      const backHasNewPhoto =
+        modifiedLayoutSides.has('back') && !!backLayout?.photoUri;
 
       for (const side of modifiedLayoutSides) {
         const layoutData = layouts[side];
 
         if (layoutData && layoutData.layoutSections && layoutData.layoutSections.length > 0) {
-          console.log(`[LayoutOnlyEdit] 💾 Saving ${side} layout:`, {
-            hasPhotoUri: !!(layoutData as any).photoUri,
-            photoUri: (layoutData as any).photoUri,
+          // The back side with a new photo is handled via the multipart path below.
+          if (side === 'back' && backHasNewPhoto) {
+            continue;
+          }
+          // Strip photoUri (local file URI) — same as the single-side JSON path.
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { photoUri, ...sideData } = layoutData as any;
+          console.log(`[LayoutOnlyEdit] 💾 Queuing ${side} layout for batch:`, {
+            hasPhotoUri: !!photoUri,
             hasPhotoId: !!layoutData.photoId,
             photoId: layoutData.photoId,
             sectionsCount: layoutData.layoutSections.length,
           });
-          savePromises.push(
-            createOrUpdateTruckLayout({
-              truckId: activeTruckId,
-              side,
-              data: layoutData,
-            })
-          );
+          batchBody[side] = sideData;
         }
       }
 
-      await Promise.all(savePromises);
+      // Consolidated batch save for the JSON sides — ONE request, ONE notification.
+      // TODO(lead): confirm the batch endpoint path/body shape. Assumed
+      // `POST /layout/truck/:truckId/batch` with body `{ left?, right?, back? }`
+      // (each = layout data minus photoUri). The single-side endpoint is
+      // `POST /layout/truck/:truckId/:side` in layoutService.createOrUpdateTruckLayout.
+      if (Object.keys(batchBody).length > 0) {
+        await apiClient.post(`/layout/truck/${activeTruckId}/batch`, batchBody);
+      }
+
+      // Upload a new back-side photo via the multipart single-side endpoint.
+      // TODO(lead): this is a SEPARATE request (extra notification) because the
+      // JSON batch body cannot carry a file. If the batch endpoint should accept
+      // the back photo (e.g. multipart) so this stays a single notification,
+      // adjust here once the backend contract is confirmed.
+      if (backHasNewPhoto) {
+        await layoutService.createOrUpdateTruckLayout(activeTruckId, 'back', backLayout);
+      }
+
+      if (Object.keys(batchBody).length === 0 && !backHasNewPhoto) {
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Mirror the cache invalidation that useLayoutMutations did per-side.
+      queryClient.invalidateQueries({ queryKey: layoutQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: layoutQueryKeys.byTruck(activeTruckId) });
+      queryClient.invalidateQueries({ queryKey: ["trucks", "detail", activeTruckId] });
 
       // API client already shows success alert
       // Navigate back to the correct list based on navigation source

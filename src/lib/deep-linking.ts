@@ -66,6 +66,25 @@ export const ROUTE_MAP = {
 
   // Financial
   FinancialCustomer: '/(tabs)/financeiro/clientes/detalhes/[id]',
+
+  // Message (personal inbox - list route, no [id] segment)
+  Message: '/(tabs)/pessoal/minhas-mensagens',
+  // Questionnaire (self-fill, personal domain - list route, no [id] segment)
+  Questionnaire: '/(tabs)/pessoal/questionarios',
+  // Assessment / competency evaluation (no dedicated mobile detail page yet - notifications list)
+  Assessment: '/(tabs)/pessoal/minhas-notificacoes',
+  // Reconciliation run (no dedicated mobile page yet - notifications list)
+  ReconciliationRun: '/(tabs)/pessoal/minhas-notificacoes',
+  // Order schedule (no dedicated mobile detail page yet - orders list)
+  OrderSchedule: '/(tabs)/estoque/pedidos',
+  // Task quote / budget (id is the taskId; orcamento detail screen is detalhes/[taskId])
+  TaskQuote: '/(tabs)/financeiro/orcamento/detalhes/[taskId]',
+  // Secullum solicitation (RH approvers review under calculos; employee self-service is meus-pontos)
+  SecullumSolicitacao: '/(tabs)/recursos-humanos/calculos',
+  // Payroll (no dedicated mobile detail page yet - notifications list fallback)
+  Payroll: '/(tabs)/pessoal/minhas-notificacoes',
+  // Bank slip / fatura (no dedicated mobile page yet - notifications list fallback)
+  BankSlip: '/(tabs)/pessoal/minhas-notificacoes',
 } as const;
 
 /**
@@ -202,6 +221,20 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   PPEDELIVERY: 'PpeDelivery',
   MY_PPE: 'PpeDelivery',
   MYPPE: 'PpeDelivery',
+  MESSAGE: 'Message',
+  QUESTIONNAIRE: 'Questionnaire',
+  ASSESSMENT: 'Assessment',
+  RECONCILIATION_RUN: 'ReconciliationRun',
+  RECONCILIATIONRUN: 'ReconciliationRun',
+  ORDER_SCHEDULE: 'OrderSchedule',
+  ORDERSCHEDULE: 'OrderSchedule',
+  TASK_QUOTE: 'TaskQuote',
+  TASKQUOTE: 'TaskQuote',
+  SECULLUM_SOLICITACAO: 'SecullumSolicitacao',
+  SECULLUMSOLICITACAO: 'SecullumSolicitacao',
+  PAYROLL: 'Payroll',
+  BANK_SLIP: 'BankSlip',
+  BANKSLIP: 'BankSlip',
 
   // PascalCase variants (for direct entity type matching)
   Task: 'Task',
@@ -238,6 +271,15 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   FinancialCustomer: 'FinancialCustomer',
   PpeDelivery: 'PpeDelivery',
   MyPpe: 'PpeDelivery',
+  Message: 'Message',
+  Questionnaire: 'Questionnaire',
+  Assessment: 'Assessment',
+  ReconciliationRun: 'ReconciliationRun',
+  OrderSchedule: 'OrderSchedule',
+  TaskQuote: 'TaskQuote',
+  SecullumSolicitacao: 'SecullumSolicitacao',
+  Payroll: 'Payroll',
+  BankSlip: 'BankSlip',
 
   // Lowercase variants (existing)
   task: 'Task',
@@ -322,6 +364,59 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   'entregas-epi': 'PpeDelivery',
   'meu-epi': 'PpeDelivery',
   'meus-epis': 'PpeDelivery',
+
+  // Message routes
+  message: 'Message',
+  messages: 'Message',
+  mensagem: 'Message',
+  mensagens: 'Message',
+
+  // Questionnaire routes
+  questionnaire: 'Questionnaire',
+  questionnaires: 'Questionnaire',
+  questionario: 'Questionnaire',
+  questionarios: 'Questionnaire',
+
+  // Assessment / competency evaluation routes
+  assessment: 'Assessment',
+  assessments: 'Assessment',
+  avaliacao: 'Assessment',
+  avaliacoes: 'Assessment',
+
+  // Reconciliation run routes
+  'reconciliation-run': 'ReconciliationRun',
+  reconciliationrun: 'ReconciliationRun',
+  conciliacao: 'ReconciliationRun',
+
+  // Order schedule routes
+  'order-schedule': 'OrderSchedule',
+  orderschedule: 'OrderSchedule',
+  'agendamento-pedido': 'OrderSchedule',
+  'agendamentos-pedido': 'OrderSchedule',
+
+  // Task quote / budget routes
+  'task-quote': 'TaskQuote',
+  taskquote: 'TaskQuote',
+  orcamento: 'TaskQuote',
+  orcamentos: 'TaskQuote',
+
+  // Secullum solicitation routes
+  'secullum-solicitacao': 'SecullumSolicitacao',
+  secullumsolicitacao: 'SecullumSolicitacao',
+  secullum: 'SecullumSolicitacao',
+
+  // Payroll routes (no dedicated mobile detail page yet)
+  payroll: 'Payroll',
+  'folha-de-pagamento': 'Payroll',
+  'folha-pagamento': 'Payroll',
+
+  // Bank slip / fatura routes (no dedicated mobile detail page yet)
+  'bank-slip': 'BankSlip',
+  bankslip: 'BankSlip',
+  fatura: 'BankSlip',
+  faturas: 'BankSlip',
+  boleto: 'BankSlip',
+  boletos: 'BankSlip',
 };
 
 // =====================================================
@@ -332,6 +427,20 @@ export interface ParsedDeepLink {
   route: string;
   params?: Record<string, any>;
   requiresAuth?: boolean;
+}
+
+/**
+ * Replaces the dynamic segment of a route template with a concrete id.
+ *
+ * Most routes use the `[id]` param, but some screens declare a differently
+ * named param (e.g. orcamento uses `detalhes/[taskId]`). A naive
+ * `route.replace('[id]', id)` would leave a literal `[taskId]` segment and the
+ * navigation would fail. This helper substitutes whichever single `[param]`
+ * token the route declares so the resolved path matches the actual screen file.
+ */
+function fillRouteParam(route: string, id: string): string {
+  // Replace any single [param] token (e.g. [id], [taskId], [orderId]) with the id.
+  return route.replace(/\[[^/\]]+\]/, id);
 }
 
 /**
@@ -448,7 +557,7 @@ export function parseDeepLink(url: string): ParsedDeepLink {
         if (id) {
           console.log('[Deep Link] Entity shortcut matched:', { entityType, id });
           return {
-            route: route.replace('[id]', id),
+            route: fillRouteParam(route, id),
             params: { id },
             requiresAuth: true,
           };
@@ -533,7 +642,7 @@ export function parseDeepLink(url: string): ParsedDeepLink {
             const route = ROUTE_MAP[entityType];
             console.log('[Deep Link] Web path pattern matched:', { webPathKey, entityType, id });
             return {
-              route: route.replace('[id]', id),
+              route: fillRouteParam(route, id),
               params: { id },
               requiresAuth: true,
             };
@@ -554,7 +663,7 @@ export function parseDeepLink(url: string): ParsedDeepLink {
           console.log('[Deep Link] Path pattern matched:', { section, entityPath, entityType, id });
 
           return {
-            route: route.replace('[id]', id),
+            route: fillRouteParam(route, id),
             params: { id },
             requiresAuth: true,
           };
@@ -603,7 +712,7 @@ function parseNotificationLink(queryParams?: Record<string, any>): ParsedDeepLin
   if (route) {
     console.log('[Deep Link] Notification link matched:', { entityType, id });
     return {
-      route: route.replace('[id]', id),
+      route: fillRouteParam(route, id),
       params: { id },
       requiresAuth: true,
     };

@@ -372,7 +372,7 @@ export function TaskForm({
         initialLogoPaints={task?.logoPaints}
       />
 
-      {/* Truck Layout (Medidas do Caminhão) */}
+      {/* Truck Layout (Layout do Caminhão) */}
       <Suspense fallback={<SectionPlaceholder title="Carregando medidas..." />}>
         {canViewTruckLayout && (
           <TruckLayoutSection

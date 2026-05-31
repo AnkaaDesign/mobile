@@ -404,7 +404,7 @@ export default function ScheduleDetailsScreen() {
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
                   <IconLayoutGrid size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.sectionTitle}>Medidas do Caminhão</ThemedText>
+                  <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
                 </View>
               </View>
               <View style={styles.sectionContent}>

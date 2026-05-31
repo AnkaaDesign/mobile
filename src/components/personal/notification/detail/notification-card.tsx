@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import type { Notification } from "@/types";
 import { formatDateTime } from "@/utils";
-import { NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE } from "@/constants";
+import { NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE, NOTIFICATION_ACTION_TYPE_LABELS, NOTIFICATION_CHANNEL_LABELS } from "@/constants";
 import {
   IconBell,
   IconCheck,
@@ -132,7 +132,14 @@ export function NotificationCard({ notification }: NotificationCardProps) {
         {(notification.actionType || notification.actionUrl) && (
           <DetailSection title="Ação">
             {notification.actionType && (
-              <DetailField label="Tipo de Ação" value={notification.actionType} />
+              <DetailField
+                label="Tipo de Ação"
+                value={
+                  NOTIFICATION_ACTION_TYPE_LABELS[
+                    notification.actionType as keyof typeof NOTIFICATION_ACTION_TYPE_LABELS
+                  ] ?? notification.actionType
+                }
+              />
             )}
             {notification.actionUrl && (
               <DetailField label="URL" value={notification.actionUrl} />
@@ -146,7 +153,7 @@ export function NotificationCard({ notification }: NotificationCardProps) {
             <View style={styles.channelsContainer}>
               {notification.channel.map((channel, index) => (
                 <Badge key={index} variant="secondary" size="sm">
-                  <ThemedText style={styles.badgeText}>{channel}</ThemedText>
+                  <ThemedText style={styles.badgeText}>{NOTIFICATION_CHANNEL_LABELS[channel] ?? channel}</ThemedText>
                 </Badge>
               ))}
             </View>

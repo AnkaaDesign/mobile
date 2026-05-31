@@ -1,6 +1,6 @@
 /**
  * Truck Layout Section Component
- * Handles truck layout configuration for each side (driver, passenger, back)
+ * Handles truck layout configuration for each side (Motorista, Sapo, Traseira)
  *
  * Layout changes are tracked OUTSIDE react-hook-form's dirty system (matching web).
  * The parent (TaskForm) passes onLayoutChange callback to collect modified layout data.
@@ -76,7 +76,7 @@ export default function TruckLayoutSection({
   };
 
   return (
-    <FormCard title="Medidas do Caminhão" icon="IconTruck">
+    <FormCard title="Layout do Caminhão" icon="IconTruck">
       {/* Side Selector */}
       <View style={[styles.sideSelector, { backgroundColor: colors.muted }]}>
         {(['left', 'right', 'back'] as const).map((side) => (

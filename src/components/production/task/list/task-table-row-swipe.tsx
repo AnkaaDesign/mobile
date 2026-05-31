@@ -107,7 +107,7 @@ const TaskTableRowSwipeComponent = ({
     // Layout option - ADMIN, LOGISTIC, or Team Leaders
     if (onEditLayout && userCanViewLayout) {
       options.push({
-        label: hasLayout ? "Editar Medidas" : "Adicionar Medidas",
+        label: hasLayout ? "Editar Layout" : "Adicionar Layout",
         action: () => onEditLayout(taskId),
       });
     }
