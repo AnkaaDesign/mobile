@@ -10,6 +10,9 @@ import {
   getRegularCategories,
   getToolCategories,
   getCategoriesByType,
+  getCategoryTree,
+  getRootCategories,
+  getSubcategories,
   updateItemCategory,
   batchCreateItemCategories,
   batchUpdateItemCategories,
@@ -25,6 +28,7 @@ import type {
   ItemCategoryBatchDeleteFormData,
   ItemCategoryInclude,
 } from '@/schemas';
+import type { ItemCategory } from '@/types';
 import type {
   ItemCategoryGetManyResponse,
   ItemCategoryGetUniqueResponse,
@@ -148,6 +152,58 @@ export const useToolCategories = (options?: { enabled?: boolean; staleTime?: num
     queryFn: () => getToolCategories(),
     staleTime: options?.staleTime ?? 1000 * 60 * 10, // 10 minutes
     enabled: options?.enabled,
+  });
+};
+
+/**
+ * Hook to fetch the category tree: top-level Categorias (level 1) with their
+ * Subcategoria children. Unwraps the API envelope and returns the array
+ * directly via react-query `select`, matching the web tree hook contract so
+ * consumers can `.map`/`.filter` without touching `.data`.
+ */
+export const useItemCategoryTree = (
+  params?: Partial<ItemCategoryGetManyFormData>,
+  options?: { enabled?: boolean; staleTime?: number },
+) => {
+  return useQuery({
+    queryKey: itemCategoryKeys.tree(params),
+    queryFn: () => getCategoryTree(params),
+    select: (response): ItemCategory[] => response?.data ?? [],
+    staleTime: options?.staleTime ?? 1000 * 60 * 10,
+    enabled: options?.enabled,
+  });
+};
+
+/**
+ * Hook to fetch only top-level Categorias (level 1). Returns the array.
+ */
+export const useRootCategories = (
+  params?: Partial<ItemCategoryGetManyFormData>,
+  options?: { enabled?: boolean; staleTime?: number },
+) => {
+  return useQuery({
+    queryKey: itemCategoryKeys.roots(params),
+    queryFn: () => getRootCategories(params),
+    select: (response): ItemCategory[] => response?.data ?? [],
+    staleTime: options?.staleTime ?? 1000 * 60 * 10,
+    enabled: options?.enabled,
+  });
+};
+
+/**
+ * Hook to fetch Subcategorias (level 2) under a parent Categoria. Returns the array.
+ */
+export const useSubcategories = (
+  parentId: string,
+  params?: Partial<ItemCategoryGetManyFormData>,
+  options?: { enabled?: boolean; staleTime?: number },
+) => {
+  return useQuery({
+    queryKey: itemCategoryKeys.subcategories(parentId, params),
+    queryFn: () => getSubcategories(parentId, params),
+    select: (response): ItemCategory[] => response?.data ?? [],
+    staleTime: options?.staleTime ?? 1000 * 60 * 10,
+    enabled: (options?.enabled ?? true) && !!parentId,
   });
 };
 

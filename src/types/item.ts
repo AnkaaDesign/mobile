@@ -1,7 +1,7 @@
 // packages/interfaces/src/item.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse, BaseMergeResponse } from "./common";
-import type { MEASURE_UNIT, ORDER_BY_DIRECTION, ABC_CATEGORY, XYZ_CATEGORY, PPE_TYPE, PPE_SIZE, PPE_DELIVERY_MODE, ITEM_CATEGORY_TYPE, STOCK_LEVEL } from '@/constants';
+import type { MEASURE_UNIT, ORDER_BY_DIRECTION, ABC_CATEGORY, XYZ_CATEGORY, PPE_TYPE, PPE_SIZE, PPE_DELIVERY_MODE, ITEM_CATEGORY_TYPE, ACCOUNTING_TYPE, STOCK_LEVEL } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
 import type { Activity, ActivityIncludes } from "./activity";
 import type { Borrow, BorrowIncludes } from "./borrow";
@@ -30,7 +30,15 @@ export interface ItemCategory extends BaseEntity {
   type: ITEM_CATEGORY_TYPE;
   typeOrder: number;
 
+  // Hierarchy (operational Categoria -> Subcategoria)
+  parentId: string | null;
+  categoryLevel: number; // 1 = category, 2 = subcategory
+  // Accounting rollup (read-only classification)
+  accountingType: ACCOUNTING_TYPE | null;
+
   // Relations
+  parent?: ItemCategory | null;
+  children?: ItemCategory[];
   items?: Item[];
 }
 
@@ -70,6 +78,8 @@ export interface Item extends BaseEntity {
   xyzCategoryOrder: number | null;
   stockLevel: STOCK_LEVEL | null;
   hasActiveOrder: boolean;
+  // Flags item whose category assignment needs review after taxonomy migration
+  categoryReviewNeeded: boolean;
 
   // PPE-specific fields (when item is a PPE)
   ppeType: PPE_TYPE | null;

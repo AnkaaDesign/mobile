@@ -58,6 +58,11 @@ export default function CategoryDetailScreen() {
       id: true,
       name: true,
       type: true,
+      parentId: true,
+      categoryLevel: true,
+      accountingType: true,
+      categoryReviewNeeded: true,
+      parent: { select: { id: true, name: true, type: true, categoryLevel: true, accountingType: true } },
       createdAt: true,
       updatedAt: true,
       // Items - only fields displayed in the UI

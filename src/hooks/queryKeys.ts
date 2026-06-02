@@ -393,6 +393,11 @@ export const itemCategoryKeys = {
   ppe: (filters?: Partial<ItemCategoryGetManyFormData>) => (filters ? (["itemCategories", "ppe", filters] as const) : (["itemCategories", "ppe"] as const)),
   regular: (filters?: Partial<ItemCategoryGetManyFormData>) => (filters ? (["itemCategories", "regular", filters] as const) : (["itemCategories", "regular"] as const)),
   tool: (filters?: Partial<ItemCategoryGetManyFormData>) => (filters ? (["itemCategories", "tool", filters] as const) : (["itemCategories", "tool"] as const)),
+  // Hierarchy queries (3-level Categoria -> Subcategoria restructure)
+  tree: (filters?: Partial<ItemCategoryGetManyFormData>) => (filters ? (["itemCategories", "tree", filters] as const) : (["itemCategories", "tree"] as const)),
+  roots: (filters?: Partial<ItemCategoryGetManyFormData>) => (filters ? (["itemCategories", "roots", filters] as const) : (["itemCategories", "roots"] as const)),
+  subcategories: (parentId: string, filters?: Partial<ItemCategoryGetManyFormData>) =>
+    filters ? (["itemCategories", "subcategories", parentId, filters] as const) : (["itemCategories", "subcategories", parentId] as const),
 };
 
 // =====================================================

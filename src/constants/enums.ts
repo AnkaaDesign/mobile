@@ -1760,6 +1760,29 @@ export enum ITEM_CATEGORY_TYPE {
   PPE = "PPE",
 }
 
+// Accounting rollup classification for item categories (read-only rollup on items)
+export enum ACCOUNTING_TYPE {
+  SALARIOS = "SALARIOS",
+  DESPESAS_FIXAS = "DESPESAS_FIXAS",
+  PRODUTIVO = "PRODUTIVO",
+  IMPOSTO_TARIFAS = "IMPOSTO_TARIFAS",
+  MATERIA_PRIMA = "MATERIA_PRIMA",
+  INVESTIMENTO = "INVESTIMENTO",
+  MANUTENCAO = "MANUTENCAO",
+  COZINHA_ALIMENTACAO = "COZINHA_ALIMENTACAO",
+  EPI = "EPI",
+  ESCRITORIO = "ESCRITORIO",
+  APLICACAO_FINANCEIRA = "APLICACAO_FINANCEIRA",
+  ESTORNO = "ESTORNO",
+  LUCRO_DISTRIBUIDO = "LUCRO_DISTRIBUIDO",
+}
+
+// Category hierarchy levels: 1 = top-level Categoria, 2 = Subcategoria (leaf)
+export enum ITEM_CATEGORY_LEVEL {
+  CATEGORY = 1,
+  SUBCATEGORY = 2,
+}
+
 // =====================
 // Financial - Expense Management
 // =====================

@@ -48,6 +48,7 @@ import {
   TREND_TYPE,
   ABC_CATEGORY,
   XYZ_CATEGORY,
+  ACCOUNTING_TYPE,
   VALIDATION_SEVERITY,
   VERIFICATION_ERROR_SEVERITY,
   SECTOR_PRIVILEGES,
@@ -876,6 +877,71 @@ export const XYZ_BADGE_COLORS: Record<
 };
 
 /**
+ * Accounting Type (DRE bucket) Badge Colors for React Native
+ * Distinct color per accounting classification for charts/badges.
+ */
+export const ACCOUNTING_TYPE_COLORS: Record<
+  ACCOUNTING_TYPE,
+  {
+    bg: string;
+    text: string;
+  }
+> = {
+  [ACCOUNTING_TYPE.SALARIOS]: {
+    bg: "#dbeafe", // blue-100
+    text: "#1d4ed8", // blue-700
+  },
+  [ACCOUNTING_TYPE.DESPESAS_FIXAS]: {
+    bg: "#f1f5f9", // slate-100
+    text: "#334155", // slate-700
+  },
+  [ACCOUNTING_TYPE.PRODUTIVO]: {
+    bg: "#dcfce7", // green-100
+    text: "#15803d", // green-700
+  },
+  [ACCOUNTING_TYPE.IMPOSTO_TARIFAS]: {
+    bg: "#fee2e2", // red-100
+    text: "#b91c1c", // red-700
+  },
+  [ACCOUNTING_TYPE.MATERIA_PRIMA]: {
+    bg: "#fef3c7", // amber-100
+    text: "#b45309", // amber-700
+  },
+  [ACCOUNTING_TYPE.INVESTIMENTO]: {
+    bg: "#e0e7ff", // indigo-100
+    text: "#4338ca", // indigo-700
+  },
+  [ACCOUNTING_TYPE.MANUTENCAO]: {
+    bg: "#ffedd5", // orange-100
+    text: "#c2410c", // orange-700
+  },
+  [ACCOUNTING_TYPE.COZINHA_ALIMENTACAO]: {
+    bg: "#fef9c3", // yellow-100
+    text: "#a16207", // yellow-700
+  },
+  [ACCOUNTING_TYPE.EPI]: {
+    bg: "#cffafe", // cyan-100
+    text: "#0e7490", // cyan-700
+  },
+  [ACCOUNTING_TYPE.ESCRITORIO]: {
+    bg: "#ede9fe", // violet-100
+    text: "#6d28d9", // violet-700
+  },
+  [ACCOUNTING_TYPE.APLICACAO_FINANCEIRA]: {
+    bg: "#d1fae5", // emerald-100
+    text: "#047857", // emerald-700
+  },
+  [ACCOUNTING_TYPE.ESTORNO]: {
+    bg: "#fce7f3", // pink-100
+    text: "#be185d", // pink-700
+  },
+  [ACCOUNTING_TYPE.LUCRO_DISTRIBUIDO]: {
+    bg: "#ccfbf1", // teal-100
+    text: "#0f766e", // teal-700
+  },
+};
+
+/**
  * Boolean Badge Configurations
  * For fields like type, isActive, etc.
  */
@@ -963,6 +1029,13 @@ export function getXYZBadgeColors(category: XYZ_CATEGORY) {
 }
 
 /**
+ * Helper function to get accounting type badge colors
+ */
+export function getAccountingTypeColors(accountingType: ACCOUNTING_TYPE) {
+  return ACCOUNTING_TYPE_COLORS[accountingType];
+}
+
+/**
  * Export all badge configurations for use across the application
  */
 export default {
@@ -971,10 +1044,12 @@ export default {
   GENERIC_STATUS_CONFIG,
   ABC_BADGE_COLORS,
   XYZ_BADGE_COLORS,
+  ACCOUNTING_TYPE_COLORS,
   BOOLEAN_BADGE_CONFIG,
   getBadgeVariant,
   getBadgeColors,
   getBooleanBadgeVariant,
   getABCBadgeColors,
   getXYZBadgeColors,
+  getAccountingTypeColors,
 };

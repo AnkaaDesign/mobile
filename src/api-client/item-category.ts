@@ -1,7 +1,7 @@
 // packages/api-client/src/item-category.ts
 
 import { apiClient } from "./axiosClient";
-import { ITEM_CATEGORY_TYPE } from '../constants';
+import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_LEVEL, ACCOUNTING_TYPE } from '../constants';
 import type {
   // Schema types (for parameters)
   ItemCategoryGetManyFormData,
@@ -104,6 +104,53 @@ export class ItemCategoryService {
     return response.data;
   }
 
+  /**
+   * Fetch top-level Categorias (categoryLevel = 1) with their subcategory children.
+   * Returns the category tree.
+   */
+  async getCategoryTree(params?: Partial<ItemCategoryGetManyFormData>): Promise<ItemCategoryGetManyResponse> {
+    return this.getItemCategories({
+      ...params,
+      categoryLevel: ITEM_CATEGORY_LEVEL.CATEGORY,
+      include: { children: true, ...(params?.include || {}) },
+      orderBy: params?.orderBy ?? { name: "asc" },
+    });
+  }
+
+  /**
+   * Fetch only top-level Categorias (categoryLevel = 1).
+   */
+  async getRootCategories(params?: Partial<ItemCategoryGetManyFormData>): Promise<ItemCategoryGetManyResponse> {
+    return this.getItemCategories({
+      ...params,
+      categoryLevel: ITEM_CATEGORY_LEVEL.CATEGORY,
+      orderBy: params?.orderBy ?? { name: "asc" },
+    });
+  }
+
+  /**
+   * Fetch Subcategorias (categoryLevel = 2) belonging to a given parent Categoria.
+   */
+  async getSubcategories(parentId: string, params?: Partial<ItemCategoryGetManyFormData>): Promise<ItemCategoryGetManyResponse> {
+    return this.getItemCategories({
+      ...params,
+      parentId,
+      categoryLevel: ITEM_CATEGORY_LEVEL.SUBCATEGORY,
+      orderBy: params?.orderBy ?? { name: "asc" },
+    });
+  }
+
+  /**
+   * Fetch categories by accounting rollup classification.
+   */
+  async getCategoriesByAccountingType(accountingType: ACCOUNTING_TYPE, params?: Partial<ItemCategoryGetManyFormData>): Promise<ItemCategoryGetManyResponse> {
+    return this.getItemCategories({
+      ...params,
+      accountingType,
+      orderBy: params?.orderBy ?? { name: "asc" },
+    });
+  }
+
   // =====================
   // Mutation Operations
   // =====================
@@ -170,6 +217,11 @@ export const getPpeCategories = () => itemCategoryService.getPpeCategories();
 export const getRegularCategories = () => itemCategoryService.getRegularCategories();
 export const getToolCategories = () => itemCategoryService.getToolCategories();
 export const getCategoriesByType = (type: ITEM_CATEGORY_TYPE) => itemCategoryService.getCategoriesByType(type);
+export const getCategoryTree = (params?: Partial<ItemCategoryGetManyFormData>) => itemCategoryService.getCategoryTree(params);
+export const getRootCategories = (params?: Partial<ItemCategoryGetManyFormData>) => itemCategoryService.getRootCategories(params);
+export const getSubcategories = (parentId: string, params?: Partial<ItemCategoryGetManyFormData>) => itemCategoryService.getSubcategories(parentId, params);
+export const getCategoriesByAccountingType = (accountingType: ACCOUNTING_TYPE, params?: Partial<ItemCategoryGetManyFormData>) =>
+  itemCategoryService.getCategoriesByAccountingType(accountingType, params);
 export const getItemCategoryById = (id: string, params?: ItemCategoryGetByIdFormData) => itemCategoryService.getItemCategoryById(id, params);
 
 // Mutation Operations

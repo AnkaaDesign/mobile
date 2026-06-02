@@ -32,7 +32,15 @@ function CategoryEditScreen() {
   const { updateAsync } = useItemCategoryMutations();
 
   const { data: response, isLoading, error } = useItemCategory(id!, {
-    select: { id: true, name: true, type: true },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      parentId: true,
+      categoryLevel: true,
+      accountingType: true,
+      parent: { select: { id: true, name: true, type: true, categoryLevel: true, accountingType: true } },
+    },
   });
 
   useScreenReady(!isLoading);
@@ -104,7 +112,14 @@ function CategoryEditScreen() {
     <ItemCategoryForm
       key={id}
       mode="update"
-      defaultValues={{ name: category.name, type: category.type }}
+      defaultValues={{
+        name: category.name,
+        type: category.type,
+        parentId: category.parentId ?? null,
+        categoryLevel: category.categoryLevel,
+        accountingType: category.accountingType ?? null,
+      }}
+      initialParent={category.parent ?? undefined}
       onSubmit={handleFormSubmit}
       onCancel={handleCancel}
       isSubmitting={false}

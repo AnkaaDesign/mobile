@@ -62,7 +62,17 @@ function ItemEditScreen() {
       ppeDeliveryMode: true,
       ppeStandardQuantity: true,
       brand: { select: { id: true, name: true } },
-      category: { select: { id: true, name: true, type: true } },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          parentId: true,
+          categoryLevel: true,
+          accountingType: true,
+          parent: { select: { id: true, name: true, type: true, categoryLevel: true, accountingType: true } },
+        },
+      },
       supplier: { select: { id: true, fantasyName: true } },
       measures: {
         select: { id: true, value: true, unit: true, measureType: true },

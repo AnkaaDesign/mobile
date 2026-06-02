@@ -84,6 +84,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       supplierId: apiData.supplierId,
       estimatedLeadTime: apiData.estimatedLeadTime,
       isActive: apiData.isActive,
+      categoryReviewNeeded: apiData.categoryReviewNeeded,
       price: currentPrice,
       // PPE fields
       ppeType: apiData.ppeType,
