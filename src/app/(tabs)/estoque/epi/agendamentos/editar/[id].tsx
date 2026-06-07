@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useLocalSearchParams } from "expo-router";
@@ -9,11 +9,13 @@ import { Switch } from "@/components/ui/switch";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { FormScreen } from "@/components/screens/form-screen";
 import { useFormFlow } from "@/hooks/use-form-flow";
+import { usePpeDeliverySchedule, usePpeDeliveryScheduleMutations } from "@/hooks";
 import { mobileRoute } from "@/constants/routes.types";
 import {
   routes,
   SCHEDULE_FREQUENCY,
   ASSIGNMENT_TYPE,
+  PPE_TYPE,
   SECTOR_PRIVILEGES,
 } from "@/constants";
 import {
@@ -38,41 +40,63 @@ export default function EditPPEScheduleScreen() {
 
 function EditPPEScheduleScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { updateAsync } = usePpeDeliveryScheduleMutations();
 
-  // TODO: Use real schedule hook when available.
-  const schedule: any = null;
+  const { data: response } = usePpeDeliverySchedule(id || "", {
+    include: { items: true },
+    enabled: !!id,
+  });
+  const schedule = response?.data;
 
   const form = useForm<PpeScheduleEditForm>({
-    defaultValues: schedule
-      ? {
-          name: schedule.name,
-          frequency: schedule.frequency,
-          frequencyCount: schedule.frequencyCount,
-          assignmentType: schedule.assignmentType,
-          ppeTypes: schedule.ppeTypes || [],
-          isActive: schedule.isActive,
-        }
-      : {
-          name: "",
-          frequency: SCHEDULE_FREQUENCY.MONTHLY,
-          frequencyCount: 1,
-          assignmentType: ASSIGNMENT_TYPE.ALL,
-          ppeTypes: [],
-          isActive: true,
-        },
+    defaultValues: {
+      name: "",
+      frequency: SCHEDULE_FREQUENCY.MONTHLY,
+      frequencyCount: 1,
+      assignmentType: ASSIGNMENT_TYPE.ALL,
+      ppeTypes: [],
+      isActive: true,
+    },
   });
+
+  // Prefill once the schedule loads.
+  const prefilledRef = useRef(false);
+  useEffect(() => {
+    if (!schedule || prefilledRef.current) return;
+    prefilledRef.current = true;
+    form.reset({
+      name: schedule.name,
+      frequency: schedule.frequency,
+      frequencyCount: schedule.frequencyCount,
+      assignmentType: schedule.assignmentType,
+      ppeTypes: (schedule.items ?? []).map((item) => item.ppeType),
+      isActive: schedule.isActive,
+    });
+  }, [schedule, form]);
 
   const flow = useFormFlow<PpeScheduleEditForm, { id: string }>({
     form,
-    mutation: async (_data) => {
+    mutation: async (data) => {
       if (!id) {
         Alert.alert("Erro", "ID de agendamento não encontrado");
         throw new Error("missing id");
       }
-      Alert.alert("Sucesso", "Agendamento atualizado com sucesso");
+      await updateAsync({
+        id,
+        data: {
+          name: data.name,
+          frequency: data.frequency,
+          frequencyCount: data.frequencyCount,
+          assignmentType: data.assignmentType,
+          isActive: data.isActive,
+          items: (data.ppeTypes || [])
+            .filter((t) => t !== PPE_TYPE.OTHERS)
+            .map((ppeType) => ({ ppeType: ppeType as PPE_TYPE, quantity: 1 })),
+        },
+      });
       return { id };
     },
-    successRoute: () => mobileRoute(routes.inventory.ppe.schedules.root),
+    successRoute: () => mobileRoute(routes.inventory.ppe.schedules.details(id || "")),
     cancelFallback: mobileRoute(routes.inventory.ppe.schedules.root),
   });
 

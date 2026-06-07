@@ -34,20 +34,7 @@ export async function unregisterPushToken(token: string) {
   return apiClient.delete('/notifications/device-token', { data: { token } });
 }
 
-/**
- * Update push notification preferences
- * @param preferences - Notification preferences
- * @returns Update response
- */
-export async function updatePushPreferences(preferences: {
-  enabled: boolean;
-  categories?: string[];
-}) {
-  return apiClient.patch('/notifications/preferences', preferences);
-}
-
 export const pushNotificationService = {
   registerToken: registerPushToken,
   unregisterToken: unregisterPushToken,
-  updatePreferences: updatePushPreferences,
 };

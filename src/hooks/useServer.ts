@@ -10,7 +10,6 @@ import {
   getSystemStatus,
   getSystemUsers,
   createSystemUser,
-  deleteSystemUser,
   setSystemUserPassword,
   getSharedFolders,
   getSharedFolderContents,
@@ -168,17 +167,6 @@ export function useCreateSystemUser() {
   });
 }
 
-export function useDeleteSystemUser() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (username: string) => deleteSystemUser(username),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: serverKeys.users() });
-    },
-  });
-}
-
 export function useSetSystemUserPassword() {
   const queryClient = useQueryClient();
 
@@ -228,7 +216,6 @@ export function useServerManagement() {
   const stopService = useStopService();
   const restartService = useRestartService();
   const createUser = useCreateSystemUser();
-  const deleteUser = useDeleteSystemUser();
   const setUserPassword = useSetSystemUserPassword();
 
   return {
@@ -263,7 +250,6 @@ export function useServerManagement() {
     stopService: stopService.mutate,
     restartService: restartService.mutate,
     createUser: createUser.mutate,
-    deleteUser: deleteUser.mutate,
     setUserPassword: setUserPassword.mutate,
 
     // Mutation states
@@ -271,7 +257,6 @@ export function useServerManagement() {
     isStoppingService: stopService.isPending,
     isRestartingService: restartService.isPending,
     isCreatingUser: createUser.isPending,
-    isDeletingUser: deleteUser.isPending,
     isSettingPassword: setUserPassword.isPending,
 
     // Refetch functions

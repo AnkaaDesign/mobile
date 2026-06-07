@@ -11,8 +11,11 @@ import type { Position, PositionIncludes } from "./position";
 export interface Discount extends BaseEntity {
   percentage: number | null;
   value: number | null;
-  calculationOrder: number;
   reference: string;
+  discountType: string;
+  isPersistent: boolean;
+  isActive: boolean;
+  expirationDate: Date | null;
   payrollId: string;
 
   // Relations (optional, populated based on query)
@@ -99,7 +102,9 @@ export interface DiscountWhere {
   payrollId?: string | { in?: string[]; notIn?: string[] };
   percentage?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
   value?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
-  calculationOrder?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
+  discountType?: string | { equals?: string; in?: string[]; notIn?: string[] };
+  isPersistent?: boolean;
+  isActive?: boolean;
   createdAt?: Date | { gte?: Date; lte?: Date; gt?: Date; lt?: Date };
   updatedAt?: Date | { gte?: Date; lte?: Date; gt?: Date; lt?: Date };
 
@@ -166,7 +171,7 @@ export interface PayrollWhere {
 
 export interface DiscountOrderBy {
   id?: ORDER_BY_DIRECTION;
-  calculationOrder?: ORDER_BY_DIRECTION;
+  discountType?: ORDER_BY_DIRECTION;
   reference?: ORDER_BY_DIRECTION;
   percentage?: ORDER_BY_DIRECTION;
   value?: ORDER_BY_DIRECTION;
@@ -288,15 +293,20 @@ export interface PayrollUpdateFormData {
 export interface DiscountCreateFormData {
   percentage?: number | null;
   value?: number | null;
-  calculationOrder?: number;
   reference: string;
+  discountType?: string;
+  isPersistent?: boolean;
+  expirationDate?: Date | null;
 }
 
 export interface DiscountUpdateFormData {
   percentage?: number | null;
   value?: number | null;
-  calculationOrder?: number;
   reference?: string;
+  discountType?: string;
+  isPersistent?: boolean;
+  isActive?: boolean;
+  expirationDate?: Date | null;
 }
 
 // Query form data types

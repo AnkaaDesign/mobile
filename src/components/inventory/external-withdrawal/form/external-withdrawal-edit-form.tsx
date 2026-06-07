@@ -23,6 +23,8 @@ import { Alert } from "@/components/ui/alert";
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 
+import { createWithdrawalFormData } from "@/utils/form-data-helper";
+
 import { ExternalWithdrawalItemSelector } from "./external-withdrawal-item-selector";
 import { ExternalWithdrawalSummaryCards } from "./external-withdrawal-summary-cards";
 
@@ -268,16 +270,23 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
         notes: notes?.trim() || null,
       };
 
-      // Note: File upload functionality is available in the UI but not yet implemented
-      // in the submission logic. Files selected will be displayed but not uploaded.
-      // TODO: Implement file upload using useFileUploadManager pattern
-      if (receiptFiles.length > 0 || nfeFiles.length > 0) {
-        console.warn("File upload not yet implemented. Files will not be uploaded.");
-      }
+      // Upload newly attached documents via multipart. The API update endpoint
+      // accepts file fields `receipts`/`invoices` (mirrors web). Only newly
+      // picked local files (those with a `uri`, not yet uploaded) are sent.
+      const newReceiptFiles = receiptFiles.filter((f) => f.uri && !f.uploaded);
+      const newNfeFiles = nfeFiles.filter((f) => f.uri && !f.uploaded);
+      const hasNewFiles = newReceiptFiles.length > 0 || newNfeFiles.length > 0;
+
+      const payload = hasNewFiles
+        ? createWithdrawalFormData(updateData, {
+            receipts: newReceiptFiles.length > 0 ? newReceiptFiles : undefined,
+            invoices: newNfeFiles.length > 0 ? newNfeFiles : undefined,
+          })
+        : updateData;
 
       const result = await updateAsync({
         id: withdrawal.id,
-        data: updateData,
+        data: payload as any,
       });
 
       if (result.success) {

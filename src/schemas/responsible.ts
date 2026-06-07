@@ -1,8 +1,20 @@
 import { z } from 'zod';
 import { ResponsibleRole } from '@/types/responsible';
 
-// Phone validation regex (Brazilian format)
-const phoneRegex = /^(\+55\s?)?(\(?\d{2}\)?\s?)?(\d{4,5}[-.\s]?\d{4})$/;
+// Digits-only phone validation. The UI shows a masked phone input, but the API
+// requires a digits-only value matching /^\d{10,11}$/. Strip the mask before
+// validating so masked input passes and the submitted value is clean.
+const requiredPhoneSchema = z
+  .string()
+  .min(1, 'Telefone é obrigatório')
+  .transform((val) => val.replace(/\D/g, ''))
+  .pipe(z.string().regex(/^\d{10,11}$/, 'Telefone inválido'));
+
+const optionalPhoneSchema = z
+  .string()
+  .transform((val) => val.replace(/\D/g, ''))
+  .pipe(z.string().regex(/^\d{10,11}$/, 'Telefone inválido'))
+  .optional();
 
 // Email validation
 const emailSchema = z
@@ -24,10 +36,7 @@ export const responsibleCreateSchema = z.object({
     (val) => (val === '' || val === null || val === undefined ? null : val),
     emailSchema,
   ),
-  phone: z
-    .string()
-    .min(1, 'Telefone é obrigatório')
-    .regex(phoneRegex, 'Formato de telefone inválido'),
+  phone: requiredPhoneSchema,
   name: z
     .string()
     .min(1, 'Nome é obrigatório')
@@ -54,10 +63,7 @@ export const responsibleUpdateSchema = z.object({
     (val) => (val === '' || val === null || val === undefined ? null : val),
     emailSchema,
   ),
-  phone: z
-    .string()
-    .regex(phoneRegex, 'Formato de telefone inválido')
-    .optional(),
+  phone: optionalPhoneSchema,
   name: z
     .string()
     .min(3, 'Nome deve ter no mínimo 3 caracteres')
@@ -153,7 +159,7 @@ export const responsibleBatchDeleteSchema = z.object({
 // Inline responsible creation (used in task create to create responsibles alongside the task)
 export const responsibleCreateInlineSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100, 'Nome deve ter no máximo 100 caracteres'),
-  phone: z.string().min(1, 'Telefone é obrigatório').regex(phoneRegex, 'Formato de telefone inválido'),
+  phone: requiredPhoneSchema,
   email: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? undefined : val),
     z.string().email('Email inválido').optional(),

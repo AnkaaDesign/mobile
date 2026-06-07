@@ -30,7 +30,12 @@ import { USER_STATUS_LABELS, SHIRT_SIZE_LABELS, BOOT_SIZE_LABELS, PANTS_SIZE_LAB
 interface CollaboratorFormProps {
   mode: "create" | "update";
   user?: User;
-  onSuccess?: () => void;
+  /**
+   * Called after a successful create/update. When provided, the caller is
+   * responsible for navigation (the form skips its default redirect to the
+   * administration collaborator detail page). Receives the affected user id.
+   */
+  onSuccess?: (id?: string) => void;
   onCancel?: () => void;
 }
 
@@ -354,8 +359,11 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
       if (mode === "create") {
         const result = await createAsync(data as UserCreateFormData);
         const newId = (result as any)?.data?.id || (result as any)?.id;
-        onSuccess?.();
-        if (newId) {
+        // When the caller provides onSuccess it owns navigation (e.g. the RH
+        // funcionarios pages redirect back to their own detail screen).
+        if (onSuccess) {
+          onSuccess(newId);
+        } else if (newId) {
           nav.replace(mobileRoute(routes.administration.collaborators.details(newId)));
         } else {
           nav.goBack();
@@ -365,8 +373,11 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
           id: user.id,
           data: data as UserUpdateFormData,
         });
-        onSuccess?.();
-        nav.replace(mobileRoute(routes.administration.collaborators.details(user.id)));
+        if (onSuccess) {
+          onSuccess(user.id);
+        } else {
+          nav.replace(mobileRoute(routes.administration.collaborators.details(user.id)));
+        }
       }
     } catch {
       // Error toast is shown automatically by the axios response interceptor.

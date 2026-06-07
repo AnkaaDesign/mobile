@@ -488,7 +488,7 @@ export const serviceOrderCreateSchema = z.object({
     .enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]], {
       errorMap: () => ({ message: "tipo inválido" }),
     })
-    .nullable()
+    .default(SERVICE_ORDER_TYPE.PRODUCTION)
     .optional(),
   description: z.string().min(3, { message: "Minímo de 3 caracteres" }).max(400, { message: "Maxímo de 400 caracteres atingido" }),
   observation: z.string().max(2000, { message: "Maxímo de 2000 caracteres atingido" }).nullable().optional(),
@@ -514,7 +514,6 @@ export const serviceOrderUpdateSchema = z.object({
     .enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]], {
       errorMap: () => ({ message: "tipo inválido" }),
     })
-    .nullable()
     .optional(),
   description: z.string().min(3, { message: "Minímo de 3 caracteres" }).max(400, { message: "Maxímo de 400 caracteres atingido" }).optional(),
   observation: z.string().max(2000, { message: "Maxímo de 2000 caracteres atingido" }).nullable().optional(),

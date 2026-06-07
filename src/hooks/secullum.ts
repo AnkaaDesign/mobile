@@ -298,28 +298,12 @@ export const useSecullumJustifications = () => {
   });
 };
 
-// Sync Management hooks
-export const useSecullumSyncStatus = () => {
+// Integration health hook
+export const useSecullumHealth = () => {
   return useQuery({
-    queryKey: [...secullumKeys.all, "sync-status"],
-    queryFn: () => secullumService.getSyncStatus(),
+    queryKey: [...secullumKeys.all, "health"],
+    queryFn: () => secullumService.getHealth(),
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 10 * 1000, // Refetch every 10s — was 5s, but UI didn't need that resolution
-    refetchIntervalInBackground: false,
-  });
-};
-
-export const useSecullumSyncTrigger = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (_params: { type: "full" | "partial" | "pause" | "resume" | "stop"; entityTypes?: string[] }) => secullumService.triggerSync(_params),
-    onSuccess: (_data) => {
-      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "sync-status"] });
-      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "sync-history"] });
-    },
-    onError: (_error: any) => {
-    },
   });
 };
 
@@ -425,16 +409,6 @@ export const useSecullumSyncJobs = () => {
     queryFn: () => secullumService.getSyncJobs(),
     staleTime: 10 * 1000, // 10 seconds for real-time monitoring
     refetchInterval: 5 * 1000, // Refetch every 5s — was 2s, which thrashed the JS thread
-    refetchIntervalInBackground: false,
-  });
-};
-
-export const useSecullumSystemMetrics = () => {
-  return useQuery({
-    queryKey: [...secullumKeys.all, "system-metrics"],
-    queryFn: () => secullumService.getSystemMetrics(),
-    staleTime: 5 * 1000, // 5 seconds
-    refetchInterval: 15 * 1000, // Refetch every 15s — was 5s
     refetchIntervalInBackground: false,
   });
 };

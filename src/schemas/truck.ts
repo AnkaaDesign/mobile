@@ -1,7 +1,7 @@
 // packages/schemas/src/truck.ts
 
 import { z } from "zod";
-import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, createNameSchema } from "./common";
+import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy } from "./common";
 import type { Truck } from '../types';
 import { TRUCK_MANUFACTURER, TRUCK_CATEGORY, IMPLEMENT_TYPE, TRUCK_SPOT } from '../constants';
 
@@ -602,12 +602,6 @@ export const truckCreateSchema = z.object({
     .nullable()
     .optional(),
 
-  model: createNameSchema(1, 100, "Modelo"),
-
-  manufacturer: z.enum(Object.values(TRUCK_MANUFACTURER) as [string, ...string[]], {
-    errorMap: () => ({ message: "Montadora inválida" }),
-  }),
-
   // Truck specifications
   category: z.nativeEnum(TRUCK_CATEGORY).nullable().optional(),
   implementType: z.nativeEnum(IMPLEMENT_TYPE).nullable().optional(),
@@ -640,14 +634,6 @@ export const truckUpdateSchema = z.object({
     .min(1, "Número do chassi inválido")
     .max(100, "Número do chassi deve ter no máximo 100 caracteres")
     .nullable()
-    .optional(),
-
-  model: createNameSchema(1, 100, "Modelo").optional(),
-
-  manufacturer: z
-    .enum(Object.values(TRUCK_MANUFACTURER) as [string, ...string[]], {
-      errorMap: () => ({ message: "Montadora inválida" }),
-    })
     .optional(),
 
   // Truck specifications
@@ -732,8 +718,6 @@ export type TruckBatchQueryFormData = z.infer<typeof truckBatchQuerySchema>;
 export const mapTruckToFormData = createMapToFormDataHelper<Truck, TruckUpdateFormData>((truck) => ({
   plate: truck.plate || undefined,
   chassisNumber: truck.chassisNumber || undefined,
-  model: truck.model,
-  manufacturer: truck.manufacturer,
   category: truck.category || undefined,
   implementType: truck.implementType || undefined,
   spot: truck.spot || undefined,

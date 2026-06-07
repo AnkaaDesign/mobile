@@ -15,6 +15,8 @@ interface MenuItem {
   onlyInStaging?: boolean; // Only show in staging environment
   isContextual?: boolean; // Indicates if this is a contextual menu item
   requiresBonifiable?: boolean; // Only show if user's position is bonifiable
+  requiresOpenQuestionnaire?: boolean; // Only show if the user has at least one non-submitted questionnaire entry
+  hidden?: boolean; // Temporarily hide this item (and its subtree) from navigation regardless of other conditions
   sortOrder?: number; // Custom sort order (lower numbers appear first, items without sortOrder are sorted alphabetically after items with sortOrder)
 }
 
@@ -321,14 +323,16 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
-      // Questionarios - self-fill, visible to ALL users (no requiredPrivilege)
-      { id: "meus-questionarios", title: "Questionarios", icon: "clipboardList", path: "/pessoal/questionarios" },
+      // Questionarios - self-fill, visible to ALL users (no requiredPrivilege),
+      // but only while the user has at least one non-submitted (open) entry.
+      { id: "meus-questionarios", title: "Questionarios", icon: "clipboardList", path: "/pessoal/questionarios", requiresOpenQuestionnaire: true },
       { id: "minhas-mensagens", title: "Minhas Mensagens", icon: "message", path: "/pessoal/minhas-mensagens" },
       {
         id: "meu-bonus",
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
+        hidden: true, // TEMP: bonus feature hidden from navigation
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT available for DESIGNER
         requiresBonifiable: true, // Only show if user's position is bonifiable
         children: [
@@ -533,6 +537,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Bônus",
         icon: "coins",
         path: "/recursos-humanos/bonus/listar",
+        hidden: true, // TEMP: bonus feature hidden from navigation
         children: [
           { id: "nivel-de-performance", title: "Nível de Performance", icon: "trendingUp", path: "/recursos-humanos/bonus/nivel-de-performance" },
           { id: "simulacao-bonus", title: "Simulação de Bônus", icon: "calculator", path: "/recursos-humanos/bonus/simulacao" },
@@ -1010,13 +1015,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     sortOrder: 50,
     children: [
       { id: "meus-feriados-production", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
-      { id: "meus-questionarios-production", title: "Questionários", icon: "clipboardList", path: "/pessoal/questionarios" },
+      { id: "meus-questionarios-production", title: "Questionários", icon: "clipboardList", path: "/pessoal/questionarios", requiresOpenQuestionnaire: true },
       { id: "minhas-mensagens-production", title: "Minhas Mensagens", icon: "message", path: "/pessoal/minhas-mensagens" },
       {
         id: "meu-bonus-production",
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
+        hidden: true, // TEMP: bonus feature hidden from navigation
         requiresBonifiable: true,
         children: [
           { id: "meu-bonus-historico-production", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },

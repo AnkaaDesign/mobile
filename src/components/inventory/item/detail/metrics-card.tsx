@@ -15,13 +15,14 @@ import {
   IconTrendingDown,
 } from "@tabler/icons-react-native";
 import type { Item } from "../../../../types";
-import { formatCurrency, formatQuantity, itemUtils } from "@/utils";
+import { formatCurrency, formatQuantity, itemUtils, determineStockLevel } from "@/utils";
 import {
   STOCK_LEVEL,
   STOCK_LEVEL_LABELS,
   ABC_CATEGORY_LABELS,
   XYZ_CATEGORY_LABELS,
   ACTIVITY_OPERATION,
+  ORDER_STATUS,
 } from "@/constants";
 import { useCanViewPrices } from "@/hooks";
 import { useTheme } from "@/lib/theme";
@@ -62,9 +63,27 @@ export function MetricsCard({ item }: MetricsCardProps) {
     const currentPrice = item.prices && item.prices.length > 0 ? item.prices[0].value : 0;
     const stockValue = currentPrice * item.quantity;
 
-    // Stock level is computed authoritative by the API.
-    const stockLevel = item.stockLevel ?? STOCK_LEVEL.OPTIMAL;
-    const hasActiveOrder = item.hasActiveOrder ?? false;
+    // Check if item has active orders (mirrors web's metrics-card).
+    const activeOrderStatuses = [
+      ORDER_STATUS.CREATED,
+      ORDER_STATUS.PARTIALLY_FULFILLED,
+      ORDER_STATUS.FULFILLED,
+      ORDER_STATUS.PARTIALLY_RECEIVED,
+    ];
+    const hasActiveOrder =
+      item.orderItems?.some(
+        (orderItem) =>
+          orderItem.order && activeOrderStatuses.includes(orderItem.order.status),
+      ) || false;
+
+    // Unified stock level determination (matches stock-badge + web metrics-card).
+    const stockLevel = determineStockLevel(
+      item.quantity || 0,
+      item.reorderPoint || null,
+      item.maxQuantity || null,
+      hasActiveOrder,
+      item.category?.type ?? null,
+    );
 
     // Borrowed quantity: prefer _count.borrows from include; fall back to filtering live borrows array.
     const countBorrows = (item as any)._count?.borrows as number | undefined;

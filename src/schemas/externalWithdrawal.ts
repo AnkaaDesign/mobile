@@ -446,6 +446,8 @@ export const externalWithdrawalCreateSchema = z
     status: z.nativeEnum(EXTERNAL_WITHDRAWAL_STATUS).default(EXTERNAL_WITHDRAWAL_STATUS.PENDING).optional(),
     nfeId: z.string().uuid("NFe inválida").nullable().optional(),
     receiptId: z.string().uuid("Recibo inválido").nullable().optional(),
+    invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),
+    receiptIds: z.array(z.string().uuid("Recibo inválido")).optional(),
     notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").nullable().optional(),
     items: z
       .array(
@@ -479,9 +481,10 @@ export const externalWithdrawalUpdateSchema = z.object({
     .optional(),
   type: z.nativeEnum(EXTERNAL_WITHDRAWAL_TYPE).optional(),
   status: z.nativeEnum(EXTERNAL_WITHDRAWAL_STATUS).optional(),
-  nfeId: z.string().uuid("NFe inválida").nullable().optional(),
-  receiptId: z.string().uuid("Recibo inválido").nullable().optional(),
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").nullable().optional(),
+  // File arrays (multipart upload references) — mirrors API update schema
+  invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),
+  receiptIds: z.array(z.string().uuid("Recibo inválido")).optional(),
 });
 
 // Batch Schemas

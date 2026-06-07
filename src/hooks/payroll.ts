@@ -15,8 +15,6 @@ import type {
   PayrollBatchCreateFormData,
   PayrollBatchUpdateFormData,
   PayrollBatchDeleteFormData,
-  DiscountCreateFormData,
-  DiscountUpdateFormData,
 } from '@/schemas';
 
 // =====================================================
@@ -338,52 +336,9 @@ export const useBatchCreatePayroll = () => {
   });
 };
 
-/**
- * Hook for payroll discount management
- */
-export const usePayrollDiscountMutations = () => {
-  const queryClient = useQueryClient();
-
-  const addDiscount = useMutation({
-    mutationFn: ({ payrollId, discount }: {
-      payrollId: string;
-      discount: DiscountCreateFormData
-    }) => payrollService.addDiscount(payrollId, discount).then(response => response.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.all });
-    },
-  });
-
-  const removeDiscount = useMutation({
-    mutationFn: ({ payrollId, discountId }: { payrollId: string; discountId: string }) =>
-      payrollService.removeDiscount(payrollId, discountId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.all });
-    },
-  });
-
-  const updateDiscount = useMutation({
-    mutationFn: ({ payrollId, discountId, discount }: {
-      payrollId: string;
-      discountId: string;
-      discount: DiscountUpdateFormData
-    }) => payrollService.updateDiscount(payrollId, discountId, discount).then(response => response.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.all });
-    },
-  });
-
-  return {
-    addDiscount: addDiscount.mutate,
-    addDiscountAsync: addDiscount.mutateAsync,
-    removeDiscount: removeDiscount.mutate,
-    removeDiscountAsync: removeDiscount.mutateAsync,
-    updateDiscount: updateDiscount.mutate,
-    updateDiscountAsync: updateDiscount.mutateAsync,
-    isLoading: addDiscount.isPending || removeDiscount.isPending || updateDiscount.isPending,
-    error: addDiscount.error || removeDiscount.error || updateDiscount.error,
-  };
-};
+// Payroll discounts are managed through the dedicated /discount CRUD endpoints
+// (see api-client/services/discount.ts + useDiscount hooks). The previous nested
+// /payroll/:payrollId/discounts routes never existed in the API and were removed.
 
 // =====================================================
 // Legacy/Compatibility Exports

@@ -58,7 +58,7 @@ const URGENCY_VARIANT: Record<
   { variant: any; label: string; color: string }
 > = {
   critical: { variant: "destructive", label: "CRÍTICO", color: "#dc2626" },
-  high: { variant: "default", label: "ALTO", color: "#f97316" },
+  high: { variant: "orange", label: "ALTO", color: "#f97316" },
   medium: { variant: "secondary", label: "MÉDIO", color: "#eab308" },
   low: { variant: "outline", label: "BAIXO", color: "#737373" },
 };
@@ -572,9 +572,20 @@ function RecommendationRow({
             </ThemedText>
           </Badge>
         )}
-        <Badge variant={urgency.variant}>
-          <ThemedText style={styles.badgeText}>{urgency.label}</ThemedText>
-        </Badge>
+        {item.isEmergencyOverride ? (
+          // Top of the urgency hierarchy: the item runs out BEFORE its next
+          // scheduled order arrives, so it must be reordered now. Mirrors web,
+          // which collapses the redundant CRÍTICO+EMERGENCIAL stack into one
+          // badge with the most alarming treatment.
+          <Badge variant="red">
+            <IconAlertTriangle size={12} color="#ffffff" style={styles.emergencyIcon} />
+            <ThemedText style={styles.badgeText}>EMERGENCIAL</ThemedText>
+          </Badge>
+        ) : (
+          <Badge variant={urgency.variant}>
+            <ThemedText style={styles.badgeText}>{urgency.label}</ThemedText>
+          </Badge>
+        )}
       </View>
 
       <View style={styles.itemMetrics}>
@@ -861,6 +872,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
     color: "#fff",
+  },
+  emergencyIcon: {
+    marginRight: 4,
   },
   toolBadgeText: {
     fontSize: 10,

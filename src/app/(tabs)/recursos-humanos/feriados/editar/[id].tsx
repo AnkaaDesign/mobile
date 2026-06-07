@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useLocalSearchParams } from "expo-router";
+import { format } from "date-fns";
 
 import { Input } from "@/components/ui/input";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
@@ -39,9 +40,11 @@ function HolidayEditScreenInner() {
     if (!holiday) return;
     form.reset({
       name: holiday.name || "",
+      // Format in local time (yyyy-MM-dd). Using toISOString() would shift the
+      // day backward/forward in non-UTC timezones.
       date:
         holiday.date instanceof Date
-          ? holiday.date.toISOString().split("T")[0]
+          ? format(holiday.date, "yyyy-MM-dd")
           : holiday.date || "",
     });
   }, [loadQuery.data, form]);

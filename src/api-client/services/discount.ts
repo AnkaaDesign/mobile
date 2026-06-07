@@ -44,7 +44,7 @@ export const discountService = {
       reference?: string;
     };
     orderBy?: {
-      calculationOrder?: "asc" | "desc";
+      discountType?: "asc" | "desc";
       createdAt?: "asc" | "desc";
     };
     include?: {
@@ -57,7 +57,7 @@ export const discountService = {
     apiClient.get<Discount>(`/discount/${id}`, { params }),
 
   getByPayroll: (payrollId: string) =>
-    apiClient.get<Discount[]>(`/discount/payroll/${payrollId}`),
+    apiClient.get<Discount[]>(`/discount/by-payroll/${payrollId}`),
 
   create: (data: DiscountCreateSchema) =>
     apiClient.post<Discount>("/discount", data),
@@ -73,9 +73,6 @@ export const discountService = {
 
   batchDelete: (ids: string[]) =>
     apiClient.delete("/discount/batch", { data: { ids } }),
-
-  reorder: (payrollId: string, discounts: { id: string; order: number }[]) =>
-    apiClient.put<Discount[]>(`/discount/payroll/${payrollId}/reorder`, { discounts }),
 };
 
 // Export types for external use

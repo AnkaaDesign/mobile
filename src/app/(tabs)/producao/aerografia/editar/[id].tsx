@@ -50,11 +50,9 @@ function AirbrushingEditScreenInner() {
   const query = useAirbrushingDetail(id as string, {
     include: {
       task: {
-        select: {
-          id: true,
-          name: true,
-          customer: { select: { id: true, fantasyName: true } },
-          truck: { select: { id: true, model: true, plate: true } },
+        include: {
+          customer: true,
+          truck: true,
         },
       },
     },
@@ -154,9 +152,9 @@ function AirbrushingEditScreenInner() {
                   Cliente: {airbrushing.task.customer.fantasyName}
                 </ThemedText>
               )}
-              {airbrushing.task.truck && (
+              {airbrushing.task.truck?.plate && (
                 <ThemedText style={{ fontSize: 12, color: colors.muted }}>
-                  Veículo: {airbrushing.task.truck.model} - {airbrushing.task.truck.plate}
+                  Veículo: {airbrushing.task.truck.plate}
                 </ThemedText>
               )}
             </View>

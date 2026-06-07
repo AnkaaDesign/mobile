@@ -14,7 +14,6 @@ import {
   getUnreadNotifications,
   markAsRead,
   markAllAsRead,
-  sendNotification,
   getSeenNotifications,
   getSeenNotificationById,
   createSeenNotification,
@@ -135,22 +134,6 @@ export const useUnreadNotifications = createSpecializedQueryHook<{ userId: strin
 // Specialized Notification Mutation Hooks
 // =====================================================
 
-// Send notification
-export const useSendNotification = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (notificationId: string) => sendNotification(notificationId),
-    onSuccess: (_, notificationId) => {
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.detail(notificationId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.all,
-      });
-    },
-  });
-};
 
 // Mark notification as read
 export const useMarkAsRead = () => {

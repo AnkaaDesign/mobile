@@ -1308,7 +1308,7 @@ export const paintCreateSchema = z.object({
     errorMap: () => ({ message: "acabamento inválido" }),
   }),
   paintTypeId: z.string().uuid("Tipo de tinta inválido"),
-  paintBrandId: z.string().uuid("Marca de tinta é obrigatória"),
+  paintBrandId: z.string().uuid("Marca de tinta inválida").nullable().optional(),
   manufacturer: z
     .enum(Object.values(TRUCK_MANUFACTURER) as [string, ...string[]], {
       errorMap: () => ({ message: "MONTADORA inválida" }),
@@ -1707,21 +1707,21 @@ export const paintFormulaComponentGetManySchema = z
   .transform(paintFormulaComponentTransform);
 
 export const paintFormulaComponentCreateSchema = z.object({
-  ratio: z.number().positive("Proporção deve ser positiva").min(0.1, "Proporção mínima é 0.1%").max(100, "Proporção máxima é 100%"),
+  weight: z.number().positive("Peso deve ser positivo"), // Weight in grams
   itemId: z.string().uuid("Item inválido"),
   formulaPaintId: z.string().uuid("Fórmula inválida"),
 });
 
 export const paintFormulaComponentUpdateSchema = z
   .object({
-    ratio: z.number().positive("Proporção deve ser positiva").min(0.1, "Proporção mínima é 0.1%").max(100, "Proporção máxima é 100%").optional(),
+    weight: z.number().positive("Peso deve ser positivo").optional(), // Weight in grams
     itemId: z.string().uuid("Item inválido").optional(),
     formulaPaintId: z.string().uuid("Fórmula inválida").optional(),
   })
   .refine(
     (data) => {
       // Ensure at least one field is being updated
-      return data.ratio !== undefined || data.itemId !== undefined || data.formulaPaintId !== undefined;
+      return data.weight !== undefined || data.itemId !== undefined || data.formulaPaintId !== undefined;
     },
     {
       message: "Pelo menos um campo deve ser fornecido para atualização",
@@ -2439,7 +2439,7 @@ export const mapPaintFormulaToFormData = createMapToFormDataHelper<PaintFormula,
 }));
 
 export const mapPaintFormulaComponentToFormData = createMapToFormDataHelper<PaintFormulaComponent, PaintFormulaComponentUpdateFormData>((component) => ({
-  ratio: component.ratio,
+  weight: component.weight ?? component.weightInGrams,
   itemId: component.itemId,
   formulaPaintId: component.formulaPaintId,
 }));

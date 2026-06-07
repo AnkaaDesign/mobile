@@ -488,43 +488,10 @@ export const historyListConfig: ListConfig<Task> = {
   },
 
   actions: {
+    // Bulk "Atualizar Status" / "Atribuir Setor" removed: bulk onPress only receives
+    // (ids, mutations) and cannot render a value picker, so both placeholders sent
+    // empty updates. Re-add once the list machinery supports a bulk value picker.
     bulk: [
-      {
-        key: 'update-status',
-        label: 'Atualizar Status',
-        icon: 'list-checks',
-        variant: 'default',
-        confirm: {
-          title: 'Atualizar Status',
-          message: (count) => `Deseja atualizar o status de ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
-        },
-        onPress: async (ids, context) => {
-          // Implementation would need to prompt for new status
-          if (context?.batchUpdateAsync) {
-            await context.batchUpdateAsync({
-              tasks: Array.from(ids).map((id) => ({ id, data: {} })),
-            })
-          }
-        },
-      },
-      {
-        key: 'update-sector',
-        label: 'Atribuir Setor',
-        icon: 'users',
-        variant: 'default',
-        confirm: {
-          title: 'Atribuir Setor',
-          message: (count) => `Deseja atribuir um setor a ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
-        },
-        onPress: async (ids, context) => {
-          // Implementation would need to prompt for sector
-          if (context?.batchUpdateAsync) {
-            await context.batchUpdateAsync({
-              tasks: Array.from(ids).map((id) => ({ id, data: {} })),
-            })
-          }
-        },
-      },
       {
         key: 'delete',
         label: 'Excluir',

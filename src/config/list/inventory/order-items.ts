@@ -302,23 +302,10 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
       route: '', // Will be set dynamically in page component with orderId
       canCreate: canEditOrders,
     },
+    // Bulk "Marcar como Recebido" removed: PUT /order-items/batch/mark-received requires
+    // a receivedQuantity per item, but bulk onPress only receives ids (no row data), so
+    // the placeholder just console.warned. Re-add once bulk actions can access row data.
     bulk: [
-      {
-        key: 'markReceived',
-        label: 'Marcar como Recebido',
-        icon: 'check',
-        variant: 'default',
-        confirm: {
-          title: 'Confirmar Recebimento',
-          message: (count) => `Deseja marcar ${count} ${count === 1 ? 'item' : 'itens'} como recebido?`,
-        },
-        onPress: async (ids, context) => {
-          // Convert ids to array of { id, receivedQuantity }
-          // This would need access to the items to get orderedQuantity
-          // For now, this is a placeholder
-          console.warn('Bulk mark received not fully implemented - needs item data access')
-        },
-      },
       {
         key: 'delete',
         label: 'Excluir',

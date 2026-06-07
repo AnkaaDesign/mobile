@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, nullableDate, toFormData } from "./common";
 import type { Airbrushing } from '../types';
-import { AIRBRUSHING_STATUS } from '../constants';
+import { AIRBRUSHING_STATUS, ARTWORK_STATUS } from '../constants';
 
 // =====================
 // Include Schema Based on Prisma Schema
@@ -477,9 +477,20 @@ export const airbrushingCreateSchema = z
       .optional(),
     status: z.nativeEnum(AIRBRUSHING_STATUS).default(AIRBRUSHING_STATUS.PENDING),
     taskId: z.string().uuid("Tarefa inválida"),
-    receiptIds: z.array(z.string().uuid()).optional(),
+    budgetIds: z.array(z.string().uuid()).optional(),
     invoiceIds: z.array(z.string().uuid()).optional(),
+    receiptIds: z.array(z.string().uuid()).optional(),
+    reimbursementIds: z.array(z.string().uuid()).optional(),
+    reimbursementInvoiceIds: z.array(z.string().uuid()).optional(),
     artworkIds: z.array(z.string().uuid()).optional(),
+    // artworkStatuses maps File ID to artwork status (for approval workflow)
+    // Can be a plain object or array with object (for FormData serialization)
+    artworkStatuses: z
+      .union([
+        z.record(z.string().uuid(), z.nativeEnum(ARTWORK_STATUS)),
+        z.array(z.record(z.string().uuid(), z.nativeEnum(ARTWORK_STATUS))),
+      ])
+      .optional(),
   })
   .transform(toFormData);
 
@@ -496,9 +507,20 @@ export const airbrushingUpdateSchema = z
       .optional(),
     status: z.nativeEnum(AIRBRUSHING_STATUS).optional(),
     taskId: z.string().uuid("Tarefa inválida").optional(),
-    receiptIds: z.array(z.string().uuid()).optional(),
+    budgetIds: z.array(z.string().uuid()).optional(),
     invoiceIds: z.array(z.string().uuid()).optional(),
+    receiptIds: z.array(z.string().uuid()).optional(),
+    reimbursementIds: z.array(z.string().uuid()).optional(),
+    reimbursementInvoiceIds: z.array(z.string().uuid()).optional(),
     artworkIds: z.array(z.string().uuid()).optional(),
+    // artworkStatuses maps File ID to artwork status (for approval workflow)
+    // Can be a plain object or array with object (for FormData serialization)
+    artworkStatuses: z
+      .union([
+        z.record(z.string().uuid(), z.nativeEnum(ARTWORK_STATUS)),
+        z.array(z.record(z.string().uuid(), z.nativeEnum(ARTWORK_STATUS))),
+      ])
+      .optional(),
   })
   .transform(toFormData);
 
@@ -594,5 +616,6 @@ export const mapAirbrushingToFormData = createMapToFormDataHelper<Airbrushing, A
   taskId: airbrushing.taskId,
   receiptIds: airbrushing.receipts?.map((file) => file.id),
   invoiceIds: airbrushing.invoices?.map((file) => file.id),
-  artworkIds: airbrushing.artworks?.map((file) => file.id),
+  // artworkIds must be File IDs (artwork.fileId or artwork.file.id), not Artwork entity IDs
+  artworkIds: airbrushing.artworks?.map((artwork: any) => artwork.fileId || artwork.file?.id || artwork.id),
 }));

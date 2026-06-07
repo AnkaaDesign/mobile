@@ -411,15 +411,15 @@ export class FileService {
   // =====================
 
   getFileUrl(fileId: string): string {
-    return `${apiClient.defaults.baseURL}${this.basePath}/${fileId}/serve`;
+    return `${apiClient.defaults.baseURL}${this.basePath}/serve/${fileId}`;
   }
 
   getFileThumbnailUrl(fileId: string, size: "small" | "medium" | "large" = "medium"): string {
-    return `${apiClient.defaults.baseURL}${this.basePath}/${fileId}/thumbnail?size=${size}`;
+    return `${apiClient.defaults.baseURL}${this.basePath}/thumbnail/${fileId}?size=${size}`;
   }
 
   async getFileThumbnail(fileId: string, size: "small" | "medium" | "large" = "medium"): Promise<FileThumbnailResponse> {
-    const response = await apiClient.get<FileThumbnailResponse>(`${this.basePath}/${fileId}/thumbnail`, {
+    const response = await apiClient.get<FileThumbnailResponse>(`${this.basePath}/thumbnail/${fileId}`, {
       params: { size },
     });
     return response.data;
@@ -475,16 +475,6 @@ export class FileService {
   // File Management Operations
   // =====================
 
-  async moveFile(fileId: string, newPath: string): Promise<FileUpdateResponse> {
-    const response = await apiClient.patch<FileUpdateResponse>(`${this.basePath}/${fileId}/move`, { newPath });
-    return response.data;
-  }
-
-  async copyFile(fileId: string, newFilename?: string): Promise<FileCreateResponse> {
-    const response = await apiClient.post<FileCreateResponse>(`${this.basePath}/${fileId}/copy`, { newFilename });
-    return response.data;
-  }
-
   async getFilesByMimeType(mimeType: string, params?: Omit<FileGetManyFormData, "mimetypes">): Promise<FileGetManyResponse> {
     return this.getFiles({ ...params, mimetypes: [mimeType] });
   }
@@ -499,11 +489,6 @@ export class FileService {
 
   async getOrphanedFiles(params?: FileGetManyFormData): Promise<FileGetManyResponse> {
     return this.getFiles({ ...params, isOrphaned: true });
-  }
-
-  async cleanupOrphanedFiles(): Promise<FileBatchDeleteResponse> {
-    const response = await apiClient.delete<FileBatchDeleteResponse>(`${this.basePath}/cleanup/orphaned`);
-    return response.data;
   }
 
   // =====================
@@ -663,26 +648,16 @@ export class FileService {
   // =====================
 
   async batchCreateFiles(data: FileBatchCreateFormData, query?: FileQueryFormData): Promise<FileBatchCreateResponse<File>> {
-    const response = await apiClient.post<FileBatchCreateResponse<File>>(`${this.basePath}/batch/create`, data, {
+    const response = await apiClient.post<FileBatchCreateResponse<File>>(`${this.basePath}/batch`, data, {
       params: query,
     });
     return response.data;
   }
 
   async batchUpdateFiles(data: FileBatchUpdateFormData, query?: FileQueryFormData): Promise<FileBatchUpdateResponse<File>> {
-    // Use bulk rename endpoint for batch updates
-    const response = await apiClient.post<FileBatchUpdateResponse<File>>(
-      `${this.basePath}/bulk/rename`,
-      {
-        files: data.files.map((update) => ({
-          id: update.id,
-          newFilename: update.data.filename || "",
-        })),
-      },
-      {
-        params: query,
-      },
-    );
+    const response = await apiClient.put<FileBatchUpdateResponse<File>>(`${this.basePath}/batch`, data, {
+      params: query,
+    });
     return response.data;
   }
 
@@ -735,14 +710,6 @@ export const getFileThumbnail = (fileId: string, size?: "small" | "medium" | "la
 export const downloadFile = (fileId: string, options?: FileDownloadOptions) => fileService.downloadFile(fileId, options);
 export const downloadFileByUrl = (url: string, options?: FileDownloadOptions) => fileService.downloadFileByUrl(url, options);
 export const downloadFileInBrowser = (blob: Blob, filename: string) => fileService.downloadFileInBrowser(blob, filename);
-
-// =====================
-// File Management Operations Exports
-// =====================
-
-export const moveFile = (fileId: string, newPath: string) => fileService.moveFile(fileId, newPath);
-export const copyFile = (fileId: string, newFilename?: string) => fileService.copyFile(fileId, newFilename);
-export const cleanupOrphanedFiles = () => fileService.cleanupOrphanedFiles();
 
 // =====================
 // File Validation & Utils Exports

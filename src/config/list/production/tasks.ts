@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Alert } from 'react-native'
+import { View } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
@@ -741,37 +741,12 @@ export const tasksListConfig: ListConfig<Task> = {
 
   actions: {
     // Note: Create button removed from schedule page - now only available on agenda page (em-preparacao)
-    bulk: [
-      {
-        key: 'update-status',
-        label: 'Atualizar Status',
-        icon: 'list-checks',
-        variant: 'default',
-        confirm: {
-          title: 'Atualizar Status',
-          message: (count) => `Deseja atualizar o status de ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
-        },
-        onPress: async (ids, { batchUpdateAsync } = {}) => {
-          // Implementation would need to prompt for new status
-          // This is a placeholder for the structure
-          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
-        },
-      },
-      {
-        key: 'update-sector',
-        label: 'Atribuir Setor',
-        icon: 'users',
-        variant: 'default',
-        confirm: {
-          title: 'Atribuir Setor',
-          message: (count) => `Deseja atribuir um setor a ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
-        },
-        onPress: async (ids, { batchUpdateAsync } = {}) => {
-          // Implementation would need to prompt for sector
-          // This is a placeholder for the structure
-          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
-        },
-      },
-    ],
+    //
+    // Bulk "Atualizar Status" / "Atribuir Setor" were removed: bulk action onPress
+    // only receives (ids, mutations) and has no way to render a value picker, so
+    // both placeholders silently did nothing (and used the wrong payload shape).
+    // Re-add them once the list machinery supports a bulk value picker, sending
+    // { tasks: ids.map(id => ({ id, data: { status | sectorId } })) } via batchUpdateTasks.
+    bulk: [],
   },
 }

@@ -39,7 +39,6 @@ function CategoryEditScreen() {
       parentId: true,
       categoryLevel: true,
       accountingType: true,
-      parent: { select: { id: true, name: true, type: true, categoryLevel: true, accountingType: true } },
     },
   });
 
@@ -112,6 +111,7 @@ function CategoryEditScreen() {
     <ItemCategoryForm
       key={id}
       mode="update"
+      categoryId={id}
       defaultValues={{
         name: category.name,
         type: category.type,
@@ -119,7 +119,6 @@ function CategoryEditScreen() {
         categoryLevel: category.categoryLevel,
         accountingType: category.accountingType ?? null,
       }}
-      initialParent={category.parent ?? undefined}
       onSubmit={handleFormSubmit}
       onCancel={handleCancel}
       isSubmitting={false}

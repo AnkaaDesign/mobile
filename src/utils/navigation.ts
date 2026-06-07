@@ -61,7 +61,15 @@ function sortMenuItemsAlphabetically(menuItems: MenuItem[]): MenuItem[] {
 /**
  * Get filtered menu for a specific user and platform
  */
-export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUser | undefined, platform: "web" | "mobile"): MenuItem[] {
+export function getFilteredMenuForUser(
+  menuItems: MenuItem[],
+  user: NavigationUser | undefined,
+  platform: "web" | "mobile",
+  // Whether the user currently has at least one non-submitted (open) questionnaire
+  // entry. Defaults to true so the Questionários entry is not hidden before the
+  // queue has loaded (avoids it flashing in after navigation).
+  hasOpenQuestionnaire: boolean = true,
+): MenuItem[] {
   let filteredMenu = filterMenuByPlatform(menuItems, platform);
 
   // Apply privilege and team leader filtering
@@ -70,10 +78,17 @@ export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUs
 
   filteredMenu = filterMenuByPrivilegesAndTeamLeader(filteredMenu, userPrivilege, isTeamLeader);
 
+  // Remove items explicitly flagged as hidden (temporary feature gating)
+  filteredMenu = filterMenuByHidden(filteredMenu);
+
   // Apply bonifiable filtering - hide menu items that require bonifiable position
   // User must be EFFECTED and have a bonifiable position to see bonus-related menus
   const isBonifiable = user?.status === USER_STATUS.EFFECTED && (user?.position?.bonifiable ?? false);
   filteredMenu = filterMenuByBonifiable(filteredMenu, isBonifiable);
+
+  // Apply open-questionnaire filtering - hide menu items (e.g. Questionários)
+  // that should only appear while the user has an open questionnaire to fill.
+  filteredMenu = filterMenuByOpenQuestionnaire(filteredMenu, hasOpenQuestionnaire);
 
   // Sort menu items alphabetically (keeping "Inicio" first)
   filteredMenu = sortMenuItemsAlphabetically(filteredMenu);
@@ -172,6 +187,30 @@ export function filterMenuByPrivileges(menuItems: MenuItem[], userPrivilege?: SE
 }
 
 /**
+ * Filter out menu items explicitly flagged as hidden.
+ * Used for temporary feature gating (e.g. hiding the bonus pages). Remove the
+ * `hidden: true` flags in navigation.ts to restore the items.
+ */
+export function filterMenuByHidden(menuItems: MenuItem[]): MenuItem[] {
+  return menuItems
+    .filter((item) => !item.hidden)
+    .map((item) => {
+      if (item.children) {
+        return {
+          ...item,
+          children: filterMenuByHidden(item.children),
+        };
+      }
+      return item;
+    })
+    .filter((item) => {
+      // Remove items with no children after filtering
+      if (item.children && item.children.length === 0) return false;
+      return true;
+    });
+}
+
+/**
  * Filter menu items based on bonifiable position requirement
  * Hides menu items that require a bonifiable position if the user's position is not bonifiable
  */
@@ -190,6 +229,37 @@ export function filterMenuByBonifiable(menuItems: MenuItem[], isBonifiable: bool
         return {
           ...item,
           children: filterMenuByBonifiable(item.children, isBonifiable),
+        };
+      }
+      return item;
+    })
+    .filter((item) => {
+      // Remove items with no children after filtering
+      if (item.children && item.children.length === 0) return false;
+      return true;
+    });
+}
+
+/**
+ * Filter menu items based on the open-questionnaire requirement
+ * Hides menu items flagged with `requiresOpenQuestionnaire` when the user has no
+ * open (non-submitted) questionnaire entry.
+ */
+export function filterMenuByOpenQuestionnaire(menuItems: MenuItem[], hasOpenQuestionnaire: boolean): MenuItem[] {
+  return menuItems
+    .filter((item) => {
+      // If item requires an open questionnaire and the user has none, hide it
+      if (item.requiresOpenQuestionnaire && !hasOpenQuestionnaire) {
+        return false;
+      }
+      return true;
+    })
+    .map((item) => {
+      // Recursively filter children
+      if (item.children) {
+        return {
+          ...item,
+          children: filterMenuByOpenQuestionnaire(item.children, hasOpenQuestionnaire),
         };
       }
       return item;

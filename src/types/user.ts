@@ -99,7 +99,9 @@ export interface User extends BaseEntity {
     changeLogs?: number;
     seenNotification?: number;
     warnings?: number; // Warnings count
+    warningsCollaborator?: number; // Warnings received as collaborator
     ppeRequests?: number; // PPE requests count
+    ppeDeliveries?: number; // PPE deliveries count
   };
 }
 

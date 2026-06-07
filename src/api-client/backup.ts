@@ -139,8 +139,11 @@ class BackupApiClient {
   }
 
   // Delete a backup
-  async deleteBackup(id: string): Promise<null> {
-    const response = await this.api.delete<null>(`/backups/${id}`);
+  async deleteBackup(id: string, options?: { suppressToast?: boolean }): Promise<null> {
+    // suppressToast lets bulk callers run sequential deletes without flooding the
+    // user with one toast per item (they show a single summary instead).
+    const config = options?.suppressToast ? ({ metadata: { suppressToast: true } } as any) : undefined;
+    const response = await this.api.delete<null>(`/backups/${id}`, config);
     return response.data;
   }
 

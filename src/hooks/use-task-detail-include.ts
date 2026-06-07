@@ -23,7 +23,10 @@ function useTaskPermissions(user: any) {
     canViewObservation: !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isProductionManagerUser && !isCommercialUser,
     canViewBaseFiles: isAdminUser || isCommercialUser || isLogisticUser || isProductionManagerUser || isDesignerUser,
     canViewProjectFiles: isAdminUser || isCommercialUser || isLogisticUser || isProductionManagerUser || isDesignerUser,
-    canViewCheckinCheckout: isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser || isProductionManagerUser,
+    // Production team leaders need check-in/check-out files fetched so the Dossiê
+    // section can render (canViewDossie). Regular production users (non-leaders) are
+    // excluded via isTeamLeader, matching use-task-permissions.ts.
+    canViewCheckinCheckout: isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser || isProductionManagerUser || (isProductionUser && isTeamLeader(user)),
     canViewArtworks: true, // All sectors can view artworks (filtered by approval status in UI)
     canViewPricingSection: isAdminUser || isFinancialUser || isCommercialUser,
     canViewPaintSections: !isWarehouseUser && !isFinancialUser && !isLogisticUser && !isProductionManagerUser,

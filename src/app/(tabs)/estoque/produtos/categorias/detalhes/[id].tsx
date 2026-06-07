@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useItemCategory, useScreenReady, useCanViewPrices } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS, ACCOUNTING_TYPE_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCard } from "@/components/ui/loading";
@@ -61,7 +61,6 @@ export default function CategoryDetailScreen() {
       parentId: true,
       categoryLevel: true,
       accountingType: true,
-      categoryReviewNeeded: true,
       parent: { select: { id: true, name: true, type: true, categoryLevel: true, accountingType: true } },
       createdAt: true,
       updatedAt: true,
@@ -289,6 +288,19 @@ export default function CategoryDetailScreen() {
                         </ThemedText>
                       )}
                     </View>
+                  </View>
+                  <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "30" }])}>
+                    <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Nível</ThemedText>
+                    <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                      {(category.categoryLevel ?? 1) === 2 ? "Subcategoria" : "Categoria"}
+                      {category.parent?.name ? ` · ${category.parent.name}` : ""}
+                    </ThemedText>
+                  </View>
+                  <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "30" }])}>
+                    <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Grupo Contábil</ThemedText>
+                    <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                      {category.accountingType ? ACCOUNTING_TYPE_LABELS[category.accountingType] : "—"}
+                    </ThemedText>
                   </View>
                   <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "30" }])}>
                     <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Produtos Cadastrados</ThemedText>

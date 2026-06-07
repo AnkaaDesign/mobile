@@ -79,7 +79,7 @@ export const usePayrollDetails = (
         include: {
           user: { include: { position: true, sector: true } },
           bonus: true,
-          discounts: { orderBy: { calculationOrder: "asc" } }
+          discounts: { orderBy: { createdAt: "asc" } }
         }
       });
       return response.data;

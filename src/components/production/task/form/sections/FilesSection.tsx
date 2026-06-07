@@ -66,6 +66,29 @@ function extractFileIds(files: Array<{ id?: string; fileId?: string; file?: { id
     .filter(Boolean);
 }
 
+/**
+ * Normalize artwork records into the flat ArtworkFileItem shape the upload field expects.
+ * task.artworks are Artwork entities with a nested `file` property (when included via
+ * `artworks: true`). Mirror web's `artwork.file || artwork` flattening so display fields
+ * (name, thumbnail) resolve correctly while preserving the artwork's status.
+ */
+function artworkToFileItem(artwork: any): ArtworkFileItem {
+  const file = artwork?.file || artwork;
+  const fileId = artwork?.fileId || file?.id || artwork?.id;
+  return {
+    id: fileId,
+    uri: file?.url || '',
+    name: file?.filename || file?.originalName || file?.name || 'artwork',
+    type: file?.mimetype || 'application/octet-stream',
+    size: file?.size,
+    mimeType: file?.mimetype,
+    uploaded: true,
+    uploadedFileId: fileId,
+    thumbnailUrl: file?.thumbnailUrl || undefined,
+    status: artwork?.status || 'DRAFT',
+  };
+}
+
 export default function FilesSection({
   isSubmitting = false,
   mode = 'edit',
@@ -82,7 +105,9 @@ export default function FilesSection({
   const { setValue } = useFormContext();
   const { colors } = useTheme();
   const [baseFiles, setBaseFiles] = useState<FilePickerItem[]>(initialBaseFiles);
-  const [artworkFiles, setArtworkFiles] = useState<ArtworkFileItem[]>(initialArtworkFiles);
+  const [artworkFiles, setArtworkFiles] = useState<ArtworkFileItem[]>(() =>
+    (initialArtworkFiles || []).map(artworkToFileItem),
+  );
   const [projectFiles, setProjectFiles] = useState<FilePickerItem[]>(initialProjectFiles);
 
   // Per-service-order checkin/checkout files

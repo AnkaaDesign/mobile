@@ -14,8 +14,14 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { PageHeader } from "@/components/ui/page-header";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { usePpeDeliverySchedule, usePpeDeliveryScheduleMutations } from "@/hooks";
 import { mobileRoute } from "@/constants/routes.types";
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import {
+  SCHEDULE_FREQUENCY_LABELS,
+  ASSIGNMENT_TYPE_LABELS,
+  PPE_TYPE_LABELS,
+} from "@/constants/enum-labels";
 import { formatDate, formatDateTime } from "@/utils";
 import {
   IconCalendar,
@@ -40,17 +46,28 @@ function Inner() {
   const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
 
-  // TODO: Wire to real `usePpeSchedule` hook when available.
-  const schedule: any = { id, status: "ACTIVE" };
-  const isLoading = false;
-  const error: unknown = null;
+  const { deleteAsync } = usePpeDeliveryScheduleMutations();
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = usePpeDeliverySchedule(id || "", {
+    include: {
+      items: { include: { item: true } },
+    },
+    enabled: !!id && id !== "",
+  });
+
+  const schedule = response?.data;
 
   useScreenReady(!isLoading);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
+    await refetch();
     setRefreshing(false);
-  }, []);
+  }, [refetch]);
 
   const handleEdit = () =>
     nav.push(mobileRoute(routes.inventory.ppe.schedules.edit(id ?? "")));
@@ -64,14 +81,23 @@ function Inner() {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: () => {
-            // TODO: Implement delete
-            nav.goBack({ fallback: mobileRoute(routes.inventory.ppe.schedules.root) });
+          onPress: async () => {
+            if (!id) return;
+            try {
+              await deleteAsync(id);
+              nav.goBack({ fallback: mobileRoute(routes.inventory.ppe.schedules.root) });
+            } catch {
+              // api-client surfaces the error toast
+            }
           },
         },
       ],
     );
   };
+
+  if (isLoading) {
+    return null;
+  }
 
   if (error || !schedule) {
     return <ErrorScreen message="Erro ao carregar agendamento" onRetry={handleRefresh} />;
@@ -112,21 +138,33 @@ function Inner() {
               </View>
             </View>
             <View style={styles.contentBlock}>
+              {schedule.name ? (
+                <View style={styles.infoRow}>
+                  <ThemedText style={styles.label}>Nome</ThemedText>
+                  <ThemedText style={styles.value}>{schedule.name}</ThemedText>
+                </View>
+              ) : null}
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Status</ThemedText>
-                <Badge variant="success">Ativo</Badge>
+                <Badge variant={schedule.isActive ? "success" : "secondary"}>
+                  {schedule.isActive ? "Ativo" : "Inativo"}
+                </Badge>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Frequência</ThemedText>
-                <ThemedText style={styles.value}>Mensal</ThemedText>
+                <ThemedText style={styles.value}>
+                  {SCHEDULE_FREQUENCY_LABELS[schedule.frequency] ?? schedule.frequency}
+                </ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Contagem</ThemedText>
-                <ThemedText style={styles.value}>1</ThemedText>
+                <ThemedText style={styles.value}>{schedule.frequencyCount}</ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Tipo de Atribuição</ThemedText>
-                <ThemedText style={styles.value}>Individual</ThemedText>
+                <ThemedText style={styles.value}>
+                  {ASSIGNMENT_TYPE_LABELS[schedule.assignmentType] ?? schedule.assignmentType}
+                </ThemedText>
               </View>
             </View>
           </Card>
@@ -141,15 +179,21 @@ function Inner() {
             <View style={styles.contentBlock}>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Criado em</ThemedText>
-                <ThemedText style={styles.value}>{formatDateTime(new Date())}</ThemedText>
+                <ThemedText style={styles.value}>
+                  {schedule.createdAt ? formatDateTime(schedule.createdAt) : "-"}
+                </ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Última Execução</ThemedText>
-                <ThemedText style={styles.value}>{formatDate(new Date())}</ThemedText>
+                <ThemedText style={styles.value}>
+                  {schedule.lastRun ? formatDate(schedule.lastRun) : "Nunca"}
+                </ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Próxima Execução</ThemedText>
-                <ThemedText style={styles.value}>{formatDate(new Date())}</ThemedText>
+                <ThemedText style={styles.value}>
+                  {schedule.nextRun ? formatDate(schedule.nextRun) : "-"}
+                </ThemedText>
               </View>
             </View>
           </Card>
@@ -162,10 +206,17 @@ function Inner() {
               </View>
             </View>
             <View style={styles.contentBlock}>
-              <View style={styles.badgeContainer}>
-                <Badge variant="secondary">Capacete (1x)</Badge>
-                <Badge variant="secondary">Luvas (2x)</Badge>
-              </View>
+              {schedule.items && schedule.items.length > 0 ? (
+                <View style={styles.badgeContainer}>
+                  {schedule.items.map((item) => (
+                    <Badge key={item.id} variant="secondary">
+                      {`${item.item?.name ?? PPE_TYPE_LABELS[item.ppeType] ?? item.ppeType} (${item.quantity}x)`}
+                    </Badge>
+                  ))}
+                </View>
+              ) : (
+                <ThemedText style={styles.description}>Nenhum tipo de EPI configurado</ThemedText>
+              )}
             </View>
           </Card>
 
@@ -177,7 +228,18 @@ function Inner() {
               </View>
             </View>
             <View style={styles.contentBlock}>
-              <ThemedText style={styles.description}>Nenhum usuário específico</ThemedText>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Incluídos</ThemedText>
+                <ThemedText style={styles.value}>
+                  {schedule.includedUserIds?.length || 0} funcionário(s)
+                </ThemedText>
+              </View>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Excluídos</ThemedText>
+                <ThemedText style={styles.value}>
+                  {schedule.excludedUserIds?.length || 0} funcionário(s)
+                </ThemedText>
+              </View>
             </View>
           </Card>
         </View>

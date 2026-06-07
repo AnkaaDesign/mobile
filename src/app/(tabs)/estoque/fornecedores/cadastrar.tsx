@@ -11,7 +11,7 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, STREET_TYPE_OPTIONS } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
@@ -51,6 +51,7 @@ function SupplierCreateScreenInner() {
       cnpj: null,
       corporateName: null,
       email: null,
+      streetType: null,
       address: null,
       addressNumber: null,
       addressComplement: null,
@@ -107,6 +108,7 @@ function SupplierCreateScreenInner() {
         if (data.cnpj) formData.append("cnpj", data.cnpj);
         if (data.corporateName) formData.append("corporateName", data.corporateName);
         if (data.email) formData.append("email", data.email);
+        if (data.streetType) formData.append("streetType", data.streetType);
         if (data.address) formData.append("address", data.address);
         if (data.addressNumber) formData.append("addressNumber", data.addressNumber);
         if (data.addressComplement) formData.append("addressComplement", data.addressComplement);
@@ -311,6 +313,26 @@ function SupplierCreateScreenInner() {
                   keyboardType="numeric"
                   editable={!isSubmitting && !isCepLoading}
                   error={!!form.formState.errors.zipCode}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          <FormFieldGroup label="Tipo de Logradouro" error={form.formState.errors.streetType?.message}>
+            <Controller
+              control={form.control}
+              name="streetType"
+              render={({ field: { onChange, value } }) => (
+                <Combobox
+                  value={value || ""}
+                  onValueChange={(v) => onChange(v?.toString() || null)}
+                  options={[...STREET_TYPE_OPTIONS]}
+                  placeholder="Selecione o tipo de logradouro"
+                  searchPlaceholder="Pesquisar tipo..."
+                  emptyText="Nenhum tipo encontrado"
+                  searchable={true}
+                  clearable={true}
+                  disabled={isSubmitting}
                 />
               )}
             />

@@ -1,7 +1,7 @@
 // packages/schemas/src/item.ts
 
 import { z } from "zod";
-import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, nullableString, createNameSchema, optionalNonNegativeNumber, optionalPositiveNumber } from "./common";
+import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, nullableString, createNameSchema, optionalNonNegativeNumber } from "./common";
 import type { Item, ItemBrand, ItemCategory, Price } from '../types';
 import { MEASURE_UNIT, MEASURE_TYPE, ABC_CATEGORY, XYZ_CATEGORY, PPE_TYPE, PPE_SIZE, PPE_DELIVERY_MODE, STOCK_LEVEL, ITEM_CATEGORY_TYPE, ACCOUNTING_TYPE } from '../constants';
 import { activityIncludeSchema, activityWhereSchema, activityOrderBySchema } from "./activity";
@@ -2254,7 +2254,7 @@ export const itemCreateSchemaBase = z.object({
   quantity: z.number().min(0, "Quantidade deve ser não-negativa").default(0),
   maxQuantity: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Quantidade máxima deve ser não-negativa"),
   reorderPoint: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Ponto de reposição deve ser não-negativo"),
-  reorderQuantity: optionalPositiveNumber.refine((val) => val === null || val === undefined || val > 0, "Quantidade de reposição deve ser positiva"),
+  reorderQuantity: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Quantidade de reposição deve ser não-negativa"),
   boxQuantity: z.number().int().nullable().optional(),
   lastAutoOrderDate: z.coerce.date().nullable().optional(),
   icms: z.number().min(0, "ICMS deve ser entre 0 e 100%").max(100, "ICMS deve ser entre 0 e 100%").default(0).optional(),
@@ -2334,7 +2334,7 @@ export const itemUpdateSchemaBase = z.object({
   quantity: z.number().min(0).optional(),
   maxQuantity: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Quantidade máxima deve ser não-negativa"),
   reorderPoint: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Ponto de reposição deve ser não-negativo"),
-  reorderQuantity: optionalPositiveNumber.refine((val) => val === null || val === undefined || val > 0, "Quantidade de reposição deve ser positiva"),
+  reorderQuantity: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Quantidade de reposição deve ser não-negativa"),
   boxQuantity: z.number().int().nullable().optional(),
   lastAutoOrderDate: z.coerce.date().nullable().optional(),
   icms: z.number().min(0, "ICMS deve ser entre 0 e 100%").max(100, "ICMS deve ser entre 0 e 100%").optional(),

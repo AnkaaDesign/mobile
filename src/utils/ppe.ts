@@ -356,7 +356,7 @@ export function getPpeFrequencyLabel(frequency: SCHEDULE_FREQUENCY): string {
 export function formatPpeScheduleSummary(schedule: PpeDeliverySchedule): string {
   const frequency = getPpeFrequencyLabel(schedule.frequency);
   const status = schedule.isActive ? "Ativo" : "Inativo";
-  const ppeTypes = schedule.ppeItems?.map((item) => `${item.ppeType} (${item.quantity}x)`).join(", ") || "Não especificado";
+  const ppeTypes = schedule.items?.map((item) => `${item.ppeType} (${item.quantity}x)`).join(", ") || "Não especificado";
 
   const assignmentTypeLabels: Record<string, string> = {
     ALL: "Todos os usuários",

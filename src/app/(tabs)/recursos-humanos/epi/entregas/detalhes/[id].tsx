@@ -43,6 +43,7 @@ export default function HRPPEDeliveryDetailsScreen() {
               sector: true,
             },
           },
+          sector: true,
         },
       },
       reviewedByUser: true,

@@ -169,7 +169,7 @@ export class ExternalWithdrawalService {
     data: ExternalWithdrawalBatchUpdateFormData,
     queryParams?: ExternalWithdrawalQueryFormData,
   ): Promise<ExternalWithdrawalBatchUpdateResponse<ExternalWithdrawal>> {
-    const response = await apiClient.patch<ExternalWithdrawalBatchUpdateResponse<ExternalWithdrawal>>(`${this.basePath}/batch`, data, {
+    const response = await apiClient.put<ExternalWithdrawalBatchUpdateResponse<ExternalWithdrawal>>(`${this.basePath}/batch`, data, {
       params: queryParams,
     });
     return response.data;

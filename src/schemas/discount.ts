@@ -120,19 +120,18 @@ export const discountWhereSchema: z.ZodType<any> = z.lazy(() =>
           }),
         ])
         .optional(),
-      calculationOrder: z
+      discountType: z
         .union([
-          z.number(),
+          z.string(),
           z.object({
-            equals: z.number().optional(),
-            not: z.number().optional(),
-            lt: z.number().optional(),
-            lte: z.number().optional(),
-            gt: z.number().optional(),
-            gte: z.number().optional(),
+            equals: z.string().optional(),
+            in: z.array(z.string()).optional(),
+            notIn: z.array(z.string()).optional(),
           }),
         ])
         .optional(),
+      isPersistent: z.boolean().optional(),
+      isActive: z.boolean().optional(),
       createdAt: nullableDate.optional(),
       updatedAt: nullableDate.optional(),
 
@@ -172,7 +171,7 @@ export const calculationOrderBySchema = z.union([
       percentage: orderByDirectionSchema.optional(),
       value: orderByDirectionSchema.optional(),
       reference: orderByDirectionSchema.optional(),
-      calculationOrder: orderByDirectionSchema.optional(),
+      discountType: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
 
@@ -199,7 +198,7 @@ export const calculationOrderBySchema = z.union([
         percentage: orderByDirectionSchema.optional(),
         value: orderByDirectionSchema.optional(),
         reference: orderByDirectionSchema.optional(),
-        calculationOrder: orderByDirectionSchema.optional(),
+        discountType: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
 
@@ -237,11 +236,9 @@ export const discountCreateSchema = z
       .transform((val) => Math.round(val * 100) / 100)
       .optional(),
     reference: createNameSchema(1, 200, "Referência"),
-    calculationOrder: z
-      .number()
-      .int("Ordem de desconto deve ser um número inteiro")
-      .min(1, "Ordem de desconto deve ser maior ou igual a 1")
-      .default(1),
+    discountType: z.string().optional(),
+    isPersistent: z.boolean().default(false),
+    expirationDate: nullableDate.optional(),
   })
   .refine(
     (data) => data.percentage !== undefined || data.value !== undefined,
@@ -265,11 +262,10 @@ export const discountUpdateSchema = z
       .transform((val) => Math.round(val * 100) / 100)
       .optional(),
     reference: createNameSchema(1, 200, "Referência").optional(),
-    calculationOrder: z
-      .number()
-      .int("Ordem de desconto deve ser um número inteiro")
-      .min(1, "Ordem de desconto deve ser maior ou igual a 1")
-      .optional(),
+    discountType: z.string().optional(),
+    isPersistent: z.boolean().optional(),
+    isActive: z.boolean().optional(),
+    expirationDate: nullableDate.optional(),
   })
   .refine(
     (data) => {
@@ -329,7 +325,7 @@ export const discountGetManySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(10),
   include: discountIncludeSchema.optional(),
   where: discountWhereSchema.optional(),
-  orderBy: calculationOrderBySchema.optional().default({ calculationOrder: "asc", createdAt: "desc" }),
+  orderBy: calculationOrderBySchema.optional().default({ discountType: "asc", createdAt: "desc" }),
   searchingFor: z.string().optional(),
 
   // Specific discount filters
@@ -405,5 +401,8 @@ export const mapToDiscountFormData = createMapToFormDataHelper<Discount, Discoun
   percentage: discount.percentage ?? undefined,
   value: discount.value ?? undefined,
   reference: discount.reference,
-  calculationOrder: discount.calculationOrder,
+  discountType: discount.discountType ?? undefined,
+  isPersistent: discount.isPersistent ?? undefined,
+  isActive: discount.isActive ?? undefined,
+  expirationDate: discount.expirationDate ?? undefined,
 }));

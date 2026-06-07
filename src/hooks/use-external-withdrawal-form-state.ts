@@ -555,8 +555,10 @@ export function useExternalWithdrawalFormState(
       withdrawerName: withdrawerName.trim(),
       type,
       notes: notes.trim() || undefined,
-      nfeId: nfeId || null,
-      receiptId: receiptId || null,
+      // NOTE: nfeId/receiptId are intentionally NOT included here. They are only
+      // used internally as dirty-tracking placeholders ("pending") when a file is
+      // picked; the actual files are uploaded via multipart (receipts/invoices),
+      // so sending the placeholder would fail the API's .uuid() validation.
       // Item payload must match externalWithdrawalCreateSchema:
       // { itemId, withdrawedQuantity, price }. Price is only sent for
       // CHARGEABLE withdrawals (mirrors web create form behavior).
@@ -566,7 +568,7 @@ export function useExternalWithdrawalFormState(
         price: type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE ? item.price || 0 : undefined,
       })),
     };
-  }, [withdrawerName, type, notes, nfeId, receiptId, getSelectedItemsWithData]);
+  }, [withdrawerName, type, notes, getSelectedItemsWithData]);
 
   const resetForm = useCallback(async () => {
     setState({

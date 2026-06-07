@@ -141,6 +141,16 @@ function EditScheduleInner() {
           size: true,
         }
       },
+      // Artworks (Layouts section) - MUST be included so the prefill sees existing
+      // artworks. Without this, adding a single layout submits artworkIds with only
+      // the new ID and the API full-replaces the relation, deleting all existing artworks.
+      artworks: true,
+      // Financial file relations - read by the prefill (budgetIds/invoiceIds/receiptIds/
+      // bankSlipIds). No editing UI today, but including them keeps change-detection truthful.
+      budgets: true,
+      invoices: true,
+      receipts: true,
+      bankSlips: true,
     }
   });
 

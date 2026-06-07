@@ -97,8 +97,8 @@ export const PpeScheduleTable = React.memo<PpeScheduleTableProps>(({
       const assignmentDisplay = (item as any).user?.name || (item as any).category?.name || ASSIGNMENT_TYPE_LABELS[item.assignmentType as keyof typeof ASSIGNMENT_TYPE_LABELS];
 
       // Get PPE items summary
-      const ppeItemsCount = item.ppeItems?.length || 0;
-      const ppeItemsSummary = item.ppeItems
+      const ppeItemsCount = item.items?.length || 0;
+      const ppeItemsSummary = item.items
         ?.slice(0, 2)
         .map(ppeItem => PPE_TYPE_LABELS[ppeItem.ppeType as keyof typeof PPE_TYPE_LABELS])
         .join(", ") || "N/A";

@@ -53,11 +53,11 @@ export const deploymentService = {
     apiClient.delete<DeploymentBatchResponse>('/deployments/batch', { data }),
 
   // New deployment workflow operations
-  createDeployment: (commitHash: string, environment: DEPLOYMENT_ENVIRONMENT) =>
-    apiClient.post<DeploymentCreateResponse>(`/deployments/deploy/${commitHash}`, { environment }),
+  createDeployment: (commitHash: string, environment: DEPLOYMENT_ENVIRONMENT, application: string = 'MOBILE') =>
+    apiClient.post<DeploymentCreateResponse>(`/deployments/deploy/${application}/${environment}/${commitHash}`),
 
-  getCurrentDeployment: (environment: DEPLOYMENT_ENVIRONMENT, params?: DeploymentGetByIdParams) =>
-    apiClient.get<DeploymentGetUniqueResponse>(`/deployments/current/${environment}`, { params }),
+  getCurrentDeployment: (application: string, environment: string) =>
+    apiClient.get<DeploymentGetUniqueResponse>(`/deployments/current/${application}/${environment}`),
 
   getAvailableCommits: (limit?: number) =>
     apiClient.get<{ success: boolean; message: string; data: GitCommitInfo[] }>('/deployments/commits/list', {

@@ -35,6 +35,7 @@ export const ppeSchedulesListConfig: ListConfig<PpeDeliverySchedule> = {
     defaultSort: { field: 'nextRun', direction: 'asc' },
     pageSize: 25,
     include: {
+      items: true,
       deliveries: true,
       autoOrders: true,
     },
@@ -58,7 +59,7 @@ export const ppeSchedulesListConfig: ListConfig<PpeDeliverySchedule> = {
         width: 2.0,
         align: 'left',
         render: (schedule) => {
-          const count = schedule.ppeItems?.length || 0
+          const count = schedule.items?.length || 0
           return count > 0 ? `${count} item${count > 1 ? 'ns' : ''}` : '-'
         },
       },
@@ -277,7 +278,7 @@ export const ppeSchedulesListConfig: ListConfig<PpeDeliverySchedule> = {
     formats: ['csv', 'json', 'pdf'],
     columns: [
       { key: 'id', label: 'ID', path: 'id' },
-      { key: 'ppeItems', label: 'Itens de EPI', path: 'ppeItems', format: (value) => value?.length || 0 },
+      { key: 'ppeItems', label: 'Itens de EPI', path: 'items', format: (value) => value?.length || 0 },
       { key: 'assignmentType', label: 'Atribuição', path: 'assignmentType', format: (value) => ASSIGNMENT_TYPE_LABELS[value] || value },
       { key: 'frequency', label: 'Frequência', path: 'frequency', format: (value) => FREQUENCY_LABELS[value] || value },
       { key: 'nextRun', label: 'Próxima Execução', path: 'nextRun', format: 'date' },

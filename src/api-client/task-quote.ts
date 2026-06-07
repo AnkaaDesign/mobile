@@ -96,6 +96,12 @@ export class TaskQuoteService {
     return response.data;
   }
 
+  // Revert billing approval back to COMMERCIAL_APPROVED (requires all bank slips + NFS-e cancelled)
+  async revertBilling(id: string): Promise<TaskQuoteResponse> {
+    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/revert-billing`);
+    return response.data;
+  }
+
   async internalApprove(id: string): Promise<TaskQuoteResponse> {
     const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/internal-approve`);
     return response.data;
@@ -117,6 +123,18 @@ export class TaskQuoteService {
 
   async getExpired(): Promise<TaskQuoteListResponse> {
     const response = await apiClient.get<TaskQuoteListResponse>(`${this.basePath}/expired/list`);
+    return response.data;
+  }
+
+  // Update just the orderNumber on a customerConfig — safe to call on locked quotes
+  async updateCustomerConfigOrderNumber(id: string, customerId: string, orderNumber: string | null): Promise<TaskQuoteResponse> {
+    const response = await apiClient.patch<TaskQuoteResponse>(`${this.basePath}/${id}/customer-config-order-number`, { customerId, orderNumber });
+    return response.data;
+  }
+
+  // Get suggestion based on matching task fields (used to pre-fill services on new budgets)
+  async getSuggestion(params: { name: string; customerId: string; category: string; implementType: string }): Promise<TaskQuoteResponse> {
+    const response = await apiClient.get<TaskQuoteResponse>(`${this.basePath}/suggest`, { params });
     return response.data;
   }
 
@@ -147,8 +165,13 @@ export const updateTaskQuoteStatus = (id: string, status: TASK_QUOTE_STATUS, rea
 export const approveTaskQuote = (id: string) => taskQuoteService.approve(id);
 export const budgetApproveTaskQuote = (id: string) => taskQuoteService.budgetApprove(id);
 export const commercialApproveTaskQuote = (id: string) => taskQuoteService.commercialApprove(id);
+export const revertBillingTaskQuote = (id: string) => taskQuoteService.revertBilling(id);
 export const internalApproveTaskQuote = (id: string) => taskQuoteService.internalApprove(id);
 export const rejectTaskQuote = (id: string, reason?: string) => taskQuoteService.reject(id, reason);
 export const cancelTaskQuote = (id: string) => taskQuoteService.cancel(id);
 export const getExpiredTaskQuotes = () => taskQuoteService.getExpired();
+export const updateTaskQuoteCustomerConfigOrderNumber = (id: string, customerId: string, orderNumber: string | null) =>
+  taskQuoteService.updateCustomerConfigOrderNumber(id, customerId, orderNumber);
+export const getTaskQuoteSuggestion = (params: { name: string; customerId: string; category: string; implementType: string }) =>
+  taskQuoteService.getSuggestion(params);
 export const getPublicTaskQuote = (id: string) => taskQuoteService.getPublic(id);

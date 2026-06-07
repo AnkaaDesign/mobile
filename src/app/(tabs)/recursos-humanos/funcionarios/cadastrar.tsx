@@ -1,203 +1,27 @@
-import { useState } from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Input } from "@/components/ui/input";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize } from "@/constants/design-system";
-import { IconUser, IconPhone } from "@tabler/icons-react-native";
+import { CollaboratorForm } from "@/components/administration/collaborator/form/collaborator-form";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EmployeesCreateScreen() {
   useScreenReady();
   const formKey = useFormScreenKey();
-  const { colors } = useTheme();
   const nav = useNav();
-  const goBack = () => nav.goBack();
-  const [formData, setFormData] = useState({
-    name: "",
-    cpf: "",
-    email: "",
-    phone: "",
-  });
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      Alert.alert("Erro", "Nome é obrigatório");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // TODO: Implement employee creation API call
-      // API client already shows success alert
-      goBack();
-    } catch (_error) {
-      // API client already shows error alert
-    } finally {
-      setIsLoading(false);
+  const handleSuccess = (id?: string) => {
+    if (id) {
+      nav.replace(mobileRoute(`/recursos-humanos/funcionarios/detalhes/${id}`));
+    } else {
+      nav.goBack();
     }
   };
 
   return (
-    <ScrollView key={formKey} style={[styles.scrollView, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      <View style={styles.container}>
-        {/* Header Card */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconUser size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.title, { color: colors.foreground }]}>
-                Informações Básicas
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Nome
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="Nome completo"
-                placeholderTextColor={colors.mutedForeground}
-                value={formData.name}
-                onChangeText={(value) => handleInputChange("name", String(value ?? ''))}
-              />
-            </View>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                CPF
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="000.000.000-00"
-                placeholderTextColor={colors.mutedForeground}
-                value={formData.cpf}
-                onChangeText={(value) => handleInputChange("cpf", String(value ?? ''))}
-              />
-            </View>
-          </View>
-        </Card>
-
-        {/* Contact Information Card */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconPhone size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.title, { color: colors.foreground }]}>
-                Informações de Contato
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                E-mail
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="email@example.com"
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="email-address"
-                value={formData.email}
-                onChangeText={(value) => handleInputChange("email", String(value ?? ''))}
-              />
-            </View>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Telefone
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="(00) 00000-0000"
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="phone-pad"
-                value={formData.phone}
-                onChangeText={(value) => handleInputChange("phone", String(value ?? ''))}
-              />
-            </View>
-          </View>
-        </Card>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          <Button onPress={() => goBack()} variant="outline" style={{ flex: 1 }}>
-            <ThemedText style={{ color: colors.foreground }}>Cancelar</ThemedText>
-          </Button>
-          <Button onPress={handleSubmit} style={{ flex: 1 }} disabled={isLoading}>
-            <ThemedText style={{ color: colors.primaryForeground }}>
-              {isLoading ? "Salvando..." : "Salvar"}
-            </ThemedText>
-          </Button>
-        </View>
-
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES] }}>
+      <CollaboratorForm key={formKey} mode="create" onSuccess={handleSuccess} />
+    </PrivilegeGate>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
-  },
-  card: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-    marginBottom: spacing.xs,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: fontSize.sm,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-});

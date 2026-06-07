@@ -77,6 +77,11 @@ export function useTaskPermissions() {
   // Only ADMIN and COMMERCIAL can see non-approved artworks (approve/reprove workflow)
   const canApproveArtworks = isAdmin || isCommercial;
   const canViewTruckDetails = !isProduction || isTeamLeaderUser;
+  // Customer identity (Razão Social) and creation metadata (Criado) are hidden
+  // from the PRODUCTION sector on the task detail — they're commercial/admin
+  // context the shop floor doesn't need. Every other sector keeps them.
+  const canViewCustomer = !isProduction;
+  const canViewCreatedBy = !isProduction;
 
   // Field editability
   const canEditIdentity = !isFinancial && !isWarehouse && !isDesigner;
@@ -100,6 +105,7 @@ export function useTaskPermissions() {
     canViewCheckinCheckout, canViewDossie, canViewReimbursement, canViewObservation,
     canViewArtworkBadges, canViewDocuments,
     canViewArtworks, canApproveArtworks, canViewTruckDetails,
+    canViewCustomer, canViewCreatedBy,
     canEditIdentity, canEditSector, canEditCommission,
     canEditDates, canEditResponsibles, canEditServices,
     canEditLayout, canEditPaint,

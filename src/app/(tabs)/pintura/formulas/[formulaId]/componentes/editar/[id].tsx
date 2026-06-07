@@ -23,7 +23,7 @@ import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { FormScreen } from "@/components/screens/form-screen";
 import { useFormFlow } from "@/hooks/use-form-flow";
-import { IconPercentage, IconPackage, IconEdit } from "@tabler/icons-react-native";
+import { IconPercentage, IconWeight, IconPackage, IconEdit } from "@tabler/icons-react-native";
 
 export default function EditComponentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -60,7 +60,7 @@ function EditComponentScreenInner() {
     resolver: zodResolver(paintFormulaComponentUpdateSchema),
     defaultValues: {
       itemId: "",
-      ratio: 1.0,
+      weight: 1.0,
     },
   });
 
@@ -69,7 +69,7 @@ function EditComponentScreenInner() {
     if (component?.data) {
       form.reset({
         itemId: component.data.itemId,
-        ratio: component.data.ratio,
+        weight: component.data.weight ?? component.data.weightInGrams,
       });
     }
   }, [component, form]);
@@ -97,7 +97,7 @@ function EditComponentScreenInner() {
   return (
     <FormScreen
       title="Editar Componente"
-      subtitle="Altere o item ou a proporção do componente na fórmula"
+      subtitle="Altere o item ou o peso do componente na fórmula"
       mode="edit"
       form={form}
       flow={flow}
@@ -113,7 +113,7 @@ function EditComponentScreenInner() {
           <View style={styles.headerText}>
             <ThemedText style={styles.headerTitle}>Editar Componente</ThemedText>
             <ThemedText style={styles.headerSubtitle}>
-              Altere o item ou a proporção do componente na fórmula
+              Altere o item ou o peso do componente na fórmula
             </ThemedText>
           </View>
         </View>
@@ -203,23 +203,23 @@ function EditComponentScreenInner() {
         )}
       </Card>
 
-      {/* Ratio */}
+      {/* Weight */}
       <Card style={styles.card}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <View style={styles.headerLeft}>
-            <IconPercentage size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Alterar Proporção</ThemedText>
+            <IconWeight size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Alterar Peso</ThemedText>
           </View>
         </View>
 
         <Controller
           control={control}
-          name="ratio"
+          name="weight"
           render={({ field: { onChange, onBlur, value } }) => (
             <View>
-              <Label style={styles.fieldLabel}>Proporção (%)</Label>
+              <Label style={styles.fieldLabel}>Peso (g)</Label>
               <ThemedText style={styles.fieldHelperText}>
-                Insira a nova proporção deste componente na fórmula (0.1% a 100%)
+                Insira o novo peso deste componente na fórmula em gramas
               </ThemedText>
               <NumberInput
                 value={value}
@@ -227,24 +227,16 @@ function EditComponentScreenInner() {
                 onBlur={onBlur}
                 placeholder="Ex: 15.5"
                 min={0.1}
-                max={100}
                 step={0.1}
                 decimalPlaces={1}
-                error={!!errors.ratio}
+                error={!!errors.weight}
               />
-              {errors.ratio && (
-                <ThemedText style={styles.fieldErrorText}>{errors.ratio.message}</ThemedText>
+              {errors.weight && (
+                <ThemedText style={styles.fieldErrorText}>{errors.weight.message}</ThemedText>
               )}
             </View>
           )}
         />
-
-        <View style={styles.ratioHelper}>
-          <ThemedText style={styles.helperTitle}>Dicas para proporções:</ThemedText>
-          <ThemedText style={styles.helperText}>• 5% = componente secundário</ThemedText>
-          <ThemedText style={styles.helperText}>• 25% = componente principal</ThemedText>
-          <ThemedText style={styles.helperText}>• 50% = base da fórmula</ThemedText>
-        </View>
       </Card>
     </FormScreen>
   );

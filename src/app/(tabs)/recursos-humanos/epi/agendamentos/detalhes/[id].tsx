@@ -39,6 +39,11 @@ export default function PPEScheduleDetailsScreen() {
     refetch,
   } = usePpeDeliverySchedule(id, {
     include: {
+      items: {
+        include: {
+          item: true,
+        },
+      },
       deliveries: {
         include: {
           user: { select: { name: true, id: true } },

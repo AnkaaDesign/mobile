@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, createNameSchema, createDescriptionSchema, nullableDate, moneySchema } from "./common";
 import type { Task } from "../types";
-import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, TRUCK_CATEGORY, IMPLEMENT_TYPE } from "../constants";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, TRUCK_CATEGORY, IMPLEMENT_TYPE, COMMISSION_STATUS } from "../constants";
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
 import { taskQuoteCreateNestedSchema } from "./task-quote";
@@ -1249,6 +1249,12 @@ export const taskCreateSchema = z
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
+    commission: z
+      .enum(Object.values(COMMISSION_STATUS) as [string, ...string[]], {
+        errorMap: () => ({ message: "Status de comissão inválido" }),
+      })
+      .nullable()
+      .optional(),
     // Responsibles relationship
     responsibleIds: z.array(z.string().uuid("ID de responsável inválido")).optional(),
     newResponsibles: z.array(responsibleCreateInlineSchema).optional(),
@@ -1375,6 +1381,12 @@ export const taskUpdateSchema = z
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
+    commission: z
+      .enum(Object.values(COMMISSION_STATUS) as [string, ...string[]], {
+        errorMap: () => ({ message: "Status de comissão inválido" }),
+      })
+      .nullable()
+      .optional(),
     // Responsibles relationship
     responsibleIds: z.array(z.string().uuid("ID de responsável inválido")).optional(),
     newResponsibles: z.array(responsibleCreateInlineSchema).optional(),

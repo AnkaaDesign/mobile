@@ -1,21 +1,19 @@
-import { useMemo, useCallback, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import type { DefaultValues, FieldError } from "react-hook-form";
+import type { DefaultValues, Path, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { itemCategoryCreateSchema, itemCategoryUpdateSchema, type ItemCategoryCreateFormData, type ItemCategoryUpdateFormData } from '../../../../../schemas';
-import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS, ITEM_CATEGORY_LEVEL, ITEM_CATEGORY_LEVEL_LABELS, ACCOUNTING_TYPE, ACCOUNTING_TYPE_LABELS } from "@/constants";
+import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS, ACCOUNTING_TYPE, ACCOUNTING_TYPE_LABELS } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
-import { useItems, useKeyboardAwareScroll } from "@/hooks";
-import { getItemCategories } from "@/api-client/item-category";
+import { useItems, useItemCategories, useKeyboardAwareScroll } from "@/hooks";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import type { ItemCategory } from "@/types";
 
 // Base form data type that covers both create and update scenarios
 // This helps TypeScript properly infer the Path types for react-hook-form
@@ -33,12 +31,13 @@ interface ItemCategoryFormProps<TMode extends "create" | "update"> {
   onCancel: () => void;
   isSubmitting?: boolean;
   defaultValues?: Partial<TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData>;
-  /** Pre-fetched parent Categoria so the parent combobox shows its name on edit. */
-  initialParent?: ItemCategory;
   mode: TMode;
+  // In update mode, the category being edited — excluded from the parent picker
+  // so a category can't become its own parent.
+  categoryId?: string;
 }
 
-export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, onCancel, isSubmitting, defaultValues, initialParent, mode }: ItemCategoryFormProps<TMode>) {
+export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, onCancel, isSubmitting, defaultValues, mode, categoryId }: ItemCategoryFormProps<TMode>) {
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
 
@@ -50,19 +49,70 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
       name: "",
       type: ITEM_CATEGORY_TYPE.REGULAR,
       parentId: null,
-      categoryLevel: ITEM_CATEGORY_LEVEL.CATEGORY,
+      categoryLevel: 1,
       accountingType: null,
       itemIds: [],
       ...defaultValues,
     } as DefaultValues<ItemCategoryBaseFormData>,
   });
 
+  // A category with a parent is a Subcategoria (level 2); otherwise a top-level
+  // Categoria (level 1). Mirrors web's CategoryForm taxonomy behaviour.
+  const watchedParentId = form.watch("parentId");
+  const isSubcategory = !!watchedParentId;
+
+  // Keep categoryLevel in sync with the presence of a parent so the API stores
+  // the right level.
+  useEffect(() => {
+    const nextLevel = isSubcategory ? 2 : 1;
+    if (form.getValues("categoryLevel") !== nextLevel) {
+      form.setValue("categoryLevel", nextLevel, { shouldDirty: true });
+    }
+  }, [isSubcategory, form]);
+
+  // Existing categories for the parent picker.
+  const { data: categories } = useItemCategories({ orderBy: { name: "asc" } });
+
+  const parentOptions = useMemo(
+    () =>
+      (categories?.data || [])
+        // A category can't be its own parent; subcategories (level 2) can't be parents.
+        .filter((c) => c.id !== categoryId && (c.categoryLevel ?? 1) === 1)
+        .map((c) => ({ value: c.id, label: c.name })),
+    [categories, categoryId],
+  );
+
+  // When a parent is chosen, roll up its accountingType onto this subcategory
+  // (read-only in the UI) so per-item splits land in the correct cost group.
+  const handleParentChange = (parentId: string | null) => {
+    form.setValue("parentId", parentId, { shouldDirty: true, shouldValidate: true });
+    if (parentId) {
+      const parent = (categories?.data || []).find((c) => c.id === parentId);
+      if (parent?.accountingType) {
+        form.setValue("accountingType", parent.accountingType as ACCOUNTING_TYPE, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    }
+  };
+
+  // Item categories only ever roll up into these operational accounting groups;
+  // the remaining (transaction-only) AccountingType values are intentionally
+  // hidden. Mirrors web's AccountingTypeSelector.
+  const accountingTypeOptions = [
+    ACCOUNTING_TYPE.PRODUTIVO,
+    ACCOUNTING_TYPE.MATERIA_PRIMA,
+    ACCOUNTING_TYPE.MANUTENCAO,
+    ACCOUNTING_TYPE.EPI,
+    ACCOUNTING_TYPE.ESCRITORIO,
+  ].map((value) => ({
+    label: ACCOUNTING_TYPE_LABELS[value],
+    value,
+  }));
+
   const handleSubmit = async (data: ItemCategoryBaseFormData) => {
     try {
-      // Derive categoryLevel from parentId: a category with a parent is a
-      // Subcategoria (level 2), otherwise a top-level Categoria (level 1).
-      const categoryLevel = data.parentId ? ITEM_CATEGORY_LEVEL.SUBCATEGORY : ITEM_CATEGORY_LEVEL.CATEGORY;
-
       // In update mode, never send itemIds. The web edit form (CategoryEditForm)
       // does not submit itemIds; the API treats a provided itemIds array as the
       // full association set, so sending an empty/stale array would disassociate
@@ -71,9 +121,9 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
         mode === "update"
           ? (() => {
               const { itemIds: _omitItemIds, ...rest } = data;
-              return { ...rest, categoryLevel };
+              return rest;
             })()
-          : { ...data, categoryLevel };
+          : data;
       // Cast to the appropriate type based on mode
       await onSubmit(payload as TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData);
     } catch (error) {
@@ -102,57 +152,7 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
     value: type,
   }));
 
-  // Item categories only roll up into these operational accounting groups; the
-  // remaining (transaction-only) AccountingType values are intentionally hidden.
-  const accountingTypeOptions = [
-    ACCOUNTING_TYPE.PRODUTIVO,
-    ACCOUNTING_TYPE.MATERIA_PRIMA,
-    ACCOUNTING_TYPE.MANUTENCAO,
-    ACCOUNTING_TYPE.EPI,
-    ACCOUNTING_TYPE.ESCRITORIO,
-  ].map((accType) => ({
-    label: ACCOUNTING_TYPE_LABELS[accType],
-    value: accType,
-  }));
-
   const watchedType = form.watch("type");
-  const watchedParentId = form.watch("parentId");
-  const derivedLevel = watchedParentId ? ITEM_CATEGORY_LEVEL.SUBCATEGORY : ITEM_CATEGORY_LEVEL.CATEGORY;
-
-  // Cache for parent category lookups
-  const parentCacheRef = useRef<Map<string, ItemCategory>>(new Map());
-  if (initialParent && !parentCacheRef.current.has(initialParent.id)) {
-    parentCacheRef.current.set(initialParent.id, initialParent);
-  }
-  const initialParentOptions = useMemo<ItemCategory[]>(() => (initialParent ? [initialParent] : []), [initialParent?.id]);
-
-  // Search top-level Categorias for the parent selector (level 1 only)
-  const searchParentCategories = useCallback(
-    async (search: string, page: number = 1): Promise<{ data: ItemCategory[]; hasMore: boolean }> => {
-      const params: any = {
-        orderBy: { name: "asc" },
-        page,
-        take: 50,
-        categoryLevel: ITEM_CATEGORY_LEVEL.CATEGORY,
-        select: { id: true, name: true, type: true, categoryLevel: true, accountingType: true },
-      };
-      if (search && search.trim()) params.searchingFor = search.trim();
-
-      try {
-        const response = await getItemCategories(params);
-        const categories = response.data || [];
-        categories.forEach((cat) => parentCacheRef.current.set(cat.id, cat));
-        return { data: categories, hasMore: response.meta?.hasNextPage || false };
-      } catch (error) {
-        console.error("[CategoryForm] Error fetching parent categories:", error);
-        return { data: [], hasMore: false };
-      }
-    },
-    [],
-  );
-
-  const getParentLabel = useCallback((category: ItemCategory) => category.name, []);
-  const getParentValue = useCallback((category: ItemCategory) => category.id, []);
 
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
     onFieldLayout: handlers.handleFieldLayout,
@@ -203,39 +203,13 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
           </FormFieldGroup>
 
           <FormFieldGroup
-            label="Tipo"
-            helper="Classificação contábil usada como tipo principal da categoria"
-            error={(form.formState.errors.accountingType as FieldError | undefined)?.message}
-          >
-            <Controller
-              control={form.control}
-              name="accountingType"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox
-                  placeholder="Selecione a classificação contábil"
-                  options={accountingTypeOptions}
-                  value={typeof value === "string" ? value : ""}
-                  onValueChange={(selectedValue) => {
-                    const singleValue = Array.isArray(selectedValue) ? selectedValue[0] : selectedValue;
-                    onChange(singleValue === "" ? null : singleValue ?? null);
-                  }}
-                  disabled={isSubmitting}
-                  searchable={true}
-                  clearable={true}
-                  error={error?.message}
-                />
-              )}
-            />
-          </FormFieldGroup>
-
-          <FormFieldGroup
-            label="Tipo físico (interno)"
+            label="Tipo da Categoria"
             helper={
               watchedType === ITEM_CATEGORY_TYPE.PPE
-                ? "Sinalizador físico interno: Equipamentos de Proteção Individual"
+                ? "Categoria para Equipamentos de Proteção Individual"
                 : watchedType === ITEM_CATEGORY_TYPE.TOOL
-                  ? "Sinalizador físico interno: ferramentas e equipamentos"
-                  : "Sinalizador físico interno: produtos gerais"
+                  ? "Categoria para ferramentas e equipamentos"
+                  : "Categoria para produtos gerais"
             }
             error={(form.formState.errors.type as FieldError | undefined)?.message}
           >
@@ -244,7 +218,7 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
               name="type"
               render={({ field: { onChange, value }, fieldState: { error } }) => (
                 <Combobox
-                  placeholder="Selecione o tipo físico"
+                  placeholder="Selecione o tipo da categoria"
                   options={typeOptions}
                   value={value}
                   onValueChange={onChange}
@@ -260,43 +234,55 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
           <FormFieldGroup
             label="Categoria Pai"
             helper={
-              derivedLevel === ITEM_CATEGORY_LEVEL.SUBCATEGORY
-                ? `Esta será uma ${ITEM_CATEGORY_LEVEL_LABELS[ITEM_CATEGORY_LEVEL.SUBCATEGORY]} (nível 2)`
-                : `Deixe vazio para criar uma ${ITEM_CATEGORY_LEVEL_LABELS[ITEM_CATEGORY_LEVEL.CATEGORY]} de nível superior (nível 1)`
+              isSubcategory
+                ? "Nível 2 · Subcategoria — herda o grupo contábil da categoria pai"
+                : "Nível 1 · Categoria — deixe vazio para uma categoria de topo"
             }
           >
             <Controller
               control={form.control}
               name="parentId"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox<ItemCategory>
-                  value={typeof value === "string" ? value : ""}
-                  onValueChange={(selectedValue) => {
-                    const singleValue = Array.isArray(selectedValue) ? selectedValue[0] : selectedValue;
-                    onChange(singleValue === "" ? null : singleValue ?? null);
-                  }}
-                  async={true}
-                  queryKey={["item-categories", "form-parents"]}
-                  queryFn={searchParentCategories}
-                  initialOptions={initialParentOptions}
-                  getOptionLabel={getParentLabel}
-                  getOptionValue={getParentValue}
-                  placeholder="Nenhuma (categoria de nível superior)"
-                  searchPlaceholder="Buscar categoria pai..."
-                  emptyText="Nenhuma categoria encontrada"
+              render={({ field: { value }, fieldState: { error } }) => (
+                <Combobox
+                  placeholder="Nenhuma (categoria de topo)"
+                  searchPlaceholder="Pesquisar categorias..."
+                  options={parentOptions}
+                  value={value ?? undefined}
+                  onValueChange={(v) => handleParentChange(v ? (v as string) : null)}
                   disabled={isSubmitting}
-                  clearable={true}
-                  minSearchLength={0}
-                  pageSize={50}
-                  debounceMs={300}
+                  clearable
+                  emptyText="Nenhuma categoria encontrada"
                   error={error?.message}
                 />
               )}
             />
           </FormFieldGroup>
 
-          <FormFieldGroup label="Nível" helper="Definido automaticamente pela categoria pai">
-            <Input value={ITEM_CATEGORY_LEVEL_LABELS[derivedLevel]} editable={false} />
+          <FormFieldGroup
+            label="Grupo Contábil"
+            helper={
+              isSubcategory
+                ? "Herdado da categoria pai"
+                : "Classificação contábil (DRE) para rateio de custos"
+            }
+            error={(form.formState.errors.accountingType as FieldError | undefined)?.message}
+          >
+            <Controller
+              control={form.control}
+              name="accountingType"
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <Combobox
+                  placeholder="Selecione o grupo contábil"
+                  searchPlaceholder="Pesquisar grupo..."
+                  options={accountingTypeOptions}
+                  value={value ?? undefined}
+                  onValueChange={(v) => onChange(v ? (v as string) : null)}
+                  disabled={isSubmitting || isSubcategory}
+                  clearable
+                  error={error?.message}
+                />
+              )}
+            />
           </FormFieldGroup>
 
           <FormFieldGroup label="Produtos Associados">

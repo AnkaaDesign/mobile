@@ -37,6 +37,7 @@ import { selectionHaptic, impactHaptic, lightImpactHaptic } from "@/utils/haptic
 import { usePathname } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
+import { useMyQuestionnaireEntries } from '@/hooks/useQuestionnaire';
 import { normalizePath } from '@/utils/route-mapper';
 import { mobileRoute } from '@/constants/routes.types';
 import { maskPhone } from '@/utils';
@@ -78,6 +79,17 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
   const { navigation } = props;
   const drawerStatus = useDrawerStatus();
+
+  // Mirror the web sidebar gate: only show the Questionários entry while the
+  // user has at least one non-submitted (open) entry. Default to "has open" until
+  // the queue loads so the item doesn't flash in after the drawer renders.
+  const { data: questionnaireResp } = useMyQuestionnaireEntries();
+  const hasOpenQuestionnaire = useMemo(() => {
+    if (!questionnaireResp) return true;
+    return ((questionnaireResp.data ?? []) as { status: string }[]).some(
+      (e) => e.status !== "SUBMITTED",
+    );
+  }, [questionnaireResp]);
 
   // State
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
@@ -195,9 +207,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         });
     };
 
-    const userFilteredMenu = getFilteredMenuForUser(MENU_ITEMS, navUser, 'mobile');
+    const userFilteredMenu = getFilteredMenuForUser(MENU_ITEMS, navUser, 'mobile', hasOpenQuestionnaire);
     return filterDetailPages(userFilteredMenu);
-  }, [navUser]);
+  }, [navUser, hasOpenQuestionnaire]);
 
   // Toggle submenu expansion (accordion style - only collapse same-level siblings)
   const toggleSubmenu = useCallback(

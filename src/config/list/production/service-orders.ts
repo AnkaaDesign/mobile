@@ -220,23 +220,10 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
       route: '/producao/ordens-de-servico/cadastrar',
       canCreate: canEditTasks,
     },
+    // Bulk "Atualizar Status" removed: bulk onPress only receives (ids, mutations) and
+    // cannot render a status picker, so the placeholder sent empty updates. Re-add once
+    // the list machinery supports a bulk value picker.
     bulk: [
-      {
-        key: 'update-status',
-        label: 'Atualizar Status',
-        icon: 'list-checks',
-        variant: 'default',
-        confirm: {
-          title: 'Atualizar Status',
-          message: (count) => `Deseja atualizar o status de ${count} ${count === 1 ? 'ordem' : 'ordens'} de serviço?`,
-        },
-        onPress: async (ids, { batchUpdateAsync } = {}) => {
-          // Implementation would need to prompt for new status
-          await batchUpdateAsync?.({
-            serviceOrders: Array.from(ids).map((id) => ({ id, data: {} })),
-          })
-        },
-      },
       {
         key: 'delete',
         label: 'Excluir',

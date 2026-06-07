@@ -111,11 +111,6 @@ export class ServerService {
     return response.data;
   }
 
-  async deleteUser(username: string): Promise<ActionResponse> {
-    const response = await apiClient.delete<ActionResponse>(`${this.basePath}/users/${username}`);
-    return response.data;
-  }
-
   async setUserPassword(username: string, data: SetUserPasswordFormData): Promise<ActionResponse> {
     const response = await apiClient.put<ActionResponse>(`${this.basePath}/users/${username}/password`, data);
     return response.data;
@@ -197,7 +192,6 @@ export const getSystemStatus = () => serverService.getStatus();
 // System Users
 export const getSystemUsers = () => serverService.getUsers();
 export const createSystemUser = (data: CreateUserFormData) => serverService.createUser(data);
-export const deleteSystemUser = (username: string) => serverService.deleteUser(username);
 export const setSystemUserPassword = (username: string, data: SetUserPasswordFormData) => serverService.setUserPassword(username, data);
 
 // File Manager (shared folders API)

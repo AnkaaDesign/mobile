@@ -402,25 +402,10 @@ export const historyCancelledListConfig: ListConfig<Task> = {
   },
 
   actions: {
+    // Bulk "Atribuir Setor" removed: bulk onPress only receives (ids, mutations) and
+    // cannot render a sector picker, so the placeholder sent empty updates. Re-add once
+    // the list machinery supports a bulk value picker.
     bulk: [
-      {
-        key: 'update-sector',
-        label: 'Atribuir Setor',
-        icon: 'users',
-        variant: 'default',
-        confirm: {
-          title: 'Atribuir Setor',
-          message: (count) => `Deseja atribuir um setor a ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
-        },
-        onPress: async (ids, mutations) => {
-          // Implementation would need to prompt for sector
-          if (mutations?.batchUpdateAsync) {
-            await mutations.batchUpdateAsync({
-              tasks: Array.from(ids).map((id) => ({ id, data: {} })),
-            })
-          }
-        },
-      },
       {
         key: 'delete',
         label: 'Excluir',

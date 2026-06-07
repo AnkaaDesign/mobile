@@ -219,7 +219,6 @@ export interface PpeDeliverySchedule extends BaseEntity {
 
   // Relations (optional, populated based on query)
   items?: PpeScheduleItem[];
-  ppeItems?: PpeScheduleItem[];
   deliveries?: PpeDelivery[];
   autoOrders?: Order[];
 }

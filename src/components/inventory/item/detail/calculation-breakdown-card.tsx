@@ -17,15 +17,29 @@ import {
   fontWeight,
   borderRadius,
 } from "@/constants/design-system";
-import { formatQuantity } from "@/utils";
+import { formatQuantity, formatDate } from "@/utils";
 import { ABC_CATEGORY_LABELS, XYZ_CATEGORY_LABELS } from "@/constants";
 import type { Item } from "../../../../types";
 
-interface CalculationBreakdownCardProps {
-  item: Item;
+interface ScheduledNextOrder {
+  quantity: number;
+  scheduleName?: string | null;
+  scheduleId?: string;
+  nextRun?: Date | string | null;
 }
 
-const WORKING_DAYS_PER_MONTH = 22;
+interface CalculationBreakdownCardProps {
+  item: Item;
+  // When the item belongs to an active order schedule, this is the quantity that
+  // schedule will actually order next (gap + one cycle). It replaces the standalone
+  // restock-to-max suggestion, which is never used for scheduled items.
+  scheduledNextOrder?: ScheduledNextOrder | null;
+}
+
+// The API derives reorderPoint/maxQuantity using monthlyConsumption / 30
+// (item.service.ts avgDailyConsumption = monthlyConsumption / 30), and the
+// formula strings below print "/30". Keep the daily-average display consistent.
+const DAYS_PER_MONTH = 30;
 
 const ABC_XYZ_EXPLANATIONS: Record<string, string> = {
   "A-X":
@@ -48,13 +62,13 @@ const ABC_XYZ_EXPLANATIONS: Record<string, string> = {
     "Baixo valor com consumo imprevisível: estoque oportunístico, baixa prioridade.",
 };
 
-export function CalculationBreakdownCard({ item }: CalculationBreakdownCardProps) {
+export function CalculationBreakdownCard({ item, scheduledNextOrder }: CalculationBreakdownCardProps) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   const data = useMemo(() => {
     const monthlyConsumption = item.monthlyConsumption ?? 0;
-    const avgDailyConsumption = monthlyConsumption / WORKING_DAYS_PER_MONTH;
+    const avgDailyConsumption = monthlyConsumption / DAYS_PER_MONTH;
     const estimatedLeadTime = item.estimatedLeadTime ?? null;
     const reorderPoint = item.reorderPoint ?? null;
     const maxQuantity = item.maxQuantity ?? null;
@@ -154,7 +168,7 @@ export function CalculationBreakdownCard({ item }: CalculationBreakdownCardProps
           <Row
             label="Consumo Diário Médio"
             value={`${formatQuantity(data.avgDailyConsumption)} un/dia`}
-            hint={`(${formatQuantity(data.monthlyConsumption)} un/mês ÷ ${WORKING_DAYS_PER_MONTH} dias úteis)`}
+            hint={`(${formatQuantity(data.monthlyConsumption)} un/mês ÷ ${DAYS_PER_MONTH} dias)`}
             colors={colors}
           />
           <Row
@@ -202,6 +216,39 @@ export function CalculationBreakdownCard({ item }: CalculationBreakdownCardProps
             hint={data.classificationExplanation ?? undefined}
             colors={colors}
           />
+
+          {scheduledNextOrder ? (
+            // The item belongs to an active schedule — show the quantity that schedule
+            // will actually order next (gap + one cycle) instead of the standalone
+            // restock-to-max suggestion, which is never used for scheduled items.
+            <View style={[styles.nextOrderBlock, { backgroundColor: colors.primary + "12" }]}>
+              <View style={styles.nextOrderMain}>
+                <ThemedText style={[styles.nextOrderLabel, { color: colors.foreground }]}>
+                  Próximo pedido (agendamento)
+                </ThemedText>
+                <ThemedText style={[styles.nextOrderValue, { color: colors.primary }]}>
+                  {formatQuantity(scheduledNextOrder.quantity)}
+                </ThemedText>
+              </View>
+              <ThemedText style={[styles.nextOrderHint, { color: colors.mutedForeground }]}>
+                {scheduledNextOrder.scheduleName || "Agendamento ativo"}
+                {scheduledNextOrder.nextRun ? ` · ${formatDate(scheduledNextOrder.nextRun)}` : ""}
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={[styles.nextOrderBlock, { backgroundColor: colors.primary + "12" }]}>
+              <View style={styles.nextOrderMain}>
+                <ThemedText style={[styles.nextOrderLabel, { color: colors.mutedForeground }]}>
+                  Quantidade sugerida para o próximo pedido
+                </ThemedText>
+                <ThemedText style={[styles.nextOrderValue, { color: colors.primary }]}>
+                  {item.reorderQuantity !== null && item.reorderQuantity !== undefined
+                    ? formatQuantity(item.reorderQuantity)
+                    : "—"}
+                </ThemedText>
+              </View>
+            </View>
+          )}
 
           <FormulaBlock
             title="Fórmula do Ponto de Reposição"
@@ -339,6 +386,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+  },
+  nextOrderBlock: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: 2,
+  },
+  nextOrderMain: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  nextOrderLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    flex: 1,
+  },
+  nextOrderValue: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+  },
+  nextOrderHint: {
+    fontSize: fontSize.xs,
   },
   formulaBlock: {
     marginTop: spacing.sm,

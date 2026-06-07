@@ -1,14 +1,12 @@
-import { View, FlatList, RefreshControl, Alert } from "react-native";
-import { useState } from "react";
+import { View, FlatList, RefreshControl } from "react-native";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { useSystemUsers, useDeleteSystemUser } from "@/hooks/useServer";
+import { useSystemUsers } from "@/hooks/useServer";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
@@ -18,8 +16,6 @@ import { useScreenReady } from "@/hooks/use-screen-ready";
 export default function SystemUsersScreen() {
   const { colors } = useTheme();
   const { data, isLoading, refetch, isFetching } = useSystemUsers();
-  const { mutateAsync: deleteUser } = useDeleteSystemUser();
-  const [deletingUser, setDeletingUser] = useState<string | null>(null);
 
   useScreenReady(!isLoading);
 
@@ -60,32 +56,6 @@ export default function SystemUsersScreen() {
       default:
         return "Desconhecido";
     }
-  };
-
-  const handleDeleteUser = (username: string) => {
-    Alert.alert(
-      "Confirmar remoção",
-      `Tem certeza que deseja remover o usuário ${username}? Esta ação não pode ser desfeita.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setDeletingUser(username);
-              await deleteUser(username);
-              // API client interceptor already shows the success toast
-              refetch();
-            } catch (_error) {
-              // API client interceptor already shows the error toast
-            } finally {
-              setDeletingUser(null);
-            }
-          },
-        },
-      ]
-    );
   };
 
   return (
@@ -196,20 +166,6 @@ export default function SystemUsersScreen() {
                       </View>
                     </>
                   )}
-
-                  {/* Actions */}
-                  <View className="mt-2">
-                    <Button
-                      variant="destructive"
-                      onPress={() => handleDeleteUser(item.username)}
-                      disabled={deletingUser === item.username}
-                    >
-                      <Icon name="trash" className="w-4 h-4 mr-2" />
-                      <Text className="text-destructive-foreground">
-                        {deletingUser === item.username ? "Removendo..." : "Remover Usuário"}
-                      </Text>
-                    </Button>
-                  </View>
                 </CardContent>
               </Card>
             )}

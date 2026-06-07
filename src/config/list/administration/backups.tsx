@@ -1,12 +1,14 @@
 import React from 'react'
-import { View } from 'react-native'
+import { View, Alert } from 'react-native'
 import { Text } from '@/components/ui/text'
 import { Icon } from '@/components/ui/icon'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useBackupSystemHealth } from '@/hooks/useBackup'
+import { useBackupSystemHealth, backupQueryKeys } from '@/hooks/useBackup'
 import { borderRadius } from '@/constants/design-system'
 import type { ListConfig } from '@/components/list/types'
 import type { BackupMetadata } from '@/api-client/backup'
+import { backupApi } from '@/api-client'
+import { queryClient } from '@/lib/query-client'
 import { canEditUsers } from '@/utils/permissions/entity-permissions'
 
 // Status labels
@@ -330,8 +332,32 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
           title: 'Confirmar Exclusão',
           message: (count: number) => `Deseja excluir ${count} ${count === 1 ? 'backup' : 'backups'}?`,
         },
-        onPress: async (ids, context) => {
-          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
+        onPress: async (ids) => {
+          // There is no batch-delete backup route, so delete sequentially.
+          // Suppress per-item toasts and show a single summary instead.
+          const idList = Array.from(ids)
+          const failures: string[] = []
+          for (const id of idList) {
+            try {
+              await backupApi.deleteBackup(id, { suppressToast: true })
+            } catch {
+              failures.push(id)
+            }
+          }
+          queryClient.invalidateQueries({ queryKey: backupQueryKeys.all })
+
+          const succeeded = idList.length - failures.length
+          if (failures.length === 0) {
+            Alert.alert(
+              'Backups excluídos',
+              `${succeeded} ${succeeded === 1 ? 'backup excluído' : 'backups excluídos'} com sucesso.`,
+            )
+          } else {
+            Alert.alert(
+              'Exclusão parcial',
+              `${succeeded} de ${idList.length} ${idList.length === 1 ? 'backup excluído' : 'backups excluídos'}. ${failures.length} ${failures.length === 1 ? 'falhou' : 'falharam'}.`,
+            )
+          }
         },
       },
     ],

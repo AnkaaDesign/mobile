@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 
 import { Input } from "@/components/ui/input";
@@ -9,11 +8,13 @@ import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { FormScreen } from "@/components/screens/form-screen";
 import { useFormFlow } from "@/hooks/use-form-flow";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { usePpeDeliveryScheduleMutations } from "@/hooks";
 import { mobileRoute } from "@/constants/routes.types";
 import {
   routes,
   SCHEDULE_FREQUENCY,
   ASSIGNMENT_TYPE,
+  PPE_TYPE,
   SECTOR_PRIVILEGES,
 } from "@/constants";
 import {
@@ -37,6 +38,8 @@ export default function CreatePPEScheduleScreen() {
 }
 
 function CreatePPEScheduleScreenInner() {
+  const { createAsync } = usePpeDeliveryScheduleMutations();
+
   const form = useForm<PpeScheduleCreateForm>({
     defaultValues: {
       name: "",
@@ -48,14 +51,31 @@ function CreatePPEScheduleScreenInner() {
     },
   });
 
-  // Mock mutation — wire to real API once available.
   const flow = useFormFlow<PpeScheduleCreateForm, { id: string }>({
     form,
-    mutation: async (_data) => {
-      Alert.alert("Sucesso", "Agendamento criado com sucesso");
-      return { id: "" };
+    mutation: async (data) => {
+      const result = await createAsync({
+        name: data.name,
+        frequency: data.frequency,
+        frequencyCount: data.frequencyCount,
+        assignmentType: data.assignmentType,
+        isActive: data.isActive,
+        excludedUserIds: [],
+        includedUserIds: [],
+        customMonths: [],
+        rescheduleCount: 0,
+        items: (data.ppeTypes || [])
+          .filter((t) => t !== PPE_TYPE.OTHERS)
+          .map((ppeType) => ({ ppeType: ppeType as PPE_TYPE, quantity: 1 })),
+      });
+      const newId = (result as any)?.data?.id || (result as any)?.id;
+      return { id: newId ?? "" };
     },
-    successRoute: () => mobileRoute(routes.inventory.ppe.schedules.root),
+    successAction: "replace",
+    successRoute: (result) =>
+      result.id
+        ? mobileRoute(routes.inventory.ppe.schedules.details(result.id))
+        : mobileRoute(routes.inventory.ppe.schedules.root),
     cancelFallback: mobileRoute(routes.inventory.ppe.schedules.root),
   });
 

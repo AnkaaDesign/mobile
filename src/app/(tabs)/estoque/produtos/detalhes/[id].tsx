@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { IconHistory, IconPackage } from "@tabler/icons-react-native";
@@ -7,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { useTheme } from "@/lib/theme";
-import { useItem } from "@/hooks";
+import { useItem, useOrderSchedules, useOrderScheduleProjection } from "@/hooks";
 import { mobileRoute } from "@/constants/routes.types";
 import { CHANGE_LOG_ENTITY_TYPE, routes } from "@/constants";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -29,64 +30,59 @@ export default function ItemDetailScreen() {
 
   const query = useItem(id as string, {
     enabled: !!id && id !== "",
-    select: {
-      id: true,
-      name: true,
-      uniCode: true,
-      quantity: true,
-      maxQuantity: true,
-      reorderPoint: true,
-      reorderQuantity: true,
-      monthlyConsumption: true,
-      monthlyConsumptionTrendPercent: true,
-      stockLevel: true,
-      hasActiveOrder: true,
-      totalPrice: true,
-      isActive: true,
-      abcCategory: true,
-      abcCategoryOrder: true,
-      xyzCategory: true,
-      xyzCategoryOrder: true,
-      boxQuantity: true,
-      estimatedLeadTime: true,
-      barcodes: true,
-      ppeType: true,
-      ppeSize: true,
-      ppeCA: true,
-      ppeDeliveryMode: true,
-      ppeStandardQuantity: true,
-      shouldAssignToUser: true,
-      createdAt: true,
-      brand: { select: { id: true, name: true } },
-      category: { select: { id: true, name: true } },
-      supplier: { select: { id: true, fantasyName: true } },
-      measures: {
-        select: { id: true, value: true, unit: true, measureType: true },
-      },
+    include: {
+      brand: true,
+      category: true,
+      supplier: true,
+      measures: true,
       prices: {
-        take: 10,
         orderBy: { createdAt: "desc" },
-        select: { id: true, value: true, createdAt: true },
+        take: 10,
+      },
+      activities: {
+        include: {
+          user: { select: { name: true, id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
       },
       relatedItems: {
-        select: {
-          id: true,
-          name: true,
-          quantity: true,
-          isActive: true,
-          brand: { select: { id: true, name: true } },
-          category: { select: { id: true, name: true } },
+        include: {
+          brand: true,
+          category: true,
         },
       },
       relatedTo: {
-        select: {
-          id: true,
-          name: true,
-          quantity: true,
-          isActive: true,
-          brand: { select: { id: true, name: true } },
-          category: { select: { id: true, name: true } },
+        include: {
+          brand: true,
+          category: true,
         },
+      },
+      orderItems: {
+        include: {
+          order: {
+            include: {
+              supplier: true,
+              items: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+      borrows: {
+        include: {
+          user: { select: { name: true, id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+      changeLogs: {
+        include: {
+          user: { select: { name: true, id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
       },
       _count: {
         select: {
@@ -102,6 +98,49 @@ export default function ItemDetailScreen() {
     },
   });
 
+  // This item's purchasing is governed by any active order schedule that lists it.
+  // The schedule's projected "expected" quantity (gap + one cycle) is what actually
+  // gets ordered — so surface that on the detail page instead of the standalone
+  // restock-to-max suggestion, which is never used for scheduled items.
+  const { data: schedulesResponse } = useOrderSchedules(
+    { where: { isActive: true }, limit: 100 },
+    { enabled: !!id },
+  );
+
+  const targetSchedule = useMemo(() => {
+    if (!id) return null;
+    const matches = (schedulesResponse?.data || []).filter(
+      (s) => Array.isArray(s.items) && s.items.includes(id as string),
+    );
+    // Prefer the schedule that fires soonest — that's the next order this item will be in.
+    return (
+      matches.sort(
+        (a, b) =>
+          new Date(a.nextRun || 0).getTime() - new Date(b.nextRun || 0).getTime(),
+      )[0] || null
+    );
+  }, [schedulesResponse, id]);
+
+  const { data: scheduleProjectionResponse } = useOrderScheduleProjection(
+    targetSchedule?.id || "",
+    { enabled: !!targetSchedule?.id },
+  );
+
+  const scheduledNextOrder = useMemo(() => {
+    if (!targetSchedule) return null;
+    const projItem = scheduleProjectionResponse?.data?.items?.find(
+      (p) => p.itemId === id,
+    );
+    if (!projItem) return null;
+    return {
+      quantity: projItem.quantityGapPlusCycle,
+      scheduleName: targetSchedule.name,
+      scheduleId: targetSchedule.id,
+      nextRun:
+        scheduleProjectionResponse?.data?.meta?.nextRun ?? targetSchedule.nextRun ?? null,
+    };
+  }, [targetSchedule, scheduleProjectionResponse, id]);
+
   return (
     <DetailScreen<Item>
       query={query as any}
@@ -114,7 +153,7 @@ export default function ItemDetailScreen() {
         <View style={styles.body}>
           <SpecificationsCard item={item} />
           <MetricsCard item={item} />
-          <CalculationBreakdownCard item={item} />
+          <CalculationBreakdownCard item={item} scheduledNextOrder={scheduledNextOrder} />
           {item.ppeType && <PpeInfoCard item={item} />}
           <RelatedItemsCard item={item} />
 

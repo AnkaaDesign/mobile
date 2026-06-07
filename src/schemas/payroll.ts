@@ -18,8 +18,10 @@ import { BONUS_STATUS, PAYROLL_STATUS } from '../constants';
 export const discountCreateSchema = z.object({
   percentage: percentageSchema.nullable().optional(),
   value: moneySchema.nullable().optional(),
-  calculationOrder: z.number().int().min(1, "Ordem de cálculo deve ser pelo menos 1").default(1),
-  reference: createNameSchema(1, 200, "Referência")
+  reference: createNameSchema(1, 200, "Referência"),
+  discountType: z.string().optional(),
+  isPersistent: z.boolean().default(false),
+  expirationDate: nullableDate.optional(),
 }).refine(
   data => (data.percentage !== null && data.percentage !== undefined) ||
          (data.value !== null && data.value !== undefined),
@@ -31,8 +33,11 @@ export type DiscountCreateFormData = z.infer<typeof discountCreateSchema>;
 export const discountUpdateSchema = z.object({
   percentage: percentageSchema.nullable().optional(),
   value: moneySchema.nullable().optional(),
-  calculationOrder: z.number().int().min(1, "Ordem de cálculo deve ser pelo menos 1").optional(),
-  reference: createNameSchema(1, 200, "Referência").optional()
+  reference: createNameSchema(1, 200, "Referência").optional(),
+  discountType: z.string().optional(),
+  isPersistent: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  expirationDate: nullableDate.optional(),
 }).refine(
   data => {
     // If any field is provided, we need to validate the percentage/value constraint
@@ -143,8 +148,11 @@ export const mapPayrollToFormData = (payroll: any): PayrollUpdateFormData => {
     discounts: payroll.discounts?.map((discount: any) => ({
       percentage: discount.percentage,
       value: discount.value,
-      calculationOrder: discount.calculationOrder,
-      reference: discount.reference
+      reference: discount.reference,
+      discountType: discount.discountType,
+      isPersistent: discount.isPersistent,
+      isActive: discount.isActive,
+      expirationDate: discount.expirationDate,
     }))
   };
 };
@@ -169,7 +177,8 @@ export const payrollIncludeSchema = z
     discounts: z.union([z.boolean(), z.object({
       where: z.object({}).optional(),
       orderBy: z.object({
-        calculationOrder: z.enum(["asc", "desc"]).optional()
+        discountType: z.enum(["asc", "desc"]).optional(),
+        createdAt: z.enum(["asc", "desc"]).optional()
       }).optional()
     })]).optional(),
     user: z

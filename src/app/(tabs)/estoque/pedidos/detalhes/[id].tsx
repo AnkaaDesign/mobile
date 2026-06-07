@@ -33,6 +33,7 @@ export default function OrderDetailScreen() {
           item: {
             include: {
               brand: true,
+              category: true,
               measures: true,
             },
           },
@@ -43,6 +44,7 @@ export default function OrderDetailScreen() {
           logo: true,
         },
       },
+      orderSchedule: true,
       budgets: true,
       invoices: true,
       receipts: true,

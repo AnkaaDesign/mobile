@@ -37,6 +37,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
     defaultSort: { field: 'nextRun', direction: 'asc' },
     pageSize: 25,
     include: {
+      items: true,
       deliveries: true,
       autoOrders: true,
     },
@@ -68,7 +69,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (schedule) => String(schedule.ppeItems?.length || 0),
+        render: (schedule) => String(schedule.items?.length || 0),
       },
       {
         key: 'isActive',
@@ -111,7 +112,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (schedule) => String(schedule.ppeItems?.filter(item => item.id).length || 0),
+        render: (schedule) => String(schedule.items?.filter(item => item.id).length || 0),
       },
     ],
     defaultVisible: ['frequency', 'assignmentType', 'ppeItems', 'isActive'],

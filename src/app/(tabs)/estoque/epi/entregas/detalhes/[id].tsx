@@ -75,7 +75,7 @@ export default function PPEDeliveryDetailsScreen() {
       },
       user: { include: { position: true, sector: true } },
       reviewedByUser: true,
-      ppeSchedule: { include: { ppeItems: true } },
+      ppeSchedule: { include: { items: true } },
     },
   });
 

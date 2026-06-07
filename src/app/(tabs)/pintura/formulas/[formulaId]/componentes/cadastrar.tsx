@@ -19,7 +19,7 @@ import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { FormScreen } from "@/components/screens/form-screen";
 import { useFormFlow } from "@/hooks/use-form-flow";
-import { IconPercentage, IconPackage, IconPlus } from "@tabler/icons-react-native";
+import { IconWeight, IconPackage, IconPlus } from "@tabler/icons-react-native";
 
 export default function CreateComponentScreen() {
   const { colors } = useTheme();
@@ -47,7 +47,7 @@ export default function CreateComponentScreen() {
     defaultValues: {
       formulaPaintId: formulaId!,
       itemId: "",
-      ratio: 1.0,
+      weight: 1.0,
     },
   });
 
@@ -74,7 +74,7 @@ export default function CreateComponentScreen() {
   return (
     <FormScreen
       title="Adicionar Componente"
-      subtitle="Adicione um item à fórmula com sua respectiva proporção"
+      subtitle="Adicione um item à fórmula com seu respectivo peso"
       mode="create"
       form={form}
       flow={flow}
@@ -89,7 +89,7 @@ export default function CreateComponentScreen() {
           <View style={styles.headerText}>
             <ThemedText style={styles.headerTitle}>Novo Componente</ThemedText>
             <ThemedText style={styles.headerSubtitle}>
-              Adicione um item à fórmula com sua respectiva proporção
+              Adicione um item à fórmula com seu respectivo peso
             </ThemedText>
           </View>
         </View>
@@ -153,23 +153,23 @@ export default function CreateComponentScreen() {
         )}
       </Card>
 
-      {/* Ratio Input */}
+      {/* Weight Input */}
       <Card style={styles.card}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <View style={styles.headerLeft}>
-            <IconPercentage size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Proporção</ThemedText>
+            <IconWeight size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Peso</ThemedText>
           </View>
         </View>
 
         <Controller
           control={control}
-          name="ratio"
+          name="weight"
           render={({ field: { onChange, onBlur, value } }) => (
             <View>
-              <Label style={styles.fieldLabel}>Proporção (%)</Label>
+              <Label style={styles.fieldLabel}>Peso (g)</Label>
               <ThemedText style={styles.fieldHelperText}>
-                Insira a proporção deste componente na fórmula (0.1% a 100%)
+                Insira o peso deste componente na fórmula em gramas
               </ThemedText>
               <NumberInput
                 value={value}
@@ -177,24 +177,16 @@ export default function CreateComponentScreen() {
                 onBlur={onBlur}
                 placeholder="Ex: 15.5"
                 min={0.1}
-                max={100}
                 step={0.1}
                 decimalPlaces={1}
-                error={!!errors.ratio}
+                error={!!errors.weight}
               />
-              {errors.ratio && (
-                <ThemedText style={styles.fieldErrorText}>{errors.ratio.message}</ThemedText>
+              {errors.weight && (
+                <ThemedText style={styles.fieldErrorText}>{errors.weight.message}</ThemedText>
               )}
             </View>
           )}
         />
-
-        <View style={styles.ratioHelper}>
-          <ThemedText style={styles.helperTitle}>Exemplos de proporção:</ThemedText>
-          <ThemedText style={styles.helperText}>• 5% = componente secundário</ThemedText>
-          <ThemedText style={styles.helperText}>• 25% = componente principal</ThemedText>
-          <ThemedText style={styles.helperText}>• 50% = base da fórmula</ThemedText>
-        </View>
       </Card>
     </FormScreen>
   );

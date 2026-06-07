@@ -20,6 +20,8 @@ interface TaskDatesCardProps {
     };
   };
   canViewRestrictedFields?: boolean;
+  /** Whether user can view the creation metadata (Criado / created-by). Hidden from the PRODUCTION sector. Defaults to true. */
+  canViewCreatedBy?: boolean;
 }
 
 function formatRelativeTime(date: Date | string): string {
@@ -124,7 +126,7 @@ function ForecastHistory({ taskId }: { taskId: string }) {
   );
 }
 
-export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, canViewRestrictedFields = false }) => {
+export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, canViewRestrictedFields = false, canViewCreatedBy = true }) => {
   const { colors } = useTheme();
 
   const isOverdue = task.term && new Date(task.term) < new Date() &&
@@ -132,23 +134,25 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
 
   return (
     <DetailCard title="Datas" icon="calendar-week">
-      {/* Created At */}
-      <DetailField
-        label="Criado"
-        icon="calendar-plus"
-        value={
-          <View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {formatDateTime(task.createdAt)}
-            </ThemedText>
-            {task.createdBy && (
-              <ThemedText style={[styles.subtext, { color: colors.mutedForeground }]}>
-                por {task.createdBy.name}
+      {/* Created At — hidden from PRODUCTION sector */}
+      {canViewCreatedBy && (
+        <DetailField
+          label="Criado"
+          icon="calendar-plus"
+          value={
+            <View>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                {formatDateTime(task.createdAt)}
               </ThemedText>
-            )}
-          </View>
-        }
-      />
+              {task.createdBy && (
+                <ThemedText style={[styles.subtext, { color: colors.mutedForeground }]}>
+                  por {task.createdBy.name}
+                </ThemedText>
+              )}
+            </View>
+          }
+        />
+      )}
 
       {/* Forecast Date + History */}
       {canViewRestrictedFields && task.forecastDate && (

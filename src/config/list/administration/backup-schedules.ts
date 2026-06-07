@@ -1,6 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
 import type { ScheduledBackupJob } from '@/api-client/backup'
 import { backupApi } from '@/api-client'
+import { queryClient } from '@/lib/query-client'
+import { backupQueryKeys } from '@/hooks/useBackup'
 import { canEditUsers } from '@/utils/permissions/entity-permissions'
 
 // Type labels
@@ -84,13 +86,14 @@ export const backupSchedulesListConfig: ListConfig<ScheduledBackupJob> = {
           title: 'Excluir Agendamento',
           message: (schedule) => `Deseja excluir o agendamento "${schedule.name}"?`,
         },
-        onPress: async (schedule, _, context) => {
-          // useBackupMutations returns { removeScheduled } as a mutation object
-          const removeFn = (context?.mutations as any)?.removeScheduled
-          if (removeFn?.mutateAsync) {
-            await removeFn.mutateAsync(schedule.id)
-          } else if (typeof removeFn === 'function') {
-            await removeFn(schedule.id)
+        onPress: async (schedule) => {
+          try {
+            await backupApi.removeScheduledBackup(schedule.id)
+            // Direct api-client call bypasses react-query, so invalidate manually.
+            queryClient.invalidateQueries({ queryKey: backupQueryKeys.scheduled() })
+            // api-client interceptor already shows success/error toasts.
+          } catch {
+            // api-client interceptor already shows the error toast.
           }
         },
       },

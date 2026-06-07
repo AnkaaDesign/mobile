@@ -123,15 +123,16 @@ export function useAvailableCommits(
 }
 
 /**
- * Hook to get current deployment for an environment
+ * Hook to get current deployment for an environment and application
  */
 export function useCurrentDeployment(
   environment: DEPLOYMENT_ENVIRONMENT,
   options?: Omit<UseQueryOptions<DeploymentGetUniqueResponse>, 'queryKey' | 'queryFn'>,
+  application: string = 'MOBILE',
 ) {
   return useQuery({
-    queryKey: deploymentKeys.current(environment),
-    queryFn: () => deploymentService.getCurrentDeployment(environment).then(res => res.data),
+    queryKey: deploymentKeys.current(application, environment),
+    queryFn: () => deploymentService.getCurrentDeployment(application, environment).then(res => res.data),
     staleTime: 1000 * 30, // 30 seconds
     refetchInterval: 1000 * 30, // Refetch every 30 seconds
     ...options,
@@ -145,8 +146,8 @@ export function useCreateDeployment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ commitHash, environment }: { commitHash: string; environment: DEPLOYMENT_ENVIRONMENT }) =>
-      deploymentService.createDeployment(commitHash, environment).then(res => res.data),
+    mutationFn: ({ commitHash, environment, application = 'MOBILE' }: { commitHash: string; environment: DEPLOYMENT_ENVIRONMENT; application?: string }) =>
+      deploymentService.createDeployment(commitHash, environment, application).then(res => res.data),
     onSuccess: () => {
       // Invalidate all deployment queries
       queryClient.invalidateQueries({ queryKey: deploymentKeys.all });

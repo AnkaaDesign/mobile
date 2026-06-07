@@ -19,7 +19,7 @@ import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { navigationTracker } from "@/utils/navigation-tracker";
 import { useTheme } from "@/lib/theme";
 import { mobileRoute } from "@/constants/routes.types";
-import { routes, TRUCK_MANUFACTURER, SECTOR_PRIVILEGES } from "@/constants";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { canEditLayoutForTask } from "@/utils/permissions/entity-permissions";
 import type { LayoutCreateFormData, TruckCreateFormData } from "@/schemas";
@@ -256,8 +256,6 @@ function LayoutOnlyEditInner() {
       if (!activeTruckId) {
         try {
           const truckData: TruckCreateFormData = {
-            model: `Caminhão - ${task?.name || 'Tarefa'}`,
-            manufacturer: TRUCK_MANUFACTURER.VOLVO,
             taskId: id!,
           };
           const truckResponse = await truckService.createTruck(truckData);

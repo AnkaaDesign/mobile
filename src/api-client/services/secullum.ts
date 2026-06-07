@@ -53,7 +53,17 @@ export const secullumService = {
   // Authentication
   authenticate: (credentials: SecullumAuthCredentials) => apiClient.post<SecullumAuthResponse>("/integrations/secullum/auth", credentials),
 
-  getAuthStatus: () => apiClient.get<{ success: boolean; data: { isAuthenticated: boolean } }>("/integrations/secullum/auth/status"),
+  getAuthStatus: () =>
+    apiClient.get<{ success: boolean; isAuthenticated: boolean; tokenExpiresAt?: string; tokenValid?: boolean }>("/integrations/secullum/auth/status"),
+
+  getHealth: () =>
+    apiClient.get<{
+      success: boolean;
+      status: "healthy" | "degraded" | "down";
+      timestamp: string;
+      version?: string;
+      database?: { status: "connected" | "disconnected"; responseTime?: number };
+    }>("/integrations/secullum/health"),
 
   logout: (email?: string) => apiClient.post<{ success: boolean; message: string }>("/integrations/secullum/auth/logout", { email }),
 
@@ -166,11 +176,6 @@ export const secullumService = {
   }) => apiClient.post<{ success: boolean; data: any }>("/integrations/secullum/requests/approved", params || {}),
 
   // Sync Management
-  getSyncStatus: () => apiClient.get<{ success: boolean; data: any }>("/integrations/secullum/sync/status"),
-
-  triggerSync: (params: { type: "full" | "partial" | "pause" | "resume" | "stop"; entityTypes?: string[] }) =>
-    apiClient.post<{ success: boolean; message: string; data: any }>("/integrations/secullum/sync/trigger", params),
-
   getSyncHistory: (params?: { page?: number; limit?: number; status?: string; entityType?: string; dateFrom?: Date; dateTo?: Date }) =>
     apiClient.get<{ success: boolean; data: any; meta?: any }>("/integrations/secullum/sync/history", { params }),
 
@@ -206,8 +211,6 @@ export const secullumService = {
 
   // Real-time Monitoring
   getSyncJobs: () => apiClient.get<{ success: boolean; data: any }>("/integrations/secullum/sync/jobs"),
-
-  getSystemMetrics: () => apiClient.get<{ success: boolean; data: any }>("/integrations/secullum/metrics"),
 
   // Job Control
   pauseJob: (jobId: string) => apiClient.post<{ success: boolean; message: string }>(`/integrations/secullum/sync/jobs/${jobId}/pause`),

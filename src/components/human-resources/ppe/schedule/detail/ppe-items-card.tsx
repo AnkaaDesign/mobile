@@ -18,7 +18,7 @@ interface PpeItemsCardProps {
 export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
   const { colors, isDark } = useTheme();
 
-  if (!schedule.ppeItems || schedule.ppeItems.length === 0) {
+  if (!schedule.items || schedule.items.length === 0) {
     return (
       <DetailCard title="Itens de EPI" icon="shield">
         <View
@@ -38,7 +38,7 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
     );
   }
 
-  const totalItems = schedule.ppeItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalItems = schedule.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <DetailCard
@@ -54,7 +54,7 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
               marginLeft: spacing.xs,
             }}
           >
-            {schedule.ppeItems.length} tipo(s)
+            {schedule.items.length} tipo(s)
           </ThemedText>
         </Badge>
       }
@@ -108,7 +108,7 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
 
       {/* PPE Items List */}
       <View style={styles.itemsList}>
-        {schedule.ppeItems.map((item, index) => (
+        {schedule.items.map((item, index) => (
           <View
             key={index}
             style={StyleSheet.flatten([

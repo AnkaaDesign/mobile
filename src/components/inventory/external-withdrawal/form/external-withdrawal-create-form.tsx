@@ -21,6 +21,8 @@ import { Alert } from "@/components/ui/alert";
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 
+import { createWithdrawalFormData } from "@/utils/form-data-helper";
+
 import { ExternalWithdrawalItemSelector } from "./external-withdrawal-item-selector";
 import { ExternalWithdrawalSummaryCards } from "./external-withdrawal-summary-cards";
 
@@ -165,14 +167,21 @@ export function ExternalWithdrawalCreateForm() {
     try {
       const formData = getFormData();
 
-      // Note: File upload functionality is available in the UI but not yet implemented
-      // in the submission logic. Files selected will be displayed but not uploaded.
-      // TODO: Implement file upload using useFileUploadManager pattern
-      if (receiptFiles.length > 0 || nfeFiles.length > 0) {
-        console.warn("File upload not yet implemented. Files will not be uploaded.");
-      }
+      // If documents were attached, upload them via multipart. The API create
+      // endpoint accepts file fields `receipts`/`invoices` (mirrors web). Only
+      // newly picked local files (those with a `uri`, not yet uploaded) are sent.
+      const newReceiptFiles = receiptFiles.filter((f) => f.uri && !f.uploaded);
+      const newNfeFiles = nfeFiles.filter((f) => f.uri && !f.uploaded);
+      const hasNewFiles = newReceiptFiles.length > 0 || newNfeFiles.length > 0;
 
-      const result = await createAsync(formData as any);
+      const payload = hasNewFiles
+        ? createWithdrawalFormData(formData, {
+            receipts: newReceiptFiles.length > 0 ? newReceiptFiles : undefined,
+            invoices: newNfeFiles.length > 0 ? newNfeFiles : undefined,
+          })
+        : formData;
+
+      const result = await createAsync(payload as any);
 
       if (result.success && result.data) {
         await resetForm();

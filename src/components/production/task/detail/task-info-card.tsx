@@ -58,9 +58,11 @@ interface TaskInfoCardProps {
   canViewTruckDetails?: boolean;
   /** Whether the current user is from the Designer sector. Used to filter responsibles (MARKETING only, COMMERCIAL fallback). */
   isDesignerUser?: boolean;
+  /** Whether user can view the customer identity (Razão Social). Hidden from the PRODUCTION sector. Defaults to true. */
+  canViewCustomer?: boolean;
 }
 
-export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false, canViewTruckDetails = true, isDesignerUser = false }) => {
+export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false, canViewTruckDetails = true, isDesignerUser = false, canViewCustomer = true }) => {
   const { colors } = useTheme();
 
   // Handle phone call
@@ -114,8 +116,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
       icon="clipboard-list"
       badge={<TaskStatusBadge status={task.status} size="md" />}
     >
-      {/* Customer */}
-      {task.customer && (
+      {/* Customer — Razão Social hidden from PRODUCTION sector */}
+      {canViewCustomer && task.customer && (
         <DetailField
           label="Razão Social"
           icon="building"

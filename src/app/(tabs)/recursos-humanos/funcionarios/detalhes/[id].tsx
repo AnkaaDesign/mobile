@@ -126,7 +126,8 @@ export default function EmployeeDetailScreen() {
       warningsCollaborator: {
         select: {
           id: true,
-          type: true,
+          severity: true,
+          category: true,
           reason: true,
           createdAt: true,
         },
@@ -168,7 +169,6 @@ export default function EmployeeDetailScreen() {
       },
       _count: {
         select: {
-          tasks: true,
           createdTasks: true,
           warningsCollaborator: true,
           borrows: true,
@@ -329,7 +329,7 @@ export default function EmployeeDetailScreen() {
               </View>
               <View style={styles.statInfo}>
                 <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                  {employee._count?.tasks || 0}
+                  {employee._count?.createdTasks || 0}
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
                   tarefas
@@ -355,7 +355,7 @@ export default function EmployeeDetailScreen() {
               </View>
               <View style={styles.statInfo}>
                 <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                  {employee._count?.warnings || 0}
+                  {employee._count?.warningsCollaborator || 0}
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
                   avisos
@@ -381,7 +381,7 @@ export default function EmployeeDetailScreen() {
               </View>
               <View style={styles.statInfo}>
                 <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                  {employee._count?.ppeRequests || 0}
+                  {employee._count?.ppeDeliveries || 0}
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
                   EPIs

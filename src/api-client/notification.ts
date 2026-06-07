@@ -125,11 +125,6 @@ export class NotificationService {
     return response.data;
   }
 
-  async sendNotification(notificationId: string): Promise<NotificationUpdateResponse> {
-    const response = await apiClient.post<NotificationUpdateResponse>(`${this.basePath}/${notificationId}/send`);
-    return response.data;
-  }
-
   // Admin: Send notification to multiple users/sectors
   async adminSendNotification(data: AdminSendNotificationData): Promise<{ success: boolean; message: string }> {
     const response = await apiClient.post<{ success: boolean; message: string }>("/admin/notifications/send", data);
@@ -254,7 +249,6 @@ export const getNotificationsByUser = (userId: string, params?: NotificationGetM
 export const getUnreadNotifications = (userId: string, params?: NotificationGetManyFormData) => notificationService.getUnreadNotifications(userId, params || {});
 export const markAsRead = (notificationId: string, userId: string) => notificationService.markAsRead(notificationId, userId);
 export const markAllAsRead = (userId: string) => notificationService.markAllAsRead(userId);
-export const sendNotification = (notificationId: string) => notificationService.sendNotification(notificationId);
 export const adminSendNotification = (data: AdminSendNotificationData) => notificationService.adminSendNotification(data);
 
 // SeenNotification exports

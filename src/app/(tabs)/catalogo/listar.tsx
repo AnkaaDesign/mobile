@@ -214,7 +214,6 @@ function CatalogViewOnlyListScreen() {
 
         finish: true,
         colorPreview: true,
-        description: true,
         colorOrder: true,
         manufacturer: true,
         createdAt: true,

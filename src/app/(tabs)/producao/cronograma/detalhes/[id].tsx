@@ -115,6 +115,7 @@ export default function ScheduleDetailsScreen() {
     canViewLayout: canViewTruckLayout,
     canViewTruckDetails, canViewArtworks, canApproveArtworks,
     canViewCommission: canViewFinancialFields,
+    canViewCustomer, canViewCreatedBy,
   } = useTaskPermissions();
 
   // TWO-PHASE LOADING: Minimal include for fast above-the-fold, full include for below-fold
@@ -386,7 +387,7 @@ export default function ScheduleDetailsScreen() {
               customer: task.customer,
               responsibles: (task as any).responsibles,
               details: task.details ?? "",
-            }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} isDesignerUser={isDesignerUser} />
+            }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} isDesignerUser={isDesignerUser} canViewCustomer={canViewCustomer} />
           </View>
 
           {/* Dates Card - Datas */}
@@ -394,7 +395,7 @@ export default function ScheduleDetailsScreen() {
             <TaskDatesCard task={{
               ...task,
               createdBy: task.createdBy,
-            } as React.ComponentProps<typeof TaskDatesCard>['task']} canViewRestrictedFields={canViewRestrictedFields} />
+            } as React.ComponentProps<typeof TaskDatesCard>['task']} canViewRestrictedFields={canViewRestrictedFields} canViewCreatedBy={canViewCreatedBy} />
           </View>
 
 

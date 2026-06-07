@@ -172,6 +172,18 @@ export const preferencesGetManySchema = z.object({
 // CRUD Schemas
 // =====================
 
+// JSON value passthrough for dashboard layouts — shape validated separately by the dashboard module
+const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(jsonValueSchema),
+  ]),
+);
+
 const toFormData = <T>(data: T) => data;
 
 export const preferencesCreateSchema = z
@@ -190,6 +202,8 @@ export const preferencesCreateSchema = z
       )
       .default([])
       .optional(),
+    dashboardLayoutWeb: jsonValueSchema.nullable().optional(),
+    dashboardLayoutMobile: jsonValueSchema.nullable().optional(),
   })
   .transform(toFormData);
 
@@ -208,6 +222,8 @@ export const preferencesUpdateSchema = z
       )
       .default([])
       .optional(),
+    dashboardLayoutWeb: jsonValueSchema.nullable().optional(),
+    dashboardLayoutMobile: jsonValueSchema.nullable().optional(),
   })
   .transform(toFormData);
 

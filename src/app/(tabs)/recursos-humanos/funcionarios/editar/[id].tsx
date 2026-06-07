@@ -1,43 +1,31 @@
-import { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { useUser, useScreenReady} from '@/hooks';
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+
+import { CollaboratorForm } from "@/components/administration/collaborator/form/collaborator-form";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/lib/theme";
+import { Text } from "@/components/ui/text";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { useNav } from "@/contexts/nav";
-import { spacing, borderRadius, fontSize } from "@/constants/design-system";
-import { IconUser, IconPhone } from "@tabler/icons-react-native";
-// import { showToast } from "@/components/ui/toast";
+import { mobileRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EmployeeEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <EmployeeEditScreenInner key={id} />;
+  return (
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES] }}>
+      <EmployeeEditInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
-function EmployeeEditScreenInner() {
-  const params = useLocalSearchParams<{ id: string }>();
+function EmployeeEditInner() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const nav = useNav();
-  const goBack = () => nav.goBack();
-  const [formData, setFormData] = useState({
-    name: "",
-    cpf: "",
-    email: "",
-    phone: "",
-  });
-  const [isLoading, setIsLoading] = useState(false);
-
-  const id = params?.id || "";
-
-  const {
-    data: response,
-    isLoading: isFetching,
-  } = useUser(id, {
-    // Use optimized select for better performance - fetches only fields needed for edit form
+  const { data: user, isLoading, error } = useUser(id, {
     select: {
       id: true,
       name: true,
@@ -48,9 +36,10 @@ function EmployeeEditScreenInner() {
       birth: true,
       status: true,
       isActive: true,
+      verified: true,
+      avatarId: true,
       payrollNumber: true,
       performanceLevel: true,
-      // Address fields for form
       address: true,
       addressNumber: true,
       addressComplement: true,
@@ -58,262 +47,69 @@ function EmployeeEditScreenInner() {
       city: true,
       state: true,
       zipCode: true,
-      // IDs for form selectors
-      sectorId: true,
-      positionId: true,
-      // Status tracking dates
+      effectedAt: true,
       exp1StartAt: true,
       exp1EndAt: true,
       exp2StartAt: true,
       exp2EndAt: true,
-      effectedAt: true,
       dismissedAt: true,
-      // Relations for form dropdowns
-      sector: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      position: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      // PPE size for form
+      sectorId: true,
+      positionId: true,
+      createdAt: true,
+      updatedAt: true,
+      sector: { select: { id: true, name: true } },
+      position: { select: { id: true, name: true } },
+      ledSector: { select: { id: true, name: true } },
       ppeSize: true,
     },
     enabled: !!id && id !== "",
   });
 
-  useScreenReady(!isFetching);
+  useScreenReady(!isLoading);
 
-  const employee = response?.data;
-
-  useEffect(() => {
-    if (employee) {
-      setFormData({
-        name: employee.name || "",
-        cpf: employee.cpf || "",
-        email: employee.email || "",
-        phone: employee.phone || "",
-      });
-    }
-  }, [employee]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      Alert.alert("Erro", "Nome é obrigatório");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // TODO: Implement employee update API call
-      // API client already shows success alert
-      goBack();
-    } catch (_error) {
-      // API client already shows error alert
-    } finally {
-      setIsLoading(false);
+  const handleSuccess = (userId?: string) => {
+    if (userId) {
+      nav.replace(mobileRoute(`/recursos-humanos/funcionarios/detalhes/${userId}`));
+    } else {
+      nav.goBack();
     }
   };
 
-  if (isFetching) {
+  if (isLoading) {
     return (
-      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.container}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
-            <Skeleton width="45%" height={18} style={{ marginBottom: spacing.xs }} />
-            <Skeleton width="100%" height={44} />
-            <Skeleton width="100%" height={44} />
-          </View>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
-            <Skeleton width="55%" height={18} style={{ marginBottom: spacing.xs }} />
-            <Skeleton width="100%" height={44} />
-            <Skeleton width="100%" height={44} />
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing.md }}>
-            <Skeleton width="48%" height={44} />
-            <Skeleton width="48%" height={44} />
-          </View>
-          <View style={{ height: spacing.xxl * 2 }} />
-        </View>
-      </ScrollView>
+      <FormSkeleton
+        cards={[
+          { title: true, titleWidth: "45%", fields: 5 },
+          { title: true, titleWidth: "35%", fields: 4 },
+          { title: true, titleWidth: "40%", fields: 3, toggleCount: 1 },
+        ]}
+        showActionBar
+      />
     );
   }
 
-  if (!employee || !id) {
+  if (error || !user?.data) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Card style={styles.card}>
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Funcionário não encontrado
-          </ThemedText>
-          <Button onPress={() => goBack()} style={{ marginTop: spacing.lg }}>
-            <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
-          </Button>
-        </Card>
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.destructive }]}>
+          Erro ao carregar funcionário
+        </Text>
       </View>
     );
   }
 
-  return (
-    <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      <View style={styles.container}>
-        {/* Header Card */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconUser size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.title, { color: colors.foreground }]}>
-                Informações Básicas
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Nome
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="Nome completo"
-                placeholderTextColor={colors.mutedForeground}
-                value={formData.name}
-                onChangeText={(value) => handleInputChange("name", String(value ?? ''))}
-              />
-            </View>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                CPF
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="000.000.000-00"
-                placeholderTextColor={colors.mutedForeground}
-                editable={false}
-                value={formData.cpf}
-              />
-            </View>
-          </View>
-        </Card>
-
-        {/* Contact Information Card */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconPhone size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.title, { color: colors.foreground }]}>
-                Informações de Contato
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                E-mail
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="email@example.com"
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="email-address"
-                value={formData.email}
-                onChangeText={(value) => handleInputChange("email", String(value ?? ''))}
-              />
-            </View>
-            <View>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Telefone
-              </ThemedText>
-              <Input
-                style={[styles.input, { borderColor: colors.border }]}
-                inputStyle={{ color: colors.foreground }}
-                placeholder="(00) 00000-0000"
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="phone-pad"
-                value={formData.phone}
-                onChangeText={(value) => handleInputChange("phone", String(value ?? ''))}
-              />
-            </View>
-          </View>
-        </Card>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          <Button onPress={() => goBack()} variant="outline" style={{ flex: 1 }}>
-            <ThemedText style={{ color: colors.foreground }}>Cancelar</ThemedText>
-          </Button>
-          <Button onPress={handleSubmit} style={{ flex: 1 }} disabled={isLoading}>
-            <ThemedText style={{ color: colors.primaryForeground }}>
-              {isLoading ? "Salvando..." : "Salvar"}
-            </ThemedText>
-          </Button>
-        </View>
-
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
-  );
+  return <CollaboratorForm key={id} mode="update" user={user.data} onSuccess={handleSuccess} />;
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  centered: {
     flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
-  },
-  card: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
+    gap: 12,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
+  errorText: {
+    fontSize: 16,
     fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-    marginBottom: spacing.xs,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: fontSize.sm,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: spacing.md,
   },
 });

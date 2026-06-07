@@ -117,7 +117,7 @@ export const userIncludeSchema = z
         }),
       ])
       .optional(),
-    tasks: z
+    createdTasks: z
       .union([
         z.boolean(),
         z.object({
@@ -142,7 +142,7 @@ export const userIncludeSchema = z
         }),
       ])
       .optional(),
-    commissions: z
+    bonuses: z
       .union([
         z.boolean(),
         z.object({
@@ -159,8 +159,7 @@ export const userIncludeSchema = z
     warningsSupervisor: z.boolean().optional(),
     warningsWitness: z.boolean().optional(),
     ppeDeliveries: z.boolean().optional(),
-    ppeDeliveriesApproved: z.boolean().optional(),
-    ppeSchedules: z.boolean().optional(),
+    ppeDeliveriesReviewed: z.boolean().optional(),
     changeLogs: z.boolean().optional(),
     seenNotification: z.boolean().optional(),
     _count: z.union([z.boolean(), z.object({ select: z.record(z.boolean()).optional() })]).optional(),
@@ -538,7 +537,7 @@ export const userWhereSchema: z.ZodSchema = z.lazy(() =>
         })
         .optional(),
 
-      tasks: z
+      createdTasks: z
         .object({
           some: z.any().optional(),
           every: z.any().optional(),
@@ -546,7 +545,7 @@ export const userWhereSchema: z.ZodSchema = z.lazy(() =>
         })
         .optional(),
 
-      commissions: z
+      bonuses: z
         .object({
           some: z.any().optional(),
           every: z.any().optional(),
@@ -989,6 +988,11 @@ export const userCreateSchema = z
     // Sector leader flag - when true, sets this user as leader of the selected sector
     // The backend will update Sector.leaderId accordingly
     isSectorLeader: z.boolean().default(false),
+    // Payroll fields (parity with api/src/schemas/user.ts userCreateSchema).
+    unionMember: z.boolean().default(false),
+    unionAuthorizationDate: nullableDate.optional(),
+    dependentsCount: z.number().int().min(0).default(0),
+    hasSimplifiedDeduction: z.boolean().default(true),
     // Secullum integration toggle (parity with web <SecullumSyncSwitch />).
     secullumSyncEnabled: z.boolean().default(false).optional(),
     // Per-user override for Secullum Horario.Id (parity with web <HorarioSelector />).
