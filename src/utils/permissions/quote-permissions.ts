@@ -65,7 +65,9 @@ const VALID_TRANSITIONS: Record<TASK_QUOTE_STATUS, TASK_QUOTE_STATUS[]> = {
   PENDING: ['BUDGET_APPROVED'],
   BUDGET_APPROVED: ['COMMERCIAL_APPROVED', 'PENDING'],
   // COMMERCIAL_APPROVED -> PENDING allows cancel/reject back to pending.
-  COMMERCIAL_APPROVED: ['BILLING_APPROVED', 'BUDGET_APPROVED', 'PENDING'],
+  // COMMERCIAL_APPROVED -> SETTLED covers "direct" quotes (orçamento direto)
+  // paid upfront with no billing/installment phase; settleManually is safe here.
+  COMMERCIAL_APPROVED: ['BILLING_APPROVED', 'BUDGET_APPROVED', 'PENDING', 'SETTLED'],
   // BILLING_APPROVED -> SETTLED supports prepayment + stuck-quote recovery.
   BILLING_APPROVED: ['UPCOMING', 'SETTLED'],
   UPCOMING: ['PARTIAL', 'DUE', 'BILLING_APPROVED', 'SETTLED'],
