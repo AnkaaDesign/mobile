@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, nullableDate, toFormData } from "./common";
 import type { Airbrushing } from '../types';
-import { AIRBRUSHING_STATUS, ARTWORK_STATUS } from '../constants';
+import { AIRBRUSHING_STATUS, AIRBRUSHING_PAYMENT_STATUS, ARTWORK_STATUS } from '../constants';
 
 // =====================
 // Include Schema Based on Prisma Schema
@@ -111,6 +111,19 @@ export const airbrushingIncludeSchema = z
         }),
       ])
       .optional(),
+    painter: z
+      .union([
+        z.boolean(),
+        z.object({
+          include: z
+            .object({
+              position: z.boolean().optional(),
+              sector: z.boolean().optional(),
+            })
+            .optional(),
+        }),
+      ])
+      .optional(),
   })
   .partial();
 
@@ -195,6 +208,19 @@ export const airbrushingWhereSchema: z.ZodSchema = z.lazy(() =>
           z.object({
             equals: z.string().optional(),
             not: z.string().optional(),
+            in: z.array(z.string()).optional(),
+            notIn: z.array(z.string()).optional(),
+          }),
+        ])
+        .optional(),
+
+      painterId: z
+        .union([
+          z.string(),
+          z.null(),
+          z.object({
+            equals: z.string().nullable().optional(),
+            not: z.string().nullable().optional(),
             in: z.array(z.string()).optional(),
             notIn: z.array(z.string()).optional(),
           }),
@@ -318,6 +344,7 @@ const airbrushingFilters = {
   searchingFor: z.string().optional(),
   status: z.array(z.nativeEnum(AIRBRUSHING_STATUS)).optional(),
   taskIds: z.array(z.string()).optional(),
+  painterIds: z.array(z.string()).optional(),
   priceRange: z
     .object({
       min: z.number().optional(),
@@ -362,6 +389,11 @@ const airbrushingTransform = (data: any): any => {
   if (data.taskIds?.length) {
     andConditions.push({ taskId: { in: data.taskIds } });
     delete data.taskIds;
+  }
+
+  if (data.painterIds?.length) {
+    andConditions.push({ painterId: { in: data.painterIds } });
+    delete data.painterIds;
   }
 
   if (data.priceRange) {
@@ -475,8 +507,12 @@ export const airbrushingCreateSchema = z
       .min(0, "Preço deve ser maior ou igual a zero")
       .nullable()
       .optional(),
+    startedAt: nullableDate.optional(),
+    finishedAt: nullableDate.optional(),
     status: z.nativeEnum(AIRBRUSHING_STATUS).default(AIRBRUSHING_STATUS.PENDING),
+    paymentStatus: z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS).default(AIRBRUSHING_PAYMENT_STATUS.PENDING),
     taskId: z.string().uuid("Tarefa inválida"),
+    painterId: z.string().uuid("Pintor inválido").nullable().optional(),
     budgetIds: z.array(z.string().uuid()).optional(),
     invoiceIds: z.array(z.string().uuid()).optional(),
     receiptIds: z.array(z.string().uuid()).optional(),
@@ -505,8 +541,12 @@ export const airbrushingUpdateSchema = z
       .min(0, "Preço deve ser maior ou igual a zero")
       .nullable()
       .optional(),
+    startedAt: nullableDate.optional(),
+    finishedAt: nullableDate.optional(),
     status: z.nativeEnum(AIRBRUSHING_STATUS).optional(),
+    paymentStatus: z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS).optional(),
     taskId: z.string().uuid("Tarefa inválida").optional(),
+    painterId: z.string().uuid("Pintor inválido").nullable().optional(),
     budgetIds: z.array(z.string().uuid()).optional(),
     invoiceIds: z.array(z.string().uuid()).optional(),
     receiptIds: z.array(z.string().uuid()).optional(),
@@ -586,6 +626,7 @@ export type AirbrushingWhere = z.infer<typeof airbrushingWhereSchema>;
 
 export const airbrushingCreateNestedSchema = z
   .object({
+    id: z.string().optional(),
     startDate: nullableDate.optional(),
     finishDate: nullableDate.optional(),
     price: z
@@ -595,7 +636,11 @@ export const airbrushingCreateNestedSchema = z
       .min(0, "Preço deve ser maior ou igual a zero")
       .nullable()
       .optional(),
+    startedAt: nullableDate.optional(),
+    finishedAt: nullableDate.optional(),
     status: z.nativeEnum(AIRBRUSHING_STATUS).default(AIRBRUSHING_STATUS.PENDING),
+    paymentStatus: z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS).default(AIRBRUSHING_PAYMENT_STATUS.PENDING),
+    painterId: z.string().uuid("Pintor inválido").nullable().optional(),
     receiptIds: z.array(z.string().uuid()).optional(),
     invoiceIds: z.array(z.string().uuid()).optional(),
     artworkIds: z.array(z.string().uuid()).optional(),
@@ -611,9 +656,13 @@ export type AirbrushingCreateNestedFormData = z.infer<typeof airbrushingCreateNe
 export const mapAirbrushingToFormData = createMapToFormDataHelper<Airbrushing, AirbrushingUpdateFormData>((airbrushing) => ({
   startDate: airbrushing.startDate,
   finishDate: airbrushing.finishDate,
+  startedAt: airbrushing.startedAt,
+  finishedAt: airbrushing.finishedAt,
   price: airbrushing.price,
   status: airbrushing.status,
+  paymentStatus: airbrushing.paymentStatus,
   taskId: airbrushing.taskId,
+  painterId: airbrushing.painterId,
   receiptIds: airbrushing.receipts?.map((file) => file.id),
   invoiceIds: airbrushing.invoices?.map((file) => file.id),
   // artworkIds must be File IDs (artwork.fileId or artwork.file.id), not Artwork entity IDs

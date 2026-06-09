@@ -25,7 +25,13 @@ export function AirbrushingDatesCard({ airbrushing }: AirbrushingDatesCardProps)
   // Only show price if user has permission
   const showPrice = canViewFinancials && airbrushing.price;
 
-  const hasDateInfo = airbrushing.startDate || airbrushing.finishDate || showPrice;
+  const hasDateInfo =
+    airbrushing.startDate ||
+    airbrushing.finishDate ||
+    airbrushing.startedAt ||
+    airbrushing.finishedAt ||
+    showPrice ||
+    airbrushing.painter;
 
   if (!hasDateInfo) {
     return (
@@ -47,9 +53,17 @@ export function AirbrushingDatesCard({ airbrushing }: AirbrushingDatesCardProps)
 
   return (
     <DetailCard title="Datas e Valores" icon="calendar">
+      {airbrushing.painter && (
+        <DetailField
+          label="Pintor"
+          icon="user"
+          value={airbrushing.painter.name}
+        />
+      )}
+
       {airbrushing.startDate && (
         <DetailField
-          label="Data de Início"
+          label="Início Previsto"
           icon="calendar"
           value={formatDate(airbrushing.startDate)}
         />
@@ -57,9 +71,25 @@ export function AirbrushingDatesCard({ airbrushing }: AirbrushingDatesCardProps)
 
       {airbrushing.finishDate && (
         <DetailField
-          label="Data de Finalização"
-          icon="calendar-check"
+          label="Término Previsto"
+          icon="calendar"
           value={formatDate(airbrushing.finishDate)}
+        />
+      )}
+
+      {airbrushing.startedAt && (
+        <DetailField
+          label="Iniciado em"
+          icon="calendar-check"
+          value={formatDate(airbrushing.startedAt)}
+        />
+      )}
+
+      {airbrushing.finishedAt && (
+        <DetailField
+          label="Finalizado em"
+          icon="calendar-check"
+          value={formatDate(airbrushing.finishedAt)}
         />
       )}
 

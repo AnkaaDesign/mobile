@@ -20,7 +20,7 @@ import type {
   AirbrushingBatchUpdateResponse,
   AirbrushingBatchDeleteResponse,
 } from '@/types';
-import { airbrushingKeys, taskKeys, fileKeys } from "./queryKeys";
+import { airbrushingKeys, taskKeys, fileKeys, userKeys } from "./queryKeys";
 
 // =====================================================
 // Create Airbrushing Hooks using Factory
@@ -53,7 +53,7 @@ const airbrushingHooks = createEntityHooks<
     batchUpdate: (data, include) => airbrushingService.batchUpdateAirbrushings(data, include ? { include } : undefined),
     batchDelete: (data) => airbrushingService.batchDeleteAirbrushings(data),
   },
-  relatedQueryKeys: [taskKeys, fileKeys],
+  relatedQueryKeys: [taskKeys, fileKeys, userKeys],
 });
 
 // =====================================================

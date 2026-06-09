@@ -38,6 +38,7 @@ export default function AirbrushingDetailScreen() {
       receipts: true,
       invoices: true,
       artworks: true,
+      painter: true,
     },
     enabled: !!id && id !== "",
   });

@@ -22,6 +22,7 @@ import {
   EXTERNAL_WITHDRAWAL_TYPE,
   SERVICE_ORDER_STATUS,
   AIRBRUSHING_STATUS,
+  AIRBRUSHING_PAYMENT_STATUS,
   CUT_STATUS,
   BORROW_STATUS,
   PPE_REQUEST_STATUS,
@@ -446,6 +447,13 @@ export const ENTITY_BADGE_CONFIG = {
     [AIRBRUSHING_STATUS.CANCELLED]: "cancelled" as BadgeVariant,   // Red - cancelled
   },
 
+  // Airbrushing Payment Status
+  AIRBRUSHING_PAYMENT_STATUS: {
+    [AIRBRUSHING_PAYMENT_STATUS.PENDING]: "gray" as BadgeVariant,          // Gray - awaiting payment
+    [AIRBRUSHING_PAYMENT_STATUS.PARTIALLY_PAID]: "yellow" as BadgeVariant, // Yellow - partially paid
+    [AIRBRUSHING_PAYMENT_STATUS.PAID]: "green" as BadgeVariant,            // Green - fully paid
+  },
+
   // Cut Status
   CUT: {
     [CUT_STATUS.PENDING]: "gray" as BadgeVariant,
@@ -687,6 +695,7 @@ export const ENTITY_BADGE_CONFIG = {
     [SECTOR_PRIVILEGES.EXTERNAL]: "gray" as BadgeVariant,          // Gray - external access
     [SECTOR_PRIVILEGES.WAREHOUSE]: "green" as BadgeVariant,        // Green - warehouse role
     [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "purple" as BadgeVariant, // Purple - production manager (same as logistic)
+    [SECTOR_PRIVILEGES.AIRBRUSHING]: "orange" as BadgeVariant,        // Orange - airbrushing (third-party painters)
   },
 
   // Commission Status

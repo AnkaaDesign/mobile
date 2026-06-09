@@ -47,6 +47,7 @@ const PRIVILEGE_HIERARCHY: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, number
   [SECTOR_PRIVILEGES.DESIGNER]: 2,
   [SECTOR_PRIVILEGES.PLOTTING]: 2, // Same level as DESIGNER
   [TEAM_LEADER]: 2, // Virtual privilege - checked via user.ledSector
+  [SECTOR_PRIVILEGES.AIRBRUSHING]: 1, // Third-party painters - minimal access
   [SECTOR_PRIVILEGES.EXTERNAL]: 1,
   [SECTOR_PRIVILEGES.BASIC]: 0,
 };

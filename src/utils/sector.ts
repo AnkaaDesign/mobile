@@ -46,6 +46,7 @@ export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES | typ
     [SECTOR_PRIVILEGES.ADMIN]: "Acesso administrativo completo",
     [SECTOR_PRIVILEGES.EXTERNAL]: "Acesso externo limitado",
     [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "Acesso de gerente de produção",
+    [SECTOR_PRIVILEGES.AIRBRUSHING]: "Acesso a aerografia",
   };
   return descriptions[privilege] ?? "Privilégio não definido";
 };
@@ -66,6 +67,7 @@ export const getSectorPrivilegeColor = (privilege: SECTOR_PRIVILEGES | typeof TE
     [SECTOR_PRIVILEGES.ADMIN]: "red",
     [SECTOR_PRIVILEGES.EXTERNAL]: "gray",
     [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "emerald",
+    [SECTOR_PRIVILEGES.AIRBRUSHING]: "amber",
   };
   return colors[privilege] ?? "gray";
 };
@@ -86,6 +88,7 @@ export const getSectorPrivilegeBadgeVariant = (privilege: SECTOR_PRIVILEGES | ty
     [SECTOR_PRIVILEGES.ADMIN]: "destructive",
     [SECTOR_PRIVILEGES.EXTERNAL]: "outline",
     [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "default",
+    [SECTOR_PRIVILEGES.AIRBRUSHING]: "secondary",
   };
   return variants[privilege] ?? "outline";
 };

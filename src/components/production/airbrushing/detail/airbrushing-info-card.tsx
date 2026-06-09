@@ -1,7 +1,7 @@
 import { View, StyleSheet } from "react-native";
 import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { Badge } from "@/components/ui/badge";
-import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from '@/constants';
+import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS, AIRBRUSHING_PAYMENT_STATUS, AIRBRUSHING_PAYMENT_STATUS_LABELS } from '@/constants';
 import { getBadgeVariantFromStatus } from "@/components/ui/badge";
 import { spacing } from "@/constants/design-system";
 
@@ -11,6 +11,10 @@ interface AirbrushingInfoCardProps {
 
 export function AirbrushingInfoCard({ airbrushing }: AirbrushingInfoCardProps) {
   const statusBadgeVariant = getBadgeVariantFromStatus(airbrushing.status, "AIRBRUSHING_STATUS");
+  const paymentStatusBadgeVariant = getBadgeVariantFromStatus(
+    airbrushing.paymentStatus,
+    "AIRBRUSHING_PAYMENT_STATUS",
+  );
 
   return (
     <DetailCard title="Informações do Airbrushing" icon="brush">
@@ -23,6 +27,18 @@ export function AirbrushingInfoCard({ airbrushing }: AirbrushingInfoCardProps) {
           </Badge>
         }
       />
+
+      {airbrushing.paymentStatus && (
+        <DetailField
+          label="Status de Pagamento"
+          icon="currency-dollar"
+          value={
+            <Badge variant={paymentStatusBadgeVariant}>
+              {AIRBRUSHING_PAYMENT_STATUS_LABELS[airbrushing.paymentStatus as AIRBRUSHING_PAYMENT_STATUS]}
+            </Badge>
+          }
+        />
+      )}
 
       {(airbrushing.task?.logoPaints?.length || airbrushing.task?.generalPainting) && (
         <>

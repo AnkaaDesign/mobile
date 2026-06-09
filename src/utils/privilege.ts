@@ -28,7 +28,8 @@ export const getSectorPrivilegeSortOrder = (privilege: SECTOR_PRIVILEGES | typeo
     [SECTOR_PRIVILEGES.ADMIN]: 11,
     [SECTOR_PRIVILEGES.EXTERNAL]: 12,
     [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: 13,
-    [TEAM_LEADER]: 14,
+    [SECTOR_PRIVILEGES.AIRBRUSHING]: 14,
+    [TEAM_LEADER]: 15,
   };
   return sortOrder[privilege] || 1;
 };

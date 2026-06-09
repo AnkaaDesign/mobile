@@ -11,12 +11,14 @@ import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
-import { AIRBRUSHING_STATUS } from "@/constants/enums";
-import { AIRBRUSHING_STATUS_LABELS } from "@/constants/enum-labels";
+import { AIRBRUSHING_STATUS, AIRBRUSHING_PAYMENT_STATUS } from "@/constants/enums";
+import { AIRBRUSHING_STATUS_LABELS, AIRBRUSHING_PAYMENT_STATUS_LABELS } from "@/constants/enum-labels";
 import { IconTrash, IconSpray, IconGripVertical } from "@tabler/icons-react-native";
 import { formatCurrency, formatDate } from "@/utils";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import * as DocumentPicker from "expo-document-picker";
+import { PainterSelector } from "@/components/production/airbrushing/form/painter-selector";
+import type { User } from "@/types";
 
 interface MultiAirbrushingSelectorProps {
   control: any;
@@ -28,9 +30,14 @@ interface MultiAirbrushingSelectorProps {
 interface AirbrushingItem {
   id: string;
   status: string;
+  paymentStatus: string;
   price: number | null;
   startDate: Date | null;
   finishDate: Date | null;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+  painterId?: string | null;
+  painter?: User | null;
   receiptFiles: FilePickerItem[];
   nfeFiles: FilePickerItem[];
   artworkFiles: FilePickerItem[];
@@ -71,9 +78,14 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
         return field.value.map((airbrushing: any, index: number) => ({
           id: airbrushing.id || `airbrushing-${Date.now()}-${index}`,
           status: airbrushing.status || AIRBRUSHING_STATUS.PENDING,
+          paymentStatus: airbrushing.paymentStatus || AIRBRUSHING_PAYMENT_STATUS.PENDING,
           price: airbrushing.price || null,
           startDate: airbrushing.startDate || null,
           finishDate: airbrushing.finishDate || null,
+          startedAt: airbrushing.startedAt || null,
+          finishedAt: airbrushing.finishedAt || null,
+          painterId: airbrushing.painterId || null,
+          painter: airbrushing.painter || null,
           receiptFiles: [
             ...convertFilesToFilePickerItem(airbrushing.receipts || []),
             ...(airbrushing.receiptFiles || []),
@@ -106,9 +118,13 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
       const formValue = airbrushings.map((airbrushing) => ({
         id: airbrushing.id,
         status: airbrushing.status,
+        paymentStatus: airbrushing.paymentStatus,
         price: airbrushing.price,
         startDate: airbrushing.startDate,
         finishDate: airbrushing.finishDate,
+        startedAt: airbrushing.startedAt,
+        finishedAt: airbrushing.finishedAt,
+        painterId: airbrushing.painterId ?? null,
         receiptIds: airbrushing.receiptIds || [],
         invoiceIds: airbrushing.invoiceIds || [],
         artworkIds: airbrushing.artworkIds || [],
@@ -134,9 +150,14 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
       const newAirbrushing: AirbrushingItem = {
         id: `airbrushing-${Date.now()}`,
         status: AIRBRUSHING_STATUS.PENDING,
+        paymentStatus: AIRBRUSHING_PAYMENT_STATUS.PENDING,
         price: null,
         startDate: null,
         finishDate: null,
+        startedAt: null,
+        finishedAt: null,
+        painterId: null,
+        painter: null,
         receiptFiles: [],
         nfeFiles: [],
         artworkFiles: [],
@@ -203,6 +224,11 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
       label: AIRBRUSHING_STATUS_LABELS[status],
     }));
 
+    const paymentStatusOptions = Object.values(AIRBRUSHING_PAYMENT_STATUS).map((paymentStatus) => ({
+      value: paymentStatus,
+      label: AIRBRUSHING_PAYMENT_STATUS_LABELS[paymentStatus],
+    }));
+
     return (
       <View style={styles.container}>
         {airbrushings.length > 0 && (
@@ -257,21 +283,19 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                   {/* Airbrushing Content (Expandable) */}
                   {isExpanded && (
                     <View style={styles.airbrushingContent}>
-                      {/* Status, Price and Dates */}
-                      <View style={styles.formRow}>
-                        {isEditMode && (
-                          <View style={styles.fieldGroup}>
-                            <Label>Status</Label>
-                            <Combobox
-                              value={airbrushing.status}
-                              onValueChange={(value) => updateAirbrushing(airbrushing.id, { status: value as string })}
-                              disabled={disabled}
-                              options={statusOptions}
-                              placeholder="Selecione o status"
-                              searchable={false}
-                            />
-                          </View>
-                        )}
+                      {/* Painter and Price */}
+                      <View style={styles.horizontalRow}>
+                        <View style={styles.fieldGroup}>
+                          <PainterSelector
+                            label="Pintor"
+                            value={airbrushing.painterId}
+                            onValueChange={(painterId) =>
+                              updateAirbrushing(airbrushing.id, { painterId, painter: painterId ? airbrushing.painter : null })
+                            }
+                            initialPainter={airbrushing.painter}
+                            disabled={disabled}
+                          />
+                        </View>
 
                         <View style={styles.fieldGroup}>
                           <Label>Preço</Label>
@@ -290,9 +314,10 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                         </View>
                       </View>
 
-                      <View style={styles.formRow}>
+                      {/* Expected Dates */}
+                      <View style={styles.horizontalRow}>
                         <View style={styles.fieldGroup}>
-                          <Label>Data de Início</Label>
+                          <Label>Início Previsto</Label>
                           <DatePicker
                             value={airbrushing.startDate ?? undefined}
                             onChange={(date) => updateAirbrushing(airbrushing.id, { startDate: date || null })}
@@ -303,7 +328,7 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                         </View>
 
                         <View style={styles.fieldGroup}>
-                          <Label>Data de Conclusão</Label>
+                          <Label>Término Previsto</Label>
                           <DatePicker
                             value={airbrushing.finishDate ?? undefined}
                             onChange={(date) => updateAirbrushing(airbrushing.id, { finishDate: date || null })}
@@ -311,6 +336,67 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                             placeholder="Selecione a data"
                             disabled={disabled}
                           />
+                        </View>
+                      </View>
+
+                      {/* Actual Dates */}
+                      <View style={styles.horizontalRow}>
+                        <View style={styles.fieldGroup}>
+                          <Label>Iniciado em</Label>
+                          <DatePicker
+                            value={airbrushing.startedAt ?? undefined}
+                            onChange={(date) => updateAirbrushing(airbrushing.id, { startedAt: date || null })}
+                            type="date"
+                            placeholder="Selecione a data"
+                            disabled={disabled}
+                          />
+                        </View>
+
+                        <View style={styles.fieldGroup}>
+                          <Label>Finalizado em</Label>
+                          <DatePicker
+                            value={airbrushing.finishedAt ?? undefined}
+                            onChange={(date) => updateAirbrushing(airbrushing.id, { finishedAt: date || null })}
+                            type="date"
+                            placeholder="Selecione a data"
+                            disabled={disabled}
+                          />
+                        </View>
+                      </View>
+
+                      {/* Status and Payment Status */}
+                      <View style={styles.formRow}>
+                        {isEditMode && (
+                          <View style={styles.fieldGroup}>
+                            <Label>Status</Label>
+                            <Combobox
+                              value={airbrushing.status}
+                              onValueChange={(value) => updateAirbrushing(airbrushing.id, { status: value as string })}
+                              disabled={disabled}
+                              options={statusOptions}
+                              placeholder="Selecione o status"
+                              searchable={false}
+                            />
+                          </View>
+                        )}
+
+                        <View style={styles.fieldGroup}>
+                          <Label>Status de Pagamento</Label>
+                          <Combobox
+                            value={airbrushing.paymentStatus}
+                            onValueChange={(value) =>
+                              updateAirbrushing(airbrushing.id, { paymentStatus: value as string })
+                            }
+                            disabled={disabled || airbrushing.status !== AIRBRUSHING_STATUS.COMPLETED}
+                            options={paymentStatusOptions}
+                            placeholder="Selecione o status de pagamento"
+                            searchable={false}
+                          />
+                          {airbrushing.status !== AIRBRUSHING_STATUS.COMPLETED && (
+                            <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
+                              Disponível apenas quando o status for Concluído
+                            </ThemedText>
+                          )}
                         </View>
                       </View>
 
@@ -445,9 +531,16 @@ const styles = StyleSheet.create({
   formRow: {
     gap: spacing.md,
   },
+  horizontalRow: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
   fieldGroup: {
     gap: spacing.sm,
     flex: 1,
+  },
+  helperText: {
+    fontSize: fontSize.xs,
   },
   separator: {
     height: 1,
