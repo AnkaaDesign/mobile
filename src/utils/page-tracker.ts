@@ -12,7 +12,7 @@ const PAGE_ACCESS_KEY = "@ankaa_page_access";
 const MAX_TRACKED_PAGES = 20;
 
 // Pages that should not be tracked or displayed in recents/most accessed
-const EXCLUDED_PATHS = ["/(tabs)/inicio", "/login", "/logout", "/register", "/forgot-password", "/reset-password", "/"];
+const EXCLUDED_PATHS = ["/(tabs)/inicio", "/login", "/logout", "/forgot-password", "/reset-password", "/"];
 
 function isExcludedPath(path: string): boolean {
   return EXCLUDED_PATHS.some((excluded) => path === excluded || path.startsWith(excluded + "?"));

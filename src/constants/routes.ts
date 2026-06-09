@@ -87,7 +87,6 @@ export const routes = {
   authentication: {
     login: "/autenticacao/entrar", // fazer login
     recoverPassword: "/autenticacao/recuperar-senha", // recuperar senha
-    register: "/autenticacao/registrar", // registrar-se
     resetPassword: (token: string) => `/autenticacao/redefinir-senha/${token}`, // redefinir senha com token
     verifyCode: "/autenticacao/verificar-codigo", // código de verificação (unificado)
     verifyPasswordReset: "/autenticacao/verificar-redefinicao-senha", // verificação de redefinição de senha

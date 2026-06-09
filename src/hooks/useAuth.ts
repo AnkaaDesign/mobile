@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authService } from '@/api-client';
 import type {
   SignInFormData,
-  SignUpFormData,
   PasswordResetRequestFormData,
   PasswordResetFormData,
   ChangePasswordFormData,
@@ -30,7 +29,6 @@ interface AuthHookReturn {
 
   // Core auth mutations
   login: UseMutationResult<AuthTokenResponse, Error, SignInFormData>;
-  register: UseMutationResult<AuthTokenResponse, Error, SignUpFormData>;
   logout: UseMutationResult<AuthMessageResponse, Error, void>;
   changePassword: UseMutationResult<AuthMessageResponse, Error, ChangePasswordFormData>;
 
@@ -85,13 +83,6 @@ export function useAuth(): AuthHookReturn {
   // Core authentication mutations
   const login = useMutation({
     mutationFn: authService.login,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: authKeys.all });
-    },
-  });
-
-  const register = useMutation({
-    mutationFn: authService.register,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: authKeys.all });
     },
@@ -157,7 +148,6 @@ export function useAuth(): AuthHookReturn {
 
     // Core auth mutations
     login,
-    register,
     logout,
     changePassword,
 

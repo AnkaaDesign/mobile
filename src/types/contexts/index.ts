@@ -15,7 +15,6 @@ export interface AuthContextType {
   accessToken: string | null;
   refreshUserData: () => Promise<void>;
   isAuthReady: boolean;
-  register: (data: { name: string; contact: string; password: string }) => Promise<{ requiresVerification: boolean; phone?: string; email?: string; userId?: string }>;
   recoverPassword: (data: PasswordResetRequestFormData) => Promise<void>;
 }
 

@@ -210,22 +210,6 @@ export default function LoginScreen() {
                       {isLoading ? "Fazendo login..." : "Entrar"}
                     </ThemedText>
                   </Button>
-
-                  {/* Register Link */}
-                  <View style={{ alignItems: "center" }}>
-                    <ThemedText variant="muted" size="sm" style={{ textAlign: "center" }}>
-                      Não tem uma conta?{" "}
-                      <ThemedText
-                        variant="primary"
-                        size="sm"
-                        weight="semibold"
-                        onPress={() => nav.push(authRoute(routes.authentication.register))}
-                        style={{ textDecorationLine: "underline" }}
-                      >
-                        Cadastre-se
-                      </ThemedText>
-                    </ThemedText>
-                  </View>
                 </CardFooter>
                 </Card>
               </View>

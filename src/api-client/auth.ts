@@ -25,9 +25,6 @@ export const authService = {
   // Login with email or phone
   login: (data: SignInFormData) => apiClient.post<AuthTokenResponse>("/auth/login", data).then((res) => res.data),
 
-  // Register with email or phone
-  register: (data: SignUpFormData) => apiClient.post<AuthTokenResponse>("/auth/register", data).then((res) => res.data),
-
   // Logout current user
   logout: () => apiClient.post<AuthMessageResponse>("/auth/logout").then((res) => res.data),
 
@@ -123,9 +120,6 @@ export const authService = {
 
   // @deprecated Use login instead
   signin: (data: SignInFormData) => authService.login(data),
-
-  // @deprecated Use register instead
-  signup: (data: SignUpFormData) => authService.register(data),
 
   // @deprecated Use requestPasswordReset instead
   passwordReset: (data: PasswordResetRequestFormData) => authService.requestPasswordReset(data),

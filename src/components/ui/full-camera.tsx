@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo } from 'react'
+import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react'
 import {
   View,
   StyleSheet,
@@ -7,10 +7,13 @@ import {
   Modal,
   Image,
   Animated,
-  Platform,
 } from 'react-native'
-import { CameraView, useCameraPermissions } from 'expo-camera'
-import type { CameraType, FlashMode } from 'expo-camera'
+import {
+  Camera,
+  useCameraDevice,
+  useCameraPermission,
+} from 'react-native-vision-camera'
+import type { CameraDevice } from 'react-native-vision-camera'
 import {
   IconBolt,
   IconBoltOff,
@@ -22,60 +25,61 @@ import { ImagePreviewModal } from './image-preview-modal'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // ---------------------------------------------------------------------------
-// Zoom model
+// Zoom model — react-native-vision-camera
 // ---------------------------------------------------------------------------
-// iOS — expo-camera exposes a logical camera group (builtInDualWide / builtInTriple)
-//   by default. zoom=0 is the widest lens available (typically 0.5x on modern
-//   iPhones). We also pass selectedLens when we can identify a specific physical
-//   lens via getAvailableLensesAsync, so each pill maps to a true optical lens
-//   rather than a digital-zoom cropped view.
-// Android — with the patched expo-camera, zoom=0 maps to minZoomRatio (can be
-//   < 1x on devices with ultra-wide physical lenses, e.g. 0.6x on the Poco X7).
-//   Zoom is linearly mapped from [0, 1] onto [minZoomRatio, maxZoomRatio].
+// vision-camera selects the best multi-camera logical device for the back
+// position and exposes its REAL optical zoom range:
+//   • device.minZoom      — widest factor reachable (≈0.5x ⇒ ultra-wide lens)
+//   • device.neutralZoom  — the "1x" point (main wide-angle lens)
+//   • device.maxZoom      — maximum factor (optical telephoto + digital)
+// The <Camera zoom={factor}> prop takes the ACTUAL zoom factor (not a 0..1
+// ratio) and the native layer automatically switches across the physical
+// lenses (ultra-wide ⇆ wide ⇆ tele) as the factor crosses lens boundaries.
+//
+// This is what makes ultra-wide work "on any camera": unlike expo-camera —
+// which could only drive setZoomRatio within a single logical camera and so
+// never reached the ultra-wide on phones (e.g. Poco/Xiaomi) that expose it as
+// a SEPARATE physical camera — vision-camera binds the virtual multi-cam, so
+// minZoom genuinely lands on the ultra-wide sensor.
+//
+// Presets are derived per-device from neutralZoom, so the pills always reflect
+// what the hardware actually supports (no ultra-wide pill on phones lacking
+// one, no telephoto pill beyond maxZoom).
 // ---------------------------------------------------------------------------
 
-type LensKind = 'ultraWide' | 'wide' | 'telephoto'
-
-/** Match localized lens names in common Latin languages (en, pt, es, fr, it, de). */
-const LENS_MATCHERS: Record<LensKind, RegExp> = {
-  ultraWide: /ultra/i,
-  telephoto: /tele/i,
-  wide: /.*/,
-}
+type FlashMode = 'off' | 'on' | 'auto'
 
 interface ZoomPreset {
   label: string
-  /** Preferred physical lens on iOS — fallback to zoom when not available. */
-  lens: LensKind
-  /** Zoom value (0..1) used as fallback on iOS or always on Android. */
-  zoom: number
+  /** Actual zoom factor (device units, minZoom..maxZoom). */
+  factor: number
 }
 
-// iOS presets: calibrated against the logical camera group (pow zoom formula).
-// 0.5x — widest via logical group (uses ultra-wide optically when present)
-// 1x / 2x / 3x — calibrated empirically against iPhone's pow(maxZoom, zoom)
-const ZOOM_PRESETS_IOS: ZoomPreset[] = [
-  { label: '.5', lens: 'ultraWide', zoom: 0 },
-  { label: '1', lens: 'wide', zoom: 0.12 },
-  { label: '2', lens: 'wide', zoom: 0.26 },
-  { label: '3', lens: 'telephoto', zoom: 0.41 },
-]
+/** Format a factor relative to the 1x point: 0.5 → ".5", 2 → "2", 1.5 → "1.5". */
+function formatZoomLabel(factor: number, neutral: number): string {
+  const ratio = factor / neutral
+  if (ratio < 1) return ratio.toFixed(1).replace(/^0/, '') // 0.5 -> .5
+  return Number.isInteger(ratio) ? String(ratio) : ratio.toFixed(1)
+}
 
-// Android presets: CameraX linear mapping [0..1] → [minZoomRatio, maxZoomRatio].
-// Calibrated against typical modern devices (ultra-wide minZoom ≈ 0.6x,
-// maxZoom ≈ 8–10x). Device variance means these are approximations, but
-// they give native-camera-like behavior on mainstream phones.
-const ZOOM_PRESETS_ANDROID: ZoomPreset[] = [
-  { label: '.5', lens: 'ultraWide', zoom: 0 },
-  { label: '1', lens: 'wide', zoom: 0.05 },
-  { label: '2', lens: 'wide', zoom: 0.16 },
-  { label: '3', lens: 'telephoto', zoom: 0.27 },
-]
-
-const ZOOM_PRESETS: ZoomPreset[] =
-  Platform.OS === 'ios' ? ZOOM_PRESETS_IOS : ZOOM_PRESETS_ANDROID
-
-const DEFAULT_ZOOM_INDEX = 1 // 1x
+/** Build the pill presets from a device's real optical range. */
+function buildZoomPresets(device: CameraDevice | undefined): ZoomPreset[] {
+  if (!device) return [{ label: '1', factor: 1 }]
+  const { minZoom, maxZoom, neutralZoom } = device
+  const presets: ZoomPreset[] = []
+  // Ultra-wide pill only when the device can actually go below 1x.
+  if (minZoom < neutralZoom - 0.05) {
+    presets.push({ label: formatZoomLabel(minZoom, neutralZoom), factor: minZoom })
+  }
+  presets.push({ label: '1', factor: neutralZoom })
+  if (maxZoom >= neutralZoom * 2) {
+    presets.push({ label: '2', factor: neutralZoom * 2 })
+  }
+  if (maxZoom >= neutralZoom * 3) {
+    presets.push({ label: '3', factor: neutralZoom * 3 })
+  }
+  return presets
+}
 
 interface FullCameraProps {
   visible: boolean
@@ -86,32 +90,39 @@ interface FullCameraProps {
 }
 
 export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCameraProps) {
-  const cameraRef = useRef<CameraView>(null)
+  const cameraRef = useRef<Camera>(null)
   const mountedRef = useRef(true)
-  const [facing, setFacing] = useState<CameraType>('back')
   const [flash, setFlash] = useState<FlashMode>('off')
-  const [zoom, setZoom] = useState(ZOOM_PRESETS[DEFAULT_ZOOM_INDEX].zoom)
-  const [selectedZoomIndex, setSelectedZoomIndex] = useState(DEFAULT_ZOOM_INDEX)
   const [isTakingPicture, setIsTakingPicture] = useState(false)
   const [photoCount, setPhotoCount] = useState(0)
   const [lastPhotoUri, setLastPhotoUri] = useState<string | null>(null)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [allPhotoUris, setAllPhotoUris] = useState<string[]>([])
-  const [permission, requestPermission] = useCameraPermissions()
+  const { hasPermission, requestPermission } = useCameraPermission()
+  const device = useCameraDevice('back')
   const insets = useSafeAreaInsets()
   const shutterScale = useRef(new Animated.Value(1)).current
 
-  // iOS physical-lens identifiers discovered via getAvailableLensesAsync.
-  const [lensByKind, setLensByKind] = useState<Partial<Record<LensKind, string>>>({})
+  // Presets + the neutral (1x) factor, derived from the actual hardware.
+  const presets = useMemo(() => buildZoomPresets(device), [device])
+  const defaultZoomIndex = useMemo(
+    () => Math.max(0, presets.findIndex((p) => p.label === '1')),
+    [presets],
+  )
+
+  // Current zoom is the ACTUAL factor passed to <Camera zoom>.
+  const [zoom, setZoom] = useState(1)
+  const [selectedZoomIndex, setSelectedZoomIndex] = useState(0)
+
+  // Re-baseline zoom to 1x whenever the device (and thus its range) resolves.
+  useEffect(() => {
+    if (!device) return
+    setZoom(presets[defaultZoomIndex]?.factor ?? device.neutralZoom)
+    setSelectedZoomIndex(defaultZoomIndex)
+  }, [device, presets, defaultZoomIndex])
 
   // Pinch-to-zoom state (plain RN touch events — no gesture handler needed)
   const pinchRef = useRef<{ startDistance: number; startZoom: number } | null>(null)
-
-  const selectedPreset = ZOOM_PRESETS[selectedZoomIndex]
-  const selectedLens = useMemo(() => {
-    if (Platform.OS !== 'ios') return undefined
-    return lensByKind[selectedPreset.lens] ?? lensByKind.wide
-  }, [lensByKind, selectedPreset])
 
   const getTouchDistance = (touches: any[]) => {
     const dx = touches[0].pageX - touches[1].pageX
@@ -119,21 +130,23 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
     return Math.sqrt(dx * dx + dy * dy)
   }
 
-  const updateZoomWithIndex = useCallback((newZoom: number) => {
-    const clamped = Math.max(0, Math.min(1, newZoom))
+  const updateZoomWithIndex = useCallback((newFactor: number) => {
+    const minZoom = device?.minZoom ?? 1
+    const maxZoom = device?.maxZoom ?? 1
+    const clamped = Math.max(minZoom, Math.min(maxZoom, newFactor))
     setZoom(clamped)
-    // Find closest preset for the indicator
+    // Highlight the closest preset for the indicator.
     let closest = 0
-    let minDiff = Math.abs(clamped - ZOOM_PRESETS[0].zoom)
-    for (let i = 1; i < ZOOM_PRESETS.length; i++) {
-      const diff = Math.abs(clamped - ZOOM_PRESETS[i].zoom)
+    let minDiff = Math.abs(clamped - presets[0].factor)
+    for (let i = 1; i < presets.length; i++) {
+      const diff = Math.abs(clamped - presets[i].factor)
       if (diff < minDiff) {
         minDiff = diff
         closest = i
       }
     }
     setSelectedZoomIndex(closest)
-  }, [])
+  }, [device, presets])
 
   const handleTouchStart = useCallback((e: any) => {
     const touches = e.nativeEvent.touches
@@ -150,8 +163,8 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
     if (touches.length === 2 && pinchRef.current) {
       const currentDistance = getTouchDistance(touches)
       const scale = currentDistance / pinchRef.current.startDistance
-      // Damped scaling — smooth, non-jumpy zoom
-      const newZoom = pinchRef.current.startZoom + (scale - 1) * 0.15
+      // Multiplicative scaling against the actual factor — natural camera feel.
+      const newZoom = pinchRef.current.startZoom * scale
       updateZoomWithIndex(newZoom)
     }
   }, [updateZoomWithIndex])
@@ -166,38 +179,6 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
     return () => { mountedRef.current = false }
   }, [])
 
-  // Discover available physical lenses on iOS. Matching is keyword-based
-  // against the AVCaptureDevice localizedName (which varies by locale, but
-  // "ultra" and "tele" are stable across most Latin-script languages).
-  const discoverLenses = useCallback(async () => {
-    if (Platform.OS !== 'ios') return
-    try {
-      const lenses = (await cameraRef.current?.getAvailableLensesAsync()) ?? []
-      const picks: Partial<Record<LensKind, string>> = {}
-      for (const lens of lenses) {
-        if (!picks.ultraWide && LENS_MATCHERS.ultraWide.test(lens)) {
-          picks.ultraWide = lens
-          continue
-        }
-        if (!picks.telephoto && LENS_MATCHERS.telephoto.test(lens)) {
-          picks.telephoto = lens
-          continue
-        }
-      }
-      // Wide = first lens that isn't ultra-wide or telephoto (usually "Back Camera")
-      picks.wide = lenses.find(
-        (l) => l !== picks.ultraWide && l !== picks.telephoto,
-      )
-      if (mountedRef.current) setLensByKind(picks)
-    } catch {
-      // Ignore — selectedLens falls back to default behavior
-    }
-  }, [])
-
-  const handleCameraReady = useCallback(() => {
-    discoverLenses()
-  }, [discoverLenses])
-
   const handleTakePicture = useCallback(async () => {
     if (!cameraRef.current || isTakingPicture) return
 
@@ -208,14 +189,15 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
     ]).start()
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.92,
-        skipProcessing: true,
+      const photo = await cameraRef.current.takePhoto({
+        flash: device?.hasFlash ? flash : 'off',
       })
-      if (photo?.uri && mountedRef.current) {
-        onCapture(photo.uri)
-        setLastPhotoUri(photo.uri)
-        setAllPhotoUris((prev) => [...prev, photo.uri])
+      const path = photo?.path
+      if (path && mountedRef.current) {
+        const uri = path.startsWith('file://') ? path : `file://${path}`
+        onCapture(uri)
+        setLastPhotoUri(uri)
+        setAllPhotoUris((prev) => [...prev, uri])
         setPhotoCount((c) => c + 1)
       }
     } catch (err: any) {
@@ -228,7 +210,7 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
     if (mountedRef.current) {
       setTimeout(() => setIsTakingPicture(false), 250)
     }
-  }, [isTakingPicture, onCapture, shutterScale])
+  }, [isTakingPicture, onCapture, shutterScale, device, flash])
 
   const toggleFlash = useCallback(() => {
     setFlash((prev) => (prev === 'off' ? 'on' : prev === 'on' ? 'auto' : 'off'))
@@ -236,17 +218,17 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
 
   const handleZoomPreset = useCallback((index: number) => {
     setSelectedZoomIndex(index)
-    setZoom(ZOOM_PRESETS[index].zoom)
-  }, [])
+    setZoom(presets[index].factor)
+  }, [presets])
 
   const resetState = useCallback(() => {
     setPhotoCount(0)
     setLastPhotoUri(null)
     setAllPhotoUris([])
     setPreviewVisible(false)
-    setZoom(ZOOM_PRESETS[DEFAULT_ZOOM_INDEX].zoom)
-    setSelectedZoomIndex(DEFAULT_ZOOM_INDEX)
-  }, [])
+    setZoom(presets[defaultZoomIndex]?.factor ?? 1)
+    setSelectedZoomIndex(defaultZoomIndex)
+  }, [presets, defaultZoomIndex])
 
   // X button — discard all photos taken in this session
   const handleCancel = useCallback(() => {
@@ -270,7 +252,7 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
   return (
     <Modal visible={visible} animationType="slide" statusBarTranslucent>
       <View style={styles.root}>
-        {!permission?.granted ? (
+        {!hasPermission ? (
           <>
             <StatusBar barStyle="light-content" />
             <View style={styles.permissionContainer}>
@@ -312,21 +294,25 @@ export function FullCamera({ visible, onCapture, onClose, onDiscard }: FullCamer
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <CameraView
-                ref={cameraRef}
-                style={styles.viewfinder}
-                facing={facing}
-                flash={flash}
-                zoom={zoom}
-                selectedLens={selectedLens}
-                mode="picture"
-                onCameraReady={handleCameraReady}
-              />
+              {device ? (
+                <Camera
+                  ref={cameraRef}
+                  style={styles.viewfinder}
+                  device={device}
+                  isActive={visible}
+                  photo
+                  zoom={zoom}
+                  resizeMode="cover"
+                  enableZoomGesture={false}
+                />
+              ) : (
+                <View style={styles.viewfinder} />
+              )}
 
               {/* Zoom pills — overlaid at bottom of viewfinder */}
               <View style={styles.zoomOverlay}>
                 <View style={styles.zoomPillBar}>
-                  {ZOOM_PRESETS.map((preset, index) => {
+                  {presets.map((preset, index) => {
                     const isActive = selectedZoomIndex === index
                     return (
                       <TouchableOpacity

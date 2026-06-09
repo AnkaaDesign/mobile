@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Alert, View, Text, AppState, AppStateStatus, Platform } from "react-native";
 import NetInfo from '@react-native-community/netinfo';
-import { detectContactMethod } from '../utils';
 import { jwtDecode } from "jwt-decode";
 
 // Error types for distinguishing auth errors from network errors
@@ -54,7 +53,7 @@ function classifyAuthError(error: any): AuthErrorType {
   return AuthErrorType.UNKNOWN;
 }
 
-import type { SignUpFormData, PasswordResetRequestFormData, VerifyCodeFormData, SendVerificationFormData } from '../schemas';
+import type { PasswordResetRequestFormData, VerifyCodeFormData, SendVerificationFormData } from '../schemas';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -67,7 +66,6 @@ interface AuthContextType {
   refreshUserData: () => Promise<User | null>;
   silentRefreshUserData: () => Promise<User | null>;
   isAuthReady: boolean;
-  register: (data: { name: string; contact: string; password: string }) => Promise<{ requiresVerification: boolean; phone?: string; email?: string; userId?: string }>;
   recoverPassword: (data: PasswordResetRequestFormData) => Promise<void>;
   verifyCode: ReturnType<typeof useMutation<any, Error, VerifyCodeFormData>>;
   resendVerification: ReturnType<typeof useMutation<any, Error, SendVerificationFormData>>;
@@ -615,44 +613,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const register = async (data: { name: string; contact: string; password: string }) => {
-    const contactType = detectContactMethod(data.contact);
-    const isEmail = contactType === "email";
-    const transformedData: SignUpFormData = {
-      name: data.name,
-      password: data.password,
-      ...(isEmail ? { email: data.contact } : { phone: data.contact }),
-    };
-
-    const response = await authService.register(transformedData);
-
-    if (response.data?.token && response.data?.user) {
-      const { token, user } = response.data;
-
-      if (user.verified === false) {
-        return {
-          requiresVerification: true,
-          ...(contactType === "phone" ? { phone: data.contact } : { email: data.contact }),
-          userId: user.id,
-        };
-      }
-
-      await storeToken(token);
-      await storeUserData(user as User);
-      setAuthToken(token);
-      setAccessToken(token);
-      setCachedToken(token);
-      setUser(user as User);
-
-      return { requiresVerification: false };
-    }
-
-    return {
-      requiresVerification: true,
-      ...(contactType === "phone" ? { phone: data.contact } : { email: data.contact }),
-    };
-  };
-
   const logout = async (showAlert = false, alertMessage = "") => {
     console.log('[Auth] Logout initiated');
     setIsLoggingOut(true);
@@ -763,7 +723,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     refreshUserData,
     silentRefreshUserData,
     isAuthReady,
-    register,
     recoverPassword,
     verifyCode: verifyCodeMutation,
     resendVerification: resendVerificationMutation,
