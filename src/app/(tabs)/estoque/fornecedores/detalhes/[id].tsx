@@ -50,6 +50,8 @@ export default function SupplierDetailScreen() {
             "Tem certeza que deseja excluir este fornecedor? Esta ação não pode ser desfeita.",
           successRoute: mobileRoute(routes.inventory.suppliers.root),
         }}
+        // WAREHOUSE manages suppliers but must never delete them — ADMIN only.
+        deletePrivilege={{ any: [SECTOR_PRIVILEGES.ADMIN] }}
         notFoundFallback={mobileRoute(routes.inventory.suppliers.root)}
       >
         {(supplier) => (

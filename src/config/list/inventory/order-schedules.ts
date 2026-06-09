@@ -241,6 +241,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
+        canPerform: canDeleteOrders,
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ orderScheduleIds: Array.from(ids) })
         },

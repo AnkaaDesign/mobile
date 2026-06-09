@@ -67,6 +67,13 @@ export interface DetailScreenProps<T extends BaseEntity> {
     successRoute?: AppRoute;
   };
   /**
+   * Privilege required to DELETE this entity. Defaults to `privilege` (page
+   * access) for backwards compatibility. Pass a stricter requirement (e.g.
+   * ADMIN-only) when deletion must be gated separately from edit/view — e.g.
+   * WAREHOUSE may manage orders/suppliers but must never delete them.
+   */
+  deletePrivilege?: PrivilegeReq;
+  /**
    * Overflow-menu actions rendered in the header. Status / privilege
    * filtering is the consumer's responsibility — pass an empty array (or
    * filter the list) when an action is not currently allowed.
@@ -123,6 +130,9 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
   const editGuardActive = !!props.editGuard;
 
   const editPriv = usePrivilegeGate(props.privilege ?? SECTOR_PRIVILEGES.BASIC);
+  // Delete is gated separately so a sector can manage an entity without being
+  // able to delete it. Falls back to the page privilege when not specified.
+  const deletePriv = usePrivilegeGate(props.deletePrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.BASIC);
 
   const handleEdit = useCallback(() => {
     if (!entity || !props.editRoute) return;
@@ -242,7 +252,7 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
       <View style={styles.body}>
         {props.children(entity, childContext)}
       </View>
-      {props.deleteAction && editPriv.allowed ? (
+      {props.deleteAction && deletePriv.allowed ? (
         <View style={styles.deleteRow}>
           <ThemedText
             onPress={handleDelete}

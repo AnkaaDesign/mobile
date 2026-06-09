@@ -270,6 +270,8 @@ export interface BulkAction {
     message: string | ((count: number) => string)
   }
   onPress: (ids: Set<string>, mutations?: ActionMutationsContext) => void | Promise<void>
+  /** Permission check — if provided, the bulk action is hidden when it returns false. */
+  canPerform?: (user: any) => boolean
 }
 
 export interface BulkActionsProps {

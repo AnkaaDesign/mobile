@@ -156,6 +156,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'marca' : 'marcas'}?`,
         },
+        canPerform: canDeleteItems,
         onPress: async (ids, utils) => {
           await utils?.batchDeleteAsync?.({ itemBrandIds: Array.from(ids) })
         },

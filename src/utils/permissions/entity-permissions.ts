@@ -684,8 +684,17 @@ export function canEditItems(user: User | null): boolean {
   ]);
 }
 
+/**
+ * Can user DELETE inventory items (and their categories/brands)?
+ * WAREHOUSE manages inventory but must NEVER delete it — only ADMIN may delete.
+ * Deletion is intentionally decoupled from editing. Category and brand deletes
+ * reuse this function, inheriting the same ADMIN-only rule.
+ */
 export function canDeleteItems(user: User | null): boolean {
-  return canEditItems(user);
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 }
 
 export function canBatchOperateItems(user: User | null): boolean {
@@ -826,8 +835,16 @@ export function canEditOrders(user: User | null): boolean {
   ]);
 }
 
+/**
+ * Can user DELETE orders (and order schedules)?
+ * WAREHOUSE manages orders but must NEVER delete them — only ADMIN may delete.
+ * Order schedule deletes reuse this function, inheriting the same ADMIN-only rule.
+ */
 export function canDeleteOrders(user: User | null): boolean {
-  return canEditOrders(user);
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 }
 
 export function canBatchOperateOrders(user: User | null): boolean {
@@ -947,8 +964,29 @@ export function canEditSuppliers(user: User | null): boolean {
   ]);
 }
 
+/**
+ * Can user DELETE suppliers?
+ * WAREHOUSE manages suppliers but must NEVER delete them — only ADMIN may delete.
+ */
 export function canDeleteSuppliers(user: User | null): boolean {
-  return canEditSuppliers(user);
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
+// =====================
+// PRICE VISIBILITY
+// =====================
+
+/**
+ * Can user see monetary values (prices, costs, totals)?
+ * WAREHOUSE manages inventory but must NEVER see prices. Every other privilege
+ * keeps access. Plain predicate mirroring the `useCanViewPrices()` hook so it can
+ * be used in static list-config `canView` column guards.
+ */
+export function canViewPrices(user: User | null): boolean {
+  return !!user && user.sector?.privileges !== SECTOR_PRIVILEGES.WAREHOUSE;
 }
 
 // =====================

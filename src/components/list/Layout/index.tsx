@@ -283,7 +283,7 @@ export const Layout = memo(function Layout({
       {list.selection.enabled && list.selection.selectedIds.size > 0 && config.actions?.bulk && (
         <BulkActions
           selectedIds={list.selection.selectedIds}
-          actions={config.actions.bulk}
+          actions={config.actions.bulk.filter((a) => !a.canPerform || a.canPerform(user))}
           mutations={list.table.mutations}
           onClear={list.selection.onClear}
         />

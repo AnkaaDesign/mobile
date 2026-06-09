@@ -325,6 +325,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'fornecedor' : 'fornecedores'}?`,
         },
+        canPerform: canDeleteSuppliers,
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ supplierIds: Array.from(ids) })
         },

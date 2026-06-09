@@ -156,6 +156,7 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'categoria' : 'categorias'}?`,
         },
+        canPerform: canDeleteItems,
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ itemCategoryIds: Array.from(ids) })
         },

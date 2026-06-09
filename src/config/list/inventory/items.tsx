@@ -17,7 +17,7 @@ import {
   ABC_CATEGORY_LABELS,
   XYZ_CATEGORY_LABELS,
 } from '@/constants'
-import { canEditItems, canDeleteItems } from '@/utils/permissions/entity-permissions'
+import { canEditItems, canDeleteItems, canViewPrices } from '@/utils/permissions/entity-permissions'
 import { determineStockLevel } from '@/utils'
 import { ThemedText } from '@/components/ui/themed-text'
 import { isTabletWidth } from '@/lib/table-utils'
@@ -207,6 +207,7 @@ export const itemsListConfig: ListConfig<Item> = {
         align: 'right',
         render: (item) => item.prices?.[0]?.value || null,
         format: 'currency',
+        canView: canViewPrices,
       },
       {
         key: 'totalPrice',
@@ -643,6 +644,7 @@ export const itemsListConfig: ListConfig<Item> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'item' : 'itens'}?`,
         },
+        canPerform: canDeleteItems,
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ itemIds: Array.from(ids) })
         },

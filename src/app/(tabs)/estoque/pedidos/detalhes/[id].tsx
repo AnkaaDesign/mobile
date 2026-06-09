@@ -79,6 +79,8 @@ export default function OrderDetailScreen() {
           "Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.",
         successRoute: mobileRoute(routes.inventory.orders.list),
       }}
+      // WAREHOUSE manages orders but must never delete them — ADMIN only.
+      deletePrivilege={{ any: [SECTOR_PRIVILEGES.ADMIN] }}
       notFoundFallback={mobileRoute(routes.inventory.orders.root)}
     >
       {(order) => (

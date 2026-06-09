@@ -4,7 +4,7 @@ import {
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
 } from '@/constants'
-import { canEditOrders, canDeleteOrders } from '@/utils/permissions/entity-permissions'
+import { canEditOrders, canDeleteOrders, canViewPrices } from '@/utils/permissions/entity-permissions'
 import { isTabletWidth } from '@/lib/table-utils'
 import { formatOrderNumber } from '@/utils/order-code'
 
@@ -100,6 +100,7 @@ export const ordersListConfig: ListConfig<Order> = {
           return total
         },
         format: 'currency',
+        canView: canViewPrices,
       },
       {
         key: 'forecast',
@@ -313,6 +314,7 @@ export const ordersListConfig: ListConfig<Order> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'pedido' : 'pedidos'}?`,
         },
+        canPerform: canDeleteOrders,
         onPress: async (ids, helpers) => {
           await helpers?.batchDeleteAsync?.({ orderIds: Array.from(ids) })
         },
