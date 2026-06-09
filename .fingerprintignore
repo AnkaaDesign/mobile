@@ -1,0 +1,10 @@
+# Files excluded from the OTA runtimeVersion fingerprint.
+#
+# These hold ONLY the expo-updates runtime config (URL, check policy, and the
+# runtimeVersion value itself). They must be excluded or writing the computed
+# runtimeVersion back into them would change the fingerprint on every run
+# (a feedback loop). Nothing in these files affects native compatibility, so
+# ignoring them is safe — real native changes still live in the rest of
+# ios/ and android/ and still bump the fingerprint.
+ios/AnkaaDesign/Supporting/Expo.plist
+android/app/src/main/res/values/expo_runtime.xml

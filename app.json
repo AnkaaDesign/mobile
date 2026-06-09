@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ankaa Design",
     "slug": "ankaa-design",
-    "version": "1.0.1",
+    "version": "1.0",
     "orientation": "default",
     "icon": "./assets/icon-1024.png",
     "scheme": "ankaadesign",
@@ -13,19 +13,30 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.ankaadesign.management",
+      "buildNumber": "3",
       "jsEngine": "hermes",
       "requireFullScreen": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "associatedDomains": [
         "applinks:ankaadesign.com.br",
         "applinks:www.ankaadesign.com.br"
       ],
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification", "fetch"],
-        "LSApplicationQueriesSchemes": ["whatsapp"],
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "whatsapp"
+        ],
         "NSFaceIDUsageDescription": "Necessário para autenticação biométrica na confirmação de entrega de EPI",
         "NSLocationWhenInUseUsageDescription": "Necessário para registrar a localização no momento da assinatura de entrega de EPI",
         "NSCameraUsageDescription": "Necessário para tirar fotos de check-in e check-out"
@@ -115,11 +126,17 @@
               "pathPrefix": "/estoque/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "plugins": [
       "expo-router",
       "expo-web-browser",
@@ -156,6 +173,13 @@
         {
           "cameraPermission": "Necessário para tirar fotos de check-in e check-out"
         }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Necessário para tirar fotos de check-in e check-out",
+          "enableMicrophonePermission": false
+        }
       ]
     ],
     "experiments": {
@@ -163,8 +187,12 @@
       "reactCompiler": true
     },
     "newArchEnabled": true,
+    "runtimeVersion": { "policy": "fingerprint" },
     "updates": {
-      "enabled": false
+      "enabled": true,
+      "url": "https://api.ankaadesign.com.br/updates/manifest",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     },
     "extra": {
       "router": {},

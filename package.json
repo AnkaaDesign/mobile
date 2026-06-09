@@ -15,6 +15,8 @@
     "android:build": "eas build --platform android",
     "ios:build": "eas build --platform ios",
     "preview": "eas build --platform android --profile preview",
+    "ota:sync-version": "node scripts/sync-runtime-version.mjs",
+    "ota:publish": "node scripts/publish-ota.mjs",
     "test": "jest",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit"
@@ -115,6 +117,7 @@
     "react-native-swipe-list-view": "^3.2.9",
     "react-native-toast-message": "^2.3.3",
     "react-native-view-shot": "^4.0.3",
+    "react-native-vision-camera": "^4.7.3",
     "react-native-web": "^0.21.2",
     "react-native-webview": "^13.15.0",
     "react-native-worklets": "~0.5.1",

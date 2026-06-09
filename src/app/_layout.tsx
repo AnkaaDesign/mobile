@@ -38,6 +38,7 @@ import { AuthAwareMessageModal } from "@/components/message/MessageModalIntegrat
 import Constants from "expo-constants";
 import { updateApiUrl } from '../api-client';
 import { setupMobileNotifications } from "@/lib/setup-notifications";
+import { useOtaUpdates } from "@/hooks/use-ota-updates";
 import "../../global.css";
 
 // =====================================================
@@ -225,6 +226,9 @@ function OfflineBanner() {
 function AppContent() {
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const { currentBaseUrl } = useNetwork();
+
+  // Check the self-hosted OTA server for new JS bundles (no-op in dev).
+  useOtaUpdates();
 
   // Mark hydration complete quickly - no artificial delay needed
   useEffect(() => {

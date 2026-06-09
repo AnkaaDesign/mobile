@@ -5,8 +5,12 @@
     <key>EXUpdatesCheckOnLaunch</key>
     <string>ALWAYS</string>
     <key>EXUpdatesEnabled</key>
-    <false/>
+    <true/>
     <key>EXUpdatesLaunchWaitMs</key>
     <integer>0</integer>
+    <key>EXUpdatesRuntimeVersion</key>
+    <string>95268a128ab41e37552e96ac239c3f42969d8107</string>
+    <key>EXUpdatesURL</key>
+    <string>https://api.ankaadesign.com.br/updates/manifest</string>
   </dict>
 </plist>
