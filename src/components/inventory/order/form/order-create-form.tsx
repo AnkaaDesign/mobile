@@ -208,7 +208,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   const { data: selectedItemsData } = useItems(
     {
       where: { id: { in: selectedItemIds } },
-      include: { brand: true, category: true },
+      include: { brands: true, category: true },
     },
     { enabled: multiStepForm.currentStep === 3 && selectedItemIds.length > 0 },
   );
@@ -221,7 +221,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
     return multiStepForm.getSelectedItemsWithData().map((item) => ({
       ...item,
       name: itemsMap.get(item.id)?.name || `Item ${item.id.slice(0, 8)}`,
-      brand: itemsMap.get(item.id)?.brand?.name,
+      brand: itemsMap.get(item.id)?.brands?.map((b) => b.name).join(", "),
       uniCode: itemsMap.get(item.id)?.uniCode,
     }));
   }, [selectedItemsData, multiStepForm]);

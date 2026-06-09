@@ -108,7 +108,7 @@ export function PpeRequestModal({
           },
         },
         include: {
-          brand: true,
+          brands: true,
           category: true,
           measures: true,
         },

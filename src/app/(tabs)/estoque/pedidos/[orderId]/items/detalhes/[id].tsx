@@ -30,7 +30,7 @@ export default function OrderItemDetailScreen() {
     include: {
       item: {
         include: {
-          brand: { select: { id: true, name: true } },
+          brands: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
           measures: true,
         },
@@ -143,8 +143,8 @@ export default function OrderItemDetailScreen() {
                 {item?.uniCode && (
                   <DetailRow label="Código" value={item.uniCode} />
                 )}
-                {item?.brand?.name && (
-                  <DetailRow label="Marca" value={item.brand.name} />
+                {item?.brands && item.brands.length > 0 && (
+                  <DetailRow label="Marca" value={item.brands.map((b) => b.name).join(", ")} />
                 )}
                 {item?.category?.name && (
                   <DetailRow label="Categoria" value={item.category.name} />

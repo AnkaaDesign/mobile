@@ -27,7 +27,7 @@ export const useMyTeamPpeDeliveriesInfinite = (filters?: Partial<PpeDeliveryGetM
           item: {
             include: {
               category: true,
-              brand: true,
+              brands: true,
             }
           },
           reviewedByUser: true,

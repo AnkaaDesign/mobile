@@ -27,7 +27,7 @@ export const useMaintenanceInfiniteMobile = (filters?: Partial<MaintenanceGetMan
             include: {
               item: {
                 include: {
-                  brand: true,
+                  brands: true,
                   category: true,
                 }
               }

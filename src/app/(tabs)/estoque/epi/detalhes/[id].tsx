@@ -33,7 +33,7 @@ export default function PPEDetailsScreen() {
 
   const query = usePpeDelivery(id, {
     include: {
-      item: { include: { brand: true, category: true, supplier: true } },
+      item: { include: { brands: true, category: true, supplier: true } },
       user: { include: { position: true, sector: true } },
     },
     enabled: !!id,
@@ -185,10 +185,10 @@ function PpeDetailBody({
                 <ThemedText style={styles.value}>{ppeDelivery.item.uniCode}</ThemedText>
               </View>
             )}
-            {ppeDelivery.item.brand && (
+            {ppeDelivery.item.brands && ppeDelivery.item.brands.length > 0 && (
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Marca</ThemedText>
-                <ThemedText style={styles.value}>{ppeDelivery.item.brand.name}</ThemedText>
+                <ThemedText style={styles.value}>{ppeDelivery.item.brands.map((b: any) => b.name).join(", ")}</ThemedText>
               </View>
             )}
             {ppeDelivery.item.category && (

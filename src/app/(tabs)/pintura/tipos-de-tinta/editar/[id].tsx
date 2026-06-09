@@ -33,7 +33,7 @@ export default function EditPaintTypeScreen() {
         include: {
           measures: true,
           category: true,
-          brand: true,
+          brands: true,
         },
       },
     },

@@ -34,7 +34,7 @@ export default function TeamPpeDeliveryDetailScreen() {
   const query = usePpeDelivery(id || "", {
     include: {
       user: { include: { position: true, sector: true } },
-      item: { include: { category: true, brand: true } },
+      item: { include: { category: true, brands: true } },
       reviewedByUser: true,
       ppeSchedule: true,
       signature: {

@@ -50,7 +50,7 @@ export function BorrowItemSelector({
       metadata: {
         quantity: initialItem.quantity,
         category: initialItem.category,
-        brand: initialItem.brand,
+        brands: initialItem.brands,
         isActive: initialItem.isActive,
       },
     }];
@@ -65,7 +65,7 @@ export function BorrowItemSelector({
       where: {
         isActive: true,
         quantity: { gt: 0 }, // Only show items with available stock
-        itemCategory: {
+        category: {
           type: "TOOL", // Only show tools that can be borrowed
         },
         ...(searchTerm ? {
@@ -89,7 +89,7 @@ export function BorrowItemSelector({
             type: true,
           },
         },
-        brand: {
+        brands: {
           select: {
             id: true,
             name: true,
@@ -110,7 +110,7 @@ export function BorrowItemSelector({
         metadata: {
           quantity: item.quantity,
           category: item.category,
-          brand: item.brand,
+          brands: item.brands,
           isActive: item.isActive,
         },
       })) as ComboboxOption[],

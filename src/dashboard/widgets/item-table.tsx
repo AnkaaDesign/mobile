@@ -340,7 +340,7 @@ function buildItemQueryParams(config: Config): Record<string, unknown> {
     take: config.limit,
     orderBy: orderBy as any,
     include: {
-      brand: true,
+      brands: true,
       category: true,
       supplier: true,
       prices: true,
@@ -391,7 +391,7 @@ function renderCellValue(key: ItemColumnKey, item: any): RenderedCell {
     case "name":
       return { text: item.name ?? "—" };
     case "brand":
-      return { text: item.brand?.name ?? "—" };
+      return { text: item.brands?.map((b: any) => b.name).join(", ") || "—" };
     case "category":
       return { text: item.category?.name ?? "—" };
     case "quantity":
@@ -494,7 +494,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         }
         if (term) {
           const haystack =
-            `${item.name ?? ""} ${item.brand?.name ?? ""} ${item.category?.name ?? ""} ${item.uniCode ?? ""} ${item.supplier?.fantasyName ?? ""}`.toLowerCase();
+            `${item.name ?? ""} ${item.brands?.map((b: any) => b.name).join(" ") ?? ""} ${item.category?.name ?? ""} ${item.uniCode ?? ""} ${item.supplier?.fantasyName ?? ""}`.toLowerCase();
           if (!haystack.includes(term)) return false;
         }
         return true;
@@ -630,7 +630,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 ? layout.meta
                     .map((k) => renderCellValue(k, item).text)
                     .filter((t) => t && t !== "—")
-                : [item.brand?.name, item.uniCode].filter(Boolean);
+                : [item.brands?.map((b: any) => b.name).join(", ") || null, item.uniCode].filter(Boolean);
             const meta = metaParts.length > 0 ? metaParts.join(" · ") : null;
 
             return (

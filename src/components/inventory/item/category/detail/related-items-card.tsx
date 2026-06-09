@@ -88,17 +88,17 @@ export function RelatedItemsCard({ category }: RelatedItemsCardProps) {
                 </View>
 
                 {/* Code and Brand */}
-                {(item.uniCode || item.brand) && (
+                {(item.uniCode || item.brands?.length) && (
                   <View style={styles.itemMeta}>
                     {item.uniCode && (
                       <ThemedText style={StyleSheet.flatten([styles.metaText, { color: colors.mutedForeground }])} numberOfLines={1}>
                         #{item.uniCode}
                       </ThemedText>
                     )}
-                    {item.uniCode && item.brand && <ThemedText style={StyleSheet.flatten([styles.metaSeparator, { color: colors.mutedForeground }])}>•</ThemedText>}
-                    {item.brand && (
+                    {item.uniCode && !!item.brands?.length && <ThemedText style={StyleSheet.flatten([styles.metaSeparator, { color: colors.mutedForeground }])}>•</ThemedText>}
+                    {item.brands && item.brands.length > 0 && (
                       <ThemedText style={StyleSheet.flatten([styles.metaText, { color: colors.mutedForeground }])} numberOfLines={1}>
-                        {item.brand.name}
+                        {item.brands.map((b) => b.name).join(", ")}
                       </ThemedText>
                     )}
                   </View>

@@ -34,7 +34,7 @@ export const personalMovementsListConfig: ListConfig<Activity> = {
               name: true,
             },
           },
-          brand: {
+          brands: {
             select: {
               id: true,
               name: true,
@@ -101,12 +101,12 @@ export const personalMovementsListConfig: ListConfig<Activity> = {
         render: (activity) => activity.item?.category?.name || '-',
       },
       {
-        key: 'item.brand.name',
+        key: 'item.brands',
         label: 'MARCA',
-        sortable: true,
+        sortable: false,
         width: 1.2,
         align: 'left',
-        render: (activity) => activity.item?.brand?.name || '-',
+        render: (activity) => activity.item?.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'createdAt',
@@ -169,7 +169,7 @@ export const personalMovementsListConfig: ListConfig<Activity> = {
       { key: 'itemName', label: 'Item', path: 'item.name' },
       { key: 'itemCode', label: 'Código', path: 'item.uniCode' },
       { key: 'category', label: 'Categoria', path: 'item.category.name' },
-      { key: 'brand', label: 'Marca', path: 'item.brand.name' },
+      { key: 'brand', label: 'Marca', path: 'item.brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'operation', label: 'Operação', path: 'operation', format: (value: any): string => ACTIVITY_OPERATION_LABELS[value as keyof typeof ACTIVITY_OPERATION_LABELS] || value },
       { key: 'reason', label: 'Motivo', path: 'reason', format: (value: any): string => ACTIVITY_REASON_LABELS[value as keyof typeof ACTIVITY_REASON_LABELS] || value },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },

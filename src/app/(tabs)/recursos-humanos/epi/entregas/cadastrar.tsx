@@ -100,7 +100,7 @@ function CreateHRPPEDeliveryScreenInner() {
           isActive: true,
           category: { type: ITEM_CATEGORY_TYPE.PPE },
         },
-        include: { measures: true, brand: true },
+        include: { measures: true, brands: true },
         searchingFor: search || undefined,
         orderBy: { name: "asc" },
       });
@@ -159,7 +159,7 @@ function CreateHRPPEDeliveryScreenInner() {
     const displaySize = itemSize
       ? itemSize.startsWith("SIZE_") ? itemSize.replace("SIZE_", "") : itemSize
       : null;
-    const brandName = (item as any).brand?.name || null;
+    const brandName = (item as any).brands?.map((b: any) => b.name).join(", ") || null;
     return [item.name, brandName, displaySize].filter(Boolean).join(" - ");
   }, []);
 

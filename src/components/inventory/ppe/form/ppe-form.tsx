@@ -61,7 +61,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
             ppeCA: null,
             ppeDeliveryMode: null,
             ppeStandardQuantity: null,
-            brandId: null,
+            brandIds: [],
             categoryId: null,
             isActive: true,
             shouldAssignToUser: true,
@@ -76,7 +76,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
             ppeCA: item?.ppeCA || null,
             ppeDeliveryMode: item?.ppeDeliveryMode || null,
             ppeStandardQuantity: item?.ppeStandardQuantity || null,
-            brandId: item?.brandId || null,
+            brandIds: item?.brands?.map((b) => b.id) ?? [],
             categoryId: item?.categoryId || null,
             isActive: item?.isActive ?? true,
             shouldAssignToUser: item?.shouldAssignToUser ?? true,
@@ -221,21 +221,22 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
             </FormFieldGroup>
 
             <FormFieldGroup
-              label="Marca"
-              error={form.formState.errors.brandId?.message}
+              label="Marcas"
+              error={form.formState.errors.brandIds?.message}
             >
               <Controller
                 control={form.control}
-                name="brandId"
+                name="brandIds"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <Combobox
+                    mode="multiple"
                     options={brandOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione a marca"
+                    value={Array.isArray(value) ? value : []}
+                    onValueChange={(next) => onChange(Array.isArray(next) ? next : next ? [next] : [])}
+                    placeholder="Selecione as marcas"
                     disabled={isLoading}
                     searchable
-                    clearable
+                    showCount
                     error={error?.message}
                   />
                 )}

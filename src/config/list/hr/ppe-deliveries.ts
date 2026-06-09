@@ -19,7 +19,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
       user: true,
       item: {
         include: {
-          brand: true,
+          brands: true,
         },
       },
       reviewedByUser: true,
@@ -47,12 +47,12 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         style: { fontWeight: '500' },
       },
       {
-        key: 'item.brand.name',
+        key: 'item.brands',
         label: 'MARCA',
-        sortable: true,
+        sortable: false,
         width: 1.3,
         align: 'left',
-        render: (delivery) => delivery.item?.brand?.name || '-',
+        render: (delivery) => delivery.item?.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'user.name',
@@ -306,7 +306,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
     columns: [
       { key: 'item.uniCode', label: 'Código', path: 'item.uniCode' },
       { key: 'item.name', label: 'Item', path: 'item.name' },
-      { key: 'item.brand.name', label: 'Marca', path: 'item.brand.name' },
+      { key: 'item.brands', label: 'Marca', path: 'item.brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'user.name', label: 'Usuário', path: 'user.name' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
       { key: 'quantity', label: 'Quantidade', path: 'quantity' },

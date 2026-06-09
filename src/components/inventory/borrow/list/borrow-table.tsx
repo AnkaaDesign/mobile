@@ -135,14 +135,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "item.brand.name",
+    key: "item.brands",
     header: "MARCA",
     align: "left",
-    sortable: true,
+    sortable: false,
     width: 0,
     accessor: (borrow: Borrow) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {borrow.item?.brand?.name || "-"}
+        {borrow.item?.brands?.map((b) => b.name).join(", ") || "-"}
       </ThemedText>
     ),
   },
@@ -314,7 +314,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
         "item.uniCode": 1.2,
         "item.name": 2.0,
         "item.category.name": 1.2,
-        "item.brand.name": 1.2,
+        "item.brands": 1.2,
         "user.name": 1.5,
         quantity: 1.0,
         status: 0.8,

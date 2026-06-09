@@ -225,7 +225,7 @@ export function ActivityBatchCreateForm({
           ...prev,
           [itemId]: {
             name: item.name,
-            brand: item.brand?.name,
+            brand: item.brands?.map((b: any) => b.name).join(", "),
             uniCode: item.uniCode,
           },
         }));
@@ -320,7 +320,7 @@ export function ActivityBatchCreateForm({
         id: true,
         name: true,
         uniCode: true,
-        brand: {
+        brands: {
           select: {
             id: true,
             name: true,
@@ -344,7 +344,7 @@ export function ActivityBatchCreateForm({
       return {
         ...item,
         name: cached?.name || fetched?.name || `Item ${item.id.slice(0, 8)}`,
-        brand: cached?.brand || fetched?.brand?.name,
+        brand: cached?.brand || fetched?.brands?.map((b) => b.name).join(", "),
         uniCode: cached?.uniCode || fetched?.uniCode,
       };
     });

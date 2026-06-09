@@ -31,7 +31,7 @@ export default function ItemDetailScreen() {
   const query = useItem(id as string, {
     enabled: !!id && id !== "",
     include: {
-      brand: true,
+      brands: true,
       category: true,
       supplier: true,
       measures: true,
@@ -48,13 +48,13 @@ export default function ItemDetailScreen() {
       },
       relatedItems: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
         },
       },
       relatedTo: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
         },
       },

@@ -42,7 +42,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
           id: true,
           name: true,
           uniCode: true,
-          brand: { select: { id: true, name: true } },
+          brands: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
         },
       },
@@ -70,12 +70,12 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         render: (orderItem) => orderItem.item?.uniCode || '-',
       },
       {
-        key: 'item.brand.name',
+        key: 'item.brands',
         label: 'MARCA',
         sortable: false,
         width: 1.2,
         align: 'left',
-        render: (orderItem) => orderItem.item?.brand?.name || '-',
+        render: (orderItem) => orderItem.item?.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'orderedQuantity',
@@ -262,7 +262,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
     columns: [
       { key: 'itemName', label: 'Item', path: 'item.name' },
       { key: 'itemCode', label: 'Código', path: 'item.uniCode' },
-      { key: 'brand', label: 'Marca', path: 'item.brand.name' },
+      { key: 'brand', label: 'Marca', path: 'item.brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'orderedQuantity', label: 'Qtd. Pedida', path: 'orderedQuantity', format: 'number' },
       { key: 'receivedQuantity', label: 'Qtd. Recebida', path: 'receivedQuantity', format: 'number' },
       {

@@ -70,14 +70,14 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
   const { data: items, isLoading: isLoadingItems } = useItems({
     orderBy: { name: "asc" },
     include: {
-      brand: true,
+      brands: true,
     },
   });
 
   const itemOptions =
     items?.data?.map((item) => ({
       value: item.id,
-      label: `${item.name}${item.brand ? ` (${item.brand.name})` : ""}`,
+      label: `${item.name}${item.brands && item.brands.length > 0 ? ` (${item.brands.map((b) => b.name).join(", ")})` : ""}`,
     })) || [];
 
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({

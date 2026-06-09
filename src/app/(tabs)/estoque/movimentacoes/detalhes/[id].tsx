@@ -51,7 +51,7 @@ export default function ActivityDetailScreen() {
           id: true,
           name: true,
           uniCode: true,
-          brand: { select: { id: true, name: true } },
+          brands: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
           supplier: {
             select: { id: true, fantasyName: true, corporateName: true },
@@ -191,8 +191,8 @@ export default function ActivityDetailScreen() {
               <View style={styles.cardBody}>
                 <DetailField label="Nome" icon="package" value={activity.item?.name || "-"} />
                 <DetailField label="Código" icon="hash" value={activity.item?.uniCode || "-"} />
-                {activity.item?.brand && (
-                  <DetailField label="Marca" icon="tag" value={activity.item.brand.name} />
+                {activity.item?.brands && activity.item.brands.length > 0 && (
+                  <DetailField label="Marca" icon="tag" value={activity.item.brands.map((b) => b.name).join(", ")} />
                 )}
                 {activity.item?.category && (
                   <DetailField label="Categoria" icon="category" value={activity.item.category.name} />

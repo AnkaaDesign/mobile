@@ -29,7 +29,7 @@ export default function CreateComponentScreen() {
   // Fetch available items for selection
   const { data: itemsData, isLoading: isLoadingItems } = useItems({
     perPage: 100,
-    include: { brand: true, category: true },
+    include: { brands: true, category: true },
     orderBy: { name: "asc" },
   });
 
@@ -38,7 +38,7 @@ export default function CreateComponentScreen() {
     return itemsData.data.map((item) => ({
       value: item.id,
       label: item.uniCode ? `${item.name} (${item.uniCode})` : item.name,
-      description: item.brand?.name || item.category?.name || undefined,
+      description: item.brands?.map((b) => b.name).join(", ") || item.category?.name || undefined,
     }));
   }, [itemsData]);
 
@@ -137,9 +137,9 @@ export default function CreateComponentScreen() {
                 </ThemedText>
               )}
               <View style={styles.itemMeta}>
-                {selectedItem.brand && (
+                {selectedItem.brands && selectedItem.brands.length > 0 && (
                   <ThemedText style={styles.metaText}>
-                    Marca: {selectedItem.brand.name}
+                    Marca: {selectedItem.brands.map((b) => b.name).join(", ")}
                   </ThemedText>
                 )}
                 {selectedItem.category && (

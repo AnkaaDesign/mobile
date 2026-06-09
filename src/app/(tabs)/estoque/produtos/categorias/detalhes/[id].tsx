@@ -76,7 +76,7 @@ export default function CategoryDetailScreen() {
           totalPrice: true,
           isActive: true,
           ppeCA: true,
-          brand: {
+          brands: {
             select: {
               id: true,
               name: true,
@@ -448,9 +448,9 @@ export default function CategoryDetailScreen() {
                                   </ThemedText>
                                 </View>
 
-                                {item.brand && (
+                                {item.brands && item.brands.length > 0 && (
                                   <ThemedText style={StyleSheet.flatten([styles.itemCardBrand, { color: colors.mutedForeground }])} numberOfLines={1}>
-                                    {item.brand.name}
+                                    {item.brands.map((b) => b.name).join(", ")}
                                   </ThemedText>
                                 )}
 

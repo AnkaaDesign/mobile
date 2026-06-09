@@ -12,6 +12,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderTableRowSwipe } from "./order-table-row-swipe";
 import { OrderStatusBadge } from "./order-status-badge";
 import { formatCurrency, formatDate } from "@/utils";
+import { formatOrderNumber } from "@/utils/order-code";
 import { useCanViewPrices } from "@/hooks";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
@@ -74,6 +75,18 @@ function formatOrderDate(date: Date | string | null | undefined): { date: string
 
 // Define all available columns with their renderers
 export const createColumnDefinitions = (): TableColumn[] => [
+  {
+    key: "orderNumber",
+    header: "Nº",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {order.orderNumber != null ? formatOrderNumber(order.orderNumber) : "—"}
+      </ThemedText>
+    ),
+  },
   {
     key: "description",
     header: "DESCRIÇÃO",
@@ -268,6 +281,7 @@ export const OrderTable = React.memo<OrderTableProps>(
     const displayColumns = useMemo(() => {
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
+        orderNumber: 0.7,
         description: 1.5,
         "supplier.fantasyName": 2.0,
         status: 1.0,

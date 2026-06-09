@@ -28,7 +28,7 @@ export default function ComponentDetailsScreen() {
     include: {
       item: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
           supplier: true,
           price: true,
@@ -108,12 +108,12 @@ function ComponentBody({ component }: { component: any }) {
             )}
 
             <View style={styles.badgeContainer}>
-              {component.item.brand && (
-                <Badge variant="outline" style={styles.brandBadge}>
+              {component.item.brands?.map((b: any) => (
+                <Badge key={b.id} variant="outline" style={styles.brandBadge}>
                   <IconBuildingFactory size={14} color={colors.foreground} />
-                  <ThemedText style={styles.badgeText}>{component.item.brand.name}</ThemedText>
+                  <ThemedText style={styles.badgeText}>{b.name}</ThemedText>
                 </Badge>
-              )}
+              ))}
 
               {component.item.category && (
                 <Badge variant="outline" style={styles.categoryBadge}>

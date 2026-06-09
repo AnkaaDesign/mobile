@@ -76,10 +76,9 @@ export const itemsListConfig: ListConfig<Item> = {
       isActive: true,
       abcCategory: true,
       xyzCategory: true,
-      brandId: true,
       categoryId: true,
       supplierId: true,
-      brand: {
+      brands: {
         select: {
           id: true,
           name: true,
@@ -132,12 +131,12 @@ export const itemsListConfig: ListConfig<Item> = {
         style: { fontWeight: '500' },
       },
       {
-        key: 'brand.name',
+        key: 'brands',
         label: 'MARCA',
-        sortable: true,
+        sortable: false,
         width: 1.2,
         align: 'left',
-        render: (item) => item.brand?.name || '-',
+        render: (item) => item.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'category.name',
@@ -334,7 +333,7 @@ export const itemsListConfig: ListConfig<Item> = {
       },
     ],
     defaultVisible: isTabletWidth()
-      ? ['uniCode', 'name', 'brand.name', 'measures', 'quantity']
+      ? ['uniCode', 'name', 'brands', 'measures', 'quantity']
       : ['uniCode', 'name', 'quantity'],
     rowHeight: 72,
     actions: [
@@ -607,7 +606,7 @@ export const itemsListConfig: ListConfig<Item> = {
     columns: [
       { key: 'uniCode', label: 'Código', path: 'uniCode' },
       { key: 'name', label: 'Nome', path: 'name' },
-      { key: 'brand', label: 'Marca', path: 'brand.name' },
+      { key: 'brand', label: 'Marca', path: 'brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'category', label: 'Categoria', path: 'category.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
       { key: 'price', label: 'Preço', path: 'prices[0].value', format: 'currency' },

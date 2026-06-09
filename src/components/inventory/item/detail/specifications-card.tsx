@@ -34,7 +34,7 @@ const getMeasureIconName = (measureType: MEASURE_TYPE): string => {
 export function SpecificationsCard({ item }: SpecificationsCardProps) {
   const { colors } = useTheme();
 
-  const hasProductInfo = item.brand || item.category || item.supplier;
+  const hasProductInfo = item.brands?.length || item.category || item.supplier;
   const hasIdentification = item.uniCode || item.ppeCA || (item.barcodes && item.barcodes.length > 0);
   const hasMeasures = item.measures && item.measures.length > 0;
   const hasPackaging = item.boxQuantity !== null;
@@ -71,10 +71,10 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
         />
       )}
 
-      {item.brand && (
+      {item.brands && item.brands.length > 0 && (
         <DetailField
-          label="Marca"
-          value={item.brand.name}
+          label={item.brands.length > 1 ? "Marcas" : "Marca"}
+          value={item.brands.map((b) => b.name).join(", ")}
           icon="tag"
         />
       )}

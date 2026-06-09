@@ -68,14 +68,14 @@ export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
                 </View>
 
                 {/* Brand and Category */}
-                {(relatedItem.brand || relatedItem.category) && (
+                {(relatedItem.brands?.length || relatedItem.category) && (
                   <View style={styles.itemMeta}>
-                    {relatedItem.brand && (
+                    {relatedItem.brands && relatedItem.brands.length > 0 && (
                       <ThemedText style={StyleSheet.flatten([styles.metaText, { color: colors.mutedForeground }])} numberOfLines={1}>
-                        {relatedItem.brand.name}
+                        {relatedItem.brands.map((b) => b.name).join(", ")}
                       </ThemedText>
                     )}
-                    {relatedItem.brand && relatedItem.category && <ThemedText style={StyleSheet.flatten([styles.metaSeparator, { color: colors.mutedForeground }])}>•</ThemedText>}
+                    {relatedItem.brands && relatedItem.brands.length > 0 && relatedItem.category && <ThemedText style={StyleSheet.flatten([styles.metaSeparator, { color: colors.mutedForeground }])}>•</ThemedText>}
                     {relatedItem.category && (
                       <ThemedText style={StyleSheet.flatten([styles.metaText, { color: colors.mutedForeground }])} numberOfLines={1}>
                         {relatedItem.category.name}

@@ -15,18 +15,18 @@ type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
 interface BrandSelectorProps {
   disabled?: boolean;
   required?: boolean;
-  initialBrand?: ItemBrand;
+  initialBrands?: ItemBrand[];
 }
 
-export function BrandSelector({ disabled, required, initialBrand }: BrandSelectorProps) {
+export function BrandSelector({ disabled, required, initialBrands }: BrandSelectorProps) {
   const [isCreating, setIsCreating] = useState(false);
   const { control } = useFormContext<ItemFormData>();
   const { createAsync } = useItemBrandMutations();
 
   // Memoize initial options to prevent infinite loop
   const initialOptions = useMemo(
-    () => initialBrand ? [initialBrand] : [],
-    [initialBrand?.id]
+    () => initialBrands ?? [],
+    [initialBrands]
   );
 
   // Async search function for brands
@@ -83,41 +83,46 @@ export function BrandSelector({ disabled, required, initialBrand }: BrandSelecto
   return (
     <Controller
       control={control}
-      name="brandId"
-      render={({ field: { onChange, value }, fieldState: { error } }) => (
-        <View style={{ gap: 8 }}>
-          <Label nativeID="brandId" style={{ marginBottom: 4 }}>
-            Marca {required && <ThemedText variant="destructive">*</ThemedText>}
-          </Label>
-          <Combobox<ItemBrand>
-            value={value ?? undefined}
-            onValueChange={onChange}
-            async={true}
-            queryKey={["item-brands", "search"]}
-            queryFn={searchBrands}
-            initialOptions={initialOptions}
-            getOptionLabel={getOptionLabel}
-            getOptionValue={getOptionValue}
-            placeholder="Selecione uma marca"
-            searchPlaceholder="Buscar marca..."
-            emptyText="Nenhuma marca encontrada"
-            disabled={disabled || isCreating}
-            error={error?.message}
-            clearable={!required}
-            minSearchLength={0}
-            pageSize={50}
-            debounceMs={300}
-            onCreate={async (name) => {
-              const newBrandId = await handleCreateBrand(name);
-              if (newBrandId) {
-                onChange(newBrandId);
-              }
-            }}
-            createLabel={(value: string) => `Criar marca "${value}"`}
-            isCreating={isCreating}
-          />
-        </View>
-      )}
+      name="brandIds"
+      render={({ field: { onChange, value }, fieldState: { error } }) => {
+        const selectedIds = Array.isArray(value) ? value : [];
+        return (
+          <View style={{ gap: 8 }}>
+            <Label nativeID="brandIds" style={{ marginBottom: 4 }}>
+              Marcas {required && <ThemedText variant="destructive">*</ThemedText>}
+            </Label>
+            <Combobox<ItemBrand>
+              mode="multiple"
+              value={selectedIds}
+              onValueChange={(next) => onChange(Array.isArray(next) ? next : next ? [next] : [])}
+              async={true}
+              queryKey={["item-brands", "search"]}
+              queryFn={searchBrands}
+              initialOptions={initialOptions}
+              getOptionLabel={getOptionLabel}
+              getOptionValue={getOptionValue}
+              placeholder="Selecione as marcas"
+              searchPlaceholder="Buscar marca..."
+              emptyText="Nenhuma marca encontrada"
+              disabled={disabled || isCreating}
+              error={error?.message}
+              clearable={!required}
+              minSearchLength={0}
+              pageSize={50}
+              debounceMs={300}
+              showCount
+              onCreate={async (name) => {
+                const newBrandId = await handleCreateBrand(name);
+                if (newBrandId && !selectedIds.includes(newBrandId)) {
+                  onChange([...selectedIds, newBrandId]);
+                }
+              }}
+              createLabel={(value: string) => `Criar marca "${value}"`}
+              isCreating={isCreating}
+            />
+          </View>
+        );
+      }}
     />
   );
 }

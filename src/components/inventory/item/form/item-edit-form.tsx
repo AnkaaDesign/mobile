@@ -79,7 +79,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       shouldAssignToUser: apiData.shouldAssignToUser,
       abcCategory: apiData.abcCategory,
       xyzCategory: apiData.xyzCategory,
-      brandId: apiData.brandId,
+      brandIds: apiData.brands?.map((b) => b.id) ?? [],
       categoryId: apiData.categoryId,
       supplierId: apiData.supplierId,
       estimatedLeadTime: apiData.estimatedLeadTime,
@@ -176,7 +176,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           {/* Categorization */}
           <FormCard title="Classificação" icon="IconTag">
             <View style={styles.fieldGroup}>
-              <BrandSelector disabled={isSubmitting} required={false} initialBrand={item.brand} />
+              <BrandSelector disabled={isSubmitting} required={false} initialBrands={item.brands} />
               <CategorySelector disabled={isSubmitting} required={false} initialCategory={item.category} onCategoryChange={setSelectedCategoryId} />
               <SupplierSelector disabled={isSubmitting} initialSupplier={item.supplier} />
             </View>

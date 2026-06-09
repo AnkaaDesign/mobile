@@ -23,7 +23,7 @@ export function createFormulaComponentsListConfig(
       include: {
         item: {
           include: {
-            brand: true,
+            brands: true,
             category: true,
           },
         },
@@ -79,7 +79,7 @@ export function createFormulaComponentsListConfig(
           sortable: false,
           width: 1.2,
           align: 'left',
-          render: (component) => component.item?.brand?.name || '-',
+          render: (component) => component.item?.brands?.map((b) => b.name).join(', ') || '-',
         },
         {
           key: 'category',
@@ -247,7 +247,7 @@ export function createFormulaComponentsListConfig(
         { key: 'itemCode', label: 'Código', path: 'item.uniCode' },
         { key: 'ratio', label: 'Proporção (%)', path: 'ratio' },
         { key: 'weight', label: 'Peso (g)', path: 'weight' },
-        { key: 'brand', label: 'Marca', path: 'item.brand.name' },
+        { key: 'brand', label: 'Marca', path: 'item.brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
         { key: 'category', label: 'Categoria', path: 'item.category.name' },
         { key: 'createdAt', label: 'Adicionado em', path: 'createdAt', format: 'date' },
       ],

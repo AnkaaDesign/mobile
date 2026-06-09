@@ -130,7 +130,7 @@ export function BorrowReturnForm({ borrow, onReturn, onMarkAsLost, onCancel, isS
                 <ThemedText style={styles.infoLabel}>Item:</ThemedText>
                 <ThemedText style={styles.infoValue}>
                   {borrow.item?.name || "N/A"}
-                  {borrow.item?.brand ? ` - ${borrow.item.brand.name}` : ""}
+                  {borrow.item?.brands && borrow.item.brands.length > 0 ? ` - ${borrow.item.brands.map((b) => b.name).join(", ")}` : ""}
                 </ThemedText>
               </View>
 

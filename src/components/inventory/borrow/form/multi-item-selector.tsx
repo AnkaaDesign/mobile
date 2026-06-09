@@ -67,7 +67,7 @@ export function MultiItemSelector({
         where: {
           isActive: true,
           quantity: { gt: 0 }, // Only show items with available stock
-          itemCategory: {
+          category: {
             type: "TOOL", // Only show tools that can be borrowed
           },
           ...(searchTerm ? {
@@ -78,8 +78,8 @@ export function MultiItemSelector({
           } : {}),
         },
         include: {
-          itemCategory: true,
-          itemBrand: true,
+          category: true,
+          brands: { select: { id: true, name: true } },
         },
       });
 
@@ -95,7 +95,7 @@ export function MultiItemSelector({
           metadata: {
             quantity: item.quantity,
             category: item.category,
-            brand: item.brand,
+            brands: item.brands,
           },
         };
       });

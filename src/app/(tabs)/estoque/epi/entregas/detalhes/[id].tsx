@@ -68,7 +68,7 @@ export default function PPEDeliveryDetailsScreen() {
     include: {
       item: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
           prices: { orderBy: { updatedAt: "desc" }, take: 1 },
         },
@@ -325,7 +325,7 @@ function DeliveryDetailBody({
                   <ThemedText style={styles.detailLabel}>Marca</ThemedText>
                 </View>
                 <ThemedText style={styles.detailValue}>
-                  {delivery.item.brand?.name || "Não definida"}
+                  {delivery.item.brands?.map((b: any) => b.name).join(", ") || "Não definida"}
                 </ThemedText>
               </View>
 

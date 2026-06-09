@@ -97,7 +97,7 @@ export default function RequestPPEScreen() {
             category: { type: ITEM_CATEGORY_TYPE.PPE },
             quantity: { gt: 0 },
           },
-          include: { brand: true, category: true, measures: true },
+          include: { brands: true, category: true, measures: true },
           searchingFor: search || undefined,
           orderBy: { name: "asc" },
         });

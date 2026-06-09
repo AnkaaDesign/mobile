@@ -39,7 +39,7 @@ interface BaseItemFormProps {
   onFormStateChange?: (formState: { isValid: boolean; isDirty: boolean }) => void;
   onCancel?: () => void;
   initialSupplier?: Supplier;
-  initialBrand?: ItemBrand;
+  initialBrands?: ItemBrand[];
   initialCategory?: ItemCategory;
 }
 
@@ -60,7 +60,7 @@ type ItemFormProps = CreateItemFormProps | UpdateItemFormProps;
 export function ItemForm(props: ItemFormProps) {
   const { colors } = useTheme();
   const canViewPrices = useCanViewPrices();
-  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory, initialBrand, initialSupplier } = props;
+  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory, initialBrands, initialSupplier } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
   const [isPPE, setIsPPE] = useState(false);
 
@@ -91,7 +91,7 @@ export function ItemForm(props: ItemFormProps) {
     shouldAssignToUser: true,
     abcCategory: null,
     xyzCategory: null,
-    brandId: undefined,
+    brandIds: [],
     categoryId: undefined,
     supplierId: null,
     estimatedLeadTime: 30,
@@ -228,7 +228,7 @@ export function ItemForm(props: ItemFormProps) {
                 />
                 <BrandSelector
                   disabled={isSubmitting}
-                  initialBrand={initialBrand}
+                  initialBrands={initialBrands}
                 />
                 <SupplierSelector
                   disabled={isSubmitting}

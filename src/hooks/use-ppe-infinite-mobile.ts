@@ -17,7 +17,7 @@ export const usePpeInfiniteMobile = (filters?: Partial<ItemGetManyFormData>) => 
           item: {
             include: {
               category: true,
-              brand: true,
+              brands: true,
               supplier: true,
             }
           },

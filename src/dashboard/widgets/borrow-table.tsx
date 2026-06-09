@@ -185,7 +185,8 @@ const SORT_KEY_TO_API: Record<string, string> = {
   userName: "user.name",
   // column keys
   itemUniCode: "item.uniCode",
-  itemBrand: "item.brand.name",
+  // brand is now a to-many relation and cannot be ordered by; fall back to item name
+  itemBrand: "item.name",
   itemCategory: "item.category.name",
   userSector: "user.sector.name",
   borrowedAt: "createdAt",
@@ -364,7 +365,7 @@ function buildParams(
       config.sorts.length ? config.sorts : [{ key: "createdAt", direction: "desc" }],
     ),
     include: {
-      item: { include: { brand: true, category: true } },
+      item: { include: { brands: true, category: true } },
       user: { include: { sector: true } },
     },
   };
@@ -605,7 +606,7 @@ function BorrowRow({
                   color: colors.mutedForeground,
                 }}
               >
-                {borrow.item?.brand?.name || "—"}
+                {borrow.item?.brands?.map((b: any) => b.name).join(", ") || "—"}
               </Text>
             );
           case "itemCategory":

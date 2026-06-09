@@ -152,7 +152,7 @@ export async function exportItems(items: any[], format: ExportFormat = 'csv'): P
     {
       key: 'brand',
       label: 'Marca',
-      getValue: (item) => item.brand?.name,
+      getValue: (item) => item.brands?.map((b: any) => b.name).join(", "),
     },
     {
       key: 'category',

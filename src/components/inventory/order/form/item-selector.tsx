@@ -76,7 +76,7 @@ export function OrderItemSelector({
       metadata: {
         quantity: initialItem.quantity,
         category: initialItem.category,
-        brand: initialItem.brand,
+        brands: initialItem.brands,
         supplier: initialItem.supplier,
         price: priceInfo,
         isActive: initialItem.isActive,
@@ -94,14 +94,14 @@ export function OrderItemSelector({
         OR: [
           { name: { contains: searchTerm, mode: "insensitive" } },
           { uniCode: { contains: searchTerm, mode: "insensitive" } },
-          { brand: { name: { contains: searchTerm, mode: "insensitive" } } },
+          { brands: { some: { name: { contains: searchTerm, mode: "insensitive" } } } },
           { category: { name: { contains: searchTerm, mode: "insensitive" } } },
         ],
       } : {}),
       // Apply category filter
       ...(categoryIds.length > 0 ? { categoryId: { in: categoryIds } } : {}),
       // Apply brand filter
-      ...(brandIds.length > 0 ? { brandId: { in: brandIds } } : {}),
+      ...(brandIds.length > 0 ? { brands: { some: { id: { in: brandIds } } } } : {}),
       // Apply supplier filter
       ...(supplierIds.length > 0 ? { supplierId: { in: supplierIds } } : {}),
       // Apply active filter (only show inactive if explicitly requested)
@@ -127,7 +127,7 @@ export function OrderItemSelector({
             name: true,
           },
         },
-        brand: {
+        brands: {
           select: {
             id: true,
             name: true,
@@ -172,7 +172,7 @@ export function OrderItemSelector({
           metadata: {
             quantity: item.quantity,
             category: item.category,
-            brand: item.brand,
+            brands: item.brands,
             supplier: item.supplier,
             price: priceInfo,
             isActive: item.isActive,
@@ -210,9 +210,9 @@ export function OrderItemSelector({
             {option.label}
           </ThemedText>
           <View style={styles.optionDetails}>
-            {metadata.brand?.name && (
+            {metadata.brands?.length > 0 && (
               <ThemedText style={[styles.optionMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {metadata.brand.name}
+                {metadata.brands.map((b: any) => b.name).join(", ")}
               </ThemedText>
             )}
             {metadata.category?.name && (

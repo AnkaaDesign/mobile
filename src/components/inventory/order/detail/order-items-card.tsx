@@ -207,9 +207,9 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
                       Código: {item.uniCode}
                     </ThemedText>
                   )}
-                  {item?.brand && (
+                  {item?.brands && item.brands.length > 0 && (
                     <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
-                      {item.brand.name}
+                      {item.brands.map((b) => b.name).join(", ")}
                     </ThemedText>
                   )}
                 </View>

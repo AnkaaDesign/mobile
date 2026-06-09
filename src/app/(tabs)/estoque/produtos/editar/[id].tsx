@@ -51,7 +51,6 @@ function ItemEditScreen() {
       shouldAssignToUser: true,
       abcCategory: true,
       xyzCategory: true,
-      brandId: true,
       categoryId: true,
       supplierId: true,
       estimatedLeadTime: true,
@@ -61,7 +60,7 @@ function ItemEditScreen() {
       ppeCA: true,
       ppeDeliveryMode: true,
       ppeStandardQuantity: true,
-      brand: { select: { id: true, name: true } },
+      brands: { select: { id: true, name: true } },
       category: {
         select: {
           id: true,

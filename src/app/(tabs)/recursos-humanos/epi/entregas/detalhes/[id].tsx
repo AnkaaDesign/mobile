@@ -50,7 +50,7 @@ export default function HRPPEDeliveryDetailsScreen() {
       item: {
         include: {
           category: true,
-          brand: true,
+          brands: true,
         },
       },
       ppeSchedule: true,

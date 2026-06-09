@@ -53,7 +53,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     include: {
-      brand: true,
+      brands: true,
       category: true,
       supplier: true,
       measures: true,
@@ -134,12 +134,12 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         },
       },
       {
-        key: 'brand.name',
+        key: 'brands',
         label: 'MARCA',
-        sortable: true,
+        sortable: false,
         width: 1.2,
         align: 'left',
-        render: (item) => item.brand?.name || '-',
+        render: (item) => item.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'shouldAssignToUser',
@@ -358,7 +358,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
       { key: 'uniCode', label: 'Código' },
       { key: 'ppeCA', label: 'CA' },
       { key: 'category.name', label: 'Categoria' },
-      { key: 'brand.name', label: 'Marca' },
+      { key: 'brands', label: 'Marca', path: 'brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'quantity', label: 'Quantidade' },
       { key: 'shouldAssignToUser', label: 'Atribuir ao Usuário' },
       { key: 'isActive', label: 'Ativo' },

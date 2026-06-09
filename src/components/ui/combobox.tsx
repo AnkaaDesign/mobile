@@ -474,8 +474,9 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         const parts = [];
         if (optionAny.unicode) parts.push(optionAny.unicode);
         parts.push(label);
-        if (optionAny.brand || optionAny.category) {
-          parts.push(`(${optionAny.brand || optionAny.category})`);
+        const brandNames = Array.isArray(optionAny.brands) ? optionAny.brands.map((b: any) => b?.name ?? b).filter(Boolean).join(", ") : optionAny.brand;
+        if (brandNames || optionAny.category) {
+          parts.push(`(${brandNames || optionAny.category})`);
         }
         return parts.join(" ");
       }

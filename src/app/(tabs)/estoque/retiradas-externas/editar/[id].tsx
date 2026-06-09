@@ -29,7 +29,7 @@ function EditExternalWithdrawalScreenInner() {
       receipts: true,
       items: {
         include: {
-          item: { include: { brand: true, category: true } },
+          item: { include: { brands: true, category: true } },
         },
         orderBy: { createdAt: "asc" },
       },

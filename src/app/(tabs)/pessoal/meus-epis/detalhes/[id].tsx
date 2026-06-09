@@ -41,7 +41,7 @@ export default function PpeDeliveryDetailScreen() {
       item: {
         include: {
           category: true,
-          brand: true,
+          brands: true,
         },
       },
       ppeSchedule: true,

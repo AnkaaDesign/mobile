@@ -220,13 +220,13 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalS
               </View>
 
               {/* Item Brand/Category */}
-              {(item?.brand || item?.category) && (
+              {(item?.brands?.length || item?.category) && (
                 <View style={styles.itemMeta}>
-                  {item.brand && (
-                    <Badge variant="outline" style={styles.metaBadge}>
-                      {item.brand.name}
+                  {item.brands?.map((b) => (
+                    <Badge key={b.id} variant="outline" style={styles.metaBadge}>
+                      {b.name}
                     </Badge>
-                  )}
+                  ))}
                   {item.category && (
                     <Badge variant="secondary" style={styles.metaBadge}>
                       {item.category.name}

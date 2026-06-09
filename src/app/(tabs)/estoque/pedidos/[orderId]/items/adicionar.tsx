@@ -64,7 +64,7 @@ function AddOrderItemScreenInner() {
     isLoading: itemsLoading,
   } = useItems({
     include: {
-      brand: { select: { id: true, name: true } },
+      brands: { select: { id: true, name: true } },
       category: { select: { id: true, name: true } },
       measures: true,
     },
@@ -251,10 +251,10 @@ function AddOrderItemScreenInner() {
                       <ThemedText style={styles.itemInfoValue}>{selectedItem.uniCode}</ThemedText>
                     </View>
                   )}
-                  {selectedItem.brand?.name && (
+                  {selectedItem.brands && selectedItem.brands.length > 0 && (
                     <View style={styles.itemInfoRow}>
                       <ThemedText style={styles.itemInfoLabel}>Marca:</ThemedText>
-                      <ThemedText style={styles.itemInfoValue}>{selectedItem.brand.name}</ThemedText>
+                      <ThemedText style={styles.itemInfoValue}>{selectedItem.brands.map((b) => b.name).join(", ")}</ThemedText>
                     </View>
                   )}
                   {canViewPrices && selectedItem.prices?.[0]?.value && (
@@ -467,8 +467,8 @@ const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected }) => {
         {item?.uniCode && (
           <ThemedText style={styles.itemOptionCode}>Código: {item.uniCode}</ThemedText>
         )}
-        {item?.brand?.name && (
-          <ThemedText style={styles.itemOptionBrand}>Marca: {item.brand.name}</ThemedText>
+        {item?.brands && item.brands.length > 0 && (
+          <ThemedText style={styles.itemOptionBrand}>Marca: {item.brands.map((b: any) => b.name).join(", ")}</ThemedText>
         )}
         {item?.quantity !== undefined && (
           <ThemedText style={StyleSheet.flatten([

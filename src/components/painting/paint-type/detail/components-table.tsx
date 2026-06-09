@@ -27,7 +27,7 @@ interface ComponentsTableProps {
 const createColumnDefinitions = () => {
   return [
     { key: "name", header: "Nome" },
-    { key: "brand.name", header: "Marca" },
+    { key: "brands", header: "Marca" },
     { key: "category.name", header: "Categoria" },
     { key: "code", header: "Código" },
   ];
@@ -42,7 +42,7 @@ export function ComponentsTable({ paintType, maxHeight = 400 }: ComponentsTableP
 
   // Default to name and brand columns
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
-    return ["name", "brand.name"];
+    return ["name", "brands"];
   });
 
   // Search state
@@ -68,7 +68,7 @@ export function ComponentsTable({ paintType, maxHeight = 400 }: ComponentsTableP
       id: { in: componentItemIds },
     },
     include: {
-      brand: true,
+      brands: true,
       category: true,
     },
     orderBy: { name: "asc" },
@@ -83,7 +83,7 @@ export function ComponentsTable({ paintType, maxHeight = 400 }: ComponentsTableP
     return items.filter((item: Item) =>
       item.name?.toLowerCase().includes(searchLower) ||
       item.uniCode?.toLowerCase().includes(searchLower) ||
-      (item as any).brand?.name?.toLowerCase().includes(searchLower) ||
+      (item as any).brands?.some((b: any) => b.name?.toLowerCase().includes(searchLower)) ||
       (item as any).category?.name?.toLowerCase().includes(searchLower)
     );
   }, [items, debouncedSearch]);
@@ -98,7 +98,7 @@ export function ComponentsTable({ paintType, maxHeight = 400 }: ComponentsTableP
 
   // Get default visible columns
   const getDefaultVisibleColumns = useCallback(() => {
-    return ["name", "brand.name"];
+    return ["name", "brands"];
   }, []);
 
   // Handle opening column panel

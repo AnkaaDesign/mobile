@@ -28,7 +28,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
     pageSize: 25,
     include: {
       category: true,
-      brand: true,
+      brands: true,
       supplier: true,
       measures: true,
     },
@@ -54,12 +54,12 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         style: { fontWeight: '500' },
       },
       {
-        key: 'brand.name',
+        key: 'brands',
         label: 'MARCA',
-        sortable: true,
+        sortable: false,
         width: 1.3,
         align: 'left',
-        render: (item) => item.brand?.name || '-',
+        render: (item) => item.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'category.name',
@@ -172,7 +172,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['name', 'brand.name', 'quantity'],
+    defaultVisible: ['name', 'brands', 'quantity'],
     rowHeight: 72,
     actions: [
       {
@@ -283,7 +283,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
     columns: [
       { key: 'uniCode', label: 'Código', path: 'uniCode' },
       { key: 'name', label: 'Nome', path: 'name' },
-      { key: 'brand.name', label: 'Marca', path: 'brand.name' },
+      { key: 'brands', label: 'Marca', path: 'brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'category.name', label: 'Categoria', path: 'category.name' },
       { key: 'ppeCA', label: 'CA', path: 'ppeCA' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity' },

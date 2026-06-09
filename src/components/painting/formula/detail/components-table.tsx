@@ -78,13 +78,13 @@ const createComponentColumnDefinitions = (): ComponentColumn[] => [
     ),
   },
   {
-    key: "item.brand.name",
+    key: "item.brands",
     header: "MARCA",
     align: "left",
     width: 0,
     accessor: (component: PaintFormulaComponent) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {component.item?.brand?.name || "-"}
+        {component.item?.brands?.map((b) => b.name).join(", ") || "-"}
       </ThemedText>
     ),
   },
@@ -135,7 +135,7 @@ export function FormulaComponentsTable({
     include: {
       item: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
         },
       },
@@ -152,7 +152,7 @@ export function FormulaComponentsTable({
     return components.filter((component: PaintFormulaComponent) =>
       component.item?.name?.toLowerCase().includes(searchLower) ||
       component.item?.uniCode?.toLowerCase().includes(searchLower) ||
-      component.item?.brand?.name?.toLowerCase().includes(searchLower) ||
+      component.item?.brands?.some((b) => b.name.toLowerCase().includes(searchLower)) ||
       component.item?.category?.name?.toLowerCase().includes(searchLower)
     );
   }, [components, debouncedSearch]);
@@ -166,7 +166,7 @@ export function FormulaComponentsTable({
       "item.name": 2.5,
       ratio: 1.2,
       "item.code": 1.2,
-      "item.brand.name": 1.5,
+      "item.brands": 1.5,
       "item.category.name": 1.5,
     };
 

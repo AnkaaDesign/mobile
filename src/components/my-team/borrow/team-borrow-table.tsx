@@ -180,7 +180,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (borrow: Borrow) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {borrow.item?.brand?.name || "-"}
+        {borrow.item?.brands?.map((b) => b.name).join(", ") || "-"}
       </ThemedText>
     ),
   },

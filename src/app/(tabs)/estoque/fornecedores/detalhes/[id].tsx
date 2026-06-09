@@ -29,7 +29,7 @@ export default function SupplierDetailScreen() {
   const query = useSupplierDetail(id as string, {
     include: {
       logo: true,
-      items: { include: { brand: true, category: true } },
+      items: { include: { brands: true, category: true } },
       orders: { include: { items: true } },
       orderRules: true,
     },

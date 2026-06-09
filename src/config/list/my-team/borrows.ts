@@ -31,7 +31,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
           name: true,
           uniCode: true,
           quantity: true,
-          brand: {
+          brands: {
             select: {
               id: true,
               name: true,
@@ -120,12 +120,12 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         render: (borrow) => borrow.item?.category?.name || '-',
       },
       {
-        key: 'item.brand.name',
+        key: 'item.brands',
         label: 'MARCA',
-        sortable: true,
+        sortable: false,
         width: 1.2,
         align: 'left',
-        render: (borrow) => borrow.item?.brand?.name || '-',
+        render: (borrow) => borrow.item?.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'item.supplier.fantasyName',
@@ -375,7 +375,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
       { key: 'itemName', label: 'Item', path: 'item.name' },
       { key: 'uniCode', label: 'Código', path: 'item.uniCode' },
       { key: 'category', label: 'Categoria', path: 'item.category.name' },
-      { key: 'brand', label: 'Marca', path: 'item.brand.name' },
+      { key: 'brand', label: 'Marca', path: 'item.brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'supplier', label: 'Fornecedor', path: 'item.supplier.fantasyName' },
       { key: 'position', label: 'Cargo', path: 'user.position.name' },
       { key: 'sector', label: 'Setor', path: 'user.sector.name' },

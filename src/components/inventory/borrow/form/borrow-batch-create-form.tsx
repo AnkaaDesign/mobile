@@ -147,7 +147,7 @@ export function BorrowBatchCreateForm({
           ...prev,
           [itemId]: {
             name: item.name,
-            brand: item.brand?.name,
+            brand: item.brands?.map((b: any) => b.name).join(", "),
             uniCode: item.uniCode,
           },
         }));
@@ -173,7 +173,7 @@ export function BorrowBatchCreateForm({
   const { data: selectedItemsData } = useItems(
     {
       where: { id: { in: selectedItemIds } },
-      include: { brand: true, category: true },
+      include: { brands: true, category: true },
     },
     { enabled: multiStepForm.currentStep === 2 && selectedItemIds.length > 0 },
   );
@@ -188,7 +188,7 @@ export function BorrowBatchCreateForm({
       return {
         ...item,
         name: cached?.name || fetched?.name || `Item ${item.id.slice(0, 8)}`,
-        brand: cached?.brand || fetched?.brand?.name,
+        brand: cached?.brand || fetched?.brands?.map((b) => b.name).join(", "),
         uniCode: cached?.uniCode || fetched?.uniCode,
       };
     });

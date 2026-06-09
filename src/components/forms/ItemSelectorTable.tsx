@@ -265,11 +265,11 @@ const createColumns = (colors: any): ItemSelectorColumn[] => [
     render: (item) => item.name,
   },
   {
-    key: "brand",
+    key: "brands",
     label: "Marca",
     width: 2,
-    sortable: true,
-    render: (item) => item.brand?.name || "-",
+    sortable: false,
+    render: (item) => item.brands?.map((b: any) => b.name).join(", ") || "-",
   },
   {
     key: "category",
@@ -778,7 +778,7 @@ export function ItemSelectorTable({
   const queryParams = useMemo(() => {
     const params: any = {
       orderBy: { [sortField]: sortDirection },
-      include: { brand: true, category: true, prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+      include: { brands: true, category: true, prices: { orderBy: { createdAt: "desc" }, take: 1 } },
     };
 
     const whereConditions: any = {};
@@ -804,7 +804,7 @@ export function ItemSelectorTable({
     }
 
     if (brandIds.length > 0) {
-      whereConditions.brandId = { in: brandIds };
+      whereConditions.brands = { some: { id: { in: brandIds } } };
     }
 
     if (supplierIds.length > 0) {

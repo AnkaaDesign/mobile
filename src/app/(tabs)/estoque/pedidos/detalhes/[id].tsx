@@ -19,6 +19,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderInfoCard } from "@/components/inventory/order/detail/order-info-card";
 import { OrderItemsTable } from "@/components/inventory/order/detail/order-items-table";
 import { OrderDocumentsCard } from "@/components/inventory/order/detail/order-documents-card";
+import { OrderPdfExportCard } from "@/components/inventory/order/detail/order-pdf-export-card";
 import type { Order } from "@/types";
 
 export default function OrderDetailScreen() {
@@ -32,7 +33,7 @@ export default function OrderDetailScreen() {
         include: {
           item: {
             include: {
-              brand: true,
+              brands: true,
               category: true,
               measures: true,
             },
@@ -84,6 +85,7 @@ export default function OrderDetailScreen() {
         <View style={styles.body}>
           <OrderInfoCard order={order} />
           <OrderItemsTable order={order} />
+          <OrderPdfExportCard order={order} />
           <OrderDocumentsCard order={order} />
 
           <Card style={styles.card}>

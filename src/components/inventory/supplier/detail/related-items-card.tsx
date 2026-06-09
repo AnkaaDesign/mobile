@@ -115,9 +115,9 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
 
                 <View className="flex flex-row justify-between items-center">
                   <View className="flex flex-row gap-4">
-                    {item.brand && (
+                    {item.brands && item.brands.length > 0 && (
                       <Text className="text-sm text-muted-foreground">
-                        <Text className="font-medium">Marca:</Text> {item.brand.name}
+                        <Text className="font-medium">Marca:</Text> {item.brands.map((b) => b.name).join(", ")}
                       </Text>
                     )}
                     {item.category && (

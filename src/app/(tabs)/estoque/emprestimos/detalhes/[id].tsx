@@ -26,7 +26,7 @@ export default function BorrowDetailsScreen() {
   // Fetch borrow details with include for full relations.
   const query = useBorrow(id as string, {
     include: {
-      item: { include: { brand: true, category: true, supplier: true } },
+      item: { include: { brands: true, category: true, supplier: true } },
       user: { include: { position: true, sector: true } },
     },
     enabled: !!id,

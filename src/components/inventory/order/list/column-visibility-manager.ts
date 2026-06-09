@@ -13,6 +13,7 @@ export interface OrderColumn {
 
 // Mobile columns (< 624px)
 const MOBILE_COLUMNS = [
+  "orderNumber",
   "description",
   "supplier.fantasyName",
   "status",
@@ -21,6 +22,7 @@ const MOBILE_COLUMNS = [
 
 // Tablet columns (>= 624px) - adds items count and forecast
 const TABLET_COLUMNS = [
+  "orderNumber",
   "description",
   "supplier.fantasyName",
   "status",

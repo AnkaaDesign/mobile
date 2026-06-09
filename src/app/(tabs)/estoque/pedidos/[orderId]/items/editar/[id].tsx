@@ -59,7 +59,7 @@ function EditOrderItemScreenInner() {
     include: {
       item: {
         include: {
-          brand: { select: { id: true, name: true } },
+          brands: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
         },
       },
@@ -254,10 +254,10 @@ function EditOrderItemScreenInner() {
                   </View>
                 )}
 
-                {item?.brand?.name && (
+                {item?.brands && item.brands.length > 0 && (
                   <View style={styles.itemDetailRow}>
                     <ThemedText style={styles.itemDetailLabel}>Marca:</ThemedText>
-                    <ThemedText style={styles.itemDetailValue}>{item.brand.name}</ThemedText>
+                    <ThemedText style={styles.itemDetailValue}>{item.brands.map((b) => b.name).join(", ")}</ThemedText>
                   </View>
                 )}
 

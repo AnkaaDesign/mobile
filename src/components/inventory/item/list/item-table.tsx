@@ -82,14 +82,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "brand.name",
+    key: "brands",
     header: "MARCA",
     align: "left",
-    sortable: true,
+    sortable: false,
     width: 0,
     accessor: (item: Item) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {item.brand?.name || "-"}
+        {item.brands?.map((b) => b.name).join(", ") || "-"}
       </ThemedText>
     ),
   },

@@ -90,14 +90,14 @@ export function ExternalWithdrawalItemSelector({
         ? { id: { in: Array.from(selectedItems) } }
         : {
             ...(categoryIds.length > 0 && { categoryId: { in: categoryIds } }),
-            ...(brandIds.length > 0 && { brandId: { in: brandIds } }),
+            ...(brandIds.length > 0 && { brands: { some: { id: { in: brandIds } } } }),
             ...(supplierIds.length > 0 && { supplierId: { in: supplierIds } }),
           }),
     },
     page,
     limit: pageSize,
     include: {
-      brand: true,
+      brands: true,
       category: true,
       supplier: true,
       prices: {
@@ -214,9 +214,9 @@ export function ExternalWithdrawalItemSelector({
               {item.uniCode ? `${item.uniCode} - ` : ""}{item.name}
             </Text>
             <View style={styles.itemMeta}>
-              {item.brand && (
+              {item.brands && item.brands.length > 0 && (
                 <Text style={styles.itemMetaText}>
-                  {item.brand.name}
+                  {item.brands.map((b) => b.name).join(", ")}
                 </Text>
               )}
               {item.category && (

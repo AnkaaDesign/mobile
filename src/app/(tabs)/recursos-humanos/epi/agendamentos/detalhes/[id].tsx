@@ -49,7 +49,7 @@ export default function PPEScheduleDetailsScreen() {
           user: { select: { name: true, id: true } },
           item: {
             include: {
-              brand: true,
+              brands: true,
               category: true,
             },
           },

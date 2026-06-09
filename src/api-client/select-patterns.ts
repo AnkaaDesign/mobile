@@ -91,7 +91,7 @@ export const ITEM_SELECT_COMBOBOX = {
   uniCode: true,
   quantity: true,
   isActive: true,
-  brand: {
+  brands: {
     select: {
       id: true,
       name: true,
@@ -117,7 +117,7 @@ export const ITEM_SELECT_TABLE = {
   maxQuantity: true,
   reorderPoint: true,
   isActive: true,
-  brand: {
+  brands: {
     select: {
       id: true,
       name: true,
@@ -199,7 +199,7 @@ export const BORROW_SELECT_DETAIL = {
       uniCode: true,
       quantity: true,
       isActive: true,
-      brand: {
+      brands: {
         select: {
           id: true,
           name: true,

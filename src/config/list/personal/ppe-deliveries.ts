@@ -22,7 +22,7 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
       item: {
         include: {
           category: true,
-          brand: true,
+          brands: true,
         },
       },
       ppeSchedule: true,

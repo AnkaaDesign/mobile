@@ -6,6 +6,7 @@ import {
 } from '@/constants'
 import { canEditOrders, canDeleteOrders } from '@/utils/permissions/entity-permissions'
 import { isTabletWidth } from '@/lib/table-utils'
+import { formatOrderNumber } from '@/utils/order-code'
 
 
 export const ordersListConfig: ListConfig<Order> = {
@@ -35,6 +36,15 @@ export const ordersListConfig: ListConfig<Order> = {
 
   table: {
     columns: [
+      {
+        key: 'orderNumber',
+        label: 'Nº',
+        sortable: true,
+        width: 0.8,
+        align: 'left',
+        render: (order) => (order.orderNumber != null ? formatOrderNumber(order.orderNumber) : '—'),
+        style: { fontWeight: '500' },
+      },
       {
         key: 'description',
         label: 'DESCRIÇÃO',
@@ -249,6 +259,7 @@ export const ordersListConfig: ListConfig<Order> = {
     filename: 'pedidos',
     formats: ['csv', 'json', 'pdf'],
     columns: [
+      { key: 'orderNumber', label: 'Nº', path: 'orderNumber', format: (v: any) => (v != null ? formatOrderNumber(v) : '—') },
       { key: 'description', label: 'Descrição', path: 'description' },
       { key: 'supplier', label: 'Fornecedor', path: 'supplier.fantasyName' },
       {

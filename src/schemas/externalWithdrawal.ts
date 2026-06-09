@@ -48,7 +48,7 @@ export const externalWithdrawalIncludeSchema = z
                   z.object({
                     include: z
                       .object({
-                        brand: z.boolean().optional(),
+                        brands: z.boolean().optional(),
                         category: z.boolean().optional(),
                         supplier: z.boolean().optional(),
                         prices: z
@@ -544,7 +544,7 @@ export const externalWithdrawalItemIncludeSchema = z
         z.object({
           include: z
             .object({
-              brand: z.boolean().optional(),
+              brands: z.boolean().optional(),
               category: z.boolean().optional(),
               supplier: z.boolean().optional(),
               prices: z

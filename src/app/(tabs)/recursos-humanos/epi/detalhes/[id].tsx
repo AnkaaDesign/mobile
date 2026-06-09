@@ -42,7 +42,7 @@ export default function PPEDetailsScreen() {
     refetch: refetchItem,
   } = useItem(id, {
     include: {
-      brand: true,
+      brands: true,
       category: true,
       supplier: true,
       prices: {
@@ -69,13 +69,13 @@ export default function PPEDetailsScreen() {
       },
       relatedItems: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
         },
       },
       relatedTo: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
         },
       },

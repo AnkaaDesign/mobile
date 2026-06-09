@@ -33,7 +33,7 @@ export default function MaintenanceDetailsScreen() {
     include: {
       item: {
         include: {
-          brand: true,
+          brands: true,
           category: true,
           supplier: true,
           prices: { orderBy: { createdAt: 'desc' }, take: 1 },
@@ -200,10 +200,10 @@ function MaintenanceBody({ maintenance }: { maintenance: any }) {
               </View>
 
               <View style={styles.itemDetails}>
-                {targetItem.brand && (
+                {targetItem.brands && targetItem.brands.length > 0 && (
                   <View style={styles.itemDetailRow}>
                     <ThemedText style={styles.detailLabel}>Marca:</ThemedText>
-                    <ThemedText style={styles.detailValue}>{targetItem.brand.name}</ThemedText>
+                    <ThemedText style={styles.detailValue}>{targetItem.brands.map((b: any) => b.name).join(", ")}</ThemedText>
                   </View>
                 )}
                 {targetItem.category && (

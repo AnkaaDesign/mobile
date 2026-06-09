@@ -36,7 +36,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           name: true,
           uniCode: true,
           quantity: true, // Available quantity
-          brand: {
+          brands: {
             select: {
               id: true,
               name: true,
@@ -99,12 +99,12 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         render: (borrow) => borrow.item?.category?.name || '-',
       },
       {
-        key: 'item.brand.name',
+        key: 'item.brands',
         label: 'MARCA',
-        sortable: true,
+        sortable: false,
         width: 1.2,
         align: 'left',
-        render: (borrow) => borrow.item?.brand?.name || '-',
+        render: (borrow) => borrow.item?.brands?.map((b) => b.name).join(', ') || '-',
       },
       {
         key: 'user.name',
@@ -365,7 +365,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
       { key: 'uniCode', label: 'Código', path: 'item.uniCode' },
       { key: 'itemName', label: 'Item', path: 'item.name' },
       { key: 'category', label: 'Categoria', path: 'item.category.name' },
-      { key: 'brand', label: 'Marca', path: 'item.brand.name' },
+      { key: 'brand', label: 'Marca', path: 'item.brands', format: (value: any) => (Array.isArray(value) ? value.map((b: any) => b?.name).filter(Boolean).join(', ') : '-') },
       { key: 'userName', label: 'Usuário', path: 'user.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => BORROW_STATUS_LABELS[value as keyof typeof BORROW_STATUS_LABELS] || value },

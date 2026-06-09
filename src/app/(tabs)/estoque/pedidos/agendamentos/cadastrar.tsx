@@ -31,6 +31,7 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { IconCalendarPlus } from "@tabler/icons-react-native";
 import { OrderMultiItemSelector } from "@/components/inventory/order/form/multi-item-selector";
+import { SupplierSelector } from "@/components/inventory/supplier/supplier-selector";
 
 const DAY_OF_WEEK_OPTIONS = [
   { label: "Domingo", value: "SUNDAY" },
@@ -266,6 +267,22 @@ function OrderScheduleCreateScreenInner() {
                       multiline
                       numberOfLines={3}
                       error={!!fieldState.error}
+                    />
+                  </View>
+                )}
+              />
+
+              {/* Target supplier — optional; propagated to every order this schedule generates. */}
+              <Controller
+                control={form.control}
+                name="supplierId"
+                render={({ field, fieldState }) => (
+                  <View style={styles.field}>
+                    <SupplierSelector
+                      value={field.value ?? undefined}
+                      onValueChange={(v) => field.onChange(v ?? null)}
+                      placeholder="Selecione um fornecedor (opcional)"
+                      error={fieldState.error?.message}
                     />
                   </View>
                 )}

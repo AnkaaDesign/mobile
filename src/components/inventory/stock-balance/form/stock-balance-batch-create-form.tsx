@@ -124,7 +124,7 @@ export function StockBalanceBatchCreateForm({
   const { data: selectedItemsData } = useItems(
     {
       where: { id: { in: selectedItemIds } },
-      include: { brand: true, category: true },
+      include: { brands: true, category: true },
     },
     { enabled: multiStepForm.currentStep === 2 && selectedItemIds.length > 0 },
   );
@@ -143,7 +143,7 @@ export function StockBalanceBatchCreateForm({
       return {
         id: item.id,
         name: itemData?.name || `Item ${item.id.slice(0, 8)}`,
-        brand: itemData?.brand?.name,
+        brand: itemData?.brands?.map((b) => b.name).join(", "),
         uniCode: itemData?.uniCode ?? undefined,
         currentStock,
         countedQuantity,

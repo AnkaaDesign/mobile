@@ -76,12 +76,8 @@ export function ActivityFormFilters({
       }
     }
 
-    if (where.brandId) {
-      if (typeof where.brandId === "string") {
-        currentState.brandIds = [where.brandId];
-      } else if (where.brandId.in) {
-        currentState.brandIds = where.brandId.in;
-      }
+    if (where.brands?.some?.id?.in) {
+      currentState.brandIds = where.brands.some.id.in;
     }
 
     if (where.supplierId) {
@@ -151,12 +147,12 @@ export function ActivityFormFilters({
         // Handle "no brand" case
         const otherIds = localState.brandIds.filter((id: string) => id !== "null");
         if (otherIds.length > 0) {
-          where.OR = [...(where.OR || []), { brandId: null }, { brandId: { in: otherIds } }];
+          where.OR = [...(where.OR || []), { brands: { none: {} } }, { brands: { some: { id: { in: otherIds } } } }];
         } else {
-          where.brandId = null;
+          where.brands = { none: {} };
         }
       } else {
-        where.brandId = { in: localState.brandIds };
+        where.brands = { some: { id: { in: localState.brandIds } } };
       }
     }
 

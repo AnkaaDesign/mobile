@@ -31,7 +31,7 @@ export default function FormulaDetailsScreen() {
         include: {
           item: {
             include: {
-              brand: true,
+              brands: true,
               category: true,
               supplier: true,
             },

@@ -51,7 +51,7 @@ export function ItemsTable({ supplier, maxHeight = 500 }: ItemsTableProps) {
       supplierId: supplier.id,
     },
     include: {
-      brand: true,
+      brands: true,
       category: true,
     },
     orderBy: { name: "asc" },
@@ -67,7 +67,7 @@ export function ItemsTable({ supplier, maxHeight = 500 }: ItemsTableProps) {
       return (
         item.name?.toLowerCase().includes(lowerSearch) ||
         item.uniCode?.toLowerCase().includes(lowerSearch) ||
-        item.brand?.name?.toLowerCase().includes(lowerSearch) ||
+        item.brands?.some((b) => b.name.toLowerCase().includes(lowerSearch)) ||
         item.category?.name?.toLowerCase().includes(lowerSearch)
       );
     });

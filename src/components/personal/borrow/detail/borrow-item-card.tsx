@@ -69,8 +69,8 @@ export function BorrowItemCard({ borrow }: BorrowItemCardProps) {
         <DetailField label="Categoria" icon="folder" value={borrow.item.category.name} />
       )}
 
-      {borrow.item.brand?.name && (
-        <DetailField label="Marca" icon="tag" value={borrow.item.brand.name} />
+      {borrow.item.brands && borrow.item.brands.length > 0 && (
+        <DetailField label="Marca" icon="tag" value={borrow.item.brands.map((b) => b.name).join(", ")} />
       )}
 
       {borrow.item.quantity !== undefined && (

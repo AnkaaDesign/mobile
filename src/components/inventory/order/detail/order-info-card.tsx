@@ -7,6 +7,7 @@ import { DetailCard, DetailField, DetailPhoneField, DetailSection } from "@/comp
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey } from "@/utils";
+import { formatOrderNumber } from "@/utils/order-code";
 import type { Order } from "../../../../types";
 import { PAYMENT_METHOD_LABELS } from "@/constants";
 import { useCanViewPrices } from "@/hooks";
@@ -120,6 +121,13 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
 
       {/* Order Details Section */}
       <DetailSection title="Detalhes do Pedido">
+        {/* Order number */}
+        <DetailField
+          label="Número do Pedido"
+          value={order.orderNumber != null ? formatOrderNumber(order.orderNumber) : "—"}
+          icon="hash"
+        />
+
         {/* Description */}
         <DetailField
           label="Descrição"

@@ -24,7 +24,7 @@ function EditPPEInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { data: item, isLoading, error } = useItem(id, {
-    include: { brand: true, category: true },
+    include: { brands: true, category: true },
   });
 
   useScreenReady(!isLoading);

@@ -64,14 +64,14 @@ export function OrderMultiItemSelector({
           OR: [
             { name: { contains: searchTerm, mode: "insensitive" } },
             { uniCode: { contains: searchTerm, mode: "insensitive" } },
-            { brand: { name: { contains: searchTerm, mode: "insensitive" } } },
+            { brands: { some: { name: { contains: searchTerm, mode: "insensitive" } } } },
             { category: { name: { contains: searchTerm, mode: "insensitive" } } },
           ],
         } : {}),
         // Apply category filter
         ...(categoryIds.length > 0 ? { categoryId: { in: categoryIds } } : {}),
         // Apply brand filter
-        ...(brandIds.length > 0 ? { brandId: { in: brandIds } } : {}),
+        ...(brandIds.length > 0 ? { brands: { some: { id: { in: brandIds } } } } : {}),
         // Apply supplier filter
         ...(supplierIds.length > 0 ? { supplierId: { in: supplierIds } } : {}),
         // Apply active filter
@@ -85,7 +85,7 @@ export function OrderMultiItemSelector({
         where,
         include: {
           category: true,
-          brand: true,
+          brands: true,
           supplier: true,
           measures: true,
           prices: {
@@ -125,7 +125,7 @@ export function OrderMultiItemSelector({
             reorderPoint: item.reorderPoint,
             measures: measuresText,
             category: item.category,
-            brand: item.brand,
+            brands: item.brands,
             supplier: item.supplier,
             price: priceInfo,
             isActive: item.isActive,
@@ -173,7 +173,7 @@ export function OrderMultiItemSelector({
 
     // "marca · categoria · medidas"
     const attributeParts = [
-      metadata.brand?.name,
+      metadata.brands?.length ? metadata.brands.map((b: any) => b.name).join(", ") : null,
       metadata.category?.name,
       metadata.measures ? `Medidas: ${metadata.measures}` : null,
     ].filter(Boolean) as string[];

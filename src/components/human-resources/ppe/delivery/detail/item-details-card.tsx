@@ -42,8 +42,8 @@ export function ItemDetailsCard({ delivery }: ItemDetailsCardProps) {
         <DetailField label="Categoria" icon="tag" value={item.category.name} />
       )}
 
-      {item.brand?.name && (
-        <DetailField label="Marca" icon="tag" value={item.brand.name} />
+      {item.brands && item.brands.length > 0 && (
+        <DetailField label="Marca" icon="tag" value={item.brands.map((b) => b.name).join(", ")} />
       )}
     </DetailCard>
   );

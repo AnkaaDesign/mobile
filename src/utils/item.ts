@@ -339,7 +339,7 @@ export function sortItemsByUpdateDate(items: Item[], order: "asc" | "desc" = "de
 export function getItemSummary(item: Item): string {
   const stock = formatItemQuantity(item);
   const price = getFormattedPrice(item);
-  const brand = item.brand?.name || "";
+  const brand = item.brands?.map((b) => b.name).join(", ") || "";
   return `${item.name}${brand ? ` - ${brand}` : ""} | ${stock} | ${price}`;
 }
 

@@ -51,7 +51,7 @@ export const BorrowItemInfoCard: React.FC<BorrowItemInfoCardProps> = ({ borrow }
       )}
 
       {/* Brand */}
-      <DetailField label="Marca" value={item.brand ? item.brand.name : "-"} icon="tag" />
+      <DetailField label="Marca" value={item.brands && item.brands.length > 0 ? item.brands.map((b) => b.name).join(", ") : "-"} icon="tag" />
 
       {/* Category */}
       <DetailField label="Categoria" value={item.category ? item.category.name : "-"} icon="tags" />
