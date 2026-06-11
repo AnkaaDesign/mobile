@@ -78,7 +78,7 @@ export {
   formatQuantity,
   formatTaxPercentage,
   formatDensity,
-  formatCommissionPercentage,
+  formatBonificationPercentage,
   formatProgressPercentage,
 } from "./format-standard";
 export * from "./garage";

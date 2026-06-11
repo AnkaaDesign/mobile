@@ -77,13 +77,14 @@ export function MetricsCard({ item }: MetricsCardProps) {
       ) || false;
 
     // Unified stock level determination (matches stock-badge + web metrics-card).
-    const stockLevel = determineStockLevel(
-      item.quantity || 0,
-      item.reorderPoint || null,
-      item.maxQuantity || null,
+    const stockLevel = determineStockLevel({
+      quantity: item.quantity || 0,
+      reorderPoint: item.reorderPoint || null,
+      maxQuantity: item.maxQuantity || null,
       hasActiveOrder,
-      item.category?.type ?? null,
-    );
+      stockModel: item.stockModel ?? null,
+      fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+    });
 
     // Borrowed quantity: prefer _count.borrows from include; fall back to filtering live borrows array.
     const countBorrows = (item as any)._count?.borrows as number | undefined;

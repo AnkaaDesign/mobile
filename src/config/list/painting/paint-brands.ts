@@ -143,6 +143,7 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ paintBrandIds: Array.from(ids) })
         },
+        canPerform: canDeletePaints,
       },
     ],
   },

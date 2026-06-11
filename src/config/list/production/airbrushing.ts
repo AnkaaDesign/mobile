@@ -1,7 +1,9 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Airbrushing } from '@/types'
 import { canEditAirbrushings, canDeleteAirbrushings, canViewAirbrushingFinancials } from '@/utils/permissions/entity-permissions'
-import { AIRBRUSHING_STATUS } from '@/constants/enums'
+import { hasAnyPrivilege } from '@/utils'
+import { AIRBRUSHING_STATUS, SECTOR_PRIVILEGES } from '@/constants/enums'
+import { AIRBRUSHING_PAYMENT_STATUS_LABELS } from '@/constants/enum-labels'
 
 
 const STATUS_LABELS: Record<string, string> = {
@@ -21,47 +23,17 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
     batchMutationsHook: 'useAirbrushingBatchMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
+    // IMPORTANT: the API include schema only accepts booleans or `{ include }`
+    // shapes — Prisma-style `select` shapes are silently stripped, so the
+    // relations never arrive. Keep this in include form.
     include: {
       task: {
-        select: {
-          id: true,
-          name: true,
-          customer: {
-            select: {
-              id: true,
-              fantasyName: true,
-            },
-          },
-          sector: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+        include: {
+          customer: true,
         },
       },
-      artworks: {
-        select: {
-          id: true,
-          fileId: true,
-        },
-      },
-      receipts: {
-        select: {
-          id: true,
-        },
-      },
-      invoices: {
-        select: {
-          id: true,
-        },
-      },
+      painter: true,
+      artworks: true,
     },
   },
 
@@ -71,6 +43,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         key: 'task',
         label: 'TAREFA',
         sortable: true,
+        sortField: 'task.name',
         width: 2.0,
         align: 'left',
         render: (airbrushing) => airbrushing.task?.name || '-',
@@ -94,6 +67,27 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         render: (airbrushing) => String(airbrushing.price || 0),
         format: 'currency',
         canView: canViewAirbrushingFinancials,
+      },
+      {
+        key: 'painter',
+        label: 'PINTOR',
+        sortable: true,
+        sortField: 'painter.name',
+        width: 1.5,
+        align: 'left',
+        render: (airbrushing) => airbrushing.painter?.name || '-',
+      },
+      {
+        key: 'paymentStatus',
+        label: 'PAGAMENTO',
+        sortable: true,
+        sortField: 'paymentStatus',
+        width: 1.3,
+        align: 'left',
+        render: (airbrushing) =>
+          AIRBRUSHING_PAYMENT_STATUS_LABELS[airbrushing.paymentStatus] || airbrushing.paymentStatus,
+        format: 'badge',
+        badgeEntity: 'AIRBRUSHING_PAYMENT_STATUS',
       },
       {
         key: 'customer',
@@ -156,7 +150,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['task', 'status', 'startDate'],
+    defaultVisible: ['task', 'status', 'paymentStatus', 'startDate'],
     rowHeight: 72,
     actions: [
       {
@@ -174,7 +168,9 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         icon: 'pencil',
         variant: 'default',
         canPerform: canEditAirbrushings,
-        visible: (airbrushing) => airbrushing.status !== 'COMPLETED' && airbrushing.status !== 'CANCELLED',
+        // COMPLETED stays editable so paymentStatus can be recorded after
+        // completion (mirrors EDITABLE_AIRBRUSHING_STATUSES).
+        visible: (airbrushing) => airbrushing.status !== 'CANCELLED',
         onPress: (airbrushing, router) => {
           router.push(`/producao/aerografia/editar/${airbrushing.id}`)
         },
@@ -261,6 +257,8 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
       { key: 'task', label: 'Tarefa', path: 'task.name' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
       { key: 'price', label: 'Preço', path: 'price', format: 'currency' },
+      { key: 'painter', label: 'Pintor', path: 'painter.name' },
+      { key: 'paymentStatus', label: 'Pagamento', path: 'paymentStatus', format: (value) => AIRBRUSHING_PAYMENT_STATUS_LABELS[value as keyof typeof AIRBRUSHING_PAYMENT_STATUS_LABELS] || value },
       { key: 'customer', label: 'Cliente', path: 'task.customer.fantasyName' },
       { key: 'startDate', label: 'Início', path: 'startDate', format: 'date' },
       { key: 'finishDate', label: 'Término', path: 'finishDate', format: 'date' },
@@ -288,6 +286,8 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ airbrushingIds: Array.from(ids) })
         },
+        // API: airbrushing batch delete = ADMIN+COMMERCIAL+FINANCIAL
+        canPerform: (user) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL]),
       },
     ],
   },

@@ -11,7 +11,8 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, STREET_TYPE_OPTIONS } from "@/constants";
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, STREET_TYPE_OPTIONS, SECTOR_PRIVILEGES } from "@/constants";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
@@ -22,7 +23,13 @@ import { formSpacing } from "@/constants/form-styles";
 
 export default function SupplierCreateScreen() {
   const formKey = useFormScreenKey();
-  return <SupplierCreateScreenInner key={formKey} />;
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <SupplierCreateScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function SupplierCreateScreenInner() {

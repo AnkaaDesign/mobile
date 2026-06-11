@@ -510,6 +510,7 @@ export const employeesListConfig: ListConfig<User> = {
     create: {
       label: 'Cadastrar Funcionário',
       route: '/recursos-humanos/funcionarios/cadastrar',
+      canCreate: canEditUsers,
     },
     bulk: [
       {
@@ -524,6 +525,7 @@ export const employeesListConfig: ListConfig<User> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ userIds: Array.from(ids) })
         },
+        canPerform: canDeleteUsers,
       },
     ],
   },

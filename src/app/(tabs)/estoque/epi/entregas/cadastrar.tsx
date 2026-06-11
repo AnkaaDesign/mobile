@@ -15,7 +15,6 @@ import {
   PPE_DELIVERY_STATUS,
   PPE_DELIVERY_STATUS_ORDER,
   USER_STATUS,
-  ITEM_CATEGORY_TYPE,
   PPE_TYPE,
   routes,
   SECTOR_PRIVILEGES,
@@ -90,7 +89,8 @@ function CreatePPEDeliveryScreenInner() {
         take: 500,
         where: {
           isActive: true,
-          category: { type: ITEM_CATEGORY_TYPE.PPE },
+          // PPE identity = ppeType != null (capability-fields contract)
+          ppeType: { not: null },
         },
         include: { measures: true, brands: true },
         searchingFor: search || undefined,
@@ -173,7 +173,8 @@ function CreatePPEDeliveryScreenInner() {
     successRoute: (result) =>
       result.id
         ? mobileRoute(routes.inventory.ppe.deliveries.details(result.id))
-        : mobileRoute(routes.inventory.ppe.deliveries.root),
+        : // `as any` avoids unioning two AppRoute values (TS2590 — generated Href union too complex)
+          (mobileRoute(routes.inventory.ppe.deliveries.root) as any),
     cancelFallback: mobileRoute(routes.inventory.ppe.deliveries.root),
   });
 

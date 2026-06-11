@@ -290,7 +290,10 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                             label="Pintor"
                             value={airbrushing.painterId}
                             onValueChange={(painterId) =>
-                              updateAirbrushing(airbrushing.id, { painterId, painter: painterId ? airbrushing.painter : null })
+                              // The selector only returns the id — clear the cached
+                              // painter object so a stale user (previous selection)
+                              // isn't kept and shown after remount.
+                              updateAirbrushing(airbrushing.id, { painterId, painter: null })
                             }
                             initialPainter={airbrushing.painter}
                             disabled={disabled}

@@ -6,8 +6,8 @@ import { SECTOR_PRIVILEGES } from "@/constants";
  * Financial columns (price / quoteTotal / quoteStatus) expose the quote
  * value of a task and are restricted to financial-aware sectors.
  *
- * Commission is intentionally NOT gated here — production users receive
- * commission and must be able to see it on tables they have access to.
+ * Bonification is intentionally NOT gated here — production users receive
+ * bonification and must be able to see it on tables they have access to.
  *
  * Mirrors /web/src/utils/permissions/task-column-permissions.ts so the
  * two surfaces agree on what is sensitive.

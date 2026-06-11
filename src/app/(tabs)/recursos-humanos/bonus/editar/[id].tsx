@@ -4,8 +4,20 @@ import { BonusForm } from "@/components/human-resources/bonus/form";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useBonus } from "@/hooks/bonus";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function BonusEditScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <BonusEditScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function BonusEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: bonus, isLoading, error, refetch } = useBonus(id!);
 

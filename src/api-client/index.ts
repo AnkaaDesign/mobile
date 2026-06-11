@@ -38,7 +38,7 @@ export * from "./customer";
 export * from "./cut";
 export * from "./ppe";
 export * from "./economic-activity";
-export * from "./externalWithdrawal";
+export * from "./externalOperation";
 export * from "./file";
 export * from "./garage";
 export * from "./holiday";

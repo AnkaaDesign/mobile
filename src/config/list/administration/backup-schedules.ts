@@ -3,7 +3,11 @@ import type { ScheduledBackupJob } from '@/api-client/backup'
 import { backupApi } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
 import { backupQueryKeys } from '@/hooks/useBackup'
-import { canEditUsers } from '@/utils/permissions/entity-permissions'
+import { hasAnyPrivilege } from '@/utils'
+import { SECTOR_PRIVILEGES } from '@/constants'
+
+// API: backup/server operations = ADMIN-only (decision 10)
+const canManageBackups = (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN])
 
 // Type labels
 const TYPE_LABELS: Record<string, string> = {
@@ -96,6 +100,7 @@ export const backupSchedulesListConfig: ListConfig<ScheduledBackupJob> = {
             // api-client interceptor already shows the error toast.
           }
         },
+        canPerform: canManageBackups,
       },
     ],
   },
@@ -138,7 +143,7 @@ export const backupSchedulesListConfig: ListConfig<ScheduledBackupJob> = {
     create: {
       label: 'Novo Agendamento',
       route: '/servidor/backups/cadastrar-agendamento',
-      canCreate: canEditUsers,
+      canCreate: canManageBackups,
     },
   },
 

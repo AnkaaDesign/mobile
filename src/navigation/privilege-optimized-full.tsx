@@ -140,11 +140,11 @@ const ALL_ROUTES = [
   { name: "estoque/epi/entregas/listar", title: "Entregas EPI" },
   { name: "estoque/epi/entregas/detalhes/[id]", title: "Detalhes da Entrega EPI" },
   { name: "estoque/epi/entregas/editar/[id]", title: "Editar Entrega EPI" },
-  { name: "estoque/retiradas-externas/index", title: "Retiradas Externas" },
-  { name: "estoque/retiradas-externas/cadastrar", title: "Cadastrar Retirada Externa" },
-  { name: "estoque/retiradas-externas/listar", title: "Retiradas Externas" },
-  { name: "estoque/retiradas-externas/detalhes/[id]", title: "Detalhes da Retirada Externa" },
-  { name: "estoque/retiradas-externas/editar/[id]", title: "Editar Retirada Externa" },
+  { name: "estoque/operacoes-externas/index", title: "Operações Externas" },
+  { name: "estoque/operacoes-externas/cadastrar", title: "Cadastrar Operação Externa" },
+  { name: "estoque/operacoes-externas/listar", title: "Operações Externas" },
+  { name: "estoque/operacoes-externas/detalhes/[id]", title: "Detalhes da Operação Externa" },
+  { name: "estoque/operacoes-externas/editar/[id]", title: "Editar Operação Externa" },
 
   // Production
   { name: "producao/index", title: "Produção" },

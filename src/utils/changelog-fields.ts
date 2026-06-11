@@ -77,6 +77,11 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     shouldAssignToUser: "Deve ser Atribuído a Usuário",
     isForEpi: "É EPI",
 
+    // Capability fields
+    isBorrowable: "Emprestável",
+    stockModel: "Modelo de Estoque",
+    fixedTargetQuantity: "Quantidade Alvo",
+
     // Stock management
     leadTime: "Tempo de Entrega",
     estimatedLeadTime: "Tempo de Entrega Estimado",
@@ -281,7 +286,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     forecastDate: "Data de Previsão",
     cleared: "Liberado",
     paintId: "Tinta",
-    commission: "Comissão",
+    bonification: "Bonificação",
     bonusDiscountId: "Desconto Bônus",
     customerId: "Cliente",
     invoiceToId: "Faturar Para",
@@ -315,7 +320,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     paints: "Tintas da logomarca",
     groundPaints: "Fundos da Tinta",
     layouts: "Layouts do Veículo",
-    commissions: "Comissões",
+    bonifications: "Bonificações",
     services: "Serviços", // Legacy - for historical changelog records
     serviceOrders: "Ordens de Serviço",
     quoteId: "Orçamento",
@@ -483,7 +488,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "user.name": "Nome do Usuário",
     "order.description": "Descrição do Pedido",
   },
-  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL]: {
+  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION]: {
     withdrawerName: "Nome do Retirador",
     withdrawerDocument: "Documento do Retirador",
     withdrawerContact: "Contato do Retirador",
@@ -511,8 +516,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "budget.filename": "Nome do Orçamento",
     "responsibleUser.name": "Nome do Responsável",
   },
-  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL_ITEM]: {
-    externalWithdrawalId: "Retirada Externa",
+  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION_ITEM]: {
+    externalOperationId: "Operação Externa",
     itemId: "Item",
     withdrawedQuantity: "Quantidade Retirada",
     returnedQuantity: "Quantidade Devolvida",
@@ -535,14 +540,14 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "item.barcode": "Código de Barras do Item",
     "item.unicode": "Código Único do Item",
     "item.uniCode": "Código Único do Item",
-    "externalWithdrawal.withdrawerName": "Nome do Retirador",
+    "externalOperation.withdrawerName": "Nome do Retirador",
   },
   [CHANGE_LOG_ENTITY_TYPE.POSITION]: {
     name: "Nome",
     level: "Nível",
     sectorId: "Setor",
     privileges: "Privilégios",
-    commissionEligible: "Elegível para Comissão",
+    bonificationEligible: "Elegível para Bonificação",
     remuneration: "Remuneração",
     sector: "Setor",
     "sector.name": "Nome do Setor",
@@ -811,8 +816,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     orderReceipts: "Recibos de Pedidos",
     airbrushingReceipts: "Recibos de Aerografia",
     airbrushingInvoices: "Notas Fiscais de Aerografia",
-    externalWithdrawalInvoices: "Notas Fiscais de Retirada Externa",
-    externalWithdrawalReceipts: "Recibos de Retirada Externa",
+    externalOperationInvoices: "Notas Fiscais de Operação Externa",
+    externalOperationReceipts: "Recibos de Operação Externa",
   },
   [CHANGE_LOG_ENTITY_TYPE.NOTIFICATION]: {
     title: "Título",
@@ -982,8 +987,8 @@ interface FieldMetadata {
  * @returns The formatted value as a string
  */
 export function formatFieldValue(value: ComplexFieldValue, field?: string | null, entityType?: CHANGE_LOG_ENTITY_TYPE, metadata?: FieldMetadata): string {
-  // Handle null/undefined commission field specifically
-  if ((value === null || value === undefined) && field === "commission" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+  // Handle null/undefined bonification field specifically
+  if ((value === null || value === undefined) && field === "bonification" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
     return "Não Definida";
   }
 
@@ -1115,8 +1120,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
         // Fallback to count
         return `${value.length} ${value.length === 1 ? "serviço" : "serviços"}`;
       }
-      if (field === "commissions") {
-        return `${value.length} ${value.length === 1 ? "comissão" : "comissões"}`;
+      if (field === "bonifications") {
+        return `${value.length} ${value.length === 1 ? "bonificação" : "bonificações"}`;
       }
       if (field === "airbrushings") {
         return `${value.length} ${value.length === 1 ? "aerografia" : "aerografias"}`;
@@ -1206,8 +1211,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   }
 
   // Handle external withdrawal status
-  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL && typeof value === "string") {
-    const externalWithdrawalStatusLabels: Record<string, string> = {
+  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION && typeof value === "string") {
+    const externalOperationStatusLabels: Record<string, string> = {
       PENDING: "Pendente",
       PARTIALLY_RETURNED: "Parcialmente Devolvido",
       FULLY_RETURNED: "Totalmente Devolvido",
@@ -1216,7 +1221,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       DELIVERED: "Entregue",
       CANCELLED: "Cancelado",
     };
-    return externalWithdrawalStatusLabels[value] || value;
+    return externalOperationStatusLabels[value] || value;
   }
 
   // Handle task status
@@ -1370,15 +1375,15 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return cutReasonLabels[value] || value;
   }
 
-  // Handle commission status
-  if (field === "commission" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK && typeof value === "string") {
-    const commissionStatusLabels: Record<string, string> = {
-      NO_COMMISSION: "Sem Comissão",
-      PARTIAL_COMMISSION: "Comissão Parcial",
-      FULL_COMMISSION: "Comissão Integral",
-      SUSPENDED_COMMISSION: "Comissão Suspensa",
+  // Handle bonification status
+  if (field === "bonification" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK && typeof value === "string") {
+    const bonificationStatusLabels: Record<string, string> = {
+      NO_BONIFICATION: "Sem Bonificação",
+      PARTIAL_BONIFICATION: "Bonificação Parcial",
+      FULL_BONIFICATION: "Bonificação Integral",
+      SUSPENDED_BONIFICATION: "Bonificação Suspensa",
     };
-    return commissionStatusLabels[value] || value;
+    return bonificationStatusLabels[value] || value;
   }
 
   // Handle maintenance type
@@ -1564,8 +1569,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       PPE_DELIVERY: "Entrega de EPI",
       BORROW: "Empréstimo",
       RETURN: "Devolução",
-      EXTERNAL_WITHDRAWAL: "Retirada Externa",
-      EXTERNAL_WITHDRAWAL_RETURN: "Devolução de Retirada Externa",
+      EXTERNAL_OPERATION: "Operação Externa",
+      EXTERNAL_OPERATION_RETURN: "Devolução de Operação Externa",
       INVENTORY_COUNT: "Contagem de Inventário",
       MANUAL_ADJUSTMENT: "Ajuste Manual",
       MAINTENANCE: "Manutenção",
@@ -1599,8 +1604,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       VACATION_REJECTED: "Férias Rejeitadas",
       VACATION_STARTED: "Férias Iniciadas",
       VACATION_ENDED: "Férias Finalizadas",
-      EXTERNAL_WITHDRAWAL_CREATED: "Retirada Externa Criada",
-      EXTERNAL_WITHDRAWAL_OVERDUE: "Retirada Externa Atrasada",
+      EXTERNAL_OPERATION_CREATED: "Operação Externa Criada",
+      EXTERNAL_OPERATION_OVERDUE: "Operação Externa Atrasada",
       SYSTEM_UPDATE: "Atualização do Sistema",
       SYSTEM_MAINTENANCE: "Manutenção do Sistema",
       GENERAL_ANNOUNCEMENT: "Comunicado Geral",
@@ -1653,6 +1658,15 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       FACE_SHIELD: "Protetor Facial",
     };
     return ppeTypeLabels[value] || value;
+  }
+
+  // Handle stock model (capability-fields contract)
+  if (field === "stockModel" && typeof value === "string") {
+    const stockModelLabels: Record<string, string> = {
+      CONSUMPTION: "Consumo",
+      FIXED_TARGET: "Alvo fixo",
+    };
+    return stockModelLabels[value] || value;
   }
 
   // Handle PPE delivery mode

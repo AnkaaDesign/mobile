@@ -114,7 +114,7 @@ export default function ScheduleDetailsScreen() {
     canViewCuts, canViewAirbrushing, canViewObservation,
     canViewLayout: canViewTruckLayout,
     canViewTruckDetails, canViewArtworks, canApproveArtworks,
-    canViewCommission: canViewFinancialFields,
+    canViewBonification: canViewFinancialFields,
     canViewCustomer, canViewCreatedBy,
   } = useTaskPermissions();
 

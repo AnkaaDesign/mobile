@@ -504,6 +504,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
             users: Array.from(ids).map((id) => ({ id, data: { status: 'ACTIVE' } })),
           })
         },
+        canPerform: canEditUsers,
       },
       {
         key: 'deactivate',
@@ -519,6 +520,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
             users: Array.from(ids).map((id) => ({ id, data: { status: 'INACTIVE' } })),
           })
         },
+        canPerform: canEditUsers,
       },
       {
         key: 'delete',
@@ -532,6 +534,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ userIds: Array.from(ids) })
         },
+        canPerform: canDeleteUsers,
       },
     ],
   },

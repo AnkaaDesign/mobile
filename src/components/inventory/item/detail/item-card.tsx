@@ -27,13 +27,13 @@ export function ItemCard({ item, onPress, showActions: _showActions = true, vari
   // Determine stock level using the utility.
   // `hasActiveOrder` is intentionally NOT passed: pending-order state is a UI
   // overlay only (the new util ignores it anyway).
-  const stockLevel = determineStockLevel(
-    item.quantity || 0,
-    item.reorderPoint || null,
-    item.maxQuantity || null,
-    false,
-    item.category?.type ?? null,
-  );
+  const stockLevel = determineStockLevel({
+    quantity: item.quantity || 0,
+    reorderPoint: item.reorderPoint || null,
+    maxQuantity: item.maxQuantity || null,
+    stockModel: item.stockModel ?? null,
+    fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+  });
 
   // Get badge variant based on stock level
   const getBadgeVariant = () => {

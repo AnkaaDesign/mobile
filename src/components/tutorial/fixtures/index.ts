@@ -98,9 +98,9 @@ export const TUTORIAL_TASKS = [
 
 export const TUTORIAL_TASK_DETAIL = {
   ...TUTORIAL_TASKS[0],
-  isCommissionable: true,
-  // Real commission is an enum (COMMISSION_STATUS), not a percentage.
-  commission: "FULL_COMMISSION",
+  isBonifiable: true,
+  // Real bonification is an enum (BONIFICATION_STATUS), not a percentage.
+  bonification: "FULL_BONIFICATION",
   // Real service-order descriptions (PRODUCTION_SERVICE_DESCRIPTIONS) + real
   // SERVICE_ORDER_STATUS_LABELS (Title Case).
   services: [
@@ -255,8 +255,8 @@ export const TUTORIAL_BONUS_CURRENT = {
   discountTotal: 75,
   discountPercent: 5,
   performance: 92,
-  commission: 320,
-  rules: ["Assiduidade: até R$ 200", "Performance individual: até R$ 800", "Comissão: 5% sobre tarefas finalizadas"],
+  bonification: 320,
+  rules: ["Assiduidade: até R$ 200", "Performance individual: até R$ 800", "Bonificação: 5% sobre tarefas finalizadas"],
 };
 
 export const TUTORIAL_BONUS_HISTORY = [

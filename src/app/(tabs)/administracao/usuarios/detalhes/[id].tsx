@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useUser } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { Card } from "@/components/ui/card";
@@ -68,6 +68,7 @@ export default function UserDetailScreen() {
       query={query as any}
       icon={IconUser}
       title={(u) => u.name ?? "Usuário"}
+      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
       editRoute={(u) => mobileRoute(routes.administration.collaborators.edit(u.id))}
       notFoundFallback={mobileRoute(routes.administration.users.list)}
     >

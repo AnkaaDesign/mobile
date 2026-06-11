@@ -107,7 +107,20 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
     ],
     defaultVisible: ['title', 'type', 'createdAt'],
     rowHeight: 72,
-    actions: [],
+    actions: [
+      {
+        key: 'view',
+        label: 'Visualizar',
+        icon: 'eye',
+        variant: 'default',
+        onPress: (notification, router) => {
+          router.push(`/(tabs)/pessoal/minhas-notificacoes/detalhes/${notification.id}` as any)
+        },
+      },
+    ],
+    onRowPress: (notification, router) => {
+      router.push(`/(tabs)/pessoal/minhas-notificacoes/detalhes/${notification.id}` as any)
+    },
   },
 
   filters: {

@@ -198,7 +198,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
             const response = await getItems({
               where: {
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
-                category: { type: 'TOOL' },
+                isBorrowable: true, // capability-fields contract
               },
               orderBy: { name: 'asc' },
               limit: pageSize,

@@ -145,6 +145,7 @@ export const holidaysListConfig: ListConfig<Holiday> = {
     create: {
       label: 'Cadastrar Feriado',
       route: '/recursos-humanos/feriados/cadastrar',
+      canCreate: canEditHrEntities,
     },
     bulk: [
       {
@@ -159,6 +160,7 @@ export const holidaysListConfig: ListConfig<Holiday> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ holidayIds: Array.from(ids) })
         },
+        canPerform: canDeleteHrEntities,
       },
     ],
   },

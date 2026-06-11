@@ -14,7 +14,7 @@ export const tasksListAgendaConfig: ListConfig<Task> = {
     ...tasksListConfig.query,
     pageSize: 15, // Reduce from 25 to 15 for much faster loads
 
-    // Use include for relations - scalar fields (including commission) are automatically included
+    // Use include for relations - scalar fields (including bonification) are automatically included
     include: {
       // Customer - only essential fields
       customer: {

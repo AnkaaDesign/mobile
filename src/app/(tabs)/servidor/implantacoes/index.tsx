@@ -5,5 +5,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function ImplantacoesIndex() {
   useScreenReady();
-  return <Redirect href={mobileRoute(routes.server.deployments.list)} />;
+  return <Redirect href={mobileRoute(routes.server.deployments.list) as any} />;
 }

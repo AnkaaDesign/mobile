@@ -48,12 +48,12 @@ import { useTutorialStore } from "../engine-store";
 import { TUTORIAL_TASK_DETAIL } from "../fixtures";
 import type { SceneProps } from "./index";
 
-// Commission is an enum (mirror of COMMISSION_STATUS_LABELS), not a percentage.
-const COMMISSION_STATUS_LABELS: Record<string, string> = {
-  NO_COMMISSION: "Sem Comissão",
-  PARTIAL_COMMISSION: "Comissão Parcial",
-  FULL_COMMISSION: "Comissão Integral",
-  SUSPENDED_COMMISSION: "Comissão Suspensa",
+// Bonification is an enum (mirror of BONIFICATION_STATUS_LABELS), not a percentage.
+const BONIFICATION_STATUS_LABELS: Record<string, string> = {
+  NO_BONIFICATION: "Sem Bonificação",
+  PARTIAL_BONIFICATION: "Bonificação Parcial",
+  FULL_BONIFICATION: "Bonificação Integral",
+  SUSPENDED_BONIFICATION: "Bonificação Suspensa",
 };
 
 // Cut type labels — the tutorial copy refers to vinyl cuts as "Adesivo"
@@ -67,7 +67,7 @@ const CUT_TYPE_LABELS: Record<string, string> = {
 // we can still scroll them into view (their own onLayout y is relative to an
 // inner row, not the scroll content).
 const PARENT_SECTION: Record<string, string> = {
-  taskCommissionBadge: "taskInfoCard",
+  taskBonificationBadge: "taskInfoCard",
   taskServiceObservationIndicator: "taskServicesCard",
 };
 
@@ -194,17 +194,17 @@ export function TaskDetailScene(_props: SceneProps) {
       >
         <DetailField icon={IconBuilding} label="Razão Social" value={t.customer} colors={colors} />
         <DetailField icon={IconBuildingFactory2} label="Setor" value={t.sectorName} colors={colors} />
-        {t.isCommissionable && (
-          /* Real card shows commission as a "Comissão" DetailField (icon coins);
+        {t.isBonifiable && (
+          /* Real card shows bonification as a "Bonificação" DetailField (icon coins);
              the spotlight slot lives on its wrapping row. */
           <View
-            ref={slot.registerRef("taskCommissionBadge") as any}
-            onLayout={track("taskCommissionBadge")}
+            ref={slot.registerRef("taskBonificationBadge") as any}
+            onLayout={track("taskBonificationBadge")}
           >
             <DetailField
               icon={IconCoins}
-              label="Comissão"
-              value={COMMISSION_STATUS_LABELS[t.commission] ?? t.commission}
+              label="Bonificação"
+              value={BONIFICATION_STATUS_LABELS[t.bonification] ?? t.bonification}
               colors={colors}
             />
           </View>

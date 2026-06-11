@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useUser } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { Card } from "@/components/ui/card";
@@ -74,6 +74,7 @@ export default function EmployeeDetailsScreen() {
       query={query as any}
       icon={IconUser}
       title={(e) => e.name ?? "Colaborador"}
+      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
       editRoute={(e) => mobileRoute(routes.administration.collaborators.edit(e.id))}
       notFoundFallback={mobileRoute(routes.administration.collaborators.list)}
     >

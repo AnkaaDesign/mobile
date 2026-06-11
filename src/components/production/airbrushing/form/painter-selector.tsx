@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
+import { SECTOR_PRIVILEGES, USER_STATUS } from "@/constants";
 import { getUsers } from "@/api-client";
 import type { User } from "@/types";
 
@@ -129,6 +129,11 @@ export function PainterSelector({
               </ThemedText>
             )}
           </View>
+          {metadata.status === USER_STATUS.DISMISSED && (
+            <Badge variant="outline" style={styles.sectorBadge}>
+              <ThemedText style={[styles.sectorBadgeText, { color: colors.destructive }]}>Desligado</ThemedText>
+            </Badge>
+          )}
           {metadata.sector && (
             <Badge variant="outline" style={styles.sectorBadge}>
               <ThemedText style={[styles.sectorBadgeText, { color: colors.foreground }]}>{metadata.sector.name}</ThemedText>

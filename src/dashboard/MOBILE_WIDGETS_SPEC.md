@@ -736,7 +736,7 @@ allowed values are part of the contract.
 | `filters.assigneeIds` | uuid[] | `[]` | |
 | `filters.truckCategories` | TRUCK_CATEGORY[] | `[]` | |
 | `filters.implementTypes` | IMPLEMENT_TYPE[] | `[]` | |
-| `filters.commissions` | COMMISSION_STATUS[] | `[]` | |
+| `filters.bonifications` | BONIFICATION_STATUS[] | `[]` | |
 | `filters.hasTruck` | `"any"\|"yes"\|"no"` | `"any"` | |
 | `filters.termPreset` | `"any"\|"today"\|"overdue"\|"next-7-days"\|"next-30-days"\|"this-month"` | `"any"` | |
 | `filters.forecastPreset` | `"any"\|"today"\|"next-7-days"\|"next-30-days"\|"this-month"` | `"any"` | |
@@ -767,7 +767,7 @@ allowed values are part of the contract.
 
 ```
 name, customerName, responsibles, serialNumber, chassisNumber, plate,
-spot, sector, status, commission, term, remainingTime, forecastDate,
+spot, sector, status, bonification, term, remainingTime, forecastDate,
 createdAt, entryDate, startedAt, finishedAt, generalPainting, logoPaints,
 paintFinish, truckCategory, implementType, quoteTotal, quoteStatus, price,
 observation, details, soProduction, soCommercial, soLogistic, soArtwork,
@@ -777,7 +777,7 @@ soArtworkCount, hasArtworks, hasOpenSO, hasBudget, hasObservation
 
 Sort key catalog (`SORT_KEYS`, 11 keys):
 `term, forecastDate, createdAt, startedAt, finishedAt, name, statusOrder,
-entryDate, price, commissionOrder, updatedAt`.
+entryDate, price, bonificationOrder, updatedAt`.
 
 #### Mobile current state (gaps to close)
 
@@ -801,7 +801,7 @@ display, accent
 * Expand column catalog from 3 → at least 12 mobile-feasible:
   `task` (composite, always visible), `customerName`, `serialNumber`,
   `status`, `term`, `forecastDate`, `createdAt`, `sector`, `responsibles`,
-  `commission`, `quoteStatus`, `quoteTotal`. The remaining 29 web
+  `bonification`, `quoteStatus`, `quoteTotal`. The remaining 29 web
   columns are explicitly out of scope on mobile (paint canvas swatch,
   multiple SO sub-counts, plate, etc. — too data-dense for phone).
 * Replace `sort` with multi-sort `sorts` array (limit 3 sort entries on

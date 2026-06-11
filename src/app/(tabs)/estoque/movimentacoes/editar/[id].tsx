@@ -14,5 +14,5 @@ export default function EditMovementPage() {
 
   if (!id) return null;
 
-  return <Redirect href={mobileRoute(routes.inventory.activities.details(id))} />;
+  return <Redirect href={mobileRoute(routes.inventory.activities.details(id)) as any} />;
 }

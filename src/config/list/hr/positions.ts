@@ -186,6 +186,7 @@ export const positionsListConfig: ListConfig<Position> = {
     create: {
       label: 'Cadastrar Cargo',
       route: '/recursos-humanos/cargos/cadastrar',
+      canCreate: canEditHrEntities,
     },
     bulk: [
       {
@@ -200,6 +201,7 @@ export const positionsListConfig: ListConfig<Position> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ positionIds: Array.from(ids) })
         },
+        canPerform: canDeleteHrEntities,
       },
     ],
   },

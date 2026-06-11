@@ -599,7 +599,7 @@ function EditScheduleInner() {
 
     // Process simple scalar fields
     const scalarFields = [
-      'name', 'status', 'serialNumber', 'details', 'commission',
+      'name', 'status', 'serialNumber', 'details', 'bonification',
       'customerId', 'sectorId', 'paintId'
     ];
 
@@ -766,11 +766,15 @@ function EditScheduleInner() {
 
       const obsChanged = currDescription !== origDescription || JSON.stringify(currFileIds) !== JSON.stringify(origFileIds);
       if (obsChanged) {
-        // Only send description and fileIds, not the files relation objects
-        processed.observation = {
-          description: currObs?.description || null,
-          fileIds: currObs?.fileIds || [],
-        };
+        // Cleared observation must be sent as null so the API deletes it
+        // (an object with empty/null description fails API validation)
+        // Otherwise only send description and fileIds, not the files relation objects
+        processed.observation = currDescription
+          ? {
+              description: currObs.description,
+              fileIds: currObs?.fileIds || [],
+            }
+          : null;
       }
     }
 
@@ -909,7 +913,7 @@ function EditScheduleInner() {
                 finishedAt: null,
               }],
           status: task.status,
-          commission: task.commission ?? null,
+          bonification: task.bonification ?? null,
           startedAt: task.startedAt ? new Date(task.startedAt) : null,
           finishedAt: task.finishedAt ? new Date(task.finishedAt) : null,
           // Include observation with files for edit mode

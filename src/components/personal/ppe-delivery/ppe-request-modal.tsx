@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { getItems } from '@/api-client';
 import { ppeRequestSchema, type PpeRequestFormData } from '@/schemas/ppe-request';
-import { PPE_TYPE, SECTOR_PRIVILEGES, ITEM_CATEGORY_TYPE } from '@/constants';
+import { PPE_TYPE, SECTOR_PRIVILEGES } from '@/constants';
 import { getItemPpeSize } from '@/utils/ppe-size-mapping';
 import { getPpeSizeByType, allowsOnDemandDelivery } from '@/utils/ppe';
 import { cn } from "@/lib/utils";
@@ -100,9 +100,8 @@ export function PpeRequestModal({
         take: 500,
         where: {
           isActive: true,
-          category: {
-            type: ITEM_CATEGORY_TYPE.PPE,
-          },
+          // PPE identity = ppeType != null (capability-fields contract)
+          ppeType: { not: null },
           quantity: {
             gt: 0,
           },

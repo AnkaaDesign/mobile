@@ -9,5 +9,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
  */
 export default function CollaboratorsIndex() {
   useScreenReady();
-  return <Redirect href={mobileRoute(routes.administration.collaborators.list)} />;
+  return <Redirect href={mobileRoute(routes.administration.collaborators.list) as any} />;
 }

@@ -67,6 +67,9 @@ export interface Item extends BaseEntity {
   monthlyConsumptionTrendPercent: number | null;
   barcodes: string[];
   shouldAssignToUser: boolean;
+  isBorrowable: boolean;
+  stockModel: "CONSUMPTION" | "FIXED_TARGET";
+  fixedTargetQuantity: number | null;
   categoryId?: string;
   supplierId: string | null;
   estimatedLeadTime: number | null;
@@ -238,6 +241,13 @@ export interface ItemWhere {
   // Enum fields
   abcCategory?: ABC_CATEGORY | { equals?: ABC_CATEGORY; not?: ABC_CATEGORY; in?: ABC_CATEGORY[]; notIn?: ABC_CATEGORY[] } | null;
   xyzCategory?: XYZ_CATEGORY | { equals?: XYZ_CATEGORY; not?: XYZ_CATEGORY; in?: XYZ_CATEGORY[]; notIn?: XYZ_CATEGORY[] } | null;
+
+  // Capability fields
+  isBorrowable?: boolean | { equals?: boolean; not?: boolean };
+  stockModel?:
+    | ("CONSUMPTION" | "FIXED_TARGET")
+    | { equals?: "CONSUMPTION" | "FIXED_TARGET"; not?: "CONSUMPTION" | "FIXED_TARGET"; in?: ("CONSUMPTION" | "FIXED_TARGET")[]; notIn?: ("CONSUMPTION" | "FIXED_TARGET")[] };
+  fixedTargetQuantity?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number; in?: number[]; notIn?: number[] } | null;
 
   // PPE-specific enum fields
   ppeType?: PPE_TYPE | { equals?: PPE_TYPE; not?: PPE_TYPE; in?: PPE_TYPE[]; notIn?: PPE_TYPE[] } | null;

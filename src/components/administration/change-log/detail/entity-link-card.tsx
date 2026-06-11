@@ -54,8 +54,8 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
         return routes.inventory.borrows.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.SUPPLIER:
         return routes.inventory.suppliers.details(entityId);
-      case CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL:
-        return routes.inventory.externalWithdrawals.details(entityId);
+      case CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION:
+        return routes.inventory.externalOperations.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.MAINTENANCE:
         return routes.inventory.maintenance.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.PPE_CONFIG:

@@ -48,11 +48,17 @@ export default function ServiceOrderDetailScreen() {
       title={(so) =>
         so.description || `Ordem #${String(so.id ?? "").slice(-8).toUpperCase()}`
       }
+      // Mirrors API PUT /service-orders/:id roles (service-order.controller.ts);
+      // same list as canEditServiceOrders in entity-permissions.
       privilege={{
         any: [
-          SECTOR_PRIVILEGES.PRODUCTION,
-          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
           SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.PRODUCTION,
+          SECTOR_PRIVILEGES.DESIGNER,
+          SECTOR_PRIVILEGES.LOGISTIC,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
         ],
       }}
       editGuard={{ editable: EDITABLE_SERVICE_ORDER_STATUSES }}

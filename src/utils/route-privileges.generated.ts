@@ -99,7 +99,7 @@ export const GENERATED_ROUTE_PRIVILEGES: Record<string, GeneratedPrivilege> = {
   "/(tabs)/estoque/manutencao": "WAREHOUSE",
   "/(tabs)/estoque/epi": "WAREHOUSE",
   "/(tabs)/estoque/emprestimos": "WAREHOUSE",
-  "/(tabs)/estoque/retiradas-externas": "WAREHOUSE",
+  "/(tabs)/estoque/operacoes-externas": "WAREHOUSE",
   "/(tabs)/estoque/movimentacoes": "WAREHOUSE",
   "/(tabs)/estoque/balanco": "WAREHOUSE",
 

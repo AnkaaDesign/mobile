@@ -27,7 +27,7 @@ const ACTION_LABELS: Record<string, string> = {
 const ENTITY_TYPE_LABELS: Record<string, string> = {
   ACTIVITY: 'Atividade',
   AIRBRUSHING: 'Aerografia',
-  BONUS: 'Bonificação',
+  BONUS: 'Bônus',
   BORROW: 'Empréstimo',
   CATEGORY: 'Categoria',
   CUT: 'Corte',

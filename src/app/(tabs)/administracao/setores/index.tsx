@@ -5,5 +5,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function SectorsIndex() {
   useScreenReady();
-  return <Redirect href={mobileRoute(routes.administration.sectors.list)} />;
+  return <Redirect href={mobileRoute(routes.administration.sectors.list) as any} />;
 }

@@ -1,8 +1,9 @@
 import { View, StyleSheet } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { TaskQuote } from '@/types/task-quote'
-import { TASK_QUOTE_STATUS, TASK_QUOTE_STATUS_LABELS } from '@/constants'
+import { TASK_QUOTE_STATUS, TASK_QUOTE_STATUS_LABELS, SECTOR_PRIVILEGES } from '@/constants'
 import { canEditQuote } from '@/utils/permissions/quote-permissions'
+import { hasAnyPrivilege } from '@/utils'
 import { formatCurrency } from '@/utils/formatters'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
@@ -237,7 +238,7 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         label: 'Editar Orcamento',
         icon: 'pencil',
         variant: 'default',
-        canPerform: (user) => canEditQuote(user?.sector || ''),
+        canPerform: (user) => canEditQuote(user?.sector?.privileges || user?.sector || ''),
         onPress: (quote, router) => {
           if (quote.task?.id) {
             router.push(`/financeiro/orcamento/detalhes/${quote.task.id}`)
@@ -294,7 +295,8 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
     create: {
       label: 'Criar Orçamento',
       route: '/financeiro/orcamento/cadastrar',
-      canCreate: (user: any) => canEditQuote(user?.sector?.privileges || user?.sector || ''),
+      // API: POST /task-quotes = ADMIN+COMMERCIAL only (no FINANCIAL, task-quote.controller.ts:134)
+      canCreate: (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL]),
     },
   },
 

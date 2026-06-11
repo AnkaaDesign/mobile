@@ -17,7 +17,8 @@ import { usePpeDeliveryMutations, useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useNav } from "@/contexts/nav";
 import { getItems, getUsers } from "@/api-client";
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, USER_STATUS, ITEM_CATEGORY_TYPE, PPE_TYPE, routes } from "@/constants";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, USER_STATUS, PPE_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { ppeDeliveryCreateSchema, type PpeDeliveryCreateFormData } from "../../../../../schemas";
 import { mobileRoute } from "@/constants/routes.types";
 import { getItemPpeSize } from "@/utils/ppe-size-mapping";
@@ -25,7 +26,20 @@ import type { Item, User } from "@/types";
 
 export default function CreateHRPPEDeliveryScreen() {
   const formKey = useFormScreenKey();
-  return <CreateHRPPEDeliveryScreenInner key={formKey} />;
+  // Decision 4 (2026-06-10 audit): PPE delivery create = HR + WAREHOUSE + ADMIN.
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.ADMIN,
+        ],
+      }}
+    >
+      <CreateHRPPEDeliveryScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function CreateHRPPEDeliveryScreenInner() {
@@ -98,7 +112,8 @@ function CreateHRPPEDeliveryScreenInner() {
         take: 500,
         where: {
           isActive: true,
-          category: { type: ITEM_CATEGORY_TYPE.PPE },
+          // PPE identity = ppeType != null (capability-fields contract)
+          ppeType: { not: null },
         },
         include: { measures: true, brands: true },
         searchingFor: search || undefined,

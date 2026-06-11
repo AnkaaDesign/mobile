@@ -68,7 +68,7 @@ const PATH_PREFIX_ICON_MAP: Array<{ prefix: string; icon: Icon; color: string }>
   { prefix: "/estoque/pedidos", icon: IconShoppingCart, color: "#3b82f6" },
   { prefix: "/estoque/manutencao/agendamentos", icon: IconCalendar, color: "#ef4444" },
   { prefix: "/estoque/manutencao", icon: IconTool, color: "#dc2626" },
-  { prefix: "/estoque/retiradas-externas", icon: IconArchive, color: "#f97316" },
+  { prefix: "/estoque/operacoes-externas", icon: IconArchive, color: "#f97316" },
   { prefix: "/estoque/epi/entregas", icon: IconShield, color: "#fbbf24" },
   { prefix: "/estoque/epi/agendamentos", icon: IconCalendar, color: "#fbbf24" },
   { prefix: "/estoque/epi", icon: IconShield, color: "#eab308" },
@@ -86,7 +86,6 @@ const PATH_PREFIX_ICON_MAP: Array<{ prefix: string; icon: Icon; color: string }>
   { prefix: "/pintura", icon: IconPaint, color: "#6366f1" },
 
   // Administração
-  { prefix: "/administracao/comissoes", icon: IconCoins, color: "#22c55e" },
   { prefix: "/administracao/clientes", icon: IconUsers, color: "#f97316" },
   { prefix: "/administracao/colaboradores", icon: IconUsers, color: "#a855f7" },
   { prefix: "/administracao/orcamentos", icon: IconFileInvoice, color: "#3b82f6" },
@@ -203,7 +202,6 @@ export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {
   [FAVORITE_PAGES.PINTURA_TIPOS_TINTA_CADASTRAR]: { icon: IconPalette, color: "bg-indigo-500" },
 
   // Administração
-  [FAVORITE_PAGES.ADMINISTRACAO_COMISSOES_LISTAR]: { icon: IconCoins, color: "bg-green-500" },
   [FAVORITE_PAGES.ADMINISTRACAO_CLIENTES_LISTAR]: { icon: IconUsers, color: "bg-orange-500" },
   [FAVORITE_PAGES.ADMINISTRACAO_CLIENTES_CADASTRAR]: { icon: IconUsers, color: "bg-orange-600" },
   [FAVORITE_PAGES.ADMINISTRACAO_COLABORADORES_LISTAR]: { icon: IconUsers, color: "bg-purple-500" },
@@ -234,7 +232,6 @@ export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {
   [FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_CADASTRAR]: { icon: IconBuildingSkyscraper, color: "bg-teal-600" },
 
   // Pessoal
-  [FAVORITE_PAGES.PESSOAL_MINHAS_COMISSOES_LISTAR]: { icon: IconCoins, color: "bg-green-500" },
   [FAVORITE_PAGES.PESSOAL_MEUS_FERIADOS_LISTAR]: { icon: IconCalendar, color: "bg-orange-500" },
   [FAVORITE_PAGES.PESSOAL_MEUS_EMPRESTIMOS_LISTAR]: { icon: IconRepeat, color: "bg-purple-500" },
   [FAVORITE_PAGES.PESSOAL_MEUS_EPIS_LISTAR]: { icon: IconShield, color: "bg-yellow-500" },
@@ -243,7 +240,6 @@ export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {
   [FAVORITE_PAGES.PESSOAL_MINHAS_NOTIFICACOES_LISTAR]: { icon: IconBell, color: "bg-red-500" },
 
   // Meu Pessoal
-  //   [FAVORITE_PAGES.PESSOAL_MINHAS_COMISSOES_LISTAR]: { icon: IconCoins, color: "bg-green-500" },
   //   [FAVORITE_PAGES.MEU_PESSOAL_FERIAS_LISTAR]: { icon: IconBeach, color: "bg-blue-500" },
   //   [FAVORITE_PAGES.PESSOAL_MEUS_AVISOS_LISTAR]: { icon: IconAlertTriangle, color: "bg-red-500" },
   //   [FAVORITE_PAGES.PESSOAL_MEUS_EMPRESTIMOS_LISTAR]: { icon: IconRepeat, color: "bg-purple-500" },
@@ -320,8 +316,8 @@ export function getPageIconName(path: string): string {
     "/estoque/manutencao/cadastrar": "tool",
     "/estoque/manutencao/agendamentos": "calendar",
     "/estoque/manutencao/agendamentos/cadastrar": "calendar",
-    "/estoque/retiradas-externas": "archive",
-    "/estoque/retiradas-externas/cadastrar": "archive",
+    "/estoque/operacoes-externas": "archive",
+    "/estoque/operacoes-externas/cadastrar": "archive",
     "/estoque/epi": "shield",
     "/estoque/epi/cadastrar": "shield",
     "/estoque/epi/entregas": "shield",
@@ -342,7 +338,6 @@ export function getPageIconName(path: string): string {
     "/pintura/tipos-de-tinta/cadastrar": "palette",
 
     // Administração
-    "/administracao/comissoes": "coins",
     "/administracao/clientes": "users",
     "/administracao/clientes/cadastrar": "users",
     "/administracao/colaboradores": "users",
@@ -376,7 +371,6 @@ export function getPageIconName(path: string): string {
     "/recursos-humanos/folha-de-pagamento": "receipt",
 
     // Pessoal
-    "/pessoal/minhas-comissoes": "coins",
     "/pessoal/meus-feriados": "calendar",
     "/pessoal/meus-emprestimos": "repeat",
     "/pessoal/meus-epis": "shield",
@@ -465,7 +459,6 @@ export function getPageIconName(path: string): string {
     [FAVORITE_PAGES.PINTURA_TIPOS_TINTA_CADASTRAR]: "palette",
 
     // Administração
-    [FAVORITE_PAGES.ADMINISTRACAO_COMISSOES_LISTAR]: "coins",
     [FAVORITE_PAGES.ADMINISTRACAO_CLIENTES_LISTAR]: "users",
     [FAVORITE_PAGES.ADMINISTRACAO_CLIENTES_CADASTRAR]: "users",
     [FAVORITE_PAGES.ADMINISTRACAO_COLABORADORES_LISTAR]: "users",

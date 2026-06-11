@@ -6,5 +6,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function UsuariosScreen() {
   useScreenReady();
-  return <Redirect href={mobileRoute("/servidor/system-users")} />;
+  return <Redirect href={mobileRoute("/servidor/system-users") as any} />;
 }

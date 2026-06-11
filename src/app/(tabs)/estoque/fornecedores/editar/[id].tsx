@@ -13,7 +13,8 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, STREET_TYPE_OPTIONS } from "@/constants";
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, STREET_TYPE_OPTIONS, SECTOR_PRIVILEGES } from "@/constants";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
@@ -27,7 +28,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SupplierEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <SupplierEditScreenInner key={id} />;
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <SupplierEditScreenInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
 function SupplierEditScreenInner() {

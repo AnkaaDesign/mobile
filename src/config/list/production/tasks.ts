@@ -3,8 +3,9 @@ import { View } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
-import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks, canFinishTask, canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
+import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks, canFinishTask, canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { canViewQuote } from '@/utils/permissions/quote-permissions'
+import { hasAnyPrivilege } from '@/utils'
 import { getTaskQuoteDisplayLabel, isTaskQuoteBillingPhase } from '@/constants/enum-labels'
 import { SECTOR_PRIVILEGES } from '@/constants'
 import { navigationTracker } from '@/utils/navigation-tracker'
@@ -20,7 +21,7 @@ const canViewRestrictedFields = (user: any) => {
          privilege === SECTOR_PRIVILEGES.DESIGNER
 }
 
-const canViewCommissionField = (user: any) => {
+const canViewBonificationField = (user: any) => {
   const privilege = user?.sector?.privileges
   return privilege === SECTOR_PRIVILEGES.ADMIN ||
          privilege === SECTOR_PRIVILEGES.FINANCIAL ||
@@ -37,7 +38,7 @@ const canViewPriceField = (user: any) => {
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
-  COMMISSION_STATUS_LABELS,
+  BONIFICATION_STATUS_LABELS,
 } from '@/constants'
 import { updateTask } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
@@ -106,7 +107,7 @@ export const tasksListConfig: ListConfig<Task> = {
     hook: 'useTasksInfiniteMobile',
     defaultSort: { field: 'term', direction: 'asc' },
     pageSize: 25,
-    // Use include for relations - scalar fields (including commission) are automatically included
+    // Use include for relations - scalar fields (including bonification) are automatically included
     include: {
       customer: {
         select: {
@@ -316,17 +317,17 @@ export const tasksListConfig: ListConfig<Task> = {
         render: (task) => task.details || '-',
       },
       {
-        key: 'commission',
-        label: 'COMISSÃO',
+        key: 'bonification',
+        label: 'BONIFICAÇÃO',
         sortable: true,
-        sortField: 'commissionOrder',
+        sortField: 'bonificationOrder',
         width: 1.2,
         align: 'center',
-        render: (task) => task.commission ? COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission : '-',
+        render: (task) => task.bonification ? BONIFICATION_STATUS_LABELS[task.bonification as keyof typeof BONIFICATION_STATUS_LABELS] || task.bonification : '-',
         format: 'badge',
-        badgeEntity: 'COMMISSION_STATUS',
-        // Only visible to ADMIN, FINANCIAL, COMMERCIAL, PRODUCTION (matches web canViewCommissionField)
-        canView: canViewCommissionField,
+        badgeEntity: 'BONIFICATION_STATUS',
+        // Only visible to ADMIN, FINANCIAL, COMMERCIAL, PRODUCTION (matches web canViewBonificationField)
+        canView: canViewBonificationField,
       },
       {
         key: 'price',
@@ -557,14 +558,11 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Copiar de Outra',
         icon: 'clipboardCopy',
         variant: 'default',
-        // ADMIN, COMMERCIAL, FINANCIAL can copy from another task (PM and LOGISTIC excluded)
-        canPerform: canAccessAdvancedTaskMenu,
-        visible: (_task: Task, user: any) => {
-          const privilege = user?.sector?.privileges
-          if (privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
-          if (privilege === SECTOR_PRIVILEGES.LOGISTIC) return false
-          return canAccessAdvancedTaskMenu(user)
-        },
+        // API: copy-from-task = ADMIN+COMMERCIAL only (no FINANCIAL, task.controller.ts:669-676)
+        canPerform: (user: any) =>
+          hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL]),
+        visible: (_task: Task, user: any) =>
+          hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL]),
         onPress: (task, router, context) => {
           const currentPath = context?.route || '/(tabs)/producao/agenda'
           navigationTracker.setSource(currentPath)
@@ -734,7 +732,7 @@ export const tasksListConfig: ListConfig<Task> = {
       { key: 'status', label: 'Status', path: 'status' },
       { key: 'details', label: 'Detalhes', path: 'details' },
       { key: 'price', label: 'Preço', path: 'quote.total', format: 'currency' },
-      { key: 'commission', label: 'Comissão', path: 'commission' },
+      { key: 'bonification', label: 'Bonificação', path: 'bonification' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],
   },

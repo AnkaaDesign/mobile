@@ -7,8 +7,8 @@ import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
   SECTOR_PRIVILEGES,
-  COMMISSION_STATUS,
-  COMMISSION_STATUS_LABELS,
+  BONIFICATION_STATUS,
+  BONIFICATION_STATUS_LABELS,
 } from '@/constants'
 import { canEditTasks, canDeleteTasks, canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
@@ -30,7 +30,7 @@ export const historyListConfig: ListConfig<Task> = {
     batchMutationsHook: 'useTaskBatchMutations',
     defaultSort: { field: 'finishedAt', direction: 'desc' },
     pageSize: 25,
-    // Use include for relations - scalar fields (including commission) are automatically included
+    // Use include for relations - scalar fields (including bonification) are automatically included
     include: {
       customer: {
         select: {
@@ -163,15 +163,15 @@ export const historyListConfig: ListConfig<Task> = {
         format: 'badge',
       },
       {
-        key: 'commission',
-        label: 'COMISSÃO',
+        key: 'bonification',
+        label: 'BONIFICAÇÃO',
         sortable: true,
-        sortField: 'commissionOrder',
+        sortField: 'bonificationOrder',
         width: 1.6,
         align: 'center',
-        render: (task) => task.commission ? COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission : '-',
+        render: (task) => task.bonification ? BONIFICATION_STATUS_LABELS[task.bonification as keyof typeof BONIFICATION_STATUS_LABELS] || task.bonification : '-',
         format: 'badge',
-        badgeEntity: 'COMMISSION_STATUS',
+        badgeEntity: 'BONIFICATION_STATUS',
       },
       {
         key: 'serialNumber',
@@ -506,6 +506,7 @@ export const historyListConfig: ListConfig<Task> = {
             await context.batchDeleteAsync({ taskIds: Array.from(ids) })
           }
         },
+        canPerform: canDeleteTasks,
       },
     ],
   },

@@ -124,16 +124,16 @@ export default function CuttingListScreen() {
       ? cutsListConfig.filters.fields.filter(field => field.key !== 'sectorIds')
       : cutsListConfig.filters?.fields;
 
-    // Build request action for team leaders and ADMIN users
-    // Team leadership is now determined by ledSector relationship
-    const canRequestCut = Boolean(ledSectorId) || privileges === SECTOR_PRIVILEGES.ADMIN;
+    // Build request action — mirrors API POST /cuts roles: DESIGNER + ADMIN
+    // (2026-06-10 audit; team-leader cut requests were never allowed by the API)
+    const canRequestCut =
+      privileges === SECTOR_PRIVILEGES.DESIGNER || privileges === SECTOR_PRIVILEGES.ADMIN;
     const requestAction = canRequestCut ? {
       key: 'request',
       label: 'Solicitar Recorte',
       icon: 'cut',
       variant: 'default' as const,
       visible: (cut: Cut) => {
-        // ADMIN can request for any cut, team leaders only for their led sector
         if (privileges === SECTOR_PRIVILEGES.ADMIN) return true;
         const taskSectorId = cut.task?.sectorId;
         return canRequestCutForTask(user, taskSectorId);
@@ -143,8 +143,12 @@ export default function CuttingListScreen() {
       },
     } : null;
 
-    // Build start/complete actions for WAREHOUSE and ADMIN users
-    const canChangeStatus = privileges === SECTOR_PRIVILEGES.WAREHOUSE || privileges === SECTOR_PRIVILEGES.ADMIN;
+    // Build start/complete actions — mirrors API PUT /cuts/:id roles:
+    // DESIGNER + PLOTTING + ADMIN (2026-06-10 audit)
+    const canChangeStatus =
+      privileges === SECTOR_PRIVILEGES.DESIGNER ||
+      privileges === SECTOR_PRIVILEGES.PLOTTING ||
+      privileges === SECTOR_PRIVILEGES.ADMIN;
     const startAction = canChangeStatus ? {
       key: 'start',
       label: 'Iniciar',

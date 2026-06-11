@@ -112,8 +112,33 @@
             },
             {
               "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/pessoal/"
+            },
+            {
+              "scheme": "https",
               "host": "www.ankaadesign.com.br",
               "pathPrefix": "/app/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/task/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/order/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/item/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/service-order/"
             },
             {
               "scheme": "https",
@@ -124,6 +149,31 @@
               "scheme": "https",
               "host": "www.ankaadesign.com.br",
               "pathPrefix": "/estoque/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/recursos-humanos/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/administracao/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/pintura/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/financeiro/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/pessoal/"
             }
           ],
           "category": [

@@ -112,16 +112,17 @@ export function LowStockList({ items, totalCount }: LowStockListProps) {
       </View>
       {/* Table rows */}
       {pagedItems.map((item, index) => {
-        // categoryType is not available on the dashboard payload; passing null
-        // means TOOL items still appear here via their numeric thresholds, but
-        // the dashboard API already filters server-side so this is acceptable.
-        const stockLevel = determineStockLevel(
-          item.quantity,
-          item.reorderPoint || null,
-          item.maxQuantity,
-          false,
-          null,
-        );
+        // stockModel may not be present on the dashboard payload; passing null
+        // means FIXED_TARGET items still appear here via their numeric
+        // thresholds, but the dashboard API already filters server-side so
+        // this is acceptable.
+        const stockLevel = determineStockLevel({
+          quantity: item.quantity,
+          reorderPoint: item.reorderPoint || null,
+          maxQuantity: item.maxQuantity,
+          stockModel: (item as any).stockModel ?? null,
+          fixedTargetQuantity: (item as any).fixedTargetQuantity ?? null,
+        });
         const hexColor = getStockLevelHexColor(stockLevel);
         const stockLabel = STOCK_LEVEL_LABELS[stockLevel] || "";
         const rowBg = index % 2 === 1 ? (isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)") : undefined;

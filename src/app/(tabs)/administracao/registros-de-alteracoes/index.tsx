@@ -5,5 +5,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function AdministrationChangeLogsIndex() {
   useScreenReady();
-  return <Redirect href={mobileRoute(routes.administration.changeLogs.list)} />;
+  return <Redirect href={mobileRoute(routes.administration.changeLogs.list) as any} />;
 }

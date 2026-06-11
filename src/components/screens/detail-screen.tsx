@@ -129,10 +129,16 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
   });
   const editGuardActive = !!props.editGuard;
 
-  const editPriv = usePrivilegeGate(props.privilege ?? SECTOR_PRIVILEGES.BASIC);
+  // Deny-by-default (2026-06-10 permissions audit): when a screen omits
+  // `privilege`/`deletePrivilege`, mutating actions fall back to ADMIN-only
+  // instead of the old BASIC fallback (which exposed edit/delete to every
+  // authenticated user). ADMIN-only was chosen over hiding entirely so admins
+  // are never locked out by a missing prop; screens should still pass
+  // explicit privileges matching their API roles.
+  const editPriv = usePrivilegeGate(props.privilege ?? SECTOR_PRIVILEGES.ADMIN);
   // Delete is gated separately so a sector can manage an entity without being
   // able to delete it. Falls back to the page privilege when not specified.
-  const deletePriv = usePrivilegeGate(props.deletePrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.BASIC);
+  const deletePriv = usePrivilegeGate(props.deletePrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.ADMIN);
 
   const handleEdit = useCallback(() => {
     if (!entity || !props.editRoute) return;

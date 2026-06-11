@@ -32,7 +32,7 @@ import type { SceneProps } from "./index";
 //   2) Regras do Bônus  (primary CTA button → BonusRulesModal)
 //   3) Valor do Bônus   (Valor Base + extras + descontos + Valor Líquido)
 //   4) Detalhes de Performance (~7 metric rows incl. Nível + Tarefas ponderadas)
-//   5) Status das Comissões    (4 status badges with counts → ponderação)
+//   5) Status das Bonificações    (4 status badges with counts → ponderação)
 //   6) Simulação + Histórico nav buttons row
 //
 // The tutorial walks the colaborador through HOW the bonus is built, so the
@@ -62,8 +62,8 @@ const B = {
   weightedTasks: "21,50",
   eligibleUsers: 12,
   averagePerUser: "1,79",
-  // Commission breakdown (drives the weighted task count → ponderação)
-  commissions: {
+  // Bonification breakdown (drives the weighted task count → ponderação)
+  bonifications: {
     full: 18, // conta 1.0 cada
     partial: 4, // conta 0.5 cada
     none: 2, // conta 0
@@ -256,47 +256,47 @@ export function MeuBonusScene({ state }: SceneProps) {
         </View>
       </View>
 
-      {/* 5) Commission Status Card — drives the ponderação */}
+      {/* 5) Bonification Status Card — drives the ponderação */}
       <View
-        ref={slot.registerRef("pessoalBonusCommission") as any}
-        onLayout={track("pessoalBonusCommission")}
+        ref={slot.registerRef("pessoalBonusBonification") as any}
+        onLayout={track("pessoalBonusBonification")}
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          Status das Comissões
+          Status das Bonificações
         </Text>
         <Text style={[styles.sectionHint, { color: colors.mutedForeground }]}>
           Toque para ver as tarefas
         </Text>
-        <View style={styles.commissionList}>
-          {/* Palette mirrors ENTITY_BADGE_CONFIG.COMMISSION_STATUS:
+        <View style={styles.bonificationList}>
+          {/* Palette mirrors ENTITY_BADGE_CONFIG.BONIFICATION_STATUS:
               FULL → green, PARTIAL → blue, NO → orange, SUSPENDED → red.
               The weight note explains how each status counts in the ponderação. */}
-          <CommissionRow
-            label="Comissão Integral"
+          <BonificationRow
+            label="Bonificação Integral"
             weight="conta 1.0"
-            count={B.commissions.full}
+            count={B.bonifications.full}
             color="#15803d"
             colors={colors}
           />
-          <CommissionRow
-            label="Comissão Parcial"
+          <BonificationRow
+            label="Bonificação Parcial"
             weight="conta 0.5"
-            count={B.commissions.partial}
+            count={B.bonifications.partial}
             color="#2563eb"
             colors={colors}
           />
-          <CommissionRow
-            label="Sem Comissão"
+          <BonificationRow
+            label="Sem Bonificação"
             weight="conta 0"
-            count={B.commissions.none}
+            count={B.bonifications.none}
             color="#f97316"
             colors={colors}
           />
-          <CommissionRow
-            label="Comissão Suspensa"
+          <BonificationRow
+            label="Bonificação Suspensa"
             weight="fora do cálculo"
-            count={B.commissions.suspended}
+            count={B.bonifications.suspended}
             color="#b91c1c"
             colors={colors}
           />
@@ -406,7 +406,7 @@ export function MeuBonusScene({ state }: SceneProps) {
                 colors={colors}
               >
                 <Text style={[styles.rulesBody, { color: colors.mutedForeground }]}>
-                  Tarefas com comissão suspensa são removidas do cálculo do bônus e não
+                  Tarefas com bonificação suspensa são removidas do cálculo do bônus e não
                   contam na média ponderada. O valor que seria recebido aparece como
                   desconto "Tarefas Suspensas".
                 </Text>
@@ -576,7 +576,7 @@ function DetailRow({
   );
 }
 
-function CommissionRow({
+function BonificationRow({
   label,
   weight,
   count,
@@ -590,13 +590,13 @@ function CommissionRow({
   colors: any;
 }) {
   return (
-    <View style={styles.commissionRow}>
-      <View style={styles.commissionLeft}>
+    <View style={styles.bonificationRow}>
+      <View style={styles.bonificationLeft}>
         {/* Solid status badge — mirrors <Badge variant size="sm"> (solid bg, white text) */}
-        <View style={[styles.commissionBadge, { backgroundColor: color }]}>
-          <Text style={styles.commissionBadgeText}>{label}</Text>
+        <View style={[styles.bonificationBadge, { backgroundColor: color }]}>
+          <Text style={styles.bonificationBadgeText}>{label}</Text>
         </View>
-        <Text style={[styles.commissionWeight, { color: colors.mutedForeground }]}>
+        <Text style={[styles.bonificationWeight, { color: colors.mutedForeground }]}>
           {weight}
         </Text>
       </View>
@@ -688,32 +688,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  commissionList: {
+  bonificationList: {
     gap: 12,
   },
-  commissionRow: {
+  bonificationRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  commissionLeft: {
+  bonificationLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     flexShrink: 1,
   },
-  commissionBadge: {
+  bonificationBadge: {
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 6,
     alignSelf: "flex-start",
   },
-  commissionBadgeText: {
+  bonificationBadgeText: {
     fontSize: 12,
     fontWeight: "600",
     color: "#ffffff",
   },
-  commissionWeight: {
+  bonificationWeight: {
     fontSize: 11,
     fontWeight: "500",
     fontStyle: "italic",

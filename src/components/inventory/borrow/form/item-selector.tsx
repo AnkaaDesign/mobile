@@ -65,9 +65,7 @@ export function BorrowItemSelector({
       where: {
         isActive: true,
         quantity: { gt: 0 }, // Only show items with available stock
-        category: {
-          type: "TOOL", // Only show tools that can be borrowed
-        },
+        isBorrowable: true, // Capability-fields contract: borrow eligibility is item.isBorrowable
         ...(searchTerm ? {
           OR: [
             { name: { contains: searchTerm, mode: "insensitive" } },

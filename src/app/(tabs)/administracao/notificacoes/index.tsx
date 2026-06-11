@@ -5,5 +5,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function NotificationsIndex() {
   useScreenReady();
-  return <Redirect href={mobileRoute(routes.administration.notifications.list)} />;
+  return <Redirect href={mobileRoute(routes.administration.notifications.list) as any} />;
 }

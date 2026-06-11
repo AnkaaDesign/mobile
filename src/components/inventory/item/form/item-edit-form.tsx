@@ -5,8 +5,8 @@ import { useEditForm, useKeyboardAwareScroll } from "@/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { itemUpdateSchema, type ItemUpdateFormData } from '../../../../schemas';
 import type { Item } from '../../../../types';
-import { useItemCategories, useCanViewPrices } from "@/hooks";
-import { ITEM_CATEGORY_TYPE } from "@/constants";
+import { useCanViewPrices } from "@/hooks";
+import { STOCK_MODEL } from "@/constants";
 import { FormProvider } from "react-hook-form";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
@@ -32,6 +32,9 @@ import { PriceInput } from "./price-input";
 import { MeasuresManager } from "./measures-manager";
 import { BarcodeManager } from "./barcode-manager";
 import { AssignToUserToggle } from "./assign-to-user-toggle";
+import { BorrowableToggle } from "./borrowable-toggle";
+import { StockModelSelector } from "./stock-model-selector";
+import { FixedTargetQuantityInput } from "./fixed-target-quantity-input";
 import { PpeConfigSection } from "./ppe-config-section";
 
 interface ItemEditFormProps {
@@ -44,8 +47,7 @@ interface ItemEditFormProps {
 export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEditFormProps) {
   const { colors } = useTheme();
   const canViewPrices = useCanViewPrices();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(item.categoryId);
-  const [isPPE, setIsPPE] = useState(false);
+  const [, setSelectedCategoryId] = useState<string | undefined>(item.categoryId);
 
   // Keyboard-aware scrolling (same pattern as task form)
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -77,6 +79,10 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       measures: apiData.measures || [], // Include measures array
       barcodes: apiData.barcodes || [],
       shouldAssignToUser: apiData.shouldAssignToUser,
+      // Capability fields — direct assignment so a false/0 survives the mapping
+      isBorrowable: apiData.isBorrowable,
+      stockModel: apiData.stockModel,
+      fixedTargetQuantity: apiData.fixedTargetQuantity ?? null,
       abcCategory: apiData.abcCategory,
       xyzCategory: apiData.xyzCategory,
       brandIds: apiData.brands?.map((b) => b.id) ?? [],
@@ -126,16 +132,12 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
     }
   }, [form]);
 
-  // Check if selected category is PPE
-  const { data: categories } = useItemCategories({
-    where: { id: selectedCategoryId },
-  });
-
-  useEffect(() => {
-    if (categories?.data?.[0]) {
-      setIsPPE(categories.data[0].type === ITEM_CATEGORY_TYPE.PPE);
-    }
-  }, [categories]);
+  // PPE section visibility keys on the FORM's ppeType (capability-fields
+  // contract) — the category select never gates behavior, and a category
+  // change on UPDATE never silently flips item flags (server rule).
+  const watchedPpeType = form.watch("ppeType");
+  const isPPE = watchedPpeType != null;
+  const watchedStockModel = form.watch("stockModel");
 
   const handleSubmit = async () => {
     try {
@@ -188,6 +190,8 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
               <QuantityInput disabled={isSubmitting} required={false} />
               <BoxQuantityInput disabled={isSubmitting} />
               <LeadTimeInput disabled={isSubmitting} />
+              <StockModelSelector disabled={isSubmitting} />
+              {watchedStockModel === STOCK_MODEL.FIXED_TARGET && <FixedTargetQuantityInput disabled={isSubmitting} />}
             </View>
           </FormCard>
 
@@ -219,6 +223,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
             <View style={styles.fieldGroup}>
               <BarcodeManager disabled={isSubmitting} />
               <AssignToUserToggle disabled={isSubmitting} />
+              <BorrowableToggle disabled={isSubmitting} />
               <StatusToggle disabled={isSubmitting} />
             </View>
           </FormCard>

@@ -13,7 +13,7 @@ export * from "./changelog";
 export * from "./customer";
 export * from "./cut";
 export * from "./ppe";
-export * from "./externalWithdrawal";
+export * from "./externalOperation";
 export * from "./file";
 export * from "./garage";
 export * from "./holiday";
@@ -52,7 +52,6 @@ export * from "./monitoring";
 export * from "./secullum";
 // export * from "./statistics"; // Disabled - file doesn't exist
 export * from "./deployment";
-export * from "./commission";
 export * from "./economic-activity";
 export * from "./media";
 export { timeClockEntryBatchUpdateSchema, timeClockJustificationSchema, normalizeSecullumEntry } from "./time-clock";

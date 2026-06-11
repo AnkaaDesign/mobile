@@ -216,6 +216,7 @@ export const paintsListConfig: ListConfig<TaskPaint> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ paintIds: Array.from(ids) })
         },
+        canPerform: canDeletePaints,
       },
     ],
   },

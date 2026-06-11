@@ -36,8 +36,8 @@ import {
 } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
 import { useCanViewPrices } from "@/hooks";
-import { ITEM_CATEGORY_TYPE } from "@/constants/enums";
-import { ITEM_CATEGORY_TYPE_LABELS } from "@/constants/enum-labels";
+import { ITEM_CATEGORY_TYPE, STOCK_MODEL } from "@/constants/enums";
+import { ITEM_CATEGORY_TYPE_LABELS, STOCK_MODEL_LABELS } from "@/constants/enum-labels";
 import {
   useAutoOrderAnalysis,
   useCreateOrdersFromAutoOrder,
@@ -72,7 +72,6 @@ const NO_SUPPLIER_STRATEGY_OPTIONS: { value: NoSupplierStrategy; label: string }
   { value: "by-category", label: "Por categoria" },
 ];
 
-const TOOL_TYPES: Array<ITEM_CATEGORY_TYPE | null> = [ITEM_CATEGORY_TYPE.TOOL];
 
 const groupKey = (supplierId: string | null) => supplierId || "no-supplier";
 
@@ -530,7 +529,9 @@ function RecommendationRow({
 }: RecommendationRowProps) {
   const { colors } = useTheme();
   const urgency = URGENCY_VARIANT[item.urgency] ?? URGENCY_VARIANT.low;
-  const isTool = TOOL_TYPES.includes(item.categoryType);
+  // Capability-fields contract: tool badge keys on the item's stock model,
+  // not on category.type (which is display/grouping only).
+  const isTool = item.stockModel === "FIXED_TARGET";
 
   const TrendIcon =
     item.trend === "increasing"
@@ -568,7 +569,9 @@ function RecommendationRow({
         {isTool && (
           <Badge variant="outline">
             <ThemedText style={[styles.toolBadgeText, { color: colors.mutedForeground }]}>
-              {ITEM_CATEGORY_TYPE_LABELS[item.categoryType as ITEM_CATEGORY_TYPE]}
+              {item.categoryType === ITEM_CATEGORY_TYPE.TOOL
+                ? ITEM_CATEGORY_TYPE_LABELS[ITEM_CATEGORY_TYPE.TOOL]
+                : STOCK_MODEL_LABELS[STOCK_MODEL.FIXED_TARGET]}
             </ThemedText>
           </Badge>
         )}

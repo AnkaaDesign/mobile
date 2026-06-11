@@ -22,7 +22,7 @@ import {
   CHANGE_LOG_ENTITY_TYPE,
   routes,
 } from "@/constants";
-import { hasPrivilege, formatDate, isTeamLeader } from "@/utils";
+import { hasPrivilege, formatDate } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -63,13 +63,15 @@ export default function CuttingDetailsScreen() {
   // Get file viewer context
   const fileViewer = useFileViewer();
 
-  // Check permissions
+  // Check permissions (mirror API cut.controller roles, 2026-06-10 audit:
+  // create = DESIGNER+ADMIN; status update = DESIGNER+PLOTTING+ADMIN)
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  // Team leadership is now determined by ledSector relationship
-  const canRequestCut = isTeamLeader(user) ||
-                        hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const canRequestCut =
+    hasPrivilege(user, SECTOR_PRIVILEGES.DESIGNER) ||
+    hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canChangeStatus =
-    hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
+    hasPrivilege(user, SECTOR_PRIVILEGES.DESIGNER) ||
+    hasPrivilege(user, SECTOR_PRIVILEGES.PLOTTING) ||
     hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Fetch cut details with all relations

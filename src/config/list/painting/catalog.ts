@@ -314,6 +314,7 @@ export const catalogListConfig: ListConfig<Paint> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ paintIds: Array.from(ids) })
         },
+        canPerform: canDeletePaints,
       },
     ],
   },

@@ -318,6 +318,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ orderItemIds: Array.from(ids) })
         },
+        canPerform: canDeleteOrders,
       },
     ],
   },

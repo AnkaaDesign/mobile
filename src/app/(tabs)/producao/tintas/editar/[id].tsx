@@ -13,8 +13,20 @@ import { spacing } from "@/constants/design-system";
 import type { PaintUpdateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
 import { paintFormulaComponentService, notify } from "@/api-client";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EditPaintScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <EditPaintScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditPaintScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const nav = useNav();
   const { updateAsync, isLoading: isPaintLoading } = usePaintMutations();

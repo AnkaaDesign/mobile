@@ -33,11 +33,11 @@ export default function CreateCuttingScreen() {
   const formKey = useFormScreenKey();
   return (
     <PrivilegeGate
+      // Mirrors API POST /cuts roles: DESIGNER + ADMIN (2026-06-10 audit).
       required={{
         any: [
           SECTOR_PRIVILEGES.ADMIN,
-          SECTOR_PRIVILEGES.PRODUCTION,
-          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.DESIGNER,
         ],
       }}
       fallback="unauthorized"

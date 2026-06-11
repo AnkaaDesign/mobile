@@ -451,6 +451,7 @@ export const usersListConfig: ListConfig<User> = {
             users: Array.from(ids).map((id) => ({ id, data: { verified: true } })),
           })
         },
+        canPerform: canEditUsers,
       },
       {
         key: 'requirePasswordChange',
@@ -466,6 +467,7 @@ export const usersListConfig: ListConfig<User> = {
             users: Array.from(ids).map((id) => ({ id, data: { requirePasswordChange: true } })),
           })
         },
+        canPerform: canEditUsers,
       },
       {
         key: 'delete',
@@ -479,6 +481,7 @@ export const usersListConfig: ListConfig<User> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ userIds: Array.from(ids) })
         },
+        canPerform: canDeleteUsers,
       },
     ],
   },

@@ -469,7 +469,7 @@ function convertPortuguesePathToEnglish(portuguesePath: string): string[] {
     'produtos': 'products',
     'categorias': 'categories',
     'marcas': 'brands',
-    'retiradas-externas': 'external-withdrawals',
+    'operacoes-externas': 'external-operations',
     'agendamentos': 'schedules',
     'automaticos': 'automatic',
     'epi': 'ppe',

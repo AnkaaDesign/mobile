@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PpeDelivery } from '@/types'
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants'
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, SECTOR_PRIVILEGES } from '@/constants'
+import { hasAnyPrivilege } from '@/utils'
 import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = PPE_DELIVERY_STATUS_LABELS
@@ -258,7 +259,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
             const response = await getItems({
               where: {
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
-                category: { type: 'PPE' },
+                ppeType: { not: null }, // PPE identity = ppeType != null
               },
               orderBy: { name: 'asc' },
               limit: pageSize,
@@ -322,6 +323,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
     create: {
       label: 'Cadastrar Entrega',
       route: '/recursos-humanos/epi/entregas/cadastrar',
+      // API: create = HR+WAREHOUSE+ADMIN (decision 4)
+      canCreate: (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]),
     },
     bulk: [
       {
@@ -341,6 +344,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
             })),
           })
         },
+        // API: approve = HR+ADMIN
+        canPerform: (user) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN]),
       },
       {
         key: 'deliver',
@@ -359,6 +364,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
             })),
           })
         },
+        // API: mark-delivered = WAREHOUSE+ADMIN
+        canPerform: (user) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]),
       },
       {
         key: 'cancel',
@@ -377,6 +384,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
             })),
           })
         },
+        // API: cancel = HR+WAREHOUSE+ADMIN
+        canPerform: (user) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]),
       },
       {
         key: 'delete',
@@ -390,6 +399,7 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ ppeDeliveryIds: Array.from(ids) })
         },
+        canPerform: canDeletePpeDeliveries,
       },
     ],
   },

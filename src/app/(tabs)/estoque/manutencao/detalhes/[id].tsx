@@ -11,8 +11,10 @@ import {
   MAINTENANCE_STATUS_LABELS,
   SCHEDULE_FREQUENCY_LABELS,
   MEASURE_UNIT_LABELS,
+  SECTOR_PRIVILEGES,
   routes,
 } from '@/constants';
+import { useCanViewPrices } from '@/hooks';
 import {
   IconChevronRight,
   IconBox,
@@ -60,7 +62,13 @@ export default function MaintenanceDetailsScreen() {
     <DetailScreen
       query={query as any}
       icon={IconTool}
-      privilege={undefined}
+      privilege={{
+        any: [
+          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.MAINTENANCE,
+          SECTOR_PRIVILEGES.ADMIN,
+        ],
+      }}
       editRoute={(m: any) => mobileRoute(routes.inventory.maintenance.edit(m.id))}
       deleteAction={{
         mutation: deleteMutation,
@@ -89,6 +97,8 @@ export default function MaintenanceDetailsScreen() {
 function MaintenanceBody({ maintenance }: { maintenance: any }) {
   const { colors } = useTheme();
   const nav = useNav();
+  // Money is hidden from WAREHOUSE users by app-wide convention.
+  const canViewPrices = useCanViewPrices();
 
   const targetItem = maintenance.item;
   const maintenanceItems = maintenance.itemsNeeded || [];
@@ -154,7 +164,7 @@ function MaintenanceBody({ maintenance }: { maintenance: any }) {
               </View>
             )}
 
-            {estimatedCost > 0 && (
+            {canViewPrices && estimatedCost > 0 && (
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>Custo Estimado:</ThemedText>
                 <ThemedText style={[styles.infoValue, styles.currencyValue]}>
@@ -230,7 +240,7 @@ function MaintenanceBody({ maintenance }: { maintenance: any }) {
                         ` ${MEASURE_UNIT_LABELS[targetItem.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}`}
                     </ThemedText>
                   </View>
-                  {targetItem.prices && targetItem.prices.length > 0 && (
+                  {canViewPrices && targetItem.prices && targetItem.prices.length > 0 && (
                     <View style={styles.stockItem}>
                       <ThemedText style={styles.detailLabel}>Preço</ThemedText>
                       <ThemedText style={[styles.stockValue, styles.currencyValue]}>
@@ -337,7 +347,7 @@ function MaintenanceBody({ maintenance }: { maintenance: any }) {
                                 ]}
                             </ThemedText>
                           </View>
-                          {item.prices && item.prices.length > 0 && (
+                          {canViewPrices && item.prices && item.prices.length > 0 && (
                             <View style={styles.maintenanceItemRow}>
                               <ThemedText style={styles.maintenanceItemLabel}>
                                 Custo Unit.:

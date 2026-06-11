@@ -322,6 +322,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ paintFormulaIds: Array.from(ids) })
         },
+        canPerform: canDeletePaintFormulas,
       },
     ],
   },

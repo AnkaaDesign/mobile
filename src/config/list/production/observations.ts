@@ -179,6 +179,7 @@ export const observationsListConfig: ListConfig<Observation> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ observationIds: Array.from(ids) })
         },
+        canPerform: canDeleteObservations,
       },
     ],
   },

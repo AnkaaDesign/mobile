@@ -325,7 +325,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
             const response = await getItems({
               where: {
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
-                category: { type: 'TOOL' },
+                isBorrowable: true, // capability-fields contract
               },
               orderBy: { name: 'asc' },
               limit: pageSize,
@@ -409,6 +409,8 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
           }))
           await mutations?.batchUpdateAsync?.({ borrows: updates })
         },
+        // API: borrow batch update = WAREHOUSE+ADMIN (leaders would always 403)
+        canPerform: canEditBorrows,
       },
       {
         key: 'mark-lost',
@@ -428,6 +430,8 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
           }))
           await mutations?.batchUpdateAsync?.({ borrows: updates })
         },
+        // API: borrow batch update = WAREHOUSE+ADMIN (leaders would always 403)
+        canPerform: canEditBorrows,
       },
     ],
   },

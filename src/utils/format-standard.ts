@@ -19,9 +19,9 @@ export function formatPercentage(value: number, decimals: number = 1): string {
 }
 
 /**
- * Commission percentage - always 2 decimals
+ * Bonification percentage - always 2 decimals
  */
-export function formatCommissionPercentage(value: number): string {
+export function formatBonificationPercentage(value: number): string {
   return formatPercentage(value, 2);
 }
 

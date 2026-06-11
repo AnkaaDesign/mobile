@@ -420,6 +420,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
             await mutations.batchDeleteAsync({ taskIds: Array.from(ids) })
           }
         },
+        canPerform: canDeleteTasks,
       },
     ],
   },

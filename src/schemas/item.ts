@@ -706,7 +706,7 @@ export const itemIncludeSchema = z
       ])
       .optional(),
     orderRules: z.boolean().optional(),
-    externalWithdrawalItems: z.boolean().optional(),
+    externalOperationItems: z.boolean().optional(),
     relatedItems: z
       .union([
         z.boolean(),
@@ -790,7 +790,7 @@ export const itemIncludeSchema = z
               orderItems: z.boolean().optional(),
               ppeDeliveries: z.boolean().optional(),
               orderRules: z.boolean().optional(),
-              externalWithdrawalItems: z.boolean().optional(),
+              externalOperationItems: z.boolean().optional(),
               relatedItems: z.boolean().optional(),
               relatedTo: z.boolean().optional(),
               maintenanceItemsNeeded: z.boolean().optional(),
@@ -1147,6 +1147,44 @@ export const itemWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
+      // Capability fields
+      isBorrowable: z
+        .union([
+          z.boolean(),
+          z.object({
+            equals: z.boolean().optional(),
+            not: z.boolean().optional(),
+          }),
+        ])
+        .optional(),
+
+      stockModel: z
+        .union([
+          z.enum(["CONSUMPTION", "FIXED_TARGET"]),
+          z.object({
+            equals: z.enum(["CONSUMPTION", "FIXED_TARGET"]).optional(),
+            not: z.enum(["CONSUMPTION", "FIXED_TARGET"]).optional(),
+            in: z.array(z.enum(["CONSUMPTION", "FIXED_TARGET"])).optional(),
+            notIn: z.array(z.enum(["CONSUMPTION", "FIXED_TARGET"])).optional(),
+          }),
+        ])
+        .optional(),
+
+      fixedTargetQuantity: z
+        .union([
+          z.number(),
+          z.null(),
+          z.object({
+            equals: z.union([z.number(), z.null()]).optional(),
+            not: z.union([z.number(), z.null()]).optional(),
+            gt: z.number().optional(),
+            gte: z.number().optional(),
+            lt: z.number().optional(),
+            lte: z.number().optional(),
+          }),
+        ])
+        .optional(),
+
       // PPE Type field
       ppeType: z
         .union([
@@ -1303,7 +1341,7 @@ export const itemWhereSchema: z.ZodSchema = z.lazy(() =>
           none: z.any().optional(),
         })
         .optional(),
-      externalWithdrawalItems: z
+      externalOperationItems: z
         .object({
           some: z.any().optional(),
           every: z.any().optional(),
@@ -1376,6 +1414,10 @@ const itemFilters = {
   isActive: z.boolean().optional(),
   isPpe: z.boolean().optional(), // Backwards compatibility
   shouldAssignToUser: z.boolean().optional(),
+  isBorrowable: z.boolean().optional(),
+
+  // Stock model filter
+  stockModel: z.enum(["CONSUMPTION", "FIXED_TARGET"]).optional(),
 
   // PPE type filter
   ppeType: z.nativeEnum(PPE_TYPE).optional(),
@@ -1520,18 +1562,18 @@ const itemTransform = (data: any) => {
     delete data.where.isActive;
   }
 
-  // isPpe filter (backwards compatibility - converts to type filter)
+  // isPpe filter (backwards compatibility - converts to ppeType filter; ppeType != null ⇔ item IS PPE)
   if (data.isPpe === true) {
-    andConditions.push({ category: { type: ITEM_CATEGORY_TYPE.PPE } });
+    andConditions.push({ ppeType: { not: null } });
     delete data.isPpe;
   } else if (data.isPpe === false) {
-    andConditions.push({ category: { type: { not: ITEM_CATEGORY_TYPE.PPE } } });
+    andConditions.push({ ppeType: null });
     delete data.isPpe;
   } else if (data.where && data.where.isPpe === true) {
-    andConditions.push({ category: { type: ITEM_CATEGORY_TYPE.PPE } });
+    andConditions.push({ ppeType: { not: null } });
     delete data.where.isPpe;
   } else if (data.where && data.where.isPpe === false) {
-    andConditions.push({ category: { type: { not: ITEM_CATEGORY_TYPE.PPE } } });
+    andConditions.push({ ppeType: null });
     delete data.where.isPpe;
   }
 
@@ -1551,6 +1593,18 @@ const itemTransform = (data: any) => {
   } else if (data.where && typeof data.where.shouldAssignToUser === "boolean") {
     andConditions.push({ shouldAssignToUser: data.where.shouldAssignToUser });
     delete data.where.shouldAssignToUser;
+  }
+
+  // isBorrowable convenience filter (root level only; where-level passes through as-is)
+  if (typeof data.isBorrowable === "boolean") {
+    andConditions.push({ isBorrowable: data.isBorrowable });
+    delete data.isBorrowable;
+  }
+
+  // stockModel convenience filter (root level only; where-level passes through as-is)
+  if (data.stockModel === "CONSUMPTION" || data.stockModel === "FIXED_TARGET") {
+    andConditions.push({ stockModel: data.stockModel });
+    delete data.stockModel;
   }
 
   // hasBarcode filter
@@ -2247,6 +2301,9 @@ export const itemCreateSchemaBase = z.object({
   barcodes: z.array(z.string().min(1, "Código de barras não pode ser vazio")).default([]),
 
   shouldAssignToUser: z.boolean().default(true),
+  isBorrowable: z.boolean().optional(),
+  stockModel: z.enum(["CONSUMPTION", "FIXED_TARGET"]).optional(),
+  fixedTargetQuantity: z.number().positive("Quantidade alvo deve ser positiva").nullable().optional(),
   abcCategory: z.nativeEnum(ABC_CATEGORY).nullable().optional(),
   xyzCategory: z.nativeEnum(XYZ_CATEGORY).nullable().optional(),
   brandIds: z.array(z.string().uuid({ message: "Marca inválida" })).optional(),
@@ -2321,6 +2378,9 @@ export const itemUpdateSchemaBase = z.object({
   barcodes: z.array(z.string().min(1, "Código de barras não pode ser vazio")).optional(),
 
   shouldAssignToUser: z.boolean().optional(),
+  isBorrowable: z.boolean().optional(),
+  stockModel: z.enum(["CONSUMPTION", "FIXED_TARGET"]).optional(),
+  fixedTargetQuantity: z.number().positive("Quantidade alvo deve ser positiva").nullable().optional(),
   abcCategory: z.nativeEnum(ABC_CATEGORY).nullable().optional(),
   xyzCategory: z.nativeEnum(XYZ_CATEGORY).nullable().optional(),
   brandIds: z.array(z.string().uuid({ message: "Marca inválida" })).optional(),
@@ -2680,6 +2740,10 @@ export const mapItemToFormData = createMapToFormDataHelper<Item, ItemUpdateFormD
   monthlyConsumptionTrendPercent: item.monthlyConsumptionTrendPercent,
   barcodes: item.barcodes,
   shouldAssignToUser: item.shouldAssignToUser,
+  // Capability fields — use ?? so a false/0 survives the mapping
+  isBorrowable: item.isBorrowable ?? undefined,
+  stockModel: item.stockModel ?? undefined,
+  fixedTargetQuantity: item.fixedTargetQuantity ?? null,
   brandIds: item.brands?.map((b) => b.id) ?? undefined,
   categoryId: item.categoryId || undefined,
   supplierId: item.supplierId || undefined,

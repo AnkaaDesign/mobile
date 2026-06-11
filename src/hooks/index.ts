@@ -88,7 +88,7 @@ export * from "./useItem";
 export * from "./useItemBrand";
 export * from "./useItemCategory";
 export * from "./useSupplier";
-export * from "./useExternalWithdrawal";
+export * from "./useExternalOperation";
 export * from "./useMaintenance";
 export * from "./use-auto-order-analysis";
 
@@ -139,7 +139,7 @@ export * from "./use-my-borrows-infinite-mobile";
 export * from "./use-change-logs-infinite-mobile";
 export * from "./use-customers-infinite-mobile";
 export * from "./use-responsibles-infinite-mobile";
-export * from "./use-external-withdrawals-infinite-mobile";
+export * from "./use-external-operations-infinite-mobile";
 export * from "./use-files-infinite-mobile";
 export * from "./use-holidays-infinite-mobile";
 export * from "./use-item-brands-infinite-mobile";
@@ -206,7 +206,7 @@ export * from "./useDebouncedSearch";
 // =====================================================
 // Form State Management Hooks
 // =====================================================
-export * from "./use-external-withdrawal-form-state";
+export * from "./use-external-operation-form-state";
 export * from "./use-multi-step-form";
 export * from "./use-form-screen-key";
 

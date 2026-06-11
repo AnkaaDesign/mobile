@@ -16,7 +16,7 @@ import {
   PPE_DELIVERY_STATUS,
   AIRBRUSHING_STATUS,
   SERVICE_ORDER_STATUS,
-  EXTERNAL_WITHDRAWAL_STATUS,
+  EXTERNAL_OPERATION_STATUS,
   INVOICE_STATUS,
 } from "@/constants/enums";
 
@@ -44,9 +44,14 @@ export const EDITABLE_PPE_DELIVERY_STATUSES = [
   PPE_DELIVERY_STATUS.WAITING_SIGNATURE,
 ] as const;
 
+// COMPLETED stays editable: paymentStatus can only be set once the
+// airbrushing is COMPLETED (painters are paid after completion), so the
+// edit screen must remain reachable. Only CANCELLED is terminal.
+// Web has no status gate for airbrushing edits, so this also keeps parity.
 export const EDITABLE_AIRBRUSHING_STATUSES = [
   AIRBRUSHING_STATUS.PENDING,
   AIRBRUSHING_STATUS.IN_PRODUCTION,
+  AIRBRUSHING_STATUS.COMPLETED,
 ] as const;
 
 export const EDITABLE_SERVICE_ORDER_STATUSES = [
@@ -57,9 +62,9 @@ export const EDITABLE_SERVICE_ORDER_STATUSES = [
   SERVICE_ORDER_STATUS.WAITING_APPROVE,
 ] as const;
 
-export const EDITABLE_EXTERNAL_WITHDRAWAL_STATUSES = [
-  EXTERNAL_WITHDRAWAL_STATUS.PENDING,
-  EXTERNAL_WITHDRAWAL_STATUS.PARTIALLY_RETURNED,
+export const EDITABLE_EXTERNAL_OPERATION_STATUSES = [
+  EXTERNAL_OPERATION_STATUS.PENDING,
+  EXTERNAL_OPERATION_STATUS.PARTIALLY_RETURNED,
 ] as const;
 
 export const EDITABLE_INVOICE_STATUSES = [

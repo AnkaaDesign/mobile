@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode, useCallback, useRef } from 'react';
-import { Platform, AppState, AppStateStatus, Alert } from 'react-native';
+import { Platform, AppState, AppStateStatus, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -17,7 +17,7 @@ import {
   setBadgeCount,
 } from '@/lib/notifications';
 import { notificationCategoriesService } from '@/services/notifications/notificationCategories';
-import { parseDeepLink, generateNotificationLink, ENTITY_ALIAS_MAP, ROUTE_MAP } from '@/lib/deep-linking';
+import { parseDeepLink, resolveNotificationNavigation } from '@/lib/deep-linking';
 import { pushNotificationService, markAsRead, notify } from '@/api-client';
 import { notificationKeys } from '@/hooks/queryKeys';
 import { useAuth } from './auth-context';
@@ -55,60 +55,6 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
     setNotification(notification);
   }, []);
 
-  /**
-   * Extract mobile deep link from actionUrl
-   * Handles multiple formats:
-   * 1. Direct mobile URL: "ankaadesign://task/123"
-   * 2. Embedded JSON: 'http://localhost:5173{"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}'
-   * 3. JSON object with mobile field: {"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}
-   */
-  const extractMobileUrl = useCallback((actionUrl: string): string | null => {
-    try {
-      // If it's already a mobile deep link, return it
-      if (actionUrl.startsWith('ankaadesign://')) {
-        return actionUrl;
-      }
-
-      // Try to find embedded JSON in the URL (API sends malformed data like "http://localhost:5173{...}")
-      const jsonStartIndex = actionUrl.indexOf('{');
-      if (jsonStartIndex !== -1) {
-        const jsonString = actionUrl.substring(jsonStartIndex);
-        try {
-          const parsed = JSON.parse(jsonString);
-          // Check for mobile field
-          if (parsed.mobile && typeof parsed.mobile === 'string') {
-            return parsed.mobile;
-          }
-          // Check for universalLink as fallback
-          if (parsed.universalLink && typeof parsed.universalLink === 'string') {
-            return parsed.universalLink;
-          }
-        } catch {
-          // JSON parse failed, continue to other methods
-        }
-      }
-
-      // Try parsing the whole string as JSON
-      try {
-        const parsed = JSON.parse(actionUrl);
-        if (parsed.mobile && typeof parsed.mobile === 'string') {
-          return parsed.mobile;
-        }
-        if (parsed.universalLink && typeof parsed.universalLink === 'string') {
-          return parsed.universalLink;
-        }
-      } catch {
-        // Not valid JSON
-      }
-
-      // Return original URL as fallback
-      return actionUrl;
-    } catch (error) {
-      console.error('[Push Notification] Error extracting mobile URL:', error);
-      return null;
-    }
-  }, []);
-
   // Handle notification tap - navigate to deep link
   const handleNotificationResponse = useCallback(async (response: Notifications.NotificationResponse) => {
     try {
@@ -144,87 +90,39 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
         }
       }
 
-      // Priority 1: Use entityType + entityId if available (most reliable for API notifications)
-      if (data?.entityType && data?.entityId) {
-        let entityType = data.entityType;
-        let entityId = data.entityId;
+      // Priorities 1-4 (shared resolver, see resolveNotificationNavigation):
+      // 1. Explicit expo-router mobileUrl ("/(tabs)/...") — most specific
+      // 2. entityType + entityId mapping (SERVICE_ORDER redirects to parent Task)
+      // 3. mobileUrl parsed as deep link
+      // 4. actionUrl (embedded JSON / deep link)
+      const resolved = resolveNotificationNavigation({
+        mobileUrl: data?.mobileUrl,
+        entityType: data?.entityType,
+        entityId: data?.entityId,
+        taskId: data?.taskId,
+        actionUrl: data?.actionUrl,
+      });
 
-        // Special handling for SERVICE_ORDER - navigate to parent Task instead
-        // ServiceOrders don't have their own detail page in mobile, they're viewed within Task
-        if (
-          (entityType === 'SERVICE_ORDER' || entityType === 'ServiceOrder' || entityType === 'SERVICEORDER') &&
-          data?.taskId
-        ) {
-          entityType = 'TASK';
-          entityId = data.taskId;
-          console.log('[Push Notification] SERVICE_ORDER -> redirecting to parent Task:', { taskId: entityId });
-        }
-
-        // Map API entity types (e.g., 'TASK') to our ROUTE_MAP keys (e.g., 'Task')
-        const mappedEntityType = ENTITY_ALIAS_MAP[entityType] || entityType;
-
-        if (mappedEntityType && ROUTE_MAP[mappedEntityType as keyof typeof ROUTE_MAP]) {
-          const route = ROUTE_MAP[mappedEntityType as keyof typeof ROUTE_MAP];
-          const finalRoute = route.replace('[id]', entityId);
-          console.log('[Push Notification] Navigating via entity:', { entityType: mappedEntityType, id: entityId, route: finalRoute });
-
-          if (DEBUG_PUSH_NOTIFICATIONS) {
-            Alert.alert(
-              '➡️ Push Nav - Entity Route',
-              `EntityType: ${entityType}\nMapped: ${mappedEntityType}\nID: ${entityId}\nRoute: ${finalRoute}`,
-              [{ text: 'OK' }]
-            );
-          }
-
-          router.push(finalRoute as any);
-          return;
-        }
-      }
-
-      // Priority 2: Try direct mobileUrl from notification data (set by queue processor)
-      // This is the most efficient path when API properly sets mobileUrl in the push payload
-      if (data?.mobileUrl && typeof data.mobileUrl === 'string' && data.mobileUrl.length > 0) {
-        const parsed = parseDeepLink(data.mobileUrl);
-        console.log('[Push Notification] Navigating via direct mobileUrl:', { mobileUrl: data.mobileUrl, parsed });
+      if (resolved) {
+        console.log('[Push Notification] Resolved navigation:', resolved);
 
         if (DEBUG_PUSH_NOTIFICATIONS) {
           Alert.alert(
-            '➡️ Push Nav - Direct Mobile URL',
-            `MobileUrl: ${data.mobileUrl}\nParsed Route: ${parsed.route}`,
+            '➡️ Push Nav - Resolved',
+            `Kind: ${resolved.kind}\nTarget: ${resolved.kind === 'route' ? resolved.route : resolved.url}`,
             [{ text: 'OK' }]
           );
         }
 
-        if (parsed.route && parsed.route !== '/(tabs)') {
-          router.push(parsed.route as any);
-          return;
+        if (resolved.kind === 'route') {
+          router.push(resolved.route as any);
+        } else {
+          Linking.openURL(resolved.url);
         }
+        return;
       }
 
-      // Priority 3: Try actionUrl from notification data (may contain embedded JSON with mobile URL)
-      if (data?.actionUrl && typeof data.actionUrl === 'string') {
-        const mobileUrl = extractMobileUrl(data.actionUrl);
-
-        if (mobileUrl) {
-          const parsed = parseDeepLink(mobileUrl);
-          console.log('[Push Notification] Navigating via extracted mobile URL:', { original: data.actionUrl, mobileUrl, parsed });
-
-          if (DEBUG_PUSH_NOTIFICATIONS) {
-            Alert.alert(
-              '➡️ Push Nav - Extracted Mobile URL',
-              `Original: ${data.actionUrl.substring(0, 50)}...\nExtracted: ${mobileUrl}\nParsed Route: ${parsed.route}`,
-              [{ text: 'OK' }]
-            );
-          }
-
-          if (parsed.route && parsed.route !== '/(tabs)') {
-            router.push(parsed.route as any);
-            return;
-          }
-        }
-      }
-
-      // Priority 4: Use the deep link returned by handleNotificationTap (legacy fallback)
+      // Priority 5: Use the deep link returned by handleNotificationTap (legacy fallback)
       const deepLink = handleNotificationTap(response);
 
       if (deepLink) {
@@ -262,7 +160,7 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
         notify.setSuppressSuccessToasts(false);
       }, 1000);
     }
-  }, [router, extractMobileUrl, user?.id, queryClient]);
+  }, [router, user?.id, queryClient]);
 
   // Register push token with backend
   const registerToken = useCallback(async () => {

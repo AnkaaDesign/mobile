@@ -286,6 +286,7 @@ export const warningsListConfig: ListConfig<Warning> = {
     create: {
       label: 'Cadastrar Advertência',
       route: '/recursos-humanos/advertencias/cadastrar',
+      canCreate: canEditHrEntities,
     },
     bulk: [
       {
@@ -300,6 +301,7 @@ export const warningsListConfig: ListConfig<Warning> = {
         onPress: async (ids, actions) => {
           await actions?.batchDeleteAsync?.({ warningIds: Array.from(ids) })
         },
+        canPerform: canDeleteHrEntities,
       },
     ],
   },

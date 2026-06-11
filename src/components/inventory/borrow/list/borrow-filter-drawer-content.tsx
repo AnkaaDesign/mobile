@@ -39,7 +39,7 @@ export function BorrowFilterDrawerContent({
   const insets = useSafeAreaInsets();
   const handleClose = onClose || (() => {});
 
-  const { data: itemsData } = useItems({ limit: 100, where: { category: { type: "TOOL" } } });
+  const { data: itemsData } = useItems({ limit: 100, where: { isBorrowable: true } });
   const { data: usersData } = useUsers({ limit: 100 });
 
   const items = useMemo(() =>

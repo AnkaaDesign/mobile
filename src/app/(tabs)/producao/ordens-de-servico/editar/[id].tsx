@@ -152,7 +152,7 @@ function EditServiceOrderInner() {
       status: s.status ?? undefined,
     })) || [{ description: "", status: "PENDING" }],
     status: taskData.status,
-    commission: taskData.commission ?? null,
+    bonification: taskData.bonification ?? null,
     startedAt: taskData.startedAt ? new Date(taskData.startedAt) : null,
     finishedAt: taskData.finishedAt ? new Date(taskData.finishedAt) : null,
   };

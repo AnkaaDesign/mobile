@@ -200,7 +200,7 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
           >
             <ThemedText style={[styles.bodyText, { color: colors.mutedForeground }]}>
               Quando uma tarefa é marcada com{' '}
-              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>comissão suspensa</ThemedText>
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>bonificação suspensa</ThemedText>
               , ela é{' '}
               <ThemedText style={{ color: colors.destructive, fontWeight: '700' }}>removida do cálculo do bônus</ThemedText>
               .
@@ -214,11 +214,11 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
             </ThemedText>
             <ThemedText style={[styles.bodyText, { color: colors.mutedForeground, fontSize: 12, fontStyle: 'italic' }]}>
               Tarefas com{' '}
-              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>comissão integral</ThemedText>
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>bonificação integral</ThemedText>
               {' '}contam como 1.0 e{' '}
-              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>comissão parcial</ThemedText>
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>bonificação parcial</ThemedText>
               {' '}conta como 0.5 na ponderação.{' '}
-              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>Sem comissão</ThemedText>
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>Sem bonificação</ThemedText>
               {' '}e{' '}
               <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>suspensa</ThemedText>
               {' '}contam como 0.

@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useNotification } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { Card } from "@/components/ui/card";
@@ -39,6 +39,7 @@ export default function NotificationDetailScreen() {
       query={query as any}
       icon={IconBell}
       title={(n) => n.title ?? "Notificação"}
+      privilege={SECTOR_PRIVILEGES.ADMIN}
       editRoute={canEdit ? (n) => mobileRoute(routes.administration.notifications.edit(n.id)) : undefined}
       notFoundFallback={mobileRoute(routes.administration.notifications.list)}
     >

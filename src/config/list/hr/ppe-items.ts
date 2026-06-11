@@ -1,7 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Item } from '@/types'
 import { PPE_TYPE } from '@/constants/enums'
-import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
+import { canEditPpeDeliveries, canEditItems, canDeleteItems } from '@/utils/permissions/entity-permissions'
 
 const PPE_TYPE_LABELS: Record<string, string> = {
   SHIRT: 'Camisa',
@@ -31,6 +31,10 @@ export const ppeItemsListConfig: ListConfig<Item> = {
       brands: true,
       supplier: true,
       measures: true,
+    },
+    // PPE identity: ppeType != null (was missing entirely — list showed ALL items)
+    where: {
+      ppeType: { not: null },
     },
   },
 
@@ -199,7 +203,8 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
-        canPerform: canDeletePpeDeliveries,
+        // PPE items are Items: delete is ADMIN-only ("WAREHOUSE must never delete" policy)
+        canPerform: canDeleteItems,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (item) => `Deseja excluir o EPI "${item.name}"?`,
@@ -304,6 +309,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
     create: {
       label: 'Cadastrar EPI',
       route: '/recursos-humanos/epi/cadastrar',
+      canCreate: canEditItems,
     },
     bulk: [
       {
@@ -318,6 +324,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ itemIds: Array.from(ids) })
         },
+        canPerform: canDeleteItems,
       },
     ],
   },

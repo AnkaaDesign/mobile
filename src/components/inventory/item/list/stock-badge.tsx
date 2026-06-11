@@ -11,6 +11,8 @@ import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 type StockBadgeItem = Pick<Item, "quantity" | "reorderPoint" | "maxQuantity"> & {
   measures?: Item["measures"];
   category?: Item["category"];
+  stockModel?: Item["stockModel"] | null;
+  fixedTargetQuantity?: Item["fixedTargetQuantity"];
 };
 
 interface StockBadgeProps {
@@ -35,13 +37,13 @@ export function StockBadge({ item, size = "default", showIcon = true, showQuanti
   // Determine stock level using the utility.
   // `hasActiveOrder` is intentionally NOT passed: pending-order state is a UI
   // overlay only (the new util ignores it anyway).
-  const stockLevel = determineStockLevel(
-    item.quantity || 0,
-    item.reorderPoint || null,
-    item.maxQuantity || null,
-    false,
-    item.category?.type ?? null,
-  );
+  const stockLevel = determineStockLevel({
+    quantity: item.quantity || 0,
+    reorderPoint: item.reorderPoint || null,
+    maxQuantity: item.maxQuantity || null,
+    stockModel: item.stockModel ?? null,
+    fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+  });
 
   // Get stock status based on level
   const getStockStatus = (): StockStatus => {
@@ -148,13 +150,13 @@ export function getStockStatus(
 } {
   // `hasActiveOrder` is intentionally NOT passed to determineStockLevel:
   // pending-order state is a UI overlay only.
-  const stockLevel = determineStockLevel(
-    item.quantity || 0,
-    item.reorderPoint || null,
-    item.maxQuantity || null,
-    false,
-    item.category?.type ?? null,
-  );
+  const stockLevel = determineStockLevel({
+    quantity: item.quantity || 0,
+    reorderPoint: item.reorderPoint || null,
+    maxQuantity: item.maxQuantity || null,
+    stockModel: item.stockModel ?? null,
+    fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+  });
 
   const isLow = stockLevel === STOCK_LEVEL.LOW || stockLevel === STOCK_LEVEL.CRITICAL || stockLevel === STOCK_LEVEL.OUT_OF_STOCK || stockLevel === STOCK_LEVEL.NEGATIVE_STOCK;
   const isCritical = stockLevel === STOCK_LEVEL.CRITICAL || stockLevel === STOCK_LEVEL.OUT_OF_STOCK || stockLevel === STOCK_LEVEL.NEGATIVE_STOCK;

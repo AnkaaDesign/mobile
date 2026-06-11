@@ -43,7 +43,8 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
 
   const { data: items } = useItems({
     where: {
-      category: { type: "PPE" },
+      // PPE identity = ppeType != null (capability-fields contract)
+      ppeType: { not: null },
       isActive: true,
     },
     orderBy: { name: "asc" },

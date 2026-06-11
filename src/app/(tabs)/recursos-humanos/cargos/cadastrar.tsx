@@ -3,8 +3,20 @@ import { Stack } from "expo-router";
 import { PositionForm } from "@/components/human-resources/position/form";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function PositionsCreateScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <PositionsCreateScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function PositionsCreateScreenInner() {
   useScreenReady();
   const formKey = useFormScreenKey();
   return (

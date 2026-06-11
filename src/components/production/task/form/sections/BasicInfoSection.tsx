@@ -23,14 +23,14 @@ import { useSectors } from '@/hooks';
 import {
   TRUCK_CATEGORY,
   IMPLEMENT_TYPE,
-  COMMISSION_STATUS,
+  BONIFICATION_STATUS,
   TASK_STATUS,
   SECTOR_PRIVILEGES,
 } from '@/constants/enums';
 import {
   TRUCK_CATEGORY_LABELS,
   IMPLEMENT_TYPE_LABELS,
-  COMMISSION_STATUS_LABELS,
+  BONIFICATION_STATUS_LABELS,
   TASK_STATUS_LABELS
 } from '@/constants/enum-labels';
 
@@ -79,7 +79,7 @@ export default function BasicInfoSection({
 
   // Check if user can view restricted fields
   const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'DESIGNER'].includes(userPrivilege || '');
-  const canViewCommissionField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION'].includes(userPrivilege || '');
+  const canViewBonificationField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION'].includes(userPrivilege || '');
   // Fetch sectors
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
     privilege: SECTOR_PRIVILEGES.PRODUCTION,
@@ -106,9 +106,9 @@ export default function BasicInfoSection({
     label: TASK_STATUS_LABELS[status] || status
   }));
 
-  const commissionOptions = Object.values(COMMISSION_STATUS).map(status => ({
+  const bonificationOptions = Object.values(BONIFICATION_STATUS).map(status => ({
     value: status,
-    label: COMMISSION_STATUS_LABELS[status] || status
+    label: BONIFICATION_STATUS_LABELS[status] || status
   }));
 
   return (
@@ -339,25 +339,25 @@ export default function BasicInfoSection({
         </SimpleFormField>
       )}
 
-      {/* Commission Status - Only visible to specific roles.
-          TODO(parity): `commission` is NOT part of taskCreateSchema/taskUpdateSchema and web's
+      {/* Bonification Status - Only visible to specific roles.
+          TODO(parity): `bonification` is NOT part of taskCreateSchema/taskUpdateSchema and web's
           create form has no such field, so this control is effectively inert on submit (it's a
           read-only display field elsewhere). Guarded to edit mode so it is never forwarded in
           the create payload (cadastrar.tsx spreads `...rest`). Remove entirely once confirmed
           no edit flow relies on it. */}
-      {mode === 'edit' && canViewCommissionField && (
-        <SimpleFormField label="Status de Comissão" error={errors.commission}>
+      {mode === 'edit' && canViewBonificationField && (
+        <SimpleFormField label="Status de Bonificação" error={errors.bonification}>
           <Controller
             control={control}
-            name="commission"
+            name="bonification"
             render={({ field: { onChange, value } }) => (
               <Combobox
                 value={value || ''}
                 onValueChange={onChange}
-                options={commissionOptions}
-                placeholder="Selecione o status da comissão"
+                options={bonificationOptions}
+                placeholder="Selecione o status da bonificação"
                 disabled={isSubmitting || isFinancialSector || isDesignerSector || isLogisticSector || isProductionManagerSector || isWarehouseSector}
-                error={errors.commission?.message}
+                error={errors.bonification?.message}
               />
             )}
           />

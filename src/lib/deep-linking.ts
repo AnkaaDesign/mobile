@@ -25,7 +25,7 @@ export const ROUTE_MAP = {
   Order: '/(tabs)/estoque/pedidos/detalhes/[id]',
   Item: '/(tabs)/estoque/produtos/detalhes/[id]',
   Borrow: '/(tabs)/estoque/emprestimos/detalhes/[id]',
-  ExternalWithdrawal: '/(tabs)/estoque/retiradas-externas/detalhes/[id]',
+  ExternalOperation: '/(tabs)/estoque/operacoes-externas/detalhes/[id]',
   Maintenance: '/(tabs)/estoque/manutencao/detalhes/[id]',
   Activity: '/(tabs)/estoque/movimentacoes/detalhes/[id]',
   Supplier: '/(tabs)/estoque/fornecedores/detalhes/[id]',
@@ -54,7 +54,7 @@ export const ROUTE_MAP = {
   PaintProduction: '/(tabs)/pintura/producoes/detalhes/[id]',
 
   // Personal Routes (Employee's own data)
-  MyBonus: '/(tabs)/pessoal/meus-bonus/detalhes/[id]',
+  MyBonus: '/(tabs)/pessoal/meu-bonus/detalhes/[id]',
   MyBorrow: '/(tabs)/pessoal/meus-emprestimos/detalhes/[id]',
   MyWarning: '/(tabs)/pessoal/minhas-advertencias/detalhes/[id]',
   MyHoliday: '/(tabs)/pessoal/meus-feriados/detalhes/[id]',
@@ -75,16 +75,26 @@ export const ROUTE_MAP = {
   Assessment: '/(tabs)/pessoal/minhas-notificacoes',
   // Reconciliation run (no dedicated mobile page yet - notifications list)
   ReconciliationRun: '/(tabs)/pessoal/minhas-notificacoes',
-  // Order schedule (no dedicated mobile detail page yet - orders list)
-  OrderSchedule: '/(tabs)/estoque/pedidos',
+  // Order schedule detail screen
+  OrderSchedule: '/(tabs)/estoque/pedidos/agendamentos/detalhes/[id]',
+  // Maintenance schedule detail screen
+  MaintenanceSchedule: '/(tabs)/estoque/manutencao/agendamentos/detalhes/[id]',
   // Task quote / budget (id is the taskId; orcamento detail screen is detalhes/[taskId])
   TaskQuote: '/(tabs)/financeiro/orcamento/detalhes/[taskId]',
   // Secullum solicitation (RH approvers review under calculos; employee self-service is meus-pontos)
   SecullumSolicitacao: '/(tabs)/recursos-humanos/calculos',
-  // Payroll (no dedicated mobile detail page yet - notifications list fallback)
-  Payroll: '/(tabs)/pessoal/minhas-notificacoes',
-  // Bank slip / fatura (no dedicated mobile page yet - notifications list fallback)
-  BankSlip: '/(tabs)/pessoal/minhas-notificacoes',
+  // Financial / billing (faturamento) detail screen
+  Financial: '/(tabs)/financeiro/faturamento/detalhes/[id]',
+  // NFS-e document detail screen
+  NfseDocument: '/(tabs)/financeiro/notas-fiscais/detalhes/[id]',
+  // Time entry / clock-in (personal screen, no [id] segment)
+  TimeEntry: '/(tabs)/pessoal/meus-pontos',
+  // Payroll (folha de pagamento list screen, no [id] segment)
+  Payroll: '/(tabs)/recursos-humanos/folha-de-pagamento',
+  // Secullum payroll (same folha de pagamento screen)
+  SecullumPayroll: '/(tabs)/recursos-humanos/folha-de-pagamento',
+  // Bank slip / fatura (id is the taskId for these notifications; faturamento detail is detalhes/[id])
+  BankSlip: '/(tabs)/financeiro/faturamento/detalhes/[id]',
 } as const;
 
 /**
@@ -185,8 +195,8 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   PAINT: 'Paint',
   ITEM: 'Item',
   BORROW: 'Borrow',
-  EXTERNAL_WITHDRAWAL: 'ExternalWithdrawal',
-  EXTERNALWITHDRAWAL: 'ExternalWithdrawal',
+  EXTERNAL_OPERATION: 'ExternalOperation',
+  EXTERNALOPERATION: 'ExternalOperation',
   MAINTENANCE: 'Maintenance',
   ACTIVITY: 'Activity',
   SUPPLIER: 'Supplier',
@@ -233,8 +243,18 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   SECULLUM_SOLICITACAO: 'SecullumSolicitacao',
   SECULLUMSOLICITACAO: 'SecullumSolicitacao',
   PAYROLL: 'Payroll',
+  SECULLUM_PAYROLL: 'SecullumPayroll',
+  SECULLUMPAYROLL: 'SecullumPayroll',
   BANK_SLIP: 'BankSlip',
   BANKSLIP: 'BankSlip',
+  FINANCIAL: 'Financial',
+  TIME_ENTRY: 'TimeEntry',
+  TIMEENTRY: 'TimeEntry',
+  MAINTENANCE_SCHEDULE: 'MaintenanceSchedule',
+  MAINTENANCESCHEDULE: 'MaintenanceSchedule',
+  NFSE: 'NfseDocument',
+  NFSE_DOCUMENT: 'NfseDocument',
+  NFSEDOCUMENT: 'NfseDocument',
 
   // PascalCase variants (for direct entity type matching)
   Task: 'Task',
@@ -246,7 +266,7 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   Paint: 'Paint',
   Item: 'Item',
   Borrow: 'Borrow',
-  ExternalWithdrawal: 'ExternalWithdrawal',
+  ExternalOperation: 'ExternalOperation',
   Maintenance: 'Maintenance',
   Activity: 'Activity',
   Supplier: 'Supplier',
@@ -276,10 +296,15 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   Assessment: 'Assessment',
   ReconciliationRun: 'ReconciliationRun',
   OrderSchedule: 'OrderSchedule',
+  MaintenanceSchedule: 'MaintenanceSchedule',
   TaskQuote: 'TaskQuote',
   SecullumSolicitacao: 'SecullumSolicitacao',
   Payroll: 'Payroll',
+  SecullumPayroll: 'SecullumPayroll',
   BankSlip: 'BankSlip',
+  Financial: 'Financial',
+  TimeEntry: 'TimeEntry',
+  NfseDocument: 'NfseDocument',
 
   // Lowercase variants (existing)
   task: 'Task',
@@ -312,11 +337,11 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   borrows: 'Borrow',
   emprestimo: 'Borrow',
   emprestimos: 'Borrow',
-  withdrawal: 'ExternalWithdrawal',
-  withdrawals: 'ExternalWithdrawal',
-  'external-withdrawal': 'ExternalWithdrawal',
-  retirada: 'ExternalWithdrawal',
-  retiradas: 'ExternalWithdrawal',
+  withdrawal: 'ExternalOperation',
+  withdrawals: 'ExternalOperation',
+  'external-operation': 'ExternalOperation',
+  retirada: 'ExternalOperation',
+  retiradas: 'ExternalOperation',
   maintenance: 'Maintenance',
   manutencao: 'Maintenance',
   activity: 'Activity',
@@ -360,6 +385,8 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   // PPE routes
   'ppe-delivery': 'PpeDelivery',
   'ppe-deliveries': 'PpeDelivery',
+  ppe_delivery: 'PpeDelivery',
+  ppe_deliveries: 'PpeDelivery',
   'entrega-epi': 'PpeDelivery',
   'entregas-epi': 'PpeDelivery',
   'meu-epi': 'PpeDelivery',
@@ -405,18 +432,49 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   secullumsolicitacao: 'SecullumSolicitacao',
   secullum: 'SecullumSolicitacao',
 
-  // Payroll routes (no dedicated mobile detail page yet)
+  // Payroll routes (folha de pagamento screen)
   payroll: 'Payroll',
   'folha-de-pagamento': 'Payroll',
   'folha-pagamento': 'Payroll',
+  'secullum-payroll': 'SecullumPayroll',
+  secullum_payroll: 'SecullumPayroll',
+  secullumpayroll: 'SecullumPayroll',
 
-  // Bank slip / fatura routes (no dedicated mobile detail page yet)
+  // Bank slip / fatura routes (id is the parent taskId; faturamento detail screen)
   'bank-slip': 'BankSlip',
+  bank_slip: 'BankSlip',
   bankslip: 'BankSlip',
   fatura: 'BankSlip',
   faturas: 'BankSlip',
   boleto: 'BankSlip',
   boletos: 'BankSlip',
+
+  // Financial / billing routes
+  financial: 'Financial',
+  faturamento: 'Financial',
+
+  // Time entry / clock-in routes
+  'time-entry': 'TimeEntry',
+  time_entry: 'TimeEntry',
+  timeentry: 'TimeEntry',
+  'meus-pontos': 'TimeEntry',
+
+  // Maintenance schedule routes
+  'maintenance-schedule': 'MaintenanceSchedule',
+  maintenance_schedule: 'MaintenanceSchedule',
+  maintenanceschedule: 'MaintenanceSchedule',
+  'agendamento-manutencao': 'MaintenanceSchedule',
+
+  // Order schedule underscore variant
+  order_schedule: 'OrderSchedule',
+
+  // NFS-e document routes
+  nfse: 'NfseDocument',
+  'nfse-document': 'NfseDocument',
+  nfse_document: 'NfseDocument',
+  nfsedocument: 'NfseDocument',
+  'nota-fiscal': 'NfseDocument',
+  'notas-fiscais': 'NfseDocument',
 };
 
 // =====================================================
@@ -438,7 +496,7 @@ export interface ParsedDeepLink {
  * navigation would fail. This helper substitutes whichever single `[param]`
  * token the route declares so the resolved path matches the actual screen file.
  */
-function fillRouteParam(route: string, id: string): string {
+export function fillRouteParam(route: string, id: string): string {
   // Replace any single [param] token (e.g. [id], [taskId], [orderId]) with the id.
   return route.replace(/\[[^/\]]+\]/, id);
 }
@@ -612,12 +670,17 @@ export function parseDeepLink(url: string): ParsedDeepLink {
         'estoque/fornecedores': 'Supplier',
         'estoque/movimentacoes': 'Activity',
         'estoque/manutencao': 'Maintenance',
-        'estoque/retiradas-externas': 'ExternalWithdrawal',
+        'estoque/operacoes-externas': 'ExternalOperation',
+        // Pre-rename URLs (retiradas externas) resolve to the renamed screen
+        'estoque/retiradas-externas': 'ExternalOperation',
         // HR pages
         'recursos-humanos/funcionarios': 'Employee',
         'recursos-humanos/bonus': 'Bonus',
         'recursos-humanos/advertencias': 'Warning',
+        // Web "avisos" pages are warnings (mobile screen is advertencias)
+        'recursos-humanos/avisos': 'Warning',
         'recursos-humanos/feriados': 'Holiday',
+        'recursos-humanos/folha-de-pagamento': 'Payroll',
         // Administration pages
         'administracao/usuarios': 'User',
         'administracao/clientes': 'Customer',
@@ -628,18 +691,81 @@ export function parseDeepLink(url: string): ParsedDeepLink {
         'pintura/catalogo': 'PaintCatalog',
         'pintura/marcas-de-tinta': 'PaintBrand',
         'pintura/producoes': 'PaintProduction',
+        // Financial pages
+        'financeiro/faturamento': 'Financial',
+        'financeiro/orcamento': 'TaskQuote',
+        'financeiro/notas-fiscais': 'NfseDocument',
+        // No dedicated reconciliation screen on mobile — notifications list
+        'financeiro/conciliacao': 'ReconciliationRun',
+        // Personal pages (employee's own data)
+        'pessoal/meus-pontos': 'TimeEntry',
+        'pessoal/mensagens': 'Message',
+        'pessoal/minhas-mensagens': 'Message',
+        'pessoal/minhas-advertencias': 'MyWarning',
+        'pessoal/questionarios': 'Questionnaire',
+        'pessoal/meus-epis': 'PpeDelivery',
       };
 
-      // Try to match web path patterns: /section/page/detalhes/id
-      if (pathSegments.length >= 4) {
+      // Special cases for 3-segment web paths that the generic 2-segment
+      // lookup would mis-parse (e.g. /estoque/pedidos/agendamentos/detalhes/:id
+      // would match 'estoque/pedidos' → Order with id='agendamentos').
+      if (pathSegments.length >= 3) {
+        const twoKey = `${pathSegments[0]}/${pathSegments[1]}`.toLowerCase();
+        const seg2 = pathSegments[2]?.toLowerCase();
+        const sub = pathSegments[3];
+        const subId = sub === 'detalhes' || sub === 'details' ? pathSegments[4] : sub;
+
+        // Order/Maintenance schedule pages
+        if (seg2 === 'agendamentos') {
+          const SCHEDULE_ENTITY: Record<string, keyof typeof ROUTE_MAP> = {
+            'estoque/pedidos': 'OrderSchedule',
+            'estoque/manutencao': 'MaintenanceSchedule',
+          };
+          const scheduleEntity = SCHEDULE_ENTITY[twoKey];
+          if (scheduleEntity) {
+            const scheduleRoute = ROUTE_MAP[scheduleEntity];
+            if (subId) {
+              console.log('[Deep Link] Schedule web path matched:', { twoKey, scheduleEntity, id: subId });
+              return {
+                route: fillRouteParam(scheduleRoute, subId),
+                params: { id: subId },
+                requiresAuth: true,
+              };
+            }
+            // No id — fall back to the agendamentos list screen
+            const scheduleListRoute = scheduleRoute.replace(/\/detalhes\/\[[^\]]+\]$/, '');
+            console.log('[Deep Link] Schedule web path matched (no id, list):', { twoKey, scheduleListRoute });
+            return { route: scheduleListRoute, requiresAuth: true };
+          }
+        }
+
+        // PPE delivery admin pages: /estoque/epi/entregas[/detalhes/:id]
+        if (`${twoKey}/${seg2}` === 'estoque/epi/entregas') {
+          if (subId) {
+            console.log('[Deep Link] PPE delivery web path matched:', { id: subId });
+            return {
+              route: `/(tabs)/estoque/epi/entregas/detalhes/${subId}`,
+              params: { id: subId },
+              requiresAuth: true,
+            };
+          }
+          return { route: '/(tabs)/estoque/epi/entregas', requiresAuth: true };
+        }
+      }
+
+      // Try to match web path patterns: /section/page[/detalhes/:id | /:id]
+      if (pathSegments.length >= 2) {
         const webPathKey = `${pathSegments[0]}/${pathSegments[1]}`;
         const entityType = WEB_PATH_TO_ENTITY[webPathKey.toLowerCase()];
 
         if (entityType) {
-          // For /section/page/detalhes/id format, ID is at index 3
-          const id = pathSegments[3];
-          if (id) {
-            const route = ROUTE_MAP[entityType];
+          const route = ROUTE_MAP[entityType];
+          // The literal 'detalhes'/'details' segment is NOT the id —
+          // for /section/page/detalhes/:id the id is at index 3.
+          const sub = pathSegments[2];
+          const id = sub === 'detalhes' || sub === 'details' ? pathSegments[3] : sub;
+
+          if (id && route.includes('[')) {
             console.log('[Deep Link] Web path pattern matched:', { webPathKey, entityType, id });
             return {
               route: fillRouteParam(route, id),
@@ -647,14 +773,31 @@ export function parseDeepLink(url: string): ParsedDeepLink {
               requiresAuth: true,
             };
           }
+
+          // No id (or static route): navigate to the list/personal screen
+          if (!route.includes('[')) {
+            console.log('[Deep Link] Web path matched (static route):', { webPathKey, entityType, route });
+            return { route, requiresAuth: true };
+          }
+
+          // Detail route but no id in the path — fall back to the parent list screen
+          const listRoute = route.replace(/\/detalhes\/\[[^\]]+\]$/, '');
+          if (!listRoute.includes('[')) {
+            console.log('[Deep Link] Web path matched (no id, parent list):', { webPathKey, entityType, listRoute });
+            return { route: listRoute, requiresAuth: true };
+          }
         }
       }
 
-      // Fallback: Try to match simpler path patterns (/section/entity/id)
+      // Fallback: Try to match simpler path patterns (/section/entity/id or /section/entity/detalhes/id)
       if (pathSegments.length >= 2) {
         const section = pathSegments[0]; // e.g., 'producao', 'estoque', 'inventory'
         const entityPath = pathSegments[1]; // e.g., 'tasks', 'orders'
-        const id = pathSegments[2]; // entity ID
+        // The literal 'detalhes'/'details' segment is NOT the id
+        const id =
+          pathSegments[2] === 'detalhes' || pathSegments[2] === 'details'
+            ? pathSegments[3]
+            : pathSegments[2]; // entity ID
 
         // Try to find matching route
         const entityType = ENTITY_ALIAS_MAP[entityPath.toLowerCase()];
@@ -870,4 +1013,180 @@ export function generateUniversalLink(entityType: keyof typeof ROUTE_MAP, id: st
  */
 export function generateNotificationLink(entityType: keyof typeof ROUTE_MAP, id: string | number): string {
   return `ankaadesign://notification?type=${entityType}&id=${id}`;
+}
+
+// =====================================================
+// Notification Navigation Resolution (shared by push
+// handler, notification drawer and notification screens)
+// =====================================================
+
+/**
+ * Loose validation for URLs that are already expo-router paths
+ * (e.g. "/(tabs)/estoque/operacoes-externas/detalhes/abc").
+ * These can be pushed to the router directly without parsing.
+ */
+export function isExpoRouterPath(url: string): boolean {
+  return (
+    typeof url === 'string' &&
+    url.startsWith('/(tabs)') &&
+    !url.includes('://') &&
+    !/\s/.test(url) &&
+    // Must not contain an unfilled [param] segment
+    !url.includes('[')
+  );
+}
+
+/** True for http(s) URLs that are NOT our own web domain. */
+function isExternalHttpUrl(url: string): boolean {
+  return (
+    (url.startsWith('http://') || url.startsWith('https://')) &&
+    !url.includes('ankaadesign.com.br')
+  );
+}
+
+/**
+ * Extract a navigable mobile URL from a notification actionUrl.
+ * Handles multiple formats:
+ * 1. Direct mobile URL: "ankaadesign://task/123"
+ * 2. Expo-router path: "/(tabs)/estoque/pedidos/detalhes/123"
+ * 3. Embedded JSON: 'http://localhost:5173{"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}'
+ * 4. JSON object with mobile field: {"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}
+ */
+export function extractMobileUrlFromActionUrl(actionUrl: string): string | null {
+  try {
+    // Already a mobile deep link or an expo-router path
+    if (actionUrl.startsWith('ankaadesign://') || actionUrl.startsWith('/(tabs)')) {
+      return actionUrl;
+    }
+
+    // Try to find embedded JSON in the URL (API sends malformed data like "http://localhost:5173{...}")
+    const jsonStartIndex = actionUrl.indexOf('{');
+    if (jsonStartIndex !== -1) {
+      const jsonString = actionUrl.substring(jsonStartIndex);
+      try {
+        const parsed = JSON.parse(jsonString);
+        if (parsed.mobile && typeof parsed.mobile === 'string') {
+          return parsed.mobile;
+        }
+        if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+          return parsed.universalLink;
+        }
+      } catch {
+        // JSON parse failed, continue to other methods
+      }
+    }
+
+    // Try parsing the whole string as JSON
+    try {
+      const parsed = JSON.parse(actionUrl);
+      if (parsed.mobile && typeof parsed.mobile === 'string') {
+        return parsed.mobile;
+      }
+      if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+        return parsed.universalLink;
+      }
+    } catch {
+      // Not valid JSON
+    }
+
+    // Return original URL as fallback (might be a web path / universal link)
+    return actionUrl;
+  } catch (error) {
+    console.error('[Deep Link] Error extracting mobile URL from actionUrl:', error);
+    return null;
+  }
+}
+
+export interface NotificationNavSource {
+  /** Direct mobile URL set by the backend (data.mobileUrl / metadata.mobileUrl) */
+  mobileUrl?: string | null;
+  /** Entity type from notification data/metadata (e.g. 'TASK', 'Order') */
+  entityType?: string | null;
+  /** Entity id from notification data/metadata */
+  entityId?: string | null;
+  /** Parent task id (used to redirect SERVICE_ORDER notifications to the Task screen) */
+  taskId?: string | null;
+  /** Raw actionUrl (may contain embedded JSON) */
+  actionUrl?: string | null;
+}
+
+export type ResolvedNotificationNav =
+  | { kind: 'route'; route: string }
+  | { kind: 'external'; url: string };
+
+/**
+ * Resolves where a notification tap should navigate.
+ *
+ * Priority order:
+ * 1. Explicit expo-router mobileUrl ("/(tabs)/...") — most specific, pushed as-is.
+ * 2. entityType + entityId mapping via ENTITY_ALIAS_MAP/ROUTE_MAP
+ *    (SERVICE_ORDER redirects to the parent Task when taskId is available).
+ * 3. mobileUrl parsed as a deep link (custom scheme / universal link).
+ * 4. actionUrl: extracted mobile URL (handles embedded JSON blobs), accepted
+ *    directly when it is an expo-router path, otherwise parsed as a deep link.
+ *
+ * Returns null when nothing navigable was found — callers decide the fallback.
+ */
+export function resolveNotificationNavigation(source: NotificationNavSource): ResolvedNotificationNav | null {
+  const { mobileUrl, taskId, actionUrl } = source;
+
+  // Priority 1: explicit expo-router path provided by the API.
+  // This is MORE specific than the generic entity mapping (e.g. warnings:
+  // entity map sends employees to the ADMIN warnings screen while mobileUrl
+  // carries "/(tabs)/pessoal/minhas-advertencias/detalhes/:id").
+  if (mobileUrl && isExpoRouterPath(mobileUrl)) {
+    return { kind: 'route', route: mobileUrl };
+  }
+
+  // Priority 2: entityType + entityId mapping
+  if (source.entityType && source.entityId) {
+    let entityType = source.entityType;
+    let entityId = source.entityId;
+
+    // SERVICE_ORDER notifications navigate to the parent Task when possible —
+    // service orders are viewed within the task on mobile.
+    if (
+      (entityType === 'SERVICE_ORDER' || entityType === 'ServiceOrder' || entityType === 'SERVICEORDER') &&
+      taskId
+    ) {
+      entityType = 'TASK';
+      entityId = taskId;
+    }
+
+    const mappedEntityType = ENTITY_ALIAS_MAP[entityType] || ENTITY_ALIAS_MAP[entityType.toLowerCase()];
+    const route = mappedEntityType ? ROUTE_MAP[mappedEntityType] : undefined;
+    if (route) {
+      return { kind: 'route', route: fillRouteParam(route, entityId) };
+    }
+  }
+
+  // Priority 3: mobileUrl parsed as a deep link
+  if (mobileUrl && typeof mobileUrl === 'string' && mobileUrl.length > 0) {
+    if (isExternalHttpUrl(mobileUrl)) {
+      return { kind: 'external', url: mobileUrl };
+    }
+    const parsed = parseDeepLink(mobileUrl);
+    if (parsed.route && parsed.route !== '/(tabs)') {
+      return { kind: 'route', route: parsed.route };
+    }
+  }
+
+  // Priority 4: actionUrl (may contain embedded JSON with the mobile URL)
+  if (actionUrl && typeof actionUrl === 'string' && actionUrl.length > 0) {
+    const extracted = extractMobileUrlFromActionUrl(actionUrl);
+    if (extracted) {
+      if (isExpoRouterPath(extracted)) {
+        return { kind: 'route', route: extracted };
+      }
+      if (isExternalHttpUrl(extracted)) {
+        return { kind: 'external', url: extracted };
+      }
+      const parsed = parseDeepLink(extracted);
+      if (parsed.route && parsed.route !== '/(tabs)') {
+        return { kind: 'route', route: parsed.route };
+      }
+    }
+  }
+
+  return null;
 }

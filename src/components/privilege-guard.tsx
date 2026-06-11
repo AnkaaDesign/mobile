@@ -44,7 +44,8 @@ export function PrivilegeGuard({
     : requiredPrivilege;
 
   const fallback: PrivilegeGateFallback = showUnauthorized ? "unauthorized" : "redirect";
-  const redirectTo = fallbackScreen ? mobileRoute(fallbackScreen) : mobileRoute(routes.home);
+  // `as any` avoids unioning two AppRoute values (TS2590 — generated Href union too complex)
+  const redirectTo = fallbackScreen ? mobileRoute(fallbackScreen) : (mobileRoute(routes.home) as any);
 
   return (
     <PrivilegeGate required={required} fallback={fallback} redirectTo={redirectTo}>

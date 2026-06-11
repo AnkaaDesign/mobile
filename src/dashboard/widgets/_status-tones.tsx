@@ -27,7 +27,7 @@ import {
   INSTALLMENT_STATUS,
   BANK_SLIP_STATUS,
   TASK_QUOTE_STATUS,
-  COMMISSION_STATUS,
+  BONIFICATION_STATUS,
   STOCK_LEVEL,
 } from "@/constants/enums";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
@@ -236,20 +236,20 @@ export function toneForTaskQuoteStatus(
   }
 }
 
-// ---------- Commission (production — billing commission tier) ----------
+// ---------- Bonification (production — task bonification tier) ----------
 
-export function toneForCommissionStatus(
-  status: COMMISSION_STATUS,
+export function toneForBonificationStatus(
+  status: BONIFICATION_STATUS,
   isDark: boolean,
 ): Tone {
   switch (status) {
-    case COMMISSION_STATUS.NO_COMMISSION:
+    case BONIFICATION_STATUS.NO_BONIFICATION:
       return tone("gray", isDark);
-    case COMMISSION_STATUS.PARTIAL_COMMISSION:
+    case BONIFICATION_STATUS.PARTIAL_BONIFICATION:
       return tone("amber", isDark);
-    case COMMISSION_STATUS.FULL_COMMISSION:
+    case BONIFICATION_STATUS.FULL_BONIFICATION:
       return tone("green", isDark);
-    case COMMISSION_STATUS.SUSPENDED_COMMISSION:
+    case BONIFICATION_STATUS.SUSPENDED_BONIFICATION:
       return tone("red", isDark);
     default:
       return NEUTRAL;

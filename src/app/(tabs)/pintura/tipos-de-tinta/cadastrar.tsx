@@ -56,7 +56,8 @@ export default function CreatePaintTypeScreen() {
       const newId = (result as any)?.data?.id || (result as any)?.id;
       return newId
         ? mobileRoute(routes.painting.paintTypes.details(newId))
-        : mobileRoute(routes.painting.paintTypes.root);
+        : // `as any` avoids unioning two AppRoute values (TS2590 — generated Href union too complex)
+          (mobileRoute(routes.painting.paintTypes.root) as any);
     },
     successAction: "replace",
     cancelFallback: mobileRoute(routes.painting.paintTypes.root),

@@ -45,7 +45,7 @@ const ACTIVITY_TYPE_COLORS: Record<string, { bg: string; icon: string; text: str
     icon: "blue",
     text: "foreground",
   },
-  [ACTIVITY_REASON.EXTERNAL_WITHDRAWAL]: {
+  [ACTIVITY_REASON.EXTERNAL_OPERATION]: {
     bg: "red",
     icon: "red",
     text: "foreground",

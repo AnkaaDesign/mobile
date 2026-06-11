@@ -102,7 +102,7 @@ export function ServicesTable({ taskId, maxHeight = 400 }: ServicesTableProps) {
   }, []);
 
   const handleServiceOrderPress = (serviceOrderId: string) => {
-    router.push(mobileRoute(routes.production.serviceOrders.details(serviceOrderId)));
+    router.push(mobileRoute(routes.production.serviceOrders.details(serviceOrderId)) as any);
   };
 
   // Don't show if no service orders and not loading

@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useResponsible } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { ResponsibleRole, RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
@@ -53,6 +53,8 @@ export default function ResponsibleDetailScreen() {
       query={query as any}
       icon={IconUser}
       title={(r) => r.name ?? "Responsável"}
+      privilege={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL] }}
+      deletePrivilege={SECTOR_PRIVILEGES.ADMIN}
       editRoute={(r) => mobileRoute(routes.administration.responsibles.edit(r.id))}
       notFoundFallback={mobileRoute(routes.administration.responsibles.list)}
     >

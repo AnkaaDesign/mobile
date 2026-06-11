@@ -4,12 +4,24 @@ import { PositionForm } from "@/components/human-resources/position/form";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { usePosition } from "@/hooks/usePosition";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 // NOTE: PositionForm self-manages its mutation/navigation. Keeping this thin
 // wrapper around it (rather than wiring through <FormScreen>) preserves the
 // shared form's existing behavior; migrate to <FormScreen> when PositionForm
 // is refactored to expose a `flow`-driven surface.
 export default function PositionEditScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <PositionEditScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function PositionEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: positionResponse, isLoading, error, refetch } = usePosition(id!);
 

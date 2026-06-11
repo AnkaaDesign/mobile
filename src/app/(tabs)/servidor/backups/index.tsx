@@ -5,5 +5,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function BackupsIndex() {
   useScreenReady();
-  return <Redirect href={mobileRoute(routes.server.backups.list)} />;
+  return <Redirect href={mobileRoute(routes.server.backups.list) as any} />;
 }

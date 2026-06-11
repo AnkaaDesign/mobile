@@ -198,6 +198,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           router.push(`/estoque/emprestimos/editar/${borrow.id}`)
         },
         visible: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
+        canPerform: canEditBorrows,
       },
       {
         key: 'return',
@@ -218,6 +219,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           })
         },
         visible: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
+        canPerform: canEditBorrows,
       },
       {
         key: 'mark-lost',
@@ -237,6 +239,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           })
         },
         visible: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
+        canPerform: canEditBorrows,
       },
       {
         key: 'delete',
@@ -250,6 +253,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         onPress: async (borrow, _, { delete: deleteBorrow } = {}) => {
           await deleteBorrow?.(borrow.id)
         },
+        canPerform: canEditBorrows,
       },
     ],
   },
@@ -284,7 +288,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
             const response = await getItems({
               where: {
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
-                category: { type: 'TOOL' },
+                isBorrowable: true, // capability-fields contract
               },
               orderBy: { name: 'asc' },
               limit: pageSize,
@@ -401,6 +405,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           }))
           await batchUpdateAsync?.({ borrows: updates })
         },
+        canPerform: canEditBorrows,
       },
       {
         key: 'mark-lost',
@@ -420,6 +425,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           }))
           await batchUpdateAsync?.({ borrows: updates })
         },
+        canPerform: canEditBorrows,
       },
       {
         key: 'delete',
@@ -433,6 +439,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ borrowIds: Array.from(ids) })
         },
+        canPerform: canEditBorrows,
       },
     ],
   },

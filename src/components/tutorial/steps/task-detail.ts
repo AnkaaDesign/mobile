@@ -20,12 +20,12 @@ export const taskDetailSteps: TutorialStep[] = [
     placement: "bottom",
   },
   {
-    id: "task-commission-badge",
+    id: "task-bonification-badge",
     kind: "showcase",
     scene: "task-detail",
-    highlight: "taskCommissionBadge",
-    title: "Comissão",
-    description: "O tipo de comissão da tarefa: integral, parcial, suspensa ou sem comissão.",
+    highlight: "taskBonificationBadge",
+    title: "Bonificação",
+    description: "O tipo de bonificação da tarefa: integral, parcial, suspensa ou sem bonificação.",
     placement: "top",
   },
   {

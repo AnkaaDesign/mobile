@@ -10,7 +10,7 @@ import { DetailScreen } from "@/components/screens/detail-screen";
 import { useTheme } from "@/lib/theme";
 import { useItem, useOrderSchedules, useOrderScheduleProjection } from "@/hooks";
 import { mobileRoute } from "@/constants/routes.types";
-import { CHANGE_LOG_ENTITY_TYPE, routes } from "@/constants";
+import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import {
   ActivitiesTable,
@@ -146,6 +146,8 @@ export default function ItemDetailScreen() {
       query={query as any}
       icon={IconPackage}
       title={(i) => i.name ?? "Produto"}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      deletePrivilege={SECTOR_PRIVILEGES.ADMIN}
       editRoute={(i) => mobileRoute(routes.inventory.products.edit(i.id))}
       notFoundFallback={mobileRoute(routes.inventory.products.root)}
     >

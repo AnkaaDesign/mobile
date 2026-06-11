@@ -11,7 +11,8 @@ import {
   type ObservationUpdateFormData,
 } from "@/schemas";
 import { ThemedText, Card, Input, SimpleFormField } from "@/components/ui";
-import { IconAlertCircle } from "@tabler/icons-react-native";
+import { Alert as AlertBanner, AlertDescription } from "@/components/ui/alert";
+import { IconAlertCircle, IconAlertTriangle } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
@@ -86,7 +87,6 @@ function EditObservationScreenInner() {
           SECTOR_PRIVILEGES.ADMIN,
           SECTOR_PRIVILEGES.FINANCIAL,
           SECTOR_PRIVILEGES.COMMERCIAL,
-          SECTOR_PRIVILEGES.PRODUCTION,
           SECTOR_PRIVILEGES.WAREHOUSE,
           SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
         ],
@@ -95,6 +95,13 @@ function EditObservationScreenInner() {
       submitLabel="Salvar Alterações"
       loadQuery={query as any}
     >
+      {/* Privacy warning - observation data is visible to the whole company */}
+      <AlertBanner variant="warning" icon={IconAlertTriangle} style={{ marginBottom: spacing.md }}>
+        <AlertDescription>
+          Ao enviar, os dados desta observação (descrição e arquivos) serão compartilhados com todos os usuários da empresa.
+        </AlertDescription>
+      </AlertBanner>
+
       <Card style={styles.headerCard}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>

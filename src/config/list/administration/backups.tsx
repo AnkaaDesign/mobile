@@ -9,7 +9,11 @@ import type { ListConfig } from '@/components/list/types'
 import type { BackupMetadata } from '@/api-client/backup'
 import { backupApi } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
-import { canEditUsers } from '@/utils/permissions/entity-permissions'
+import { hasAnyPrivilege } from '@/utils'
+import { SECTOR_PRIVILEGES } from '@/constants'
+
+// API: backup/server operations = ADMIN-only (decision 10)
+const canManageBackups = (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN])
 
 // Status labels
 const STATUS_LABELS: Record<string, string> = {
@@ -214,6 +218,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
             await (del as any).mutateAsync(backup.id)
           }
         },
+        canPerform: canManageBackups,
       },
     ],
   },
@@ -320,7 +325,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
     create: {
       label: 'Novo Backup',
       route: '/servidor/backups/cadastrar',
-      canCreate: canEditUsers,
+      canCreate: canManageBackups,
     },
     bulk: [
       {
@@ -359,6 +364,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
             )
           }
         },
+        canPerform: canManageBackups,
       },
     ],
   },

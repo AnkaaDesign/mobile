@@ -1,9 +1,11 @@
 import type { ListConfig } from '@/components/list/types'
 import type { ServiceOrder } from '@/types'
-import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
+import { canEditServiceOrders, canDeleteTasks } from '@/utils/permissions/entity-permissions'
+import { hasAnyPrivilege } from '@/utils'
 import {
   SERVICE_ORDER_STATUS,
   SERVICE_ORDER_STATUS_LABELS,
+  SECTOR_PRIVILEGES,
 } from '@/constants'
 
 export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
@@ -114,7 +116,7 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
-        canPerform: canEditTasks,
+        canPerform: canEditServiceOrders,
         onPress: (order, router) => {
           router.push(`/producao/ordens-de-servico/editar/${order.id}`)
         },
@@ -218,7 +220,15 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
     create: {
       label: 'Cadastrar Ordem de Serviço',
       route: '/producao/ordens-de-servico/cadastrar',
-      canCreate: canEditTasks,
+      // API: POST /service-orders has no LOGISTIC (service-order.controller.ts:108-116)
+      canCreate: (user: any) =>
+        hasAnyPrivilege(user, [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.DESIGNER,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ]),
     },
     // Bulk "Atualizar Status" removed: bulk onPress only receives (ids, mutations) and
     // cannot render a status picker, so the placeholder sent empty updates. Re-add once
@@ -236,6 +246,8 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ serviceOrderIds: Array.from(ids) })
         },
+        // API: service-order batch delete = FINANCIAL+COMMERCIAL+ADMIN
+        canPerform: (user) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN]),
       },
     ],
   },

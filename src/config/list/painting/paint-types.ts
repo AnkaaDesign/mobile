@@ -171,6 +171,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ paintTypeIds: Array.from(ids) })
         },
+        canPerform: canDeletePaints,
       },
     ],
   },

@@ -1,7 +1,11 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Notification } from '@/types'
-import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE } from '@/constants/enums'
+import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE, SECTOR_PRIVILEGES } from '@/constants/enums'
+import { hasAnyPrivilege } from '@/utils'
 import { canEditUsers } from '@/utils/permissions/entity-permissions'
+
+// API: admin-wide notification operations = ADMIN (decision 11)
+const canManageNotifications = (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN])
 
 const IMPORTANCE_LABELS: Record<string, string> = {
   LOW: 'Baixa',
@@ -122,6 +126,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         icon: 'pencil',
         variant: 'default',
         visible: (notification) => !notification.sentAt,
+        canPerform: canManageNotifications,
         onPress: (notification, router) => {
           router.push(`/administracao/notificacoes/editar/${notification.id}`)
         },
@@ -138,6 +143,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         onPress: async (notification, _, mutations) => {
           await mutations?.delete?.(notification.id)
         },
+        canPerform: canManageNotifications,
       },
     ],
   },
@@ -234,6 +240,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ notificationIds: Array.from(ids) })
         },
+        canPerform: canManageNotifications,
       },
     ],
   },

@@ -75,7 +75,8 @@ function CreatePPEScheduleScreenInner() {
     successRoute: (result) =>
       result.id
         ? mobileRoute(routes.inventory.ppe.schedules.details(result.id))
-        : mobileRoute(routes.inventory.ppe.schedules.root),
+        : // `as any` avoids unioning two AppRoute values (TS2590 — generated Href union too complex)
+          (mobileRoute(routes.inventory.ppe.schedules.root) as any),
     cancelFallback: mobileRoute(routes.inventory.ppe.schedules.root),
   });
 

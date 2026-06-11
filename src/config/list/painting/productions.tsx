@@ -4,7 +4,8 @@ import { PaintPreview } from '@/components/painting/preview/painting-preview'
 import { fontSize, fontWeight } from '@/constants/design-system'
 import type { ListConfig } from '@/components/list/types'
 import type { PaintProduction } from '@/types'
-import { canEditPaintProductions, canDeletePaintProductions } from '@/utils/permissions/entity-permissions'
+// Paint productions hit paint endpoints (WAREHOUSE+ADMIN); canEdit/canDeletePaints carry that role set
+import { canEditPaints, canDeletePaints } from '@/utils/permissions/entity-permissions'
 
 const styles = StyleSheet.create({
   paintCell: {
@@ -153,7 +154,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
-        canPerform: canEditPaintProductions,
+        canPerform: canEditPaints,
         onPress: (production, router) => {
           router.push(`/pintura/producoes/editar/${production.id}`)
         },
@@ -163,7 +164,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
-        canPerform: canDeletePaintProductions,
+        canPerform: canDeletePaints,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (production) => {
@@ -355,6 +356,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ paintProductionIds: Array.from(ids) })
         },
+        canPerform: canDeletePaints,
       },
     ],
   },

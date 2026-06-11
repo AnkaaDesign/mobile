@@ -1,7 +1,11 @@
 import type { ListConfig } from '@/components/list/types'
 import type { File } from '@/types'
-import { formatFileSize} from '@/utils'
+import { formatFileSize, hasAnyPrivilege } from '@/utils'
 import { canEditUsers } from '@/utils/permissions/entity-permissions'
+import { SECTOR_PRIVILEGES } from '@/constants'
+
+// API: file deletes are admin-tight (uploader-or-ADMIN; list actions can't check ownership)
+const canDeleteFiles = (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN])
 import { fontSize, fontWeight } from '@/constants/design-system'
 import { View, StyleSheet } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
@@ -170,6 +174,7 @@ export const filesListConfig: ListConfig<File> = {
         onPress: async (file, _, mutations) => {
           await mutations?.delete?.(file.id)
         },
+        canPerform: canDeleteFiles,
       },
     ],
   },
@@ -314,6 +319,7 @@ export const filesListConfig: ListConfig<File> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ fileIds: Array.from(ids) })
         },
+        canPerform: canDeleteFiles,
       },
     ],
   },

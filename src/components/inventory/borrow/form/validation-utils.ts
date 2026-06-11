@@ -1,5 +1,5 @@
 import type { Item, User, Borrow } from "@/types";
-import { BORROW_STATUS, SECTOR_PRIVILEGES, ITEM_CATEGORY_TYPE } from "@/constants";
+import { BORROW_STATUS, SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
 
 /**
@@ -178,11 +178,11 @@ export function checkItemBorrowRestrictions(item: Item | null, user: User | null
     return null; // Basic validation handled elsewhere
   }
 
-  // Check if item is a TOOL (only tools can be borrowed)
-  if (item.category?.type !== ITEM_CATEGORY_TYPE.TOOL) {
+  // Check if item is borrowable (server-enforced on borrow create as well)
+  if (!item.isBorrowable) {
     return {
       field: "item",
-      message: "Apenas ferramentas podem ser emprestadas",
+      message: "Apenas itens emprestáveis podem ser emprestados",
       type: "business",
     };
   }
@@ -197,7 +197,7 @@ export function checkItemBorrowRestrictions(item: Item | null, user: User | null
   }
 
   // Check if item is a PPE and user has PPE configuration
-  if (item.category?.type === ITEM_CATEGORY_TYPE.PPE as any) {
+  if (item.ppeType != null) {
     // Check if user has PPE size configured if required
     if (!user.ppeSize) {
       return {

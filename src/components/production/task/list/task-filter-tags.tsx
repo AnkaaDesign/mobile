@@ -203,7 +203,7 @@ export function TaskFilterTags({
       hasObservation: "Tem observação",
       hasArtworks: "Tem artes",
       hasPaints: "Tem tintas",
-      hasCommissions: "Tem comissões",
+      hasBonifications: "Tem bonificações",
       hasServiceOrders: "Tem serviços",
       hasAirbrushing: "Tem aerografia",
       hasBudget: "Tem orçamento",
