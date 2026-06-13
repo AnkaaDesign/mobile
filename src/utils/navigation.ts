@@ -1,11 +1,11 @@
 // packages/utils/src/navigation.ts
 // Navigation utility functions moved from constants package
 
-import { SECTOR_PRIVILEGES, TEAM_LEADER, TABLER_ICONS, USER_STATUS, type MenuItem } from '../constants';
+import { SECTOR_PRIVILEGES, TEAM_LEADER, TABLER_ICONS, CONTRACT_TYPE, type MenuItem } from '../constants';
 
 // Define minimal user interface for navigation
 export interface NavigationUser {
-  status?: string;
+  currentContractType?: string | null;
   sector?: {
     privileges?: SECTOR_PRIVILEGES;
   };
@@ -83,7 +83,7 @@ export function getFilteredMenuForUser(
 
   // Apply bonifiable filtering - hide menu items that require bonifiable position
   // User must be EFFECTED and have a bonifiable position to see bonus-related menus
-  const isBonifiable = user?.status === USER_STATUS.EFFECTED && (user?.position?.bonifiable ?? false);
+  const isBonifiable = user?.currentContractType === CONTRACT_TYPE.EFFECTED && (user?.position?.bonifiable ?? false);
   filteredMenu = filterMenuByBonifiable(filteredMenu, isBonifiable);
 
   // Apply open-questionnaire filtering - hide menu items (e.g. Questionários)

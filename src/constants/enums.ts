@@ -32,6 +32,13 @@ export enum ORDER_STATUS {
   CANCELLED = "CANCELLED",
 }
 
+export enum ORDER_PAYMENT_STATUS {
+  NOT_REQUESTED = "NOT_REQUESTED",
+  REQUESTED = "REQUESTED",
+  AWAITING_PAYMENT = "AWAITING_PAYMENT",
+  PAID = "PAID",
+}
+
 export enum PAYMENT_METHOD {
   PIX = "PIX",
   BANK_SLIP = "BANK_SLIP",
@@ -55,6 +62,7 @@ export enum SECTOR_PRIVILEGES {
   PLOTTING = "PLOTTING",
   PRODUCTION_MANAGER = "PRODUCTION_MANAGER",
   AIRBRUSHING = "AIRBRUSHING",
+  ACCOUNTING = "ACCOUNTING",
 }
 
 /**
@@ -75,11 +83,30 @@ export enum GOAL_METRIC {
   TASKS_COMPLETED = "TASKS_COMPLETED",
 }
 
-export enum USER_STATUS {
+// The legal KIND of an employment bond (vínculo). Only meaningful for on-folha CLT-family types.
+export enum CONTRACT_TYPE {
   EXPERIENCE_PERIOD_1 = "EXPERIENCE_PERIOD_1",
   EXPERIENCE_PERIOD_2 = "EXPERIENCE_PERIOD_2",
   EFFECTED = "EFFECTED",
+  FIXED_TERM = "FIXED_TERM",
+  INTERMITTENT = "INTERMITTENT",
+  APPRENTICE = "APPRENTICE",
+  TEMPORARY = "TEMPORARY",
+}
+
+// The LIFECYCLE status (situação) of an employment bond. Orthogonal to CONTRACT_TYPE.
+export enum CONTRACT_STATUS {
+  ACTIVE = "ACTIVE",
   DISMISSED = "DISMISSED",
+}
+
+// Worker CATEGORY — gates payroll/folha inclusion (eSocial S-2200 vs S-2300 split).
+export enum EMPLOYEE_TYPE {
+  CLT = "CLT",
+  INTERN = "INTERN",
+  TERCEIRIZADO = "TERCEIRIZADO",
+  PJ = "PJ",
+  AUTONOMOUS = "AUTONOMOUS",
 }
 
 export enum REGISTRATION_STATUS {
@@ -164,12 +191,11 @@ export const STREET_TYPE_MIGRATION_MAP = {
   OUTRO: "OTHER",
 } as const;
 
-// Helper constants for common user status queries
-export const ACTIVE_USER_STATUSES = [
-  USER_STATUS.EXPERIENCE_PERIOD_1,
-  USER_STATUS.EXPERIENCE_PERIOD_2,
-  USER_STATUS.EFFECTED,
-] as const;
+// Worker categories that belong on the CLT payroll (folha).
+export const PAYROLL_EMPLOYEE_TYPES = [EMPLOYEE_TYPE.CLT] as const;
+
+// Contract types eligible for bonification (only the permanent, effected bond).
+export const BONIFIABLE_CONTRACT_TYPES = [CONTRACT_TYPE.EFFECTED] as const;
 
 export enum TASK_STATUS {
   PREPARATION = "PREPARATION",
@@ -868,6 +894,14 @@ export enum ENTITY_TYPE {
   USER = "USER",
   VACATION = "VACATION",
   VERIFICATION = "VERIFICATION",
+  SALARY_ADJUSTMENT = "SALARY_ADJUSTMENT",
+  USER_POSITION_HISTORY = "USER_POSITION_HISTORY",
+  BENEFIT = "BENEFIT",
+  USER_BENEFIT = "USER_BENEFIT",
+  ADMISSION = "ADMISSION",
+  TERMINATION = "TERMINATION",
+  MEDICAL_EXAM = "MEDICAL_EXAM",
+  LEAVE = "LEAVE",
 }
 
 export enum CHANGE_ACTION {
@@ -1491,6 +1525,14 @@ export enum CHANGE_LOG_ENTITY_TYPE {
   VACATION = "VACATION",
   VERIFICATION = "VERIFICATION",
   WARNING = "WARNING",
+  SALARY_ADJUSTMENT = "SALARY_ADJUSTMENT",
+  USER_POSITION_HISTORY = "USER_POSITION_HISTORY",
+  BENEFIT = "BENEFIT",
+  USER_BENEFIT = "USER_BENEFIT",
+  ADMISSION = "ADMISSION",
+  TERMINATION = "TERMINATION",
+  MEDICAL_EXAM = "MEDICAL_EXAM",
+  LEAVE = "LEAVE",
 }
 
 // Alias for Prisma compatibility

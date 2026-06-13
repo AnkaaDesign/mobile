@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconChevronRight, IconUser } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
-import { routes, USER_STATUS_LABELS } from "@/constants";
+import { routes, CONTRACT_TYPE_LABELS } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { useTheme } from "@/lib/theme";
@@ -66,10 +66,10 @@ export function EmployeesCard({ position }: EmployeesCardProps) {
                   </View>
                 </View>
                 <View style={styles.employeeActions}>
-                  {employee.status && (
+                  {employee.currentContractType && (
                     <Badge variant="secondary" style={styles.statusBadge}>
                       <ThemedText style={StyleSheet.flatten([styles.statusText, { color: colors.foreground }])}>
-                        {USER_STATUS_LABELS[employee.status]}
+                        {CONTRACT_TYPE_LABELS[employee.currentContractType]}
                       </ThemedText>
                     </Badge>
                   )}

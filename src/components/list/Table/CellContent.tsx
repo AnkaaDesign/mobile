@@ -8,7 +8,7 @@ import { getCurrentApiUrl } from '@/api-client'
 import { rewriteCdnUrl } from '@/utils/file-viewer-utils'
 import {
   ORDER_STATUS_LABELS,
-  USER_STATUS_LABELS,
+  CONTRACT_TYPE_LABELS,
   TASK_STATUS_LABELS,
   MAINTENANCE_STATUS_LABELS,
   EXTERNAL_OPERATION_STATUS_LABELS,
@@ -105,7 +105,7 @@ const cellStyles = StyleSheet.create({
 // Entity label maps for badge display
 const ENTITY_LABEL_MAPS: Record<string, Record<string, string>> = {
   ORDER: ORDER_STATUS_LABELS,
-  USER: USER_STATUS_LABELS,
+  USER: CONTRACT_TYPE_LABELS,
   TASK: TASK_STATUS_LABELS,
   MAINTENANCE: MAINTENANCE_STATUS_LABELS,
   EXTERNAL_OPERATION: EXTERNAL_OPERATION_STATUS_LABELS,

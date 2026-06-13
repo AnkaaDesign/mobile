@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { useUsers, usePositions, useScreenReady} from '@/hooks';
 import { bonusKeys } from "@/hooks/queryKeys";
 import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE } from "@/constants";
 import { bonusService } from "@/api-client";
 import type { SimulateResponse } from "@/api-client/services/bonus";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -87,7 +87,7 @@ export default function BonusSimulationScreen() {
   // Fetch contracted users with bonifiable positions
   const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useUsers({
     where: {
-      status: USER_STATUS.EFFECTED,
+      currentContractType: CONTRACT_TYPE.EFFECTED,
       secullumEmployeeId: { not: null },
     },
     include: {

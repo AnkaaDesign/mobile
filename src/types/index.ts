@@ -12,6 +12,7 @@ export * from "./borrow";
 export * from "./changelog";
 export * from "./customer";
 export * from "./cut";
+export * from "./employment-contract";
 export * from "./ppe";
 export * from "./externalOperation";
 export * from "./file";

@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconAlertTriangle, IconBriefcase, IconBuilding, Icon
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_STATUS } from "@/constants";
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface TeamMemberFilters {
@@ -26,10 +26,12 @@ interface TeamMemberFilterDrawerContentProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: USER_STATUS.EXPERIENCE_PERIOD_1, label: "Experiência 1" },
-  { value: USER_STATUS.EXPERIENCE_PERIOD_2, label: "Experiência 2" },
-  { value: USER_STATUS.EFFECTED, label: "Efetivado" },
-  { value: USER_STATUS.DISMISSED, label: "Desligado" },
+  { value: CONTRACT_TYPE.EXPERIENCE_PERIOD_1, label: "Experiência 1" },
+  { value: CONTRACT_TYPE.EXPERIENCE_PERIOD_2, label: "Experiência 2" },
+  { value: CONTRACT_TYPE.EFFECTED, label: "Efetivado" },
+  { value: CONTRACT_TYPE.APPRENTICE, label: "Aprendiz" },
+  { value: CONTRACT_TYPE.INTERMITTENT, label: "Intermitente" },
+  { value: CONTRACT_STATUS.DISMISSED, label: "Desligado" },
 ];
 
 export function TeamMemberFilterDrawerContent({

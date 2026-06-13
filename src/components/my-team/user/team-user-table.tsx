@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_STATUS } from "@/constants";
 import { formatDate } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
@@ -22,13 +22,15 @@ interface TeamUserTableProps {
 // Helper function to get status colors
 const getStatusColor = (status: string) => {
   switch (status) {
-    case USER_STATUS.EXPERIENCE_PERIOD_1:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_1:
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case USER_STATUS.EXPERIENCE_PERIOD_2:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_2:
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case USER_STATUS.EFFECTED:
+    case CONTRACT_TYPE.EFFECTED:
+    case CONTRACT_TYPE.APPRENTICE:
+    case CONTRACT_TYPE.INTERMITTENT:
       return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case USER_STATUS.DISMISSED:
+    case CONTRACT_STATUS.DISMISSED:
       return { background: badgeColors.error.background, text: badgeColors.error.text };
     default:
       return { background: badgeColors.muted.background, text: badgeColors.muted.text };
@@ -38,13 +40,17 @@ const getStatusColor = (status: string) => {
 // Helper function to get status label
 const getStatusLabel = (status: string) => {
   switch (status) {
-    case USER_STATUS.EXPERIENCE_PERIOD_1:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_1:
       return "Experiência 1/2";
-    case USER_STATUS.EXPERIENCE_PERIOD_2:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_2:
       return "Experiência 2/2";
-    case USER_STATUS.EFFECTED:
+    case CONTRACT_TYPE.EFFECTED:
       return "Efetivado";
-    case USER_STATUS.DISMISSED:
+    case CONTRACT_TYPE.APPRENTICE:
+      return "Aprendiz";
+    case CONTRACT_TYPE.INTERMITTENT:
+      return "Intermitente";
+    case CONTRACT_STATUS.DISMISSED:
       return "Desligado";
     default:
       return status;
@@ -58,8 +64,12 @@ export const TeamUserTable = React.memo<TeamUserTableProps>(
     // Row component
     const renderRow = useCallback(
       ({ item }: { item: User }) => {
-        const statusColor = getStatusColor(item.status);
-        const statusLabel = getStatusLabel(item.status);
+        const statusValue =
+          item.currentContractStatus === CONTRACT_STATUS.DISMISSED
+            ? CONTRACT_STATUS.DISMISSED
+            : item.currentContractType ?? "";
+        const statusColor = getStatusColor(statusValue);
+        const statusLabel = getStatusLabel(statusValue);
 
         const handlePress = () => {
           if (onUserPress) {
@@ -138,7 +148,7 @@ export const TeamUserTable = React.memo<TeamUserTableProps>(
                 <View style={styles.dateSection}>
                   <Icon name="calendar" size="xs" variant="muted" />
                   <ThemedText style={styles.dateText}>
-                    Admissão: {formatDate(item.exp1StartAt)}
+                    Admissão: {formatDate(item.currentContract?.admissionDate ?? item.currentContract?.exp1StartAt)}
                   </ThemedText>
                 </View>
               </View>

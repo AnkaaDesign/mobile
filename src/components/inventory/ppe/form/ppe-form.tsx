@@ -34,6 +34,18 @@ interface PPEFormProps {
   onCancel?: () => void;
 }
 
+// An EPI must always carry a ppeType — it IS the PPE identity
+// (item.ppeType != null) under the capability-fields contract, so the
+// EPI form enforces it even though the shared item schemas keep it optional.
+const epiCreateSchema = itemCreateSchema.refine((data) => data.ppeType != null, {
+  message: "Tipo de EPI é obrigatório",
+  path: ["ppeType"],
+});
+const epiUpdateSchema = itemUpdateSchema.refine((data) => data.ppeType !== null, {
+  message: "Tipo de EPI é obrigatório",
+  path: ["ppeType"],
+});
+
 export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
   const router = useRouter();
   const nav = useNav();
@@ -48,7 +60,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
   });
 
   const form = useForm<ItemCreateFormData | ItemUpdateFormData>({
-    resolver: zodResolver(mode === "create" ? itemCreateSchema : itemUpdateSchema),
+    resolver: zodResolver(mode === "create" ? epiCreateSchema : epiUpdateSchema),
     defaultValues:
       mode === "create"
         ? {
@@ -200,6 +212,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
           <FormRow>
             <FormFieldGroup
               label="Tipo de EPI"
+              required
               error={form.formState.errors.ppeType?.message}
             >
               <Controller
@@ -213,7 +226,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
                     placeholder="Selecione o tipo"
                     disabled={isLoading}
                     searchable={false}
-                    clearable
+                    clearable={false}
                     error={error?.message}
                   />
                 )}

@@ -1,5 +1,5 @@
 import type { Item, User, Borrow } from "@/types";
-import { BORROW_STATUS, SECTOR_PRIVILEGES } from "@/constants";
+import { BORROW_STATUS, SECTOR_PRIVILEGES, CONTRACT_STATUS } from "@/constants";
 import { hasPrivilege } from "@/utils";
 
 /**
@@ -51,7 +51,7 @@ export function checkUserBorrowPermission(user: User | null): ValidationError | 
   }
 
   // Check if user is active
-  if (user.status !== ("ACTIVE" as any)) {
+  if (user.currentContractStatus !== CONTRACT_STATUS.ACTIVE) {
     return {
       field: "user",
       message: "Usuário inativo não pode fazer empréstimos",

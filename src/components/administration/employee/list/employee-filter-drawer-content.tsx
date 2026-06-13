@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { usePositions, useSectors } from "@/hooks";
-import { USER_STATUS, USER_STATUS_LABELS } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_TYPE_LABELS } from "@/constants";
 import type { UserGetManyFormData } from '../../../../schemas';
 
 interface EmployeeFilterDrawerContentProps {
@@ -45,7 +45,7 @@ export function EmployeeFilterDrawerContent({
   const [localFilters, setLocalFilters] = useState<FilterState>(() => {
     const where = filters.where || {};
     return {
-      statuses: where.status?.in || [],
+      statuses: where.currentContractType?.in || [],
       positionIds: where.positionId?.in || [],
       sectorIds: where.sectorId?.in || [],
     };
@@ -56,7 +56,7 @@ export function EmployeeFilterDrawerContent({
     const where: any = {};
 
     if (localFilters.statuses && localFilters.statuses.length > 0) {
-      where.status = { in: localFilters.statuses };
+      where.currentContractType = { in: localFilters.statuses };
     }
 
     if (localFilters.positionIds && localFilters.positionIds.length > 0) {
@@ -82,9 +82,9 @@ export function EmployeeFilterDrawerContent({
 
   const statusOptions = useMemo(
     () =>
-      Object.values(USER_STATUS).map((status) => ({
+      Object.values(CONTRACT_TYPE).map((status) => ({
         value: status,
-        label: USER_STATUS_LABELS[status],
+        label: CONTRACT_TYPE_LABELS[status],
       })),
     []
   );
@@ -147,16 +147,16 @@ export function EmployeeFilterDrawerContent({
 
           <View style={styles.inputGroup}>
             <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
-              Status do Colaborador
+              Tipo de Contrato
             </ThemedText>
             <Combobox
               options={statusOptions}
               value={localFilters.statuses || []}
               mode="multiple"
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: Array.isArray(values) ? values : values ? [values] : [] }))}
-              placeholder="Todos os status"
-              searchPlaceholder="Buscar status..."
-              emptyText="Nenhum status encontrado"
+              placeholder="Todos os tipos de contrato"
+              searchPlaceholder="Buscar tipo de contrato..."
+              emptyText="Nenhum tipo de contrato encontrado"
             />
           </View>
         </View>

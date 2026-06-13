@@ -3,7 +3,7 @@ import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert }
 import { useLocalSearchParams } from "expo-router";
 import { useUser, useScreenReady} from '@/hooks';
 import { useNav } from "@/contexts/nav";
-import { routes, CHANGE_LOG_ENTITY_TYPE, USER_STATUS } from '@/constants';
+import { routes, CHANGE_LOG_ENTITY_TYPE, CONTRACT_TYPE, CONTRACT_STATUS, CONTRACT_TYPE_LABELS, EMPLOYEE_TYPE_LABELS } from '@/constants';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,15 +36,20 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// Helper function to get status badge variant
-const getStatusBadgeVariant = (status: USER_STATUS) => {
+// Helper function to get status badge variant. DISMISSED is a lifecycle status
+// (orthogonal to the contract type), so callers pass it through too.
+const getStatusBadgeVariant = (status: CONTRACT_TYPE | CONTRACT_STATUS | string | null | undefined) => {
   switch (status) {
-    case USER_STATUS.EFFECTED:
+    case CONTRACT_TYPE.EFFECTED:
+    case CONTRACT_TYPE.APPRENTICE:
+    case CONTRACT_TYPE.INTERMITTENT:
+    case CONTRACT_TYPE.FIXED_TERM:
+    case CONTRACT_TYPE.TEMPORARY:
       return "default";
-    case USER_STATUS.EXPERIENCE_PERIOD_1:
-    case USER_STATUS.EXPERIENCE_PERIOD_2:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_1:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_2:
       return "secondary";
-    case USER_STATUS.DISMISSED:
+    case CONTRACT_STATUS.DISMISSED:
       return "destructive";
     default:
       return "outline";
@@ -52,19 +57,9 @@ const getStatusBadgeVariant = (status: USER_STATUS) => {
 };
 
 // Helper function to get status label
-const getStatusLabel = (status: USER_STATUS) => {
-  switch (status) {
-    case USER_STATUS.EFFECTED:
-      return "Efetivo";
-    case USER_STATUS.EXPERIENCE_PERIOD_1:
-      return "Experiência 1";
-    case USER_STATUS.EXPERIENCE_PERIOD_2:
-      return "Experiência 2";
-    case USER_STATUS.DISMISSED:
-      return "Desligado";
-    default:
-      return "Desconhecido";
-  }
+const getStatusLabel = (status: CONTRACT_TYPE | string | null | undefined) => {
+  if (!status) return "Desconhecido";
+  return CONTRACT_TYPE_LABELS[status as CONTRACT_TYPE] || status;
 };
 
 export default function EmployeeDetailScreen() {
@@ -91,23 +86,23 @@ export default function EmployeeDetailScreen() {
       cpf: true,
       pis: true,
       birth: true,
-      status: true,
-      statusOrder: true,
+      currentContractType: true,
+      currentContractStatus: true,
+      currentEmployeeType: true,
       isActive: true,
       verified: true,
       avatarId: true,
       payrollNumber: true,
       performanceLevel: true,
-      // Status tracking dates
-      effectedAt: true,
-      exp1StartAt: true,
-      exp1EndAt: true,
-      exp2StartAt: true,
-      exp2EndAt: true,
-      dismissedAt: true,
       // Timestamps
       createdAt: true,
       updatedAt: true,
+      // Current vínculo (employment contract) — carries the employment dates
+      currentContract: true,
+      // Full vínculo history (read-only "Histórico de Vínculos")
+      employmentContracts: {
+        orderBy: { sequence: "asc" },
+      },
       // Relations with minimal select
       position: {
         select: {
@@ -238,13 +233,14 @@ export default function EmployeeDetailScreen() {
     ? differenceInDays(new Date(), new Date(employee.createdAt))
     : 0;
 
-  // Calculate experience period remaining days
+  // Calculate experience period remaining days (dates live on the current vínculo)
+  const contract = employee.currentContract;
   const getExperienceDaysRemaining = () => {
-    if (employee.status === USER_STATUS.EXPERIENCE_PERIOD_1 && employee.exp1EndAt) {
-      return differenceInDays(new Date(employee.exp1EndAt), new Date());
+    if (employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_1 && contract?.exp1EndAt) {
+      return differenceInDays(new Date(contract.exp1EndAt), new Date());
     }
-    if (employee.status === USER_STATUS.EXPERIENCE_PERIOD_2 && employee.exp2EndAt) {
-      return differenceInDays(new Date(employee.exp2EndAt), new Date());
+    if (employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_2 && contract?.exp2EndAt) {
+      return differenceInDays(new Date(contract.exp2EndAt), new Date());
     }
     return null;
   };
@@ -277,9 +273,18 @@ export default function EmployeeDetailScreen() {
                   {employee.name}
                 </ThemedText>
                 <View style={styles.headerMeta}>
-                  <Badge variant={getStatusBadgeVariant(employee.status as USER_STATUS)} size="sm">
+                  <Badge
+                    variant={getStatusBadgeVariant(
+                      employee.currentContractStatus === CONTRACT_STATUS.DISMISSED
+                        ? CONTRACT_STATUS.DISMISSED
+                        : employee.currentContractType
+                    )}
+                    size="sm"
+                  >
                     <ThemedText style={{ fontSize: 11 }}>
-                      {getStatusLabel(employee.status as USER_STATUS)}
+                      {employee.currentContractStatus === CONTRACT_STATUS.DISMISSED
+                        ? "Desligado"
+                        : getStatusLabel(employee.currentContractType)}
                     </ThemedText>
                   </Badge>
                   {experienceDaysRemaining !== null && experienceDaysRemaining > 0 && (
@@ -496,28 +501,72 @@ export default function EmployeeDetailScreen() {
                 {employee.sector?.name || "Não informado"}
               </ThemedText>
             </View>
-            {employee.exp1StartAt && (
+            {(contract?.admissionDate ?? contract?.exp1StartAt) && (
               <View style={styles.infoItem}>
                 <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
                   Data de Admissão
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {format(new Date(employee.exp1StartAt), "dd/MM/yyyy", { locale: ptBR })}
+                  {format(new Date((contract?.admissionDate ?? contract?.exp1StartAt) as Date), "dd/MM/yyyy", { locale: ptBR })}
                 </ThemedText>
               </View>
             )}
-            {employee.dismissedAt && (
+            {contract?.terminationDate && (
               <View style={styles.infoItem}>
                 <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
                   Data de Desligamento
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {format(new Date(employee.dismissedAt), "dd/MM/yyyy", { locale: ptBR })}
+                  {format(new Date(contract.terminationDate), "dd/MM/yyyy", { locale: ptBR })}
                 </ThemedText>
               </View>
             )}
           </View>
         </Card>
+
+        {/* Histórico de Vínculos (read-only) */}
+        {Array.isArray(employee.employmentContracts) && employee.employmentContracts.length > 0 && (
+          <Card>
+            <CardContent>
+              <View style={styles.cardHeaderRow}>
+                <IconHistory size={18} color={colors.foreground} />
+                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground, fontWeight: fontWeight.semibold }])}>
+                  Histórico de Vínculos
+                </ThemedText>
+              </View>
+              {employee.employmentContracts.map((vinculo) => {
+                const admission = vinculo.admissionDate ?? vinculo.exp1StartAt;
+                return (
+                  <View
+                    key={vinculo.id}
+                    style={StyleSheet.flatten([styles.infoItem, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm }])}
+                  >
+                    <View style={styles.headerMeta}>
+                      <Badge
+                        variant={getStatusBadgeVariant(
+                          vinculo.status === CONTRACT_STATUS.DISMISSED ? CONTRACT_STATUS.DISMISSED : vinculo.contractType
+                        )}
+                        size="sm"
+                      >
+                        <ThemedText style={{ fontSize: 11 }}>
+                          {vinculo.status === CONTRACT_STATUS.DISMISSED ? "Desligado" : getStatusLabel(vinculo.contractType)}
+                        </ThemedText>
+                      </Badge>
+                      <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                        #{vinculo.sequence}
+                        {vinculo.employeeType ? ` · ${EMPLOYEE_TYPE_LABELS[vinculo.employeeType] || vinculo.employeeType}` : ""}
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                      {admission ? format(new Date(admission), "dd/MM/yyyy", { locale: ptBR }) : "—"}
+                      {vinculo.terminationDate ? ` até ${format(new Date(vinculo.terminationDate), "dd/MM/yyyy", { locale: ptBR })}` : " · atual"}
+                    </ThemedText>
+                  </View>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Relation Tables */}
         <WarningsTable employee={employee} maxHeight={400} />
@@ -690,6 +739,12 @@ const styles = StyleSheet.create({
   },
   infoItem: {
     gap: spacing.xs,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   infoLabel: {
     fontSize: fontSize.xs,

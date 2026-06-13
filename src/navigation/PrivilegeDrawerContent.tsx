@@ -34,6 +34,7 @@ const PrivilegeBadge = memo<{ privilege: SECTOR_PRIVILEGES; isDark: boolean }>(
         case SECTOR_PRIVILEGES.PRODUCTION: return '#2563eb'; // blue
         case SECTOR_PRIVILEGES.HUMAN_RESOURCES: return '#9333ea'; // purple
         case SECTOR_PRIVILEGES.FINANCIAL: return '#9333ea'; // purple (same as HR)
+        case SECTOR_PRIVILEGES.ACCOUNTING: return '#9333ea'; // purple (same as FINANCIAL)
         case SECTOR_PRIVILEGES.DESIGNER: return '#9333ea'; // purple (same as HR)
         case SECTOR_PRIVILEGES.LOGISTIC: return '#9333ea'; // purple (same as HR)
         case SECTOR_PRIVILEGES.PRODUCTION_MANAGER: return '#9333ea'; // purple (same as LOGISTIC)
@@ -49,6 +50,7 @@ const PrivilegeBadge = memo<{ privilege: SECTOR_PRIVILEGES; isDark: boolean }>(
         case SECTOR_PRIVILEGES.ADMIN: return 'ADM';
         case SECTOR_PRIVILEGES.HUMAN_RESOURCES: return 'RH';
         case SECTOR_PRIVILEGES.FINANCIAL: return 'FIN';
+        case SECTOR_PRIVILEGES.ACCOUNTING: return 'CNT';
         case SECTOR_PRIVILEGES.PRODUCTION: return 'PRD';
         case SECTOR_PRIVILEGES.WAREHOUSE: return 'EST';
         case SECTOR_PRIVILEGES.MAINTENANCE: return 'MNT';

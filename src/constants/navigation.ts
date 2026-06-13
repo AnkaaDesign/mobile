@@ -321,7 +321,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Pessoal",
     icon: "userCircle",
     path: "/pessoal",
-    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
+    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       // Questionarios - self-fill, visible to ALL users (no requiredPrivilege),
@@ -355,7 +355,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meus EPIs",
         icon: "helmet",
         path: "/pessoal/meus-epis",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ACCOUNTING], // NOT for DESIGNER (matches web)
         children: [
           { id: "meus-epis-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-epis/detalhes/:id", isDynamic: true },
           { id: "meus-epis-solicitar", title: "Solicitar EPI", icon: "plus", path: "/pessoal/meus-epis/request", isDynamic: true },
@@ -377,7 +377,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Minhas Advertencias",
         icon: "alertTriangle",
         path: "/pessoal/minhas-advertencias",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ACCOUNTING], // NOT for DESIGNER (matches web)
         children: [{ id: "minhas-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
       },
       {
@@ -520,7 +520,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Recursos Humanos",
     icon: "users",
     path: "/recursos-humanos",
-    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES],
+    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
         id: "warnings",
@@ -670,13 +670,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Financeiro",
     icon: "currency-dollar",
     path: "/financeiro",
-    requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
         id: "faturamento",
         title: "Faturamento",
         icon: "receipt",
         path: "/financeiro/faturamento",
+        requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "faturamento-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/faturamento/detalhes/:id", isDynamic: true },
         ],
@@ -686,6 +687,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Orçamentos",
         icon: "calculator",
         path: "/financeiro/orcamento",
+        requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "orcamento-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/orcamento/detalhes/:taskId", isDynamic: true },
         ],
@@ -695,6 +697,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Notas Fiscais",
         icon: "fileInvoice",
         path: "/financeiro/notas-fiscais",
+        requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.ACCOUNTING],
         children: [
           { id: "notas-fiscais-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/notas-fiscais/detalhes/:id", isDynamic: true },
         ],

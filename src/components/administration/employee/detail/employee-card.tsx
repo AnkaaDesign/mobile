@@ -10,6 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { getBadgeVariant } from "@/constants/badge-colors";
 import { getUserStatusBadgeText } from "@/utils/user";
+import { CONTRACT_STATUS } from "@/constants";
 
 interface EmployeeCardProps {
   employee: User;
@@ -18,7 +19,10 @@ interface EmployeeCardProps {
 export function EmployeeCard({ employee }: EmployeeCardProps) {
   const { colors } = useTheme();
 
-  const statusVariant = getBadgeVariant(employee.status, "USER");
+  const statusVariant =
+    employee.currentContractStatus === CONTRACT_STATUS.DISMISSED
+      ? getBadgeVariant(CONTRACT_STATUS.DISMISSED, "CONTRACT_STATUS")
+      : getBadgeVariant(employee.currentContractType ?? "", "USER");
 
   return (
     <Card style={styles.card}>

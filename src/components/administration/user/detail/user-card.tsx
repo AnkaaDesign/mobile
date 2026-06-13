@@ -12,6 +12,7 @@ import { IconShieldCheck } from "@tabler/icons-react-native";
 import { getBadgeVariant } from "@/constants/badge-colors";
 import { getUserStatusBadgeText } from "@/utils/user";
 import { formatDate } from "@/utils";
+import { CONTRACT_STATUS } from "@/constants";
 
 interface UserCardProps {
   user: User;
@@ -20,7 +21,10 @@ interface UserCardProps {
 export function UserCard({ user }: UserCardProps) {
   const { colors } = useTheme();
 
-  const statusVariant = getBadgeVariant(user.status, "USER");
+  const statusVariant =
+    user.currentContractStatus === CONTRACT_STATUS.DISMISSED
+      ? getBadgeVariant(CONTRACT_STATUS.DISMISSED, "CONTRACT_STATUS")
+      : getBadgeVariant(user.currentContractType ?? "", "USER");
 
   return (
     <Card style={styles.card}>

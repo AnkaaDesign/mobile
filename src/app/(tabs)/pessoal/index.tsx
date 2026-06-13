@@ -22,7 +22,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useMyQuestionnaireEntries } from "@/hooks/useQuestionnaire";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE } from "@/constants";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
 interface PersonalMenuItem {
@@ -44,7 +44,7 @@ export default function PessoalScreen() {
   const { data: currentUser } = useCurrentUser();
 
   // Check if user is eligible for bonus (must be EFFECTED and have bonifiable position)
-  const isBonifiable = currentUser?.status === USER_STATUS.EFFECTED &&
+  const isBonifiable = currentUser?.currentContractType === CONTRACT_TYPE.EFFECTED &&
     currentUser?.position?.bonifiable === true;
 
   // Mirror the web sidebar gate (useMyPendingQuestionnaireEntries): show the

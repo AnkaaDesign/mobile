@@ -559,6 +559,13 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     if (userPrivileges.includes(SECTOR_PRIVILEGES.FINANCIAL) && path.startsWith('financeiro/')) {
       return true;
     }
+    // ACCOUNTING users get financial + human-resources routes (pessoal/ is already global)
+    if (userPrivileges.includes(SECTOR_PRIVILEGES.ACCOUNTING) && (
+      path.startsWith('financeiro/') ||
+      path.startsWith('recursos-humanos/')
+    )) {
+      return true;
+    }
     // COMMERCIAL users can access financial routes and responsible/customer routes
     if (userPrivileges.includes(SECTOR_PRIVILEGES.COMMERCIAL) && path.startsWith('financeiro/')) {
       return true;

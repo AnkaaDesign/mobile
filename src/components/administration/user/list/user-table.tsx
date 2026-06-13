@@ -15,6 +15,7 @@ import { extendedColors } from "@/lib/theme/extended-colors";
 
 import { getUserStatusBadgeText } from "@/utils/user";
 import { getBadgeVariant } from "@/constants/badge-colors";
+import { CONTRACT_STATUS } from "@/constants";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -143,13 +144,16 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "status",
-    header: "Status",
+    key: "currentContractType",
+    header: "Tipo de Contrato",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (user: User) => {
-      const variant = getBadgeVariant(user.status, "USER");
+      const variant =
+        user.currentContractStatus === CONTRACT_STATUS.DISMISSED
+          ? getBadgeVariant(CONTRACT_STATUS.DISMISSED, "CONTRACT_STATUS")
+          : getBadgeVariant(user.currentContractType ?? "", "USER");
       return (
         <Badge variant={variant} size="sm">
           {getUserStatusBadgeText(user)}
@@ -200,7 +204,7 @@ const createColumnDefinitions = (): TableColumn[] => [
 ];
 
 // Export the default visible columns
-export const DEFAULT_VISIBLE_COLUMNS = new Set(["name", "email", "position.hierarchy", "sector.name", "status"]);
+export const DEFAULT_VISIBLE_COLUMNS = new Set(["name", "email", "position.hierarchy", "sector.name", "currentContractType"]);
 
 export const UserTable = React.memo<UserTableProps>(
   ({
@@ -219,7 +223,7 @@ export const UserTable = React.memo<UserTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    visibleColumnKeys = ["avatar", "name", "email", "position.hierarchy", "sector.name", "status"],
+    visibleColumnKeys = ["avatar", "name", "email", "position.hierarchy", "sector.name", "currentContractType"],
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();

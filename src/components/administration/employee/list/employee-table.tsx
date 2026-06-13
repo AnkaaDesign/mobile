@@ -15,7 +15,7 @@ import { EmployeeTableRowSwipe } from "./employee-table-row-swipe";
 import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
 
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_STATUS } from "@/constants";
 import { getUserStatusBadgeText } from "@/utils/user";
 import type { SortConfig } from "@/lib/sort-utils";
 
@@ -53,16 +53,21 @@ const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
 // Status badge variant helper - returns proper BadgeVariant type
-const getStatusBadgeVariant = (status: USER_STATUS): BadgeVariant => {
-  switch (status) {
-    case USER_STATUS.EFFECTED:
+const getStatusBadgeVariant = (employee: User): BadgeVariant => {
+  if (employee.currentContractStatus === CONTRACT_STATUS.DISMISSED) {
+    return "error";
+  }
+  switch (employee.currentContractType) {
+    case CONTRACT_TYPE.EFFECTED:
       return "success";
-    case USER_STATUS.EXPERIENCE_PERIOD_1:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_1:
       return "pending";
-    case USER_STATUS.EXPERIENCE_PERIOD_2:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_2:
       return "warning";
-    case USER_STATUS.DISMISSED:
-      return "error";
+    case CONTRACT_TYPE.APPRENTICE:
+      return "info";
+    case CONTRACT_TYPE.INTERMITTENT:
+      return "info";
     default:
       return "info";
   }
@@ -218,22 +223,22 @@ export const createColumnDefinitions = (): TableColumn[] => [
     key: "dismissedAt",
     header: "Data de Demissão",
     align: "left",
-    sortable: true,
+    sortable: false,
     width: 0,
     accessor: (employee: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {employee.dismissedAt ? formatDate(new Date(employee.dismissedAt)) : "-"}
+        {employee.currentContract?.terminationDate ? formatDate(new Date(employee.currentContract.terminationDate)) : "-"}
       </ThemedText>
     ),
   },
   {
-    key: "status",
-    header: "Status",
+    key: "currentContractType",
+    header: "Tipo de Contrato",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (employee: User) => {
-      const variant = getStatusBadgeVariant(employee.status);
+      const variant = getStatusBadgeVariant(employee);
       return (
         <Badge variant={variant} size="sm">
           {getUserStatusBadgeText(employee)}
@@ -407,7 +412,7 @@ export function getDefaultVisibleColumns(): Set<string> {
   return new Set([
     "name",
     "sector.name",
-    "status"
+    "currentContractType"
   ]);
 }
 
@@ -428,7 +433,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    visibleColumnKeys = ["name", "sector.name", "status"],
+    visibleColumnKeys = ["name", "sector.name", "currentContractType"],
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
@@ -456,7 +461,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
         exp1StartAt: 1.4,
         birth: 1.4,
         dismissedAt: 1.4,
-        status: 1.5,
+        currentContractType: 1.5,
         performanceLevel: 1.5,
         verified: 1.1,
         lastLoginAt: 1.6,

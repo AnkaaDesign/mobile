@@ -26,7 +26,7 @@ import type { BonusCreateFormData, BonusUpdateFormData } from "@/schemas/bonus";
 import type { Bonus } from "@/types";
 import { useBonusMutations } from "@/hooks/bonus";
 import { useUsers } from "@/hooks/useUser";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE } from "@/constants";
 
 interface BonusFormProps {
   mode: "create" | "update";
@@ -48,7 +48,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
   const { createAsync, updateAsync, createMutation, updateMutation } = useBonusMutations();
 
   const { data: users } = useUsers({
-    where: { status: USER_STATUS.EFFECTED, secullumEmployeeId: { not: null } },
+    where: { currentContractType: CONTRACT_TYPE.EFFECTED, secullumEmployeeId: { not: null } },
     orderBy: { name: "asc" },
     include: { position: true },
   });

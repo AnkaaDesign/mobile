@@ -15,9 +15,12 @@
 
 import {
   ORDER_STATUS,
+  ORDER_PAYMENT_STATUS,
   TASK_STATUS,
   MAINTENANCE_STATUS,
-  USER_STATUS,
+  CONTRACT_TYPE,
+  CONTRACT_STATUS,
+  EMPLOYEE_TYPE,
   EXTERNAL_OPERATION_STATUS,
   EXTERNAL_OPERATION_TYPE,
   SERVICE_ORDER_STATUS,
@@ -375,6 +378,14 @@ export const ENTITY_BADGE_CONFIG = {
     [ORDER_STATUS.CANCELLED]: "cancelled" as BadgeVariant,         // Red - cancelled
   },
 
+  // Order Payment Status (Contas a Pagar)
+  ORDER_PAYMENT: {
+    [ORDER_PAYMENT_STATUS.NOT_REQUESTED]: "gray" as BadgeVariant,      // Gray - not requested yet
+    [ORDER_PAYMENT_STATUS.REQUESTED]: "pending" as BadgeVariant,       // Amber - payment requested
+    [ORDER_PAYMENT_STATUS.AWAITING_PAYMENT]: "orange" as BadgeVariant, // Orange - awaiting payment
+    [ORDER_PAYMENT_STATUS.PAID]: "green" as BadgeVariant,              // Green - paid
+  },
+
   // Task Status
   TASK: {
     [TASK_STATUS.PREPARATION]: "orange" as BadgeVariant,            // Orange - in preparation
@@ -405,12 +416,30 @@ export const ENTITY_BADGE_CONFIG = {
     [MAINTENANCE_STATUS.OVERDUE]: "purple" as BadgeVariant,
   },
 
-  // User Status
+  // User Contract Type (the legal kind/phase of the current vínculo)
   USER: {
-    [USER_STATUS.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Amber - first trial period
-    [USER_STATUS.EXPERIENCE_PERIOD_2]: "created" as BadgeVariant,  // Blue - second trial period
-    [USER_STATUS.EFFECTED]: "green" as BadgeVariant,               // Entity-specific: use green
-    [USER_STATUS.DISMISSED]: "red" as BadgeVariant,                // Entity-specific: use red
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Amber - first trial period
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "created" as BadgeVariant,  // Blue - second trial period
+    [CONTRACT_TYPE.EFFECTED]: "green" as BadgeVariant,               // Entity-specific: use green
+    [CONTRACT_TYPE.FIXED_TERM]: "created" as BadgeVariant,           // Blue - fixed term
+    [CONTRACT_TYPE.INTERMITTENT]: "blue" as BadgeVariant,            // Entity-specific: use blue
+    [CONTRACT_TYPE.APPRENTICE]: "purple" as BadgeVariant,            // Entity-specific: use purple
+    [CONTRACT_TYPE.TEMPORARY]: "orange" as BadgeVariant,             // Orange - temporary
+  },
+
+  // Employment contract lifecycle status
+  CONTRACT_STATUS: {
+    [CONTRACT_STATUS.ACTIVE]: "green" as BadgeVariant,
+    [CONTRACT_STATUS.DISMISSED]: "red" as BadgeVariant,
+  },
+
+  // Worker category (on-folha vs off-folha)
+  EMPLOYEE_TYPE: {
+    [EMPLOYEE_TYPE.CLT]: "green" as BadgeVariant,
+    [EMPLOYEE_TYPE.INTERN]: "blue" as BadgeVariant,
+    [EMPLOYEE_TYPE.TERCEIRIZADO]: "purple" as BadgeVariant,
+    [EMPLOYEE_TYPE.PJ]: "orange" as BadgeVariant,
+    [EMPLOYEE_TYPE.AUTONOMOUS]: "created" as BadgeVariant,
   },
 
   // External Withdrawal Status
@@ -696,6 +725,7 @@ export const ENTITY_BADGE_CONFIG = {
     [SECTOR_PRIVILEGES.WAREHOUSE]: "green" as BadgeVariant,        // Green - warehouse role
     [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "purple" as BadgeVariant, // Purple - production manager (same as logistic)
     [SECTOR_PRIVILEGES.AIRBRUSHING]: "orange" as BadgeVariant,        // Orange - airbrushing (third-party painters)
+    [SECTOR_PRIVILEGES.ACCOUNTING]: "purple" as BadgeVariant,         // Purple - accounting role (same family as FINANCIAL)
   },
 
   // Bonification Status

@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useUser } from "@/hooks";
-import { USER_STATUS, routes } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_STATUS, CONTRACT_TYPE_LABELS, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { spacing, fontSize } from "@/constants/design-system";
 import {
@@ -25,34 +25,33 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 
-const getStatusLabel = (status: string) => {
-  const statusLabels: Record<string, string> = {
-    [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1",
-    [USER_STATUS.EXPERIENCE_PERIOD_2]: "Experiência 2",
-    [USER_STATUS.EFFECTED]: "Efetivo",
-    [USER_STATUS.DISMISSED]: "Demitido",
-  };
-  return statusLabels[status] || status;
+const getStatusLabel = (status: string | null | undefined) => {
+  if (!status) return "Desconhecido";
+  return CONTRACT_TYPE_LABELS[status as CONTRACT_TYPE] || status;
 };
 
-const getStatusColor = (status: string, colors: any) => {
+const getStatusColor = (status: string | null | undefined, colors: any) => {
   const statusColors: Record<string, string> = {
-    [USER_STATUS.EXPERIENCE_PERIOD_1]: colors.warning,
-    [USER_STATUS.EXPERIENCE_PERIOD_2]: colors.warning,
-    [USER_STATUS.EFFECTED]: colors.success,
-    [USER_STATUS.DISMISSED]: colors.destructive,
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: colors.warning,
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: colors.warning,
+    [CONTRACT_TYPE.EFFECTED]: colors.success,
+    [CONTRACT_TYPE.APPRENTICE]: colors.success,
+    [CONTRACT_TYPE.INTERMITTENT]: colors.success,
+    [CONTRACT_TYPE.FIXED_TERM]: colors.success,
+    [CONTRACT_TYPE.TEMPORARY]: colors.success,
+    [CONTRACT_STATUS.DISMISSED]: colors.destructive,
   };
-  return statusColors[status] || colors.mutedForeground;
+  return (status && statusColors[status]) || colors.mutedForeground;
 };
 
 const getEmploymentDuration = (
-  exp1StartAt: Date | string | null,
-  dismissedAt?: Date | string | null,
+  admissionDate: Date | string | null | undefined,
+  terminationDate?: Date | string | null,
 ) => {
-  if (!exp1StartAt) return null;
+  if (!admissionDate) return null;
 
-  const startDate = new Date(exp1StartAt);
-  const endDate = dismissedAt ? new Date(dismissedAt) : new Date();
+  const startDate = new Date(admissionDate);
+  const endDate = terminationDate ? new Date(terminationDate) : new Date();
 
   const years = endDate.getFullYear() - startDate.getFullYear();
   const months = endDate.getMonth() - startDate.getMonth();
@@ -89,11 +88,11 @@ export default function EmployeeDetailScreen() {
       name: true,
       email: true,
       phone: true,
-      status: true,
+      currentContractType: true,
+      currentContractStatus: true,
       avatarId: true,
       performanceLevel: true,
-      exp1StartAt: true,
-      dismissedAt: true,
+      currentContract: true,
       avatar: {
         select: { id: true, thumbnailUrl: true },
       },
@@ -120,10 +119,11 @@ export default function EmployeeDetailScreen() {
       notFoundFallback={mobileRoute("/pessoal/funcionarios")}
     >
       {(employee) => {
-        const employmentDuration = getEmploymentDuration(
-          employee.exp1StartAt,
-          employee.dismissedAt,
-        );
+        const contract = employee.currentContract;
+        const admissionDate = contract?.admissionDate ?? contract?.exp1StartAt;
+        const terminationDate = contract?.terminationDate;
+        const isDismissed = employee.currentContractStatus === CONTRACT_STATUS.DISMISSED;
+        const employmentDuration = getEmploymentDuration(admissionDate, terminationDate);
 
         return (
           <View style={styles.body}>
@@ -159,17 +159,17 @@ export default function EmployeeDetailScreen() {
                     variant="secondary"
                     style={{
                       backgroundColor:
-                        getStatusColor(employee.status, colors) + "20",
+                        getStatusColor(isDismissed ? CONTRACT_STATUS.DISMISSED : employee.currentContractType, colors) + "20",
                       marginTop: spacing.xs,
                     }}
                   >
                     <ThemedText
                       style={[
                         styles.statusText,
-                        { color: getStatusColor(employee.status, colors) },
+                        { color: getStatusColor(isDismissed ? CONTRACT_STATUS.DISMISSED : employee.currentContractType, colors) },
                       ]}
                     >
-                      {getStatusLabel(employee.status)}
+                      {isDismissed ? "Desligado" : getStatusLabel(employee.currentContractType)}
                     </ThemedText>
                   </Badge>
                 </View>
@@ -245,7 +245,7 @@ export default function EmployeeDetailScreen() {
                     colors={colors}
                   />
                 )}
-                {employee.exp1StartAt && (
+                {admissionDate && (
                   <View style={styles.infoRow}>
                     <IconCalendar size={16} color={colors.mutedForeground} />
                     <View style={styles.infoTextContainer}>
@@ -257,7 +257,7 @@ export default function EmployeeDetailScreen() {
                       <ThemedText
                         style={[styles.infoValue, { color: colors.foreground }]}
                       >
-                        {formatDate(employee.exp1StartAt)}
+                        {formatDate(admissionDate)}
                       </ThemedText>
                       {employmentDuration && (
                         <ThemedText
@@ -266,14 +266,14 @@ export default function EmployeeDetailScreen() {
                             { color: colors.mutedForeground },
                           ]}
                         >
-                          {employee.dismissedAt ? "Trabalhou por" : "Há"}{" "}
+                          {terminationDate ? "Trabalhou por" : "Há"}{" "}
                           {employmentDuration}
                         </ThemedText>
                       )}
                     </View>
                   </View>
                 )}
-                {employee.dismissedAt && (
+                {terminationDate && (
                   <View style={styles.infoRow}>
                     <IconCalendar size={16} color={colors.destructive} />
                     <View style={styles.infoTextContainer}>
@@ -285,7 +285,7 @@ export default function EmployeeDetailScreen() {
                       <ThemedText
                         style={[styles.infoValue, { color: colors.destructive }]}
                       >
-                        {formatDate(employee.dismissedAt)}
+                        {formatDate(terminationDate)}
                       </ThemedText>
                     </View>
                   </View>

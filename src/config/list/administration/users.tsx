@@ -2,7 +2,7 @@ import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
-import { SECTOR_PRIVILEGES } from '@/constants/enums'
+import { SECTOR_PRIVILEGES, CONTRACT_STATUS } from '@/constants/enums'
 import { SECTOR_PRIVILEGES_LABELS } from '@/constants/enum-labels'
 import { Badge } from '@/components/ui/badge'
 import { getBadgeVariant } from '@/constants/badge-colors'
@@ -11,7 +11,15 @@ const STATUS_LABELS: Record<string, string> = {
   EXPERIENCE_PERIOD_1: 'Experiência 1',
   EXPERIENCE_PERIOD_2: 'Experiência 2',
   EFFECTED: 'Efetivado',
+  APPRENTICE: 'Aprendiz',
+  INTERMITTENT: 'Intermitente',
   DISMISSED: 'Desligado',
+}
+
+// Resolve the contract-type label, falling back to "Desligado" when dismissed.
+const getContractLabel = (user: User): string => {
+  if (user.currentContractStatus === CONTRACT_STATUS.DISMISSED) return STATUS_LABELS.DISMISSED
+  return (user.currentContractType ? STATUS_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
 }
 
 // Get all sector privileges as options
@@ -43,6 +51,8 @@ export const usersListConfig: ListConfig<User> = {
       verified: true,
       requirePasswordChange: true,
       cpf: true,
+      currentContractType: true,
+      currentContractStatus: true,
       city: true,
       state: true,
       lastLoginAt: true,
@@ -144,14 +154,14 @@ export const usersListConfig: ListConfig<User> = {
         render: (user) => user.ledSector?.name || '-',
       },
       {
-        key: 'status',
-        label: 'STATUS',
+        key: 'currentContractType',
+        label: 'TIPO DE CONTRATO',
         sortable: true,
         width: 1.5,
         align: 'center',
         render: (user) => {
-          const variant = getBadgeVariant(user.status, 'USER')
-          const label = STATUS_LABELS[user.status] || user.status || '-'
+          const variant = getBadgeVariant(user.currentContractType ?? '', 'USER')
+          const label = getContractLabel(user)
           return (
             <Badge
               variant={variant}
@@ -267,7 +277,7 @@ export const usersListConfig: ListConfig<User> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['name', 'email', 'sector', 'privilege', 'status'],
+    defaultVisible: ['name', 'email', 'sector', 'privilege', 'currentContractType'],
     rowHeight: 48,
     actions: [
       {
@@ -418,7 +428,7 @@ export const usersListConfig: ListConfig<User> = {
       { key: 'privilege', label: 'Privilégio', path: 'sector.privileges', format: (value) => SECTOR_PRIVILEGES_LABELS[value as SECTOR_PRIVILEGES] || String(value) },
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'ledSector', label: 'Setor Liderado', path: 'ledSector.name' },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || String(value) },
+      { key: 'currentContractType', label: 'Tipo de Contrato', path: 'currentContractType', format: (value) => STATUS_LABELS[value] || String(value) },
       { key: 'verified', label: 'Verificado', path: 'verified', format: (value) => value ? 'Sim' : 'Não' },
       { key: 'requirePasswordChange', label: 'Requer Alt. Senha', path: 'requirePasswordChange', format: (value) => value ? 'Sim' : 'Não' },
       { key: 'lastLoginAt', label: 'Último Login', path: 'lastLoginAt', format: 'datetime' },

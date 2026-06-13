@@ -2,8 +2,11 @@
 
 import {
   ORDER_STATUS,
+  ORDER_PAYMENT_STATUS,
   PAYMENT_METHOD,
-  USER_STATUS,
+  CONTRACT_TYPE,
+  CONTRACT_STATUS,
+  EMPLOYEE_TYPE,
   REGISTRATION_STATUS,
   ASSIGNMENT_TYPE,
   TASK_STATUS,
@@ -155,17 +158,40 @@ export const ORDER_STATUS_LABELS: Record<ORDER_STATUS, string> = {
   [ORDER_STATUS.CANCELLED]: "Cancelado",
 };
 
+export const ORDER_PAYMENT_STATUS_LABELS: Record<ORDER_PAYMENT_STATUS, string> = {
+  [ORDER_PAYMENT_STATUS.NOT_REQUESTED]: "Não Solicitado",
+  [ORDER_PAYMENT_STATUS.REQUESTED]: "Solicitado",
+  [ORDER_PAYMENT_STATUS.AWAITING_PAYMENT]: "Aguardando Pagamento",
+  [ORDER_PAYMENT_STATUS.PAID]: "Pago",
+};
+
 export const PAYMENT_METHOD_LABELS: Record<PAYMENT_METHOD, string> = {
   [PAYMENT_METHOD.PIX]: "Pix",
   [PAYMENT_METHOD.BANK_SLIP]: "Boleto",
   [PAYMENT_METHOD.CREDIT_CARD]: "Cartão de Crédito",
 };
 
-export const USER_STATUS_LABELS: Record<USER_STATUS, string> = {
-  [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1/2 (30 dias)",
-  [USER_STATUS.EXPERIENCE_PERIOD_2]: "Experiência 2/2 (50 dias)",
-  [USER_STATUS.EFFECTED]: "Efetivado",
-  [USER_STATUS.DISMISSED]: "Desligado",
+export const CONTRACT_TYPE_LABELS: Record<CONTRACT_TYPE, string> = {
+  [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "Experiência 1/2 (30 dias)",
+  [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "Experiência 2/2 (prorrogação)",
+  [CONTRACT_TYPE.EFFECTED]: "Efetivado (prazo indeterminado)",
+  [CONTRACT_TYPE.FIXED_TERM]: "Prazo determinado",
+  [CONTRACT_TYPE.INTERMITTENT]: "Intermitente",
+  [CONTRACT_TYPE.APPRENTICE]: "Aprendiz",
+  [CONTRACT_TYPE.TEMPORARY]: "Temporário",
+};
+
+export const CONTRACT_STATUS_LABELS: Record<CONTRACT_STATUS, string> = {
+  [CONTRACT_STATUS.ACTIVE]: "Ativo",
+  [CONTRACT_STATUS.DISMISSED]: "Desligado",
+};
+
+export const EMPLOYEE_TYPE_LABELS: Record<EMPLOYEE_TYPE, string> = {
+  [EMPLOYEE_TYPE.CLT]: "CLT",
+  [EMPLOYEE_TYPE.INTERN]: "Estagiário",
+  [EMPLOYEE_TYPE.TERCEIRIZADO]: "Terceirizado",
+  [EMPLOYEE_TYPE.PJ]: "Pessoa Jurídica (PJ)",
+  [EMPLOYEE_TYPE.AUTONOMOUS]: "Autônomo",
 };
 
 export const REGISTRATION_STATUS_LABELS: Record<REGISTRATION_STATUS, string> = {
@@ -601,6 +627,7 @@ export const SECTOR_PRIVILEGES_LABELS: Record<SECTOR_PRIVILEGES | typeof TEAM_LE
   [SECTOR_PRIVILEGES.PLOTTING]: "Plotagem",
   [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "Gerente de Produção",
   [SECTOR_PRIVILEGES.AIRBRUSHING]: "Aerografia",
+  [SECTOR_PRIVILEGES.ACCOUNTING]: "Contabilidade",
   [TEAM_LEADER]: "Líder de Equipe",
 };
 
@@ -1013,6 +1040,14 @@ export const ENTITY_TYPE_LABELS: Record<ENTITY_TYPE, string> = {
   [ENTITY_TYPE.USER]: "Usuário",
   [ENTITY_TYPE.VACATION]: "Férias",
   [ENTITY_TYPE.VERIFICATION]: "Verificação",
+  [ENTITY_TYPE.SALARY_ADJUSTMENT]: "Reajuste Salarial",
+  [ENTITY_TYPE.USER_POSITION_HISTORY]: "Histórico de Cargo",
+  [ENTITY_TYPE.BENEFIT]: "Benefício",
+  [ENTITY_TYPE.USER_BENEFIT]: "Adesão de Benefício",
+  [ENTITY_TYPE.ADMISSION]: "Admissão",
+  [ENTITY_TYPE.TERMINATION]: "Rescisão",
+  [ENTITY_TYPE.MEDICAL_EXAM]: "Exame Médico",
+  [ENTITY_TYPE.LEAVE]: "Afastamento",
 };
 
 export const FILE_ENTITY_TYPE_LABELS: Record<FILE_ENTITY_TYPE, string> = {
@@ -1426,6 +1461,14 @@ export const CHANGE_LOG_ENTITY_TYPE_LABELS: Record<CHANGE_LOG_ENTITY_TYPE, strin
   [CHANGE_LOG_ENTITY_TYPE.VACATION]: "Férias",
   [CHANGE_LOG_ENTITY_TYPE.VERIFICATION]: "Verificação",
   [CHANGE_LOG_ENTITY_TYPE.WARNING]: "Advertência",
+  [CHANGE_LOG_ENTITY_TYPE.SALARY_ADJUSTMENT]: "Reajuste Salarial",
+  [CHANGE_LOG_ENTITY_TYPE.USER_POSITION_HISTORY]: "Histórico de Cargo",
+  [CHANGE_LOG_ENTITY_TYPE.BENEFIT]: "Benefício",
+  [CHANGE_LOG_ENTITY_TYPE.USER_BENEFIT]: "Adesão de Benefício",
+  [CHANGE_LOG_ENTITY_TYPE.ADMISSION]: "Admissão",
+  [CHANGE_LOG_ENTITY_TYPE.TERMINATION]: "Rescisão",
+  [CHANGE_LOG_ENTITY_TYPE.MEDICAL_EXAM]: "Exame Médico",
+  [CHANGE_LOG_ENTITY_TYPE.LEAVE]: "Afastamento",
 };
 
 export const CHANGE_LOG_ACTION_LABELS: Record<CHANGE_LOG_ACTION, string> = {

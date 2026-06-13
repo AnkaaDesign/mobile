@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconUserCheck, IconBriefcase, IconBuilding, IconShieldCheck } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { usePositions, useSectors } from "@/hooks";
-import { USER_STATUS_LABELS } from "@/constants";
+import { CONTRACT_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -87,14 +87,14 @@ export function UserFilterTags({ filters, searchText, onFilterChange, onSearchCh
     }
 
     // Status filters
-    if (filters.where?.status?.in) {
-      filters.where.status.in.forEach((status: string) => {
+    if (filters.where?.currentContractType?.in) {
+      filters.where.currentContractType.in.forEach((status: string) => {
         tags.push(
           <Badge key={`status-${status}`} variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.muted }}>
             <View style={styles.tagContent}>
               <IconUserCheck size={12} color={colors.mutedForeground} />
-              <ThemedText style={styles.tagText}>{USER_STATUS_LABELS[status as keyof typeof USER_STATUS_LABELS]}</ThemedText>
-              <TouchableOpacity onPress={() => removeFilter(["where", "status"], status)} style={styles.removeButton} hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+              <ThemedText style={styles.tagText}>{CONTRACT_TYPE_LABELS[status as keyof typeof CONTRACT_TYPE_LABELS]}</ThemedText>
+              <TouchableOpacity onPress={() => removeFilter(["where", "currentContractType"], status)} style={styles.removeButton} hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
                 <IconX size={12} color={colors.mutedForeground} />
               </TouchableOpacity>
             </View>

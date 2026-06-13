@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
-import { USER_STATUS } from '@/constants/enums'
+import { CONTRACT_TYPE, CONTRACT_STATUS } from '@/constants/enums'
 
 
 const STATUS_LABELS: Record<string, string> = {
@@ -8,6 +8,11 @@ const STATUS_LABELS: Record<string, string> = {
   EXPERIENCE_PERIOD_2: 'Experiência 2/2 (50 dias)',
   EFFECTED: 'Efetivado',
   DISMISSED: 'Desligado',
+}
+
+const getContractLabel = (user: User): string => {
+  if (user.currentContractStatus === CONTRACT_STATUS.DISMISSED) return STATUS_LABELS.DISMISSED
+  return (user.currentContractType ? STATUS_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
 }
 
 export const personalEmployeesListConfig: ListConfig<User> = {
@@ -52,12 +57,12 @@ export const personalEmployeesListConfig: ListConfig<User> = {
         render: (user) => user.sector?.name || '-',
       },
       {
-        key: 'status',
-        label: 'STATUS',
+        key: 'currentContractType',
+        label: 'TIPO DE CONTRATO',
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (user) => STATUS_LABELS[user.status] || user.status,
+        render: (user) => getContractLabel(user),
         format: 'badge',
         badgeEntity: 'USER',
       },
@@ -78,7 +83,7 @@ export const personalEmployeesListConfig: ListConfig<User> = {
         render: (user) => user.email || '-',
       },
     ],
-    defaultVisible: ['name', 'position', 'status'],
+    defaultVisible: ['name', 'position', 'currentContractType'],
     rowHeight: 72,
     actions: [],
   },
@@ -86,15 +91,15 @@ export const personalEmployeesListConfig: ListConfig<User> = {
   filters: {
     fields: [
       {
-        key: 'status',
-        label: 'Status',
+        key: 'contractTypes',
+        label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
-        options: Object.values(USER_STATUS).map((status) => ({
+        options: Object.values(CONTRACT_TYPE).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Selecione os status',
+        placeholder: 'Selecione os tipos de contrato',
       },
       {
         key: 'positionIds',
@@ -195,7 +200,7 @@ export const personalEmployeesListConfig: ListConfig<User> = {
       { key: 'email', label: 'Email', path: 'email' },
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
+      { key: 'currentContractType', label: 'Tipo de Contrato', path: 'currentContractType', format: (value) => STATUS_LABELS[value] || value },
       { key: 'phone', label: 'Telefone', path: 'phone' },
     ],
   },

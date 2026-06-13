@@ -4,7 +4,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, USER_STATUS, SECTOR_PRIVILEGES } from "@/constants/enums";
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, CONTRACT_TYPE, SECTOR_PRIVILEGES } from "@/constants/enums";
 import { SERVICE_ORDER_TYPE_LABELS, SERVICE_ORDER_STATUS_LABELS } from "@/constants/enum-labels";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { getBadgeVariant } from "@/constants/badge-colors";
@@ -746,10 +746,10 @@ function ServiceRow({
   }> => {
     try {
       const queryParams: any = {
-        statuses: [
-          USER_STATUS.EXPERIENCE_PERIOD_1,
-          USER_STATUS.EXPERIENCE_PERIOD_2,
-          USER_STATUS.EFFECTED
+        contractTypes: [
+          CONTRACT_TYPE.EXPERIENCE_PERIOD_1,
+          CONTRACT_TYPE.EXPERIENCE_PERIOD_2,
+          CONTRACT_TYPE.EFFECTED
         ],
         orderBy: { name: "asc" },
         page: page,

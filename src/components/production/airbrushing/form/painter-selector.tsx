@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, USER_STATUS } from "@/constants";
+import { SECTOR_PRIVILEGES, CONTRACT_STATUS } from "@/constants";
 import { getUsers } from "@/api-client";
 import type { User } from "@/types";
 
@@ -51,7 +51,7 @@ export function PainterSelector({
           email: initialPainter.email,
           position: initialPainter.position,
           sector: initialPainter.sector,
-          status: initialPainter.status,
+          currentContractStatus: initialPainter.currentContractStatus,
         },
       },
     ];
@@ -97,7 +97,7 @@ export function PainterSelector({
           email: user.email,
           position: user.position,
           sector: user.sector,
-          status: user.status,
+          currentContractStatus: user.currentContractStatus,
         },
       })) as ComboboxOption[],
       hasMore,
@@ -129,7 +129,7 @@ export function PainterSelector({
               </ThemedText>
             )}
           </View>
-          {metadata.status === USER_STATUS.DISMISSED && (
+          {metadata.currentContractStatus === CONTRACT_STATUS.DISMISSED && (
             <Badge variant="outline" style={styles.sectorBadge}>
               <ThemedText style={[styles.sectorBadgeText, { color: colors.destructive }]}>Desligado</ThemedText>
             </Badge>

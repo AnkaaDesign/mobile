@@ -2,7 +2,7 @@ import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
-import { USER_STATUS } from '@/constants/enums'
+import { CONTRACT_TYPE, CONTRACT_STATUS } from '@/constants/enums'
 import { Badge } from '@/components/ui/badge'
 import { getBadgeVariant } from '@/constants/badge-colors'
 
@@ -10,7 +10,16 @@ const STATUS_LABELS: Record<string, string> = {
   EXPERIENCE_PERIOD_1: 'Experiência 1',
   EXPERIENCE_PERIOD_2: 'Experiência 2',
   EFFECTED: 'Efetivado',
+  APPRENTICE: 'Aprendiz',
+  INTERMITTENT: 'Intermitente',
   DISMISSED: 'Desligado',
+}
+
+// Resolve the contract-type label, falling back to "Desligado" when the user
+// has been dismissed (dismissal is a lifecycle status, orthogonal to the type).
+const getContractLabel = (user: User): string => {
+  if (user.currentContractStatus === CONTRACT_STATUS.DISMISSED) return STATUS_LABELS.DISMISSED
+  return (user.currentContractType ? STATUS_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
 }
 
 export const collaboratorsListConfig: ListConfig<User> = {
@@ -40,8 +49,9 @@ export const collaboratorsListConfig: ListConfig<User> = {
       requirePasswordChange: true,
       performanceLevel: true,
       birth: true,
-      exp1StartAt: true,
-      dismissedAt: true,
+      currentContractType: true,
+      currentContractStatus: true,
+      currentContract: true,
       city: true,
       state: true,
       zipCode: true,
@@ -105,14 +115,14 @@ export const collaboratorsListConfig: ListConfig<User> = {
         render: (user) => user.cpf || '-',
       },
       {
-        key: 'status',
-        label: 'STATUS',
+        key: 'currentContractType',
+        label: 'TIPO DE CONTRATO',
         sortable: true,
         width: 1.8,
         align: 'left',
         render: (user) => {
-          const variant = getBadgeVariant(user.status, 'USER')
-          const label = STATUS_LABELS[user.status] || user.status || '-'
+          const variant = getBadgeVariant(user.currentContractType ?? '', 'USER')
+          const label = getContractLabel(user)
           return (
             <Badge
               variant={variant}
@@ -149,12 +159,12 @@ export const collaboratorsListConfig: ListConfig<User> = {
         render: (user) => user.phone || '-',
       },
       {
-        key: 'exp1StartAt',
+        key: 'admissionDate',
         label: 'ADMISSÃO',
-        sortable: true,
+        sortable: false,
         width: 1.2,
         align: 'left',
-        render: (user) => user.exp1StartAt,
+        render: (user) => user.currentContract?.admissionDate ?? user.currentContract?.exp1StartAt,
         format: 'date',
       },
       {
@@ -183,12 +193,12 @@ export const collaboratorsListConfig: ListConfig<User> = {
         format: 'date',
       },
       {
-        key: 'dismissedAt',
+        key: 'terminationDate',
         label: 'DATA DE DEMISSÃO',
-        sortable: true,
+        sortable: false,
         width: 1.4,
         align: 'left',
-        render: (user) => user.dismissedAt,
+        render: (user) => user.currentContract?.terminationDate,
         format: 'date',
       },
       {
@@ -309,7 +319,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['name', 'sector', 'status'],
+    defaultVisible: ['name', 'sector', 'currentContractType'],
     rowHeight: 48,
     actions: [
       {
@@ -351,15 +361,15 @@ export const collaboratorsListConfig: ListConfig<User> = {
   filters: {
     fields: [
       {
-        key: 'status',
-        label: 'Status',
+        key: 'contractTypes',
+        label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
-        options: Object.values(USER_STATUS).map((status) => ({
+        options: Object.values(CONTRACT_TYPE).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Selecione os status',
+        placeholder: 'Selecione os tipos de contrato',
       },
       {
         key: 'positionIds',
@@ -465,10 +475,10 @@ export const collaboratorsListConfig: ListConfig<User> = {
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       { key: 'ledSector', label: 'Setor Liderado', path: 'ledSector.name' },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
+      { key: 'currentContractType', label: 'Tipo de Contrato', path: 'currentContractType', format: (value) => STATUS_LABELS[value] || value },
       { key: 'birth', label: 'Data de Nascimento', path: 'birth', format: 'date' },
-      { key: 'dismissedAt', label: 'Data de Demissão', path: 'dismissedAt', format: 'date' },
-      { key: 'exp1StartAt', label: 'Data de Admissão', path: 'exp1StartAt', format: 'date' },
+      { key: 'terminationDate', label: 'Data de Demissão', path: 'currentContract.terminationDate', format: 'date' },
+      { key: 'admissionDate', label: 'Data de Admissão', path: 'currentContract.admissionDate', format: 'date' },
       { key: 'performanceLevel', label: 'Nível de Performance', path: 'performanceLevel' },
       { key: 'verified', label: 'Verificado', path: 'verified', format: (value) => value ? 'Sim' : 'Não' },
       { key: 'lastLoginAt', label: 'Último Login', path: 'lastLoginAt', format: 'datetime' },

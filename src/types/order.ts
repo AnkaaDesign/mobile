@@ -1,7 +1,7 @@
 // packages/interfaces/src/order.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
+import type { ORDER_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
 import type { Item, ItemIncludes, ItemOrderBy, ItemWhere } from "./item";
 import type { File, FileIncludes } from "./file";
@@ -121,6 +121,12 @@ export interface Order extends BaseEntity {
   discount: number;
   status: ORDER_STATUS;
   statusOrder: number; // Status numeric order for sorting: 1=Created, 2=PartiallyFulfilled, 3=Fulfilled, 4=Overdue, 5=PartiallyReceived, 6=Received, 7=Cancelled
+  // Contas a Pagar (accounting) payment tracking — optional: present on API responses
+  // since the ACCOUNTING area build; no mobile UI consumes these yet.
+  paymentStatus?: ORDER_PAYMENT_STATUS;
+  paymentStatusOrder?: number;
+  paymentRequestedAt?: Date | null;
+  paidAt?: Date | null;
   budgetIds?: string[];
   invoiceIds?: string[];
   receiptIds?: string[];

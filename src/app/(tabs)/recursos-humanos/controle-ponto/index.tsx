@@ -10,7 +10,7 @@ import { useSecullumTimeEntries } from "@/hooks/secullum";
 import { useUsers } from "@/hooks/useUser";
 import { getBonusPeriod } from "@/utils";
 import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_STATUS } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useScreenReady } from '@/hooks/use-screen-ready';
@@ -69,7 +69,7 @@ export default function TimeEntriesListScreen() {
 
   // Fetch users for selector
   const { data: usersData, isLoading: usersLoading } = useUsers({
-    where: { status: { not: USER_STATUS.DISMISSED }, secullumEmployeeId: { not: null } },
+    where: { currentContractStatus: { not: CONTRACT_STATUS.DISMISSED }, secullumEmployeeId: { not: null } },
     orderBy: { name: "asc" },
     take: 100,
   });

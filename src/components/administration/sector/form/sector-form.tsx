@@ -114,11 +114,16 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
     [SECTOR_PRIVILEGES.ADMIN]: { order: 10, description: "Administração completa do sistema" },
     [SECTOR_PRIVILEGES.COMMERCIAL]: { order: 11, description: "Gestão comercial e vendas" },
     [SECTOR_PRIVILEGES.PLOTTING]: { order: 12, description: "Plotagem e impressão" },
+    [SECTOR_PRIVILEGES.AIRBRUSHING]: { order: 13, description: "Aerografia (pintores terceirizados)" },
+    [SECTOR_PRIVILEGES.ACCOUNTING]: { order: 14, description: "Contabilidade e departamento pessoal" },
   };
 
-  // Sort privileges by order (matching web version)
+  // Sort privileges by order (matching web version).
+  // Defensive ?? fallback: SECTOR_PRIVILEGES_LABELS also contains TEAM_LEADER (virtual),
+  // which has no privilegeInfo entry.
   const sortedPrivileges = Object.entries(SECTOR_PRIVILEGES_LABELS).sort(
-    ([a], [b]) => privilegeInfo[a as keyof typeof privilegeInfo].order - privilegeInfo[b as keyof typeof privilegeInfo].order,
+    ([a], [b]) =>
+      (privilegeInfo[a as keyof typeof privilegeInfo]?.order ?? 99) - (privilegeInfo[b as keyof typeof privilegeInfo]?.order ?? 99),
   );
 
   const privilegeOptions: ComboboxOption[] = sortedPrivileges.map(([value, label]) => ({

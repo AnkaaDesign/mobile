@@ -6,7 +6,7 @@ import { DetailCard } from "@/components/ui/detail-page-layout";
 import { IconChevronRight } from "@tabler/icons-react-native";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';
-import { routes, USER_STATUS } from "@/constants";
+import { routes, CONTRACT_STATUS } from "@/constants";
 import { mobileRoute } from '@/constants/routes.types';
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
@@ -114,11 +114,11 @@ export function SectorUsersCard({ sector }: SectorUsersCardProps) {
                     </View>
                   )}
 
-                  {user.status && (
+                  {user.currentContractStatus && (
                     <View style={styles.statusContainer}>
-                      <Badge variant={user.status !== USER_STATUS.DISMISSED ? "success" : "secondary"}>
+                      <Badge variant={user.currentContractStatus !== CONTRACT_STATUS.DISMISSED ? "success" : "secondary"}>
                         <ThemedText style={{ fontSize: fontSize.xs }}>
-                          {user.status !== USER_STATUS.DISMISSED ? "Ativo" : "Inativo"}
+                          {user.currentContractStatus !== CONTRACT_STATUS.DISMISSED ? "Ativo" : "Inativo"}
                         </ThemedText>
                       </Badge>
                     </View>

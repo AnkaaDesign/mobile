@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatDate } from "@/utils";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_STATUS } from "@/constants";
 
 interface TeamMemberFilters {
   statuses?: string[];
@@ -33,10 +33,12 @@ interface FilterTag {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1",
-  [USER_STATUS.EXPERIENCE_PERIOD_2]: "Experiência 2",
-  [USER_STATUS.EFFECTED]: "Efetivado",
-  [USER_STATUS.DISMISSED]: "Desligado",
+  [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "Experiência 1",
+  [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "Experiência 2",
+  [CONTRACT_TYPE.EFFECTED]: "Efetivado",
+  [CONTRACT_TYPE.APPRENTICE]: "Aprendiz",
+  [CONTRACT_TYPE.INTERMITTENT]: "Intermitente",
+  [CONTRACT_STATUS.DISMISSED]: "Desligado",
 };
 
 export function TeamMemberFilterTags({

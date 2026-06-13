@@ -232,9 +232,23 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     ledSectorId: "Setor Liderado",
     performanceLevel: "Nível de Desempenho",
 
-    // Status and employment
-    status: "Status",
-    statusOrder: "Ordem do Status",
+    // Employment contract (vínculo) cache fields on the user
+    currentContractType: "Tipo de Contrato",
+    currentContractStatus: "Situação do Vínculo",
+    currentEmployeeType: "Categoria do Colaborador",
+    // EmploymentContract entity fields
+    employeeType: "Categoria do Colaborador",
+    contractType: "Tipo de Contrato",
+    terminationDate: "Data de Demissão",
+    terminationType: "Tipo de Demissão",
+    admissionDate: "Data de Admissão",
+    matricula: "Matrícula",
+    sequence: "Sequência do Vínculo",
+    // Legacy field names (old changelogs recorded before the vínculo rename)
+    contractKind: "Tipo de Contrato",
+    contractKindOrder: "Ordem do Tipo de Contrato",
+    status: "Tipo de Contrato",
+    statusOrder: "Ordem do Tipo de Contrato",
     isActive: "Ativo",
     effectedAt: "Data de Contratação",
     exp1StartAt: "Data de Admissão / Início Exp. 1",
@@ -1277,15 +1291,40 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return maintenanceStatusLabels[value] || value;
   }
 
-  // Handle user status
-  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.USER && typeof value === "string") {
-    const userStatusLabels: Record<string, string> = {
+  // Handle user/employment-contract type, status and employee category values.
+  // Old changelogs may still carry the legacy field names (contractKind/status).
+  if (
+    (field === "currentContractType" ||
+      field === "contractType" ||
+      field === "currentContractStatus" ||
+      field === "currentEmployeeType" ||
+      field === "employeeType" ||
+      field === "contractKind" ||
+      field === "contractKind_transition" ||
+      field === "status" ||
+      field === "status_transition") &&
+    typeof value === "string"
+  ) {
+    const employmentLabels: Record<string, string> = {
+      // Contract types
       EXPERIENCE_PERIOD_1: "Experiência - 1º Período",
       EXPERIENCE_PERIOD_2: "Experiência - 2º Período",
       EFFECTED: "Efetivado",
+      FIXED_TERM: "Prazo Determinado",
+      INTERMITTENT: "Intermitente",
+      APPRENTICE: "Aprendiz",
+      TEMPORARY: "Temporário",
+      // Contract status
+      ACTIVE: "Ativo",
       DISMISSED: "Demitido",
+      // Employee categories
+      CLT: "CLT",
+      INTERN: "Estagiário",
+      TERCEIRIZADO: "Terceirizado",
+      PJ: "Pessoa Jurídica (PJ)",
+      AUTONOMOUS: "Autônomo",
     };
-    return userStatusLabels[value] || value;
+    return employmentLabels[value] || value;
   }
 
   // Handle PPE size fields for User entity
@@ -2109,7 +2148,9 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     field === "exp1StartAt" ||
     field === "exp1EndAt" ||
     field === "exp2StartAt" ||
-    field === "exp2EndAt"
+    field === "exp2EndAt" ||
+    field === "admissionDate" ||
+    field === "terminationDate"
   ) {
     const date = new Date(value as any);
     if (!isNaN(date.getTime())) {

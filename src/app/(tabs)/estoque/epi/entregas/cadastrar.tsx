@@ -14,7 +14,7 @@ import { getItems, getUsers } from "@/api-client";
 import {
   PPE_DELIVERY_STATUS,
   PPE_DELIVERY_STATUS_ORDER,
-  USER_STATUS,
+  CONTRACT_STATUS,
   PPE_TYPE,
   routes,
   SECTOR_PRIVILEGES,
@@ -63,7 +63,7 @@ function CreatePPEDeliveryScreenInner() {
       const response = await getUsers({
         take: pageSize,
         skip: (page - 1) * pageSize,
-        where: { status: { not: USER_STATUS.DISMISSED } },
+        where: { currentContractStatus: { not: CONTRACT_STATUS.DISMISSED } },
         orderBy: { name: "asc" },
         include: { ppeSize: true },
         searchingFor: search || undefined,

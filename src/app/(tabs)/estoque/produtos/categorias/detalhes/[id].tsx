@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useItemCategory, useScreenReady, useCanViewPrices } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS, ACCOUNTING_TYPE_LABELS } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, STOCK_LEVEL, STOCK_LEVEL_LABELS, ACCOUNTING_TYPE_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCard } from "@/components/ui/loading";
@@ -23,7 +23,6 @@ import {
   IconInfoCircle,
   IconCalendar,
 
-  IconShieldCheck,
   IconBox,
 
   IconAlertCircle,
@@ -273,21 +272,6 @@ export default function CategoryDetailScreen() {
                   <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "30" }])}>
                     <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Nome</ThemedText>
                     <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{category.name}</ThemedText>
-                  </View>
-                  <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "30" }])}>
-                    <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Tipo</ThemedText>
-                    <View style={styles.infoValueRow}>
-                      {category.type === ITEM_CATEGORY_TYPE.PPE ? (
-                        <>
-                          <IconShieldCheck size={16} color={isDark ? "#60a5fa" : "#2563eb"} />
-                          <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: isDark ? "#60a5fa" : "#2563eb" }])}>{ITEM_CATEGORY_TYPE_LABELS[ITEM_CATEGORY_TYPE.PPE]}</ThemedText>
-                        </>
-                      ) : (
-                        <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                          {ITEM_CATEGORY_TYPE_LABELS[category.type as keyof typeof ITEM_CATEGORY_TYPE_LABELS]}
-                        </ThemedText>
-                      )}
-                    </View>
                   </View>
                   <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "30" }])}>
                     <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Nível</ThemedText>

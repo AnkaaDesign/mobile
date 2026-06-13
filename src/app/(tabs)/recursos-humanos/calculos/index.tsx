@@ -10,7 +10,7 @@ import { useSecullumCalculations } from "@/hooks/secullum";
 import { useUsers } from "@/hooks/useUser";
 import { getBonusPeriod } from "@/utils";
 import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CalculationRow } from "@/types/secullum";
@@ -70,11 +70,11 @@ export default function CalculationsListScreen() {
   // Fetch users for selector
   const { data: usersData, isLoading: usersLoading } = useUsers({
     where: {
-      status: {
+      currentContractType: {
         in: [
-          USER_STATUS.EXPERIENCE_PERIOD_1,
-          USER_STATUS.EXPERIENCE_PERIOD_2,
-          USER_STATUS.EFFECTED
+          CONTRACT_TYPE.EXPERIENCE_PERIOD_1,
+          CONTRACT_TYPE.EXPERIENCE_PERIOD_2,
+          CONTRACT_TYPE.EFFECTED
         ]
       },
       secullumEmployeeId: { not: null },

@@ -11,7 +11,7 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import { usePositions, useUsers, useScreenReady } from "@/hooks";
 import { bonusKeys } from "@/hooks/queryKeys";
 import { formatCurrency, getCurrentPayrollPeriod } from "@/utils";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_TYPE } from "@/constants";
 import { bonusService } from "@/api-client";
 import type { SimulateResponse } from "@/api-client/services/bonus";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -142,7 +142,7 @@ export default function BonusSimulationScreen() {
   // eligible set matches the API canon exactly (same as the HR simulator).
   const { data: allUsersData } = useUsers({
     where: {
-      status: USER_STATUS.EFFECTED,
+      currentContractType: CONTRACT_TYPE.EFFECTED,
       secullumEmployeeId: { not: null },
     },
     include: {

@@ -3,7 +3,7 @@ import { Linking } from "react-native";
 import type { User } from '../../../../types';
 import { formatBrazilianPhone, getUserStatusBadgeText } from "@/utils";
 import { Badge } from "@/components/ui/badge";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_STATUS } from "@/constants";
 import { DetailCard, DetailField, DetailPhoneField, DetailSection } from "@/components/ui/detail-page-layout";
 
 interface BasicInfoCardProps {
@@ -11,13 +11,11 @@ interface BasicInfoCardProps {
 }
 
 export function BasicInfoCard({ employee }: BasicInfoCardProps) {
-  const getBadgeVariant = (status: string) => {
+  const getBadgeVariant = (status: User["currentContractStatus"]) => {
     switch (status) {
-      case USER_STATUS.EFFECTED:
-      case USER_STATUS.EXPERIENCE_PERIOD_1:
-      case USER_STATUS.EXPERIENCE_PERIOD_2:
+      case CONTRACT_STATUS.ACTIVE:
         return "success";
-      case USER_STATUS.DISMISSED:
+      case CONTRACT_STATUS.DISMISSED:
         return "destructive";
       default:
         return "secondary";
@@ -54,7 +52,7 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
           label="Status"
           icon="shield-check"
           value={
-            <Badge variant={getBadgeVariant(employee.status)}>
+            <Badge variant={getBadgeVariant(employee.currentContractStatus)}>
               {getUserStatusBadgeText(employee)}
             </Badge>
           }
