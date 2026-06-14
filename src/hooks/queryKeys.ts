@@ -516,6 +516,9 @@ export const orderKeys = {
 
   // Analytics
   statistics: () => ["orders", "statistics"] as const,
+
+  // Unified payables feed (Contas a Pagar)
+  payables: () => ["orders", "payables"] as const,
 };
 
 export const orderItemKeys = {

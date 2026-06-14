@@ -3,20 +3,35 @@
 // Exame → Contrato → Registro → Concluída) with the current-status badge and the
 // server-rule guards (blocking required docs / cancelled).
 
-import { View, StyleSheet } from "react-native";
-import { IconCheck, IconBan, IconAlertTriangle } from "@tabler/icons-react-native";
+import { View, StyleSheet, Alert } from "react-native";
+import { IconCheck, IconBan, IconAlertTriangle, IconStethoscope } from "@tabler/icons-react-native";
 
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge, getBadgeVariantFromStatus } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
+import { useNav } from "@/contexts/nav";
+import { useMedicalExamMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { ADMISSION_STATUS, ADMISSION_STATUS_LABELS } from "@/constants";
+import {
+  routes,
+  ADMISSION_STATUS,
+  ADMISSION_STATUS_LABELS,
+  MEDICAL_EXAM_TYPE,
+  MEDICAL_EXAM_STATUS,
+  MEDICAL_EXAM_RESULT,
+} from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
 import type { Admission } from "@/types/admission";
 import { ADMISSION_STATUS_CHAIN, hasBlockingRequiredDocs } from "../utils";
+import { LinkedExamStatus, useLinkedMedicalExam } from "@/components/human-resources/medical-exam/detail/linked-exam-status";
 
 interface StatusCardProps {
   admission: Admission;
+  /** Whether the user may schedule the linked admission exam (ADMIN/HR). */
+  canManage?: boolean;
 }
 
 const STEPPER_STEPS: { key: string; label: string }[] = [
@@ -28,12 +43,56 @@ const STEPPER_STEPS: { key: string; label: string }[] = [
   { key: ADMISSION_STATUS.COMPLETED, label: "Concluída" },
 ];
 
-export function StatusCard({ admission }: StatusCardProps) {
+export function StatusCard({ admission, canManage }: StatusCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
+  const { createAsync } = useMedicalExamMutations();
   const isCancelled = admission.status === ADMISSION_STATUS.CANCELLED;
   const currentIndex = ADMISSION_STATUS_CHAIN.indexOf(admission.status as ADMISSION_STATUS);
   const stepperIndex = currentIndex + 1; // offset by the always-done registration step
   const blockedByDocs = hasBlockingRequiredDocs(admission);
+
+  const medicalExamIndex = ADMISSION_STATUS_CHAIN.indexOf(ADMISSION_STATUS.MEDICAL_EXAM);
+  // ADMISSION exam linked to this collaborator (auto-created by the server when
+  // the process enters the medical-exam step; this also covers legacy data).
+  const { exam: admissionExam, isLoading: isExamLoading } = useLinkedMedicalExam(admission.userId, MEDICAL_EXAM_TYPE.ADMISSION);
+  const reachedMedicalStep = !isCancelled && currentIndex >= medicalExamIndex;
+  const showExamSection = reachedMedicalStep || !!admissionExam;
+  const isExamFitAndCompleted =
+    admissionExam?.status === MEDICAL_EXAM_STATUS.COMPLETED && admissionExam?.result === MEDICAL_EXAM_RESULT.FIT;
+  const awaitingExam = admission.status === ADMISSION_STATUS.MEDICAL_EXAM && !isExamLoading && !isExamFitAndCompleted;
+
+  const handleScheduleExam = () => {
+    if (!admission.userId) return;
+    Alert.alert(
+      "Agendar exame admissional",
+      "Criar um exame admissional (ASO) agendado para este colaborador?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Agendar",
+          onPress: async () => {
+            try {
+              const res = await nav.withLoading(async () =>
+                createAsync({
+                  userId: admission.userId,
+                  type: MEDICAL_EXAM_TYPE.ADMISSION,
+                  status: MEDICAL_EXAM_STATUS.SCHEDULED,
+                  admissionId: admission.id,
+                } as any),
+              );
+              const newId = (res as any)?.data?.id;
+              if (newId) {
+                nav.push(mobileRoute(routes.humanResources.occupationalHealth.medicalExams.details(newId)));
+              }
+            } catch {
+              /* interceptor toasts */
+            }
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <DetailCard
@@ -99,6 +158,44 @@ export function StatusCard({ admission }: StatusCardProps) {
         </View>
       )}
 
+      {/* ADMISSION exam (ASO) linked to the medical step */}
+      {!isCancelled && showExamSection && (
+        <View style={[styles.examSection, { borderColor: colors.border, backgroundColor: colors.muted }]}>
+          <View style={styles.row}>
+            <IconStethoscope size={16} color={colors.mutedForeground} />
+            <ThemedText style={[styles.examTitle, { color: colors.foreground }]}>Exame Admissional (ASO)</ThemedText>
+          </View>
+          <LinkedExamStatus
+            userId={admission.userId}
+            type={MEDICAL_EXAM_TYPE.ADMISSION}
+            emptyText="Nenhum exame admissional encontrado."
+          />
+          {canManage && !admissionExam && (
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={handleScheduleExam}
+              icon={<Icon name="calendar-plus" size={16} color={colors.foreground} />}
+            >
+              Agendar exame
+            </Button>
+          )}
+        </View>
+      )}
+
+      {/* Guard: leaving the medical step requires a COMPLETED + FIT exam */}
+      {awaitingExam && (
+        <View style={[styles.banner, { borderColor: "#d97706", backgroundColor: colors.muted, marginTop: spacing.sm }]}>
+          <IconAlertTriangle size={20} color="#d97706" />
+          <View style={styles.bannerTextWrap}>
+            <ThemedText style={[styles.bannerTitle, { color: colors.foreground }]}>Aguardando ASO admissional</ThemedText>
+            <ThemedText style={[styles.bannerBody, { color: colors.mutedForeground }]}>
+              O exame admissional precisa ser concluído com resultado Apto para avançar para o contrato.
+            </ThemedText>
+          </View>
+        </View>
+      )}
+
       {blockedByDocs && (
         <View style={[styles.banner, { borderColor: "#d97706", backgroundColor: colors.muted, marginTop: spacing.sm }]}>
           <IconAlertTriangle size={20} color="#d97706" />
@@ -123,6 +220,9 @@ const styles = StyleSheet.create({
   connector: { width: 2, flex: 1, minHeight: 18 },
   stepLabel: { fontSize: fontSize.sm, paddingTop: 4, paddingBottom: spacing.sm, flex: 1 },
   stepLabelCurrent: { fontWeight: fontWeight.semibold },
+  examSection: { gap: spacing.sm, borderWidth: 1, borderRadius: 8, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginTop: spacing.sm },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  examTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   banner: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, borderWidth: 1, borderRadius: 8, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   bannerTextWrap: { flex: 1, gap: 2 },
   bannerTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },

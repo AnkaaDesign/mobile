@@ -1,6 +1,6 @@
 // packages/hooks/src/useOrder.ts
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getOrders,
   getOrder,
@@ -10,6 +10,8 @@ import {
   batchCreateOrders,
   batchUpdateOrders,
   batchDeleteOrders,
+  requestOrderPayment,
+  getPayables,
 } from '@/api-client';
 import type {
   OrderGetManyFormData,
@@ -196,9 +198,20 @@ export const useOrderMutations = (options?: {
     },
   });
 
-  const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+  // REQUEST PAYMENT (Contas a Pagar: Não Solicitado → Solicitado)
+  const requestPaymentMutation = useMutation({
+    mutationFn: (id: string) => requestOrderPayment(id),
+    onSuccess: (data) => {
+      invalidateQueries(data.data?.supplierId || undefined);
+      // Refresh the unified payables feed too.
+      queryClient.invalidateQueries({ queryKey: orderKeys.payables() });
+    },
+  });
 
-  const error = createMutation.error || updateMutation.error || deleteMutation.error;
+  const isLoading =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || requestPaymentMutation.isPending;
+
+  const error = createMutation.error || updateMutation.error || deleteMutation.error || requestPaymentMutation.error;
 
   return {
     create: createMutation.mutate,
@@ -207,6 +220,8 @@ export const useOrderMutations = (options?: {
     updateAsync: updateMutation.mutateAsync,
     delete: deleteMutation.mutate,
     deleteAsync: deleteMutation.mutateAsync,
+    requestPayment: requestPaymentMutation.mutate,
+    requestPaymentAsync: requestPaymentMutation.mutateAsync,
     isLoading,
     error,
     refresh: () => invalidateQueries(),
@@ -214,7 +229,21 @@ export const useOrderMutations = (options?: {
     createMutation,
     updateMutation,
     deleteMutation,
+    requestPaymentMutation,
   };
+};
+
+// =====================================================
+// Unified Payables (Contas a Pagar) Query Hook
+// =====================================================
+
+export const usePayables = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: orderKeys.payables(),
+    queryFn: () => getPayables(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: options?.enabled ?? true,
+  });
 };
 
 export const useOrderBatchMutations = (options?: {

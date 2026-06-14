@@ -58,6 +58,7 @@ import type {
   OrderScheduleProjectionResponse,
   OrderScheduleTriggerResponse,
   OrderScheduleExpectedTotalsResponse,
+  PayablesResponse,
 } from '../types';
 
 // =====================
@@ -101,6 +102,22 @@ export class OrderService {
 
   async deleteOrder(id: string): Promise<OrderDeleteResponse> {
     const response = await apiClient.delete<OrderDeleteResponse>(`${this.basePath}/${id}`);
+    return response.data;
+  }
+
+  // =====================
+  // Payment / Payables Operations
+  // =====================
+
+  /** Move an open order to the "Solicitado" payment sub-state (Contas a Pagar pipeline). */
+  async requestOrderPayment(id: string): Promise<OrderUpdateResponse> {
+    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/request-payment`);
+    return response.data;
+  }
+
+  /** Unified Contas a Pagar feed: open orders + airbrushing painter payments + scheduled/expected outflows. */
+  async getPayables(): Promise<PayablesResponse> {
+    const response = await apiClient.get<PayablesResponse>(`${this.basePath}/payables`);
     return response.data;
   }
 
@@ -297,6 +314,8 @@ export const deleteOrder = (id: string) => orderService.deleteOrder(id);
 export const batchCreateOrders = (data: OrderBatchCreateFormData, query?: OrderQueryFormData) => orderService.batchCreateOrders(data, query);
 export const batchUpdateOrders = (data: OrderBatchUpdateFormData, query?: OrderQueryFormData) => orderService.batchUpdateOrders(data, query);
 export const batchDeleteOrders = (data: OrderBatchDeleteFormData) => orderService.batchDeleteOrders(data);
+export const requestOrderPayment = (id: string) => orderService.requestOrderPayment(id);
+export const getPayables = () => orderService.getPayables();
 
 // OrderItem exports
 export const getOrderItems = (params: OrderItemGetManyFormData) => orderService.getOrderItems(params);

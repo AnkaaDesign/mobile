@@ -8,6 +8,7 @@ import { StatusCard, UserCard, DocumentsCard } from "@/components/personnel-depa
 import { useAdmission } from "@/hooks/useAdmission";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { usePrivilegeGate } from "@/hooks/use-privilege-gate";
 import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 
 export default function AdmissionDetailScreen() {
@@ -27,6 +28,8 @@ function AdmissionDetailScreenInner() {
     },
   });
 
+  const { allowed: canManage } = usePrivilegeGate({ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] });
+
   useScreenReady(!isLoading);
   const admission = admissionResponse?.data;
 
@@ -42,7 +45,7 @@ function AdmissionDetailScreenInner() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: "Detalhes da Admissão", headerShown: true }} />
       <DetailPageLayout refreshing={isLoading} onRefresh={refetch}>
-        <StatusCard admission={admission} />
+        <StatusCard admission={admission} canManage={canManage} />
         <UserCard admission={admission} />
         <DocumentsCard admission={admission} />
         <ChangelogTimeline

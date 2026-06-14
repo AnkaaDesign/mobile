@@ -1,15 +1,24 @@
 import { View, StyleSheet, Alert } from "react-native";
+import { IconStethoscope } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import type { Termination } from "@/types";
-import { TERMINATION_STATUS } from "@/constants";
+import {
+  routes,
+  TERMINATION_STATUS,
+  MEDICAL_EXAM_TYPE,
+  MEDICAL_EXAM_STATUS,
+} from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
 import { TERMINATION_STATUS_LABELS } from "@/constants/enum-labels";
 import { TERMINATION_STATUS_ORDER } from "@/constants/sortOrders";
 import { useTerminationAdvance } from "@/hooks/useTermination";
+import { useMedicalExamMutations } from "@/hooks";
 import { useNav } from "@/contexts/nav";
+import { LinkedExamStatus, useLinkedMedicalExam } from "@/components/human-resources/medical-exam/detail/linked-exam-status";
 
 interface Props {
   termination: Termination;
@@ -33,6 +42,7 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
   const { colors } = useTheme();
   const nav = useNav();
   const advance = useTerminationAdvance();
+  const { createAsync } = useMedicalExamMutations();
 
   const currentOrder = TERMINATION_STATUS_ORDER[t.status] ?? 0;
   const isCancelled = t.status === TERMINATION_STATUS.CANCELLED;
@@ -40,6 +50,44 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
   const isTerminal = isCancelled || isCompleted;
 
   const nextStep = STEPS.find((s) => (TERMINATION_STATUS_ORDER[s] ?? 0) > currentOrder);
+
+  // DISMISSAL exam linked to this termination (auto-created by the server on the
+  // medical step; restricted to exams from the current process via createdAt).
+  const medicalOrder = TERMINATION_STATUS_ORDER[TERMINATION_STATUS.MEDICAL_EXAM] ?? 0;
+  const { exam: dismissalExam } = useLinkedMedicalExam(t.userId, MEDICAL_EXAM_TYPE.DISMISSAL, t.createdAt);
+  const showExamSection = !isCancelled && (currentOrder >= medicalOrder || !!dismissalExam);
+
+  const handleScheduleExam = () => {
+    if (!t.userId) return;
+    Alert.alert(
+      "Agendar exame demissional",
+      "Criar um exame demissional (ASO) agendado para este colaborador?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Agendar",
+          onPress: async () => {
+            try {
+              const res = await nav.withLoading(async () =>
+                createAsync({
+                  userId: t.userId,
+                  type: MEDICAL_EXAM_TYPE.DISMISSAL,
+                  status: MEDICAL_EXAM_STATUS.SCHEDULED,
+                  terminationId: t.id,
+                } as any),
+              );
+              const newId = (res as any)?.data?.id;
+              if (newId) {
+                nav.push(mobileRoute(routes.humanResources.occupationalHealth.medicalExams.details(newId)));
+              }
+            } catch {
+              /* interceptor toasts */
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleAdvance = () => {
     if (!nextStep) return;
@@ -124,6 +172,31 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
           </View>
         )}
 
+        {showExamSection ? (
+          <View style={[styles.examSection, { borderColor: colors.border, backgroundColor: colors.muted }]}>
+            <View style={styles.examTitleRow}>
+              <IconStethoscope size={16} color={colors.mutedForeground} />
+              <ThemedText style={{ color: colors.foreground, fontWeight: "600" }}>Exame Demissional (ASO)</ThemedText>
+            </View>
+            <LinkedExamStatus
+              userId={t.userId}
+              type={MEDICAL_EXAM_TYPE.DISMISSAL}
+              createdAfter={t.createdAt}
+              emptyText="Nenhum exame demissional encontrado."
+            />
+            {canManage && !dismissalExam ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={handleScheduleExam}
+                icon={<Icon name="calendar-plus" size={16} color={colors.foreground} />}
+              >
+                Agendar exame
+              </Button>
+            ) : null}
+          </View>
+        ) : null}
+
         {canManage && !isTerminal ? (
           <View style={styles.actions}>
             {nextStep ? (
@@ -159,6 +232,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   actions: { gap: 10 },
+  examSection: { gap: 8, borderWidth: 1, borderRadius: 8, padding: 12 },
+  examTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   cancelledBanner: {
     flexDirection: "row",
     alignItems: "center",

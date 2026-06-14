@@ -502,6 +502,55 @@ export interface OrderScheduleExpectedTotalsResponse {
   data: OrderScheduleExpectedTotal[];
 }
 
+// =====================
+// Unified payables (Contas a Pagar)
+// =====================
+
+export type PayableSource = "ORDER" | "AIRBRUSHING" | "SCHEDULED";
+
+export type PayableState =
+  | "NOT_REQUESTED"
+  | "REQUESTED"
+  | "AWAITING_PAYMENT"
+  | "PARTIALLY_PAID"
+  | "EXPECTED";
+
+export interface PayableRow {
+  source: PayableSource;
+  id: string;
+  payeeId: string | null;
+  payeeName: string;
+  description: string;
+  amount: number;
+  paymentState: PayableState;
+  dueDate: Date | string | null;
+  method: string | null;
+  requestedAt: Date | string | null;
+  taskId?: string | null;
+}
+
+export interface PayablesSummaryBucket {
+  count: number;
+  total: number;
+}
+
+export interface PayablesSummary {
+  NOT_REQUESTED: PayablesSummaryBucket;
+  REQUESTED: PayablesSummaryBucket;
+  AWAITING_PAYMENT: PayablesSummaryBucket;
+  PARTIALLY_PAID: PayablesSummaryBucket;
+  EXPECTED: PayablesSummaryBucket;
+}
+
+export interface PayablesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    rows: PayableRow[];
+    summary: PayablesSummary;
+  };
+}
+
 export interface OrderScheduleTriggerResult {
   order: Order;
   cascadeMode: OrderScheduleCascadeMode;
