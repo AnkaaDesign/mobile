@@ -29,7 +29,7 @@ export function EmployeeCard({ ppeSize }: EmployeeCardProps) {
         <View style={styles.nameSection}>
           <ThemedText style={StyleSheet.flatten([styles.employeeName, { color: colors.foreground }])}>{user.name}</ThemedText>
           {user.currentContractType && (
-            <Badge variant={user.currentContractStatus !== CONTRACT_STATUS.DISMISSED ? "success" : "secondary"}>
+            <Badge variant={user.currentContractStatus !== CONTRACT_STATUS.TERMINATED ? "success" : "secondary"}>
               <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>{CONTRACT_TYPE_LABELS[user.currentContractType]}</ThemedText>
             </Badge>
           )}

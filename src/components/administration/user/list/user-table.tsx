@@ -15,7 +15,6 @@ import { extendedColors } from "@/lib/theme/extended-colors";
 
 import { getUserStatusBadgeText } from "@/utils/user";
 import { getBadgeVariant } from "@/constants/badge-colors";
-import { CONTRACT_STATUS } from "@/constants";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -150,10 +149,9 @@ const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (user: User) => {
-      const variant =
-        user.currentContractStatus === CONTRACT_STATUS.DISMISSED
-          ? getBadgeVariant(CONTRACT_STATUS.DISMISSED, "CONTRACT_STATUS")
-          : getBadgeVariant(user.currentContractType ?? "", "USER");
+      const variant = user.currentContractStatus
+        ? getBadgeVariant(user.currentContractStatus, "CONTRACT_STATUS")
+        : getBadgeVariant(user.currentContractType ?? "", "USER");
       return (
         <Badge variant={variant} size="sm">
           {getUserStatusBadgeText(user)}

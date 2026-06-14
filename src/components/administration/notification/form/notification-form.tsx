@@ -507,7 +507,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
                     render={({ field: { onChange, value }, fieldState: { error } }) => (
                       <Combobox
                         async
-                        queryKey={[...userKeys.list({ currentContractStatus: { not: CONTRACT_STATUS.DISMISSED } })]}
+                        queryKey={[...userKeys.list({ currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } })]}
                         queryFn={fetchUsers}
                         minSearchLength={0}
                         pageSize={50}

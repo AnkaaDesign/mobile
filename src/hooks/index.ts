@@ -170,6 +170,9 @@ export * from "./use-users-infinite-mobile";
 export * from "./use-warnings-infinite-mobile";
 export * from "./use-my-warnings-infinite-mobile";
 export * from "./use-team-warnings-infinite-mobile";
+export * from "./use-medical-exams-infinite-mobile";
+export * from "./use-leaves-infinite-mobile";
+export * from "./use-work-accidents-infinite-mobile";
 export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
 export * from "./use-airbrushings-infinite-mobile";
@@ -255,3 +258,20 @@ export * from "./use-invoices-infinite-mobile";
 // It should be imported directly when needed: import { queryErrorMonitor } from './query-error-monitor'
 // This prevents the monitor from being bundled with every hooks import, avoiding QueryClient race conditions
 export * from "./useQuestionnaire";
+
+// =====================================================
+// HR / Departamento Pessoal + Medicina do Trabalho Hooks
+// =====================================================
+export * from "./useVacation";
+export * from "./useThirteenth";
+export * from "./useLeave";
+export * from "./useMedicalExam";
+export * from "./useWorkAccident";
+export * from "./useBenefit";
+export * from "./useUserBenefit";
+export * from "./useDependent";
+export * from "./useTermination";
+export * from "./useSalaryAdjustment";
+export * from "./useUserPositionHistory";
+export * from "./useAdmission";
+export * from "./useAdmissionDocumentSignature";

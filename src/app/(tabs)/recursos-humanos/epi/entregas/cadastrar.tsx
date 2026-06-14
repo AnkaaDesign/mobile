@@ -85,7 +85,7 @@ function CreateHRPPEDeliveryScreenInner() {
       const response = await getUsers({
         take: pageSize,
         skip: (page - 1) * pageSize,
-        where: { currentContractStatus: { not: CONTRACT_STATUS.DISMISSED } },
+        where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } },
         orderBy: { name: "asc" },
         include: { ppeSize: true },
         searchingFor: search || undefined,

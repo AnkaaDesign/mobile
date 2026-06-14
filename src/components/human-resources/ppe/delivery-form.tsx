@@ -36,7 +36,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
   const [_selectedItem, _setSelectedItem] = useState<Item | null>(preselectedItem || null);
 
   const { data: users } = useUsers({
-    where: { currentContractStatus: { not: CONTRACT_STATUS.DISMISSED } },
+    where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } },
     orderBy: { name: "asc" },
     include: { ppeSize: true }, // Include user's PPE size configuration
   });

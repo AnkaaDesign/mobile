@@ -71,6 +71,15 @@ export const positionsListConfig: ListConfig<Position> = {
         format: 'currency',
       },
       {
+        key: 'salaryFloor',
+        label: 'PISO',
+        sortable: false,
+        width: 1.3,
+        align: 'right',
+        render: (position) => position.salaryFloor ?? 0,
+        format: 'currency',
+      },
+      {
         key: 'users',
         label: 'COLABORADORES',
         sortable: false,
@@ -177,6 +186,7 @@ export const positionsListConfig: ListConfig<Position> = {
       { key: 'hierarchy', label: 'Hierarquia', path: 'hierarchy' },
       { key: 'bonifiable', label: 'Bonificável', path: 'bonifiable', format: 'boolean' },
       { key: 'remuneration', label: 'Remuneração', path: 'remunerations[0].value', format: 'currency' },
+      { key: 'salaryFloor', label: 'Piso', path: 'salaryFloor', format: 'currency' },
       { key: 'users', label: 'Colaboradores', path: '_count.users' },
       { key: 'createdAt', label: 'Cadastrado em', path: 'createdAt', format: 'date' },
     ],

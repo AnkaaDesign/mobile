@@ -841,3 +841,37 @@ export const serverKeys = {
 };
 
 // =====================================================
+// HR / Departamento Pessoal + Medicina do Trabalho Query Keys
+// =====================================================
+
+export const vacationKeys = createQueryKeyStore<Record<string, any>>("vacations");
+export const thirteenthKeys = createQueryKeyStore<Record<string, any>>("thirteenths");
+export const leaveKeys = createQueryKeyStore<Record<string, any>>("leaves");
+export const workAccidentKeys = createQueryKeyStore<Record<string, any>>("workAccidents");
+export const dependentKeys = createQueryKeyStore<Record<string, any>>("dependents");
+export const terminationKeys = createQueryKeyStore<Record<string, any>>("terminations");
+export const benefitKeys = createQueryKeyStore<Record<string, any>>("benefits");
+export const admissionKeys = createQueryKeyStore<Record<string, any>>("admissions");
+export const salaryAdjustmentKeys = createQueryKeyStore<Record<string, any>>("salaryAdjustments");
+
+export const medicalExamKeys = {
+  ...createQueryKeyStore<Record<string, any>>("medicalExams"),
+  // Specialized queries
+  expiring: (days?: number) => (days !== undefined ? (["medicalExams", "expiring", days] as const) : (["medicalExams", "expiring"] as const)),
+};
+
+export const userBenefitKeys = {
+  ...createQueryKeyStore<Record<string, any>>("userBenefits"),
+  // Specialized queries
+  byUser: (userId: string, filters?: Record<string, any>) =>
+    filters ? (["userBenefits", "byUser", userId, filters] as const) : (["userBenefits", "byUser", userId] as const),
+};
+
+export const userPositionHistoryKeys = {
+  ...createQueryKeyStore<Record<string, any>>("userPositionHistories"),
+  // Specialized queries
+  byUser: (userId: string, filters?: Record<string, any>) =>
+    filters ? (["userPositionHistories", "byUser", userId, filters] as const) : (["userPositionHistories", "byUser", userId] as const),
+};
+
+// =====================================================

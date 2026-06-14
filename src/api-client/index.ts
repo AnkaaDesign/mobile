@@ -139,3 +139,15 @@ export { NfseService, nfseService, getNfseList, getNfseDetail, getNfsePdf as get
 export * from "./select-patterns";
 export * from "./task-quote";
 export * from "./questionnaire-entry";
+// HR / Departamento Pessoal + Medicina do Trabalho api-client modules
+export * from "./vacation";
+export * from "./thirteenth";
+export * from "./leave";
+export * from "./medical-exam";
+export * from "./work-accident";
+export * from "./benefit";
+export * from "./dependent";
+export * from "./termination";
+export * from "./salary-adjustment";
+export * from "./user-position-history";
+export * from "./admission";

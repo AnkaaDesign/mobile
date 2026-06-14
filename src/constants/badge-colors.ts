@@ -57,7 +57,13 @@ import {
   VERIFICATION_ERROR_SEVERITY,
   SECTOR_PRIVILEGES,
   BONIFICATION_STATUS,
-  TASK_QUOTE_STATUS,} from "./enums";
+  TASK_QUOTE_STATUS,
+  ADMISSION_STATUS,
+  TERMINATION_STATUS,
+  MEDICAL_EXAM_STATUS,
+  MEDICAL_EXAM_RESULT,
+  LEAVE_STATUS,
+  BENEFIT_ENROLLMENT_STATUS,} from "./enums";
 
 /**
  * Badge Variant Types
@@ -416,21 +422,22 @@ export const ENTITY_BADGE_CONFIG = {
     [MAINTENANCE_STATUS.OVERDUE]: "purple" as BadgeVariant,
   },
 
-  // User Contract Type (the legal kind/phase of the current vínculo)
+  // User Contract Type (the legal MODALITY of the current vínculo)
   USER: {
-    [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Amber - first trial period
-    [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "created" as BadgeVariant,  // Blue - second trial period
-    [CONTRACT_TYPE.EFFECTED]: "green" as BadgeVariant,               // Entity-specific: use green
+    [CONTRACT_TYPE.INDETERMINATE]: "green" as BadgeVariant,          // Entity-specific: use green (efetivo)
     [CONTRACT_TYPE.FIXED_TERM]: "created" as BadgeVariant,           // Blue - fixed term
-    [CONTRACT_TYPE.INTERMITTENT]: "blue" as BadgeVariant,            // Entity-specific: use blue
-    [CONTRACT_TYPE.APPRENTICE]: "purple" as BadgeVariant,            // Entity-specific: use purple
+    [CONTRACT_TYPE.INTERMITTENT]: "purple" as BadgeVariant,          // Purple - intermittent contract
+    [CONTRACT_TYPE.APPRENTICE]: "blue" as BadgeVariant,              // Blue - apprentice contract
     [CONTRACT_TYPE.TEMPORARY]: "orange" as BadgeVariant,             // Orange - temporary
   },
 
   // Employment contract lifecycle status
   CONTRACT_STATUS: {
+    [CONTRACT_STATUS.EXPERIENCE]: "pending" as BadgeVariant,         // Amber - em experiência
     [CONTRACT_STATUS.ACTIVE]: "green" as BadgeVariant,
-    [CONTRACT_STATUS.DISMISSED]: "red" as BadgeVariant,
+    [CONTRACT_STATUS.NOTICE_PERIOD]: "orange" as BadgeVariant,       // Aviso prévio
+    [CONTRACT_STATUS.ON_LEAVE]: "purple" as BadgeVariant,            // Afastado
+    [CONTRACT_STATUS.TERMINATED]: "red" as BadgeVariant,
   },
 
   // Worker category (on-folha vs off-folha)
@@ -736,6 +743,61 @@ export const ENTITY_BADGE_CONFIG = {
     [BONIFICATION_STATUS.SUSPENDED_BONIFICATION]: "red" as BadgeVariant,  // Red - bonification suspended (critical)
   },
 
+  // Admission Status (Departamento Pessoal)
+  ADMISSION: {
+    [ADMISSION_STATUS.DOCS_PENDING]: "pending" as BadgeVariant,    // Amber - documents pending
+    [ADMISSION_STATUS.MEDICAL_EXAM]: "blue" as BadgeVariant,       // Blue - admission exam phase
+    [ADMISSION_STATUS.CONTRACT]: "purple" as BadgeVariant,         // Purple - contract phase
+    [ADMISSION_STATUS.REGISTRATION]: "cyan" as BadgeVariant,       // Cyan - registration phase
+    [ADMISSION_STATUS.COMPLETED]: "completed" as BadgeVariant,     // Green - completed
+    [ADMISSION_STATUS.CANCELLED]: "cancelled" as BadgeVariant,     // Red - cancelled
+  },
+
+  // Termination Status (Departamento Pessoal)
+  TERMINATION: {
+    [TERMINATION_STATUS.INITIATED]: "gray" as BadgeVariant,        // Gray - just initiated
+    [TERMINATION_STATUS.NOTICE_PERIOD]: "pending" as BadgeVariant, // Amber - notice period running
+    [TERMINATION_STATUS.DOCUMENTS]: "blue" as BadgeVariant,        // Blue - documents phase
+    [TERMINATION_STATUS.MEDICAL_EXAM]: "purple" as BadgeVariant,   // Purple - dismissal exam phase
+    [TERMINATION_STATUS.CALCULATION]: "cyan" as BadgeVariant,      // Cyan - calculation phase
+    [TERMINATION_STATUS.PAYMENT]: "orange" as BadgeVariant,        // Orange - awaiting payment
+    [TERMINATION_STATUS.HOMOLOGATION]: "blue" as BadgeVariant,     // Blue - homologation phase
+    [TERMINATION_STATUS.COMPLETED]: "completed" as BadgeVariant,   // Green - completed
+    [TERMINATION_STATUS.CANCELLED]: "cancelled" as BadgeVariant,   // Red - cancelled
+  },
+
+  // Medical Exam Status (Medicina do Trabalho)
+  MEDICAL_EXAM: {
+    [MEDICAL_EXAM_STATUS.SCHEDULED]: "blue" as BadgeVariant,       // Blue - scheduled
+    [MEDICAL_EXAM_STATUS.COMPLETED]: "completed" as BadgeVariant,  // Green - completed
+    [MEDICAL_EXAM_STATUS.EXPIRED]: "expired" as BadgeVariant,      // Expired styling
+    [MEDICAL_EXAM_STATUS.CANCELLED]: "cancelled" as BadgeVariant,  // Red - cancelled
+  },
+
+  // Medical Exam Result (Medicina do Trabalho)
+  MEDICAL_EXAM_RESULT: {
+    [MEDICAL_EXAM_RESULT.PENDING]: "pending" as BadgeVariant,                  // Amber - awaiting result
+    [MEDICAL_EXAM_RESULT.FIT]: "green" as BadgeVariant,                        // Green - fit (apto)
+    [MEDICAL_EXAM_RESULT.FIT_WITH_RESTRICTIONS]: "orange" as BadgeVariant,     // Orange - apto com restrições
+    [MEDICAL_EXAM_RESULT.UNFIT]: "red" as BadgeVariant,                        // Red - unfit (inapto)
+  },
+
+  // Leave Status (Medicina do Trabalho)
+  LEAVE: {
+    [LEAVE_STATUS.SCHEDULED]: "gray" as BadgeVariant,              // Gray - scheduled
+    [LEAVE_STATUS.ACTIVE]: "blue" as BadgeVariant,                 // Blue - ongoing leave
+    [LEAVE_STATUS.COMPLETED]: "completed" as BadgeVariant,         // Green - completed
+    [LEAVE_STATUS.CANCELLED]: "cancelled" as BadgeVariant,         // Red - cancelled
+  },
+
+  // Benefit Enrollment Status (Departamento Pessoal)
+  BENEFIT_ENROLLMENT: {
+    [BENEFIT_ENROLLMENT_STATUS.ACTIVE]: "green" as BadgeVariant,       // Green - active enrollment
+    [BENEFIT_ENROLLMENT_STATUS.SUSPENDED]: "suspended" as BadgeVariant, // Suspended styling
+    [BENEFIT_ENROLLMENT_STATUS.OPTED_OUT]: "gray" as BadgeVariant,     // Gray - opted out
+    [BENEFIT_ENROLLMENT_STATUS.TERMINATED]: "red" as BadgeVariant,     // Red - terminated
+  },
+
   // Backup Status / Type / Priority (lowercase values from API)
   BACKUP: {
     // Status
@@ -802,8 +864,11 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   CHARGED: "charged",
   RATE_LIMITED: "onHold",
   BOUNCED: "bounced",
-  DISMISSED: "dismissed",
-  EFFECTED: "effected",
+  // Contract statuses (EmploymentContract redesign — replaced legacy DISMISSED/EFFECTED)
+  EXPERIENCE: "pending",
+  NOTICE_PERIOD: "orange",
+  ON_LEAVE: "purple",
+  TERMINATED: "red",
   REPROVED: "reproved",
 
   // Operations

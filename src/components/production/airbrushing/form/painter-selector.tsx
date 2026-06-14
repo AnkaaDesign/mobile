@@ -25,7 +25,7 @@ interface PainterSelectorProps {
  *
  * Painters are users whose sector has the AIRBRUSHING privilege.
  * IMPORTANT: dismissed/inactive users are intentionally NOT excluded —
- * painters are usually ex-employees (DISMISSED) kept as third-party workers.
+ * painters are usually ex-employees (TERMINATED) kept as third-party workers.
  */
 export function PainterSelector({
   value,
@@ -129,7 +129,7 @@ export function PainterSelector({
               </ThemedText>
             )}
           </View>
-          {metadata.currentContractStatus === CONTRACT_STATUS.DISMISSED && (
+          {metadata.currentContractStatus === CONTRACT_STATUS.TERMINATED && (
             <Badge variant="outline" style={styles.sectorBadge}>
               <ThemedText style={[styles.sectorBadgeText, { color: colors.destructive }]}>Desligado</ThemedText>
             </Badge>

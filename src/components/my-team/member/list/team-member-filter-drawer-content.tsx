@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconAlertTriangle, IconBriefcase, IconBuilding, Icon
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { CONTRACT_TYPE, CONTRACT_STATUS } from "@/constants";
+import { CONTRACT_STATUS, CONTRACT_STATUS_LABELS } from "@/constants";
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface TeamMemberFilters {
@@ -26,12 +26,11 @@ interface TeamMemberFilterDrawerContentProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: CONTRACT_TYPE.EXPERIENCE_PERIOD_1, label: "Experiência 1" },
-  { value: CONTRACT_TYPE.EXPERIENCE_PERIOD_2, label: "Experiência 2" },
-  { value: CONTRACT_TYPE.EFFECTED, label: "Efetivado" },
-  { value: CONTRACT_TYPE.APPRENTICE, label: "Aprendiz" },
-  { value: CONTRACT_TYPE.INTERMITTENT, label: "Intermitente" },
-  { value: CONTRACT_STATUS.DISMISSED, label: "Desligado" },
+  { value: CONTRACT_STATUS.EXPERIENCE, label: CONTRACT_STATUS_LABELS[CONTRACT_STATUS.EXPERIENCE] },
+  { value: CONTRACT_STATUS.ACTIVE, label: CONTRACT_STATUS_LABELS[CONTRACT_STATUS.ACTIVE] },
+  { value: CONTRACT_STATUS.NOTICE_PERIOD, label: CONTRACT_STATUS_LABELS[CONTRACT_STATUS.NOTICE_PERIOD] },
+  { value: CONTRACT_STATUS.ON_LEAVE, label: CONTRACT_STATUS_LABELS[CONTRACT_STATUS.ON_LEAVE] },
+  { value: CONTRACT_STATUS.TERMINATED, label: CONTRACT_STATUS_LABELS[CONTRACT_STATUS.TERMINATED] },
 ];
 
 export function TeamMemberFilterDrawerContent({

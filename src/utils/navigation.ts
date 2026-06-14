@@ -1,11 +1,13 @@
 // packages/utils/src/navigation.ts
 // Navigation utility functions moved from constants package
 
-import { SECTOR_PRIVILEGES, TEAM_LEADER, TABLER_ICONS, CONTRACT_TYPE, type MenuItem } from '../constants';
+import { SECTOR_PRIVILEGES, TEAM_LEADER, TABLER_ICONS, CONTRACT_STATUS, EMPLOYEE_TYPE, type MenuItem } from '../constants';
 
 // Define minimal user interface for navigation
 export interface NavigationUser {
   currentContractType?: string | null;
+  currentContractStatus?: string | null;
+  currentEmployeeType?: string | null;
   sector?: {
     privileges?: SECTOR_PRIVILEGES;
   };
@@ -81,9 +83,12 @@ export function getFilteredMenuForUser(
   // Remove items explicitly flagged as hidden (temporary feature gating)
   filteredMenu = filterMenuByHidden(filteredMenu);
 
-  // Apply bonifiable filtering - hide menu items that require bonifiable position
-  // User must be EFFECTED and have a bonifiable position to see bonus-related menus
-  const isBonifiable = user?.currentContractType === CONTRACT_TYPE.EFFECTED && (user?.position?.bonifiable ?? false);
+  // Apply bonifiable filtering - hide menu items that require bonifiable position.
+  // Eligibility = a confirmed CLT bond (employeeType CLT && status ACTIVE) + bonifiable position.
+  const isBonifiable =
+    user?.currentEmployeeType === EMPLOYEE_TYPE.CLT &&
+    user?.currentContractStatus === CONTRACT_STATUS.ACTIVE &&
+    (user?.position?.bonifiable ?? false);
   filteredMenu = filterMenuByBonifiable(filteredMenu, isBonifiable);
 
   // Apply open-questionnaire filtering - hide menu items (e.g. Questionários)

@@ -2,7 +2,8 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useUser } from "@/hooks";
-import { CONTRACT_TYPE, CONTRACT_STATUS, CONTRACT_TYPE_LABELS, routes } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_STATUS, CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, EMPLOYEE_TYPE_LABELS, routes } from "@/constants";
+import { getExperiencePhase, getDaysRemainingInExperiencePeriod } from "@/utils/user";
 import { mobileRoute } from "@/constants/routes.types";
 import { spacing, fontSize } from "@/constants/design-system";
 import {
@@ -25,21 +26,26 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 
-const getStatusLabel = (status: string | null | undefined) => {
-  if (!status) return "Desconhecido";
-  return CONTRACT_TYPE_LABELS[status as CONTRACT_TYPE] || status;
+// Label for the contract MODALITY (tipo de vínculo).
+const getModalityLabel = (type: string | null | undefined) => {
+  if (!type) return "—";
+  return CONTRACT_TYPE_LABELS[type as CONTRACT_TYPE] || type;
 };
 
+// Label for the lifecycle STATUS (situação).
+const getStatusLabel = (status: string | null | undefined) => {
+  if (!status) return "Desconhecido";
+  return CONTRACT_STATUS_LABELS[status as CONTRACT_STATUS] || status;
+};
+
+// Color keyed on the lifecycle STATUS (situação).
 const getStatusColor = (status: string | null | undefined, colors: any) => {
   const statusColors: Record<string, string> = {
-    [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: colors.warning,
-    [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: colors.warning,
-    [CONTRACT_TYPE.EFFECTED]: colors.success,
-    [CONTRACT_TYPE.APPRENTICE]: colors.success,
-    [CONTRACT_TYPE.INTERMITTENT]: colors.success,
-    [CONTRACT_TYPE.FIXED_TERM]: colors.success,
-    [CONTRACT_TYPE.TEMPORARY]: colors.success,
-    [CONTRACT_STATUS.DISMISSED]: colors.destructive,
+    [CONTRACT_STATUS.EXPERIENCE]: colors.warning,
+    [CONTRACT_STATUS.ACTIVE]: colors.success,
+    [CONTRACT_STATUS.NOTICE_PERIOD]: colors.warning,
+    [CONTRACT_STATUS.ON_LEAVE]: colors.warning,
+    [CONTRACT_STATUS.TERMINATED]: colors.destructive,
   };
   return (status && statusColors[status]) || colors.mutedForeground;
 };
@@ -90,6 +96,7 @@ export default function EmployeeDetailScreen() {
       phone: true,
       currentContractType: true,
       currentContractStatus: true,
+      currentEmployeeType: true,
       avatarId: true,
       performanceLevel: true,
       currentContract: true,
@@ -122,8 +129,11 @@ export default function EmployeeDetailScreen() {
         const contract = employee.currentContract;
         const admissionDate = contract?.admissionDate ?? contract?.exp1StartAt;
         const terminationDate = contract?.terminationDate;
-        const isDismissed = employee.currentContractStatus === CONTRACT_STATUS.DISMISSED;
+        const isDismissed = employee.currentContractStatus === CONTRACT_STATUS.TERMINATED;
+        const isInExperience = employee.currentContractStatus === CONTRACT_STATUS.EXPERIENCE;
         const employmentDuration = getEmploymentDuration(admissionDate, terminationDate);
+        const experiencePhase = getExperiencePhase(employee);
+        const experienceDaysLeft = getDaysRemainingInExperiencePeriod(employee);
 
         return (
           <View style={styles.body}>
@@ -159,17 +169,18 @@ export default function EmployeeDetailScreen() {
                     variant="secondary"
                     style={{
                       backgroundColor:
-                        getStatusColor(isDismissed ? CONTRACT_STATUS.DISMISSED : employee.currentContractType, colors) + "20",
+                        getStatusColor(employee.currentContractStatus, colors) + "20",
                       marginTop: spacing.xs,
                     }}
                   >
                     <ThemedText
                       style={[
                         styles.statusText,
-                        { color: getStatusColor(isDismissed ? CONTRACT_STATUS.DISMISSED : employee.currentContractType, colors) },
+                        { color: getStatusColor(employee.currentContractStatus, colors) },
                       ]}
                     >
-                      {isDismissed ? "Desligado" : getStatusLabel(employee.currentContractType)}
+                      {getStatusLabel(employee.currentContractStatus)}
+                      {isInExperience && experiencePhase ? ` (Fase ${experiencePhase})` : ""}
                     </ThemedText>
                   </Badge>
                 </View>
@@ -242,6 +253,54 @@ export default function EmployeeDetailScreen() {
                     icon={<IconStar size={16} color={colors.mutedForeground} />}
                     label="Setor Liderado"
                     value={employee.ledSector.name}
+                    colors={colors}
+                  />
+                )}
+                {employee.currentEmployeeType && (
+                  <InfoRow
+                    icon={<IconBriefcase size={16} color={colors.mutedForeground} />}
+                    label="Categoria"
+                    value={EMPLOYEE_TYPE_LABELS[employee.currentEmployeeType] || employee.currentEmployeeType}
+                    colors={colors}
+                  />
+                )}
+                {employee.currentContractType && (
+                  <InfoRow
+                    icon={<IconBriefcase size={16} color={colors.mutedForeground} />}
+                    label="Modalidade do vínculo"
+                    value={getModalityLabel(employee.currentContractType)}
+                    colors={colors}
+                  />
+                )}
+                {employee.currentContractStatus && (
+                  <InfoRow
+                    icon={<IconBriefcase size={16} color={colors.mutedForeground} />}
+                    label="Situação"
+                    value={getStatusLabel(employee.currentContractStatus)}
+                    colors={colors}
+                  />
+                )}
+                {isInExperience && experiencePhase && (
+                  <InfoRow
+                    icon={<IconCalendar size={16} color={colors.warning} />}
+                    label="Experiência"
+                    value={`Fase ${experiencePhase}${experienceDaysLeft !== null ? ` · ${experienceDaysLeft} dia(s) restantes` : ""}`}
+                    colors={colors}
+                  />
+                )}
+                {contract?.effectedAt && (
+                  <InfoRow
+                    icon={<IconCalendar size={16} color={colors.success} />}
+                    label="Efetivado em"
+                    value={formatDate(contract.effectedAt)}
+                    colors={colors}
+                  />
+                )}
+                {contract?.stabilityEnd && (
+                  <InfoRow
+                    icon={<IconCalendar size={16} color={colors.warning} />}
+                    label="Estabilidade até"
+                    value={formatDate(contract.stabilityEnd)}
                     colors={colors}
                   />
                 )}

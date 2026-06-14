@@ -115,7 +115,9 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             pis: "",
             birth: getDefaultBirthDate(),
             contract: {
-              contractType: CONTRACT_TYPE.EXPERIENCE_PERIOD_1,
+              // New hires start as a FIXED_TERM modality; the bond enters EXPERIENCE
+              // status server-side and converts to INDETERMINATE on efetivação.
+              contractType: CONTRACT_TYPE.FIXED_TERM,
               admissionDate: new Date(),
             },
             sectorId: null,
@@ -564,7 +566,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
           {mode === "create" && (
             <>
               <FormFieldGroup
-                label="Tipo de Contrato"
+                label="Modalidade do Vínculo"
                 required
                 error={(form.formState.errors as any).contract?.contractType?.message}
               >
@@ -576,7 +578,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
                       options={statusOptions}
                       value={value ?? undefined}
                       onValueChange={onChange}
-                      placeholder="Selecione o tipo de contrato"
+                      placeholder="Selecione a modalidade"
                       disabled={isLoading}
                       searchable={false}
                       clearable={false}

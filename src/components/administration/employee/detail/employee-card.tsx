@@ -10,7 +10,6 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { getBadgeVariant } from "@/constants/badge-colors";
 import { getUserStatusBadgeText } from "@/utils/user";
-import { CONTRACT_STATUS } from "@/constants";
 
 interface EmployeeCardProps {
   employee: User;
@@ -19,10 +18,11 @@ interface EmployeeCardProps {
 export function EmployeeCard({ employee }: EmployeeCardProps) {
   const { colors } = useTheme();
 
-  const statusVariant =
-    employee.currentContractStatus === CONTRACT_STATUS.DISMISSED
-      ? getBadgeVariant(CONTRACT_STATUS.DISMISSED, "CONTRACT_STATUS")
-      : getBadgeVariant(employee.currentContractType ?? "", "USER");
+  // Badge variant is driven by the lifecycle STATUS (situação); fall back to the
+  // contract MODALITY when the status is unavailable.
+  const statusVariant = employee.currentContractStatus
+    ? getBadgeVariant(employee.currentContractStatus, "CONTRACT_STATUS")
+    : getBadgeVariant(employee.currentContractType ?? "", "USER");
 
   return (
     <Card style={styles.card}>

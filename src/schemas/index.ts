@@ -113,4 +113,16 @@ export {
 // export * from "./statistics"; // Disabled - file doesn't exist
 export * from "./deployment";
 export * from "./economic-activity";
+// HR / Departamento Pessoal + Medicina do Trabalho schemas
+export * from "./vacation";
+export * from "./thirteenth";
+export * from "./work-accident";
+export * from "./leave";
+export * from "./medical-exam";
+export * from "./benefit";
+export * from "./dependent";
+export * from "./termination";
+export * from "./salary-adjustment";
+export * from "./user-position-history";
+export * from "./admission";
 // export * from "./driver"; // Disabled - not currently used

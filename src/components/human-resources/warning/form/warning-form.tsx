@@ -72,6 +72,8 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
     hrNotes: "",
     witnessIds: [],
     attachmentIds: [],
+    suspensionDays: null,
+    terminationId: null,
   };
 
   const updateDefaults: WarningUpdateFormData = mode === "update" && warning ? {
@@ -87,6 +89,8 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
     witnessIds: warning.witness?.map((w: any) => w.id) || [],
     attachmentIds: warning.attachments?.map((f: any) => f.id) || [],
     resolvedAt: warning.resolvedAt ? new Date(warning.resolvedAt) : undefined,
+    suspensionDays: warning.suspensionDays ?? null,
+    terminationId: warning.terminationId ?? null,
   } : {} as WarningUpdateFormData;
 
   const form = useForm<WarningCreateFormData | WarningUpdateFormData>({
@@ -99,6 +103,9 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  const severity = form.watch("severity");
+  const isSuspension = severity === WARNING_SEVERITY.SUSPENSION;
 
   // Async user loaders mirror the web form (collaborator-select / supervisor-select /
   // witness-multi-select): fetch active users, search by name, paginated.
@@ -317,7 +324,12 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                     <Combobox
                       options={severityOptions}
                       value={value}
-                      onValueChange={onChange}
+                      onValueChange={(newValue) => {
+                        onChange(newValue);
+                        if (newValue !== WARNING_SEVERITY.SUSPENSION) {
+                          form.setValue("suspensionDays", null);
+                        }
+                      }}
                       placeholder="Selecione a gravidade"
                       disabled={isLoading}
                       searchable={false}
@@ -351,6 +363,33 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                 />
               </FormFieldGroup>
             </FormRow>
+
+            {/* Suspension Days - only for SUSPENSION severity */}
+            {isSuspension && (
+              <FormFieldGroup
+                label="Dias de Suspensão"
+                required
+                helper="CLT art. 474: máximo de 30 dias."
+                error={(form.formState.errors as any).suspensionDays?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name={"suspensionDays" as any}
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      type="integer"
+                      value={value ?? undefined}
+                      onChange={onChange}
+                      placeholder="0"
+                      min={1}
+                      max={30}
+                      editable={!isLoading}
+                      error={!!(form.formState.errors as any).suspensionDays}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
+            )}
 
             {/* Description */}
             <FormFieldGroup

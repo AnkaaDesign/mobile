@@ -993,6 +993,29 @@ export function canDeleteHrEntities(user: User | null): boolean {
   return canEditHrEntities(user);
 }
 
+/**
+ * Can user manage Medicina do Trabalho entities (medical exams / ASO, leaves,
+ * work-accident reports / CAT)? Mirrors the web occupational-health pages, which
+ * gate to ACCOUNTING + HUMAN_RESOURCES + ADMIN (the api controllers are gated the
+ * same way — these records carry restricted clinical fields such as CID).
+ */
+export function canManageOccupationalHealth(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ACCOUNTING,
+    SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
+export function canEditOccupationalHealth(user: User | null): boolean {
+  return canManageOccupationalHealth(user);
+}
+
+export function canDeleteOccupationalHealth(user: User | null): boolean {
+  return canManageOccupationalHealth(user);
+}
+
 // =====================
 // USER PERMISSIONS
 // =====================

@@ -1,0 +1,74 @@
+import { View, StyleSheet } from "react-native";
+import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius, fontSize } from "@/constants/design-system";
+import { IconUser } from "@tabler/icons-react-native";
+import type { Leave } from "@/types";
+
+interface CollaboratorCardProps {
+  leave: Leave;
+}
+
+export function CollaboratorCard({ leave }: CollaboratorCardProps) {
+  const { colors } = useTheme();
+  const user = leave.user;
+
+  if (!user) {
+    return (
+      <DetailCard title="Colaborador" icon="user">
+        <View style={styles.emptyState}>
+          <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
+            <IconUser size={32} color={colors.mutedForeground} />
+          </View>
+          <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
+            Colaborador não encontrado
+          </ThemedText>
+          <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
+            As informações do colaborador não estão disponíveis.
+          </ThemedText>
+        </View>
+      </DetailCard>
+    );
+  }
+
+  return (
+    <DetailCard title="Colaborador" icon="user">
+      <View style={styles.content}>
+        <DetailSection title="Identificação">
+          <DetailField label="Nome" value={user.name || "-"} icon="user" />
+          {user.position && <DetailField label="Cargo" value={user.position.name} icon="briefcase" />}
+          {user.sector && <DetailField label="Setor" value={user.sector.name} icon="building" />}
+        </DetailSection>
+      </View>
+    </DetailCard>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: {
+    gap: spacing.lg,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: "600",
+  },
+  emptyDescription: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
+  },
+});

@@ -4,7 +4,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, CONTRACT_TYPE, SECTOR_PRIVILEGES } from "@/constants/enums";
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, CONTRACT_STATUS, SECTOR_PRIVILEGES } from "@/constants/enums";
 import { SERVICE_ORDER_TYPE_LABELS, SERVICE_ORDER_STATUS_LABELS } from "@/constants/enum-labels";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { getBadgeVariant } from "@/constants/badge-colors";
@@ -746,11 +746,8 @@ function ServiceRow({
   }> => {
     try {
       const queryParams: any = {
-        contractTypes: [
-          CONTRACT_TYPE.EXPERIENCE_PERIOD_1,
-          CONTRACT_TYPE.EXPERIENCE_PERIOD_2,
-          CONTRACT_TYPE.EFFECTED
-        ],
+        // Currently-employed workers only (exclude terminated bonds).
+        where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } },
         orderBy: { name: "asc" },
         page: page,
         take: 50,

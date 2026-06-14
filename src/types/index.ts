@@ -60,3 +60,14 @@ export type { SecullumTimeEntry, TimeClockEntryBatchUpdateFormData, TimeClockJus
 export * from "./supplier-extended";
 export * from "./invoice";
 export * from "./questionnaire";
+export * from "./vacation";
+export * from "./thirteenth";
+export * from "./work-accident";
+export * from "./leave";
+export * from "./medical-exam";
+export * from "./benefit";
+export * from "./dependent";
+export * from "./termination";
+export * from "./salary-adjustment";
+export * from "./user-position-history";
+export * from "./admission";

@@ -1,18 +1,11 @@
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { CONTRACT_TYPE, CONTRACT_STATUS } from '@/constants/enums'
-
-
-const STATUS_LABELS: Record<string, string> = {
-  EXPERIENCE_PERIOD_1: 'Experiência 1/2 (30 dias)',
-  EXPERIENCE_PERIOD_2: 'Experiência 2/2 (50 dias)',
-  EFFECTED: 'Efetivado',
-  DISMISSED: 'Desligado',
-}
+import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS } from '@/constants/enum-labels'
 
 const getContractLabel = (user: User): string => {
-  if (user.currentContractStatus === CONTRACT_STATUS.DISMISSED) return STATUS_LABELS.DISMISSED
-  return (user.currentContractType ? STATUS_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
+  if (user.currentContractStatus === CONTRACT_STATUS.TERMINATED) return CONTRACT_STATUS_LABELS[CONTRACT_STATUS.TERMINATED]
+  return (user.currentContractType ? CONTRACT_TYPE_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
 }
 
 export const personalEmployeesListConfig: ListConfig<User> = {
@@ -95,9 +88,9 @@ export const personalEmployeesListConfig: ListConfig<User> = {
         label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
-        options: Object.values(CONTRACT_TYPE).map((status) => ({
-          label: STATUS_LABELS[status],
-          value: status,
+        options: Object.values(CONTRACT_TYPE).map((type) => ({
+          label: CONTRACT_TYPE_LABELS[type],
+          value: type,
         })),
         placeholder: 'Selecione os tipos de contrato',
       },
@@ -200,7 +193,7 @@ export const personalEmployeesListConfig: ListConfig<User> = {
       { key: 'email', label: 'Email', path: 'email' },
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
-      { key: 'currentContractType', label: 'Tipo de Contrato', path: 'currentContractType', format: (value) => STATUS_LABELS[value] || value },
+      { key: 'currentContractType', label: 'Tipo de Contrato', path: 'currentContractType', format: (value) => CONTRACT_TYPE_LABELS[value as CONTRACT_TYPE] || value },
       { key: 'phone', label: 'Telefone', path: 'phone' },
     ],
   },

@@ -602,6 +602,137 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       // { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" }, // Temporarily hidden for testing
       { id: "requisicoes", title: "Requisicoes", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
+
+      // ============================================================
+      // DEPARTAMENTO PESSOAL (Área Andressa) — mirrors web departamento-pessoal,
+      // but mobile keeps all screens under /recursos-humanos/*.
+      // Gated for ACCOUNTING/HR/ADMIN like the equivalent web nav.
+      // ============================================================
+      {
+        id: "rh-admissoes",
+        title: "Admissões",
+        icon: "userCheck",
+        path: "/recursos-humanos/admissoes/listar",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        children: [
+          { id: "rh-admissoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/admissoes/cadastrar" },
+          { id: "rh-admissoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/admissoes/detalhes/:id", isDynamic: true },
+          { id: "rh-admissoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/admissoes/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "rh-rescisoes",
+        title: "Rescisões",
+        icon: "logOut",
+        path: "/recursos-humanos/rescisoes/listar",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        children: [
+          { id: "rh-rescisoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/rescisoes/cadastrar" },
+          { id: "rh-rescisoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/rescisoes/detalhes/:id", isDynamic: true },
+          { id: "rh-rescisoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/rescisoes/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "rh-ferias",
+        title: "Férias",
+        icon: "beach",
+        path: "/recursos-humanos/ferias/listar",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        children: [
+          { id: "rh-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
+          { id: "rh-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
+          { id: "rh-ferias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/ferias/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "rh-salarios-e-cargos",
+        title: "Salários e Cargos",
+        icon: "salary",
+        path: "/recursos-humanos/faixas-salariais",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        children: [
+          { id: "rh-faixas-salariais", title: "Faixas Salariais", icon: "salary", path: "/recursos-humanos/faixas-salariais" },
+          {
+            id: "rh-reajustes",
+            title: "Reajustes",
+            icon: "trendingUp",
+            path: "/recursos-humanos/reajustes/listar",
+            children: [
+              { id: "rh-reajustes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/reajustes/detalhes/:id", isDynamic: true },
+            ],
+          },
+          {
+            id: "rh-promocoes",
+            title: "Promoções",
+            icon: "movement",
+            path: "/recursos-humanos/promocoes/listar",
+            children: [
+              { id: "rh-promocoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/promocoes/detalhes/:id", isDynamic: true },
+            ],
+          },
+        ],
+      },
+      {
+        id: "rh-beneficios",
+        title: "Benefícios",
+        icon: "coins",
+        path: "/recursos-humanos/beneficios/listar",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        children: [
+          { id: "rh-beneficios-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/beneficios/cadastrar" },
+          { id: "rh-beneficios-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/beneficios/detalhes/:id", isDynamic: true },
+          { id: "rh-beneficios-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/beneficios/editar/:id", isDynamic: true },
+        ],
+      },
+    ],
+  },
+
+  // ============================================================
+  // MEDICINA DO TRABALHO (Área Andressa) — new top-level group.
+  // Mobile screens live under /recursos-humanos/medicina/*.
+  // Gated for ACCOUNTING/HR/ADMIN like the equivalent web nav.
+  // ============================================================
+  {
+    id: "medicina-do-trabalho",
+    title: "Medicina do Trabalho",
+    icon: "safety",
+    path: "/recursos-humanos/medicina/aso/listar",
+    requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+    children: [
+      {
+        id: "mt-aso",
+        title: "ASO / Exames",
+        icon: "clipboardList",
+        path: "/recursos-humanos/medicina/aso/listar",
+        children: [
+          { id: "mt-aso-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/aso/cadastrar" },
+          { id: "mt-aso-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/aso/detalhes/:id", isDynamic: true },
+          { id: "mt-aso-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/aso/editar/:id", isDynamic: true },
+        ],
+      },
+      { id: "mt-exames-periodicos", title: "Exames Periódicos", icon: "calendarStats", path: "/recursos-humanos/medicina/exames-periodicos/listar" },
+      {
+        id: "mt-afastamentos",
+        title: "Afastamentos",
+        icon: "calendar",
+        path: "/recursos-humanos/medicina/afastamentos/listar",
+        children: [
+          { id: "mt-afastamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/afastamentos/cadastrar" },
+          { id: "mt-afastamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/afastamentos/detalhes/:id", isDynamic: true },
+          { id: "mt-afastamentos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/afastamentos/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "mt-cat",
+        title: "CAT",
+        icon: "clipboardList",
+        path: "/recursos-humanos/medicina/cat/listar",
+        children: [
+          { id: "mt-cat-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/cat/cadastrar" },
+          { id: "mt-cat-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/cat/detalhes/:id", isDynamic: true },
+          { id: "mt-cat-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/cat/editar/:id", isDynamic: true },
+        ],
+      },
     ],
   },
 

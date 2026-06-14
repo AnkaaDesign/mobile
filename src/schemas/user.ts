@@ -666,12 +666,12 @@ const userTransform = (data: any) => {
 
   // Handle isActive filter
   // isActive now mirrors the current contract's lifecycle status: a collaborator
-  // is active when their current vínculo is not DISMISSED.
+  // is active when their current vínculo is not TERMINATED.
   if (typeof data.isActive === "boolean") {
     andConditions.push({
       currentContractStatus: data.isActive
-        ? { not: CONTRACT_STATUS.DISMISSED }  // Active = current vínculo not dismissed
-        : CONTRACT_STATUS.DISMISSED            // Inactive = current vínculo dismissed
+        ? { not: CONTRACT_STATUS.TERMINATED }  // Active = current vínculo not terminated
+        : CONTRACT_STATUS.TERMINATED            // Inactive = current vínculo terminated
     });
     delete data.isActive;
   }
@@ -908,7 +908,7 @@ const notificationPreferenceCreateNestedSchema = z.object({
 });
 
 // First employment contract (vínculo) created together with the collaborator.
-// When omitted, the service defaults employeeType=CLT, contractType=EXPERIENCE_PERIOD_1
+// When omitted, the service defaults employeeType=CLT, status=EXPERIENCE
 // and uses the user's admissionDate (positionId/sectorId mirror the user).
 export const userContractCreateNestedSchema = z.object({
   employeeType: z
@@ -939,7 +939,7 @@ export const userCreateSchema = z
     name: createNameSchema(2, 200, "Nome"),
     avatarId: z.string().uuid("Avatar inválido").nullable().optional(),
     // First vínculo (EmploymentContract) created with the collaborator. Optional;
-    // the service defaults employeeType=CLT, contractType=EXPERIENCE_PERIOD_1.
+    // the service defaults employeeType=CLT, status=EXPERIENCE.
     contract: userContractCreateNestedSchema.optional(),
     phone: phoneSchema.nullable().optional(),
     // Cargo (position) — required at create time. The bound Secullum função is

@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatDate } from "@/utils";
-import { CONTRACT_TYPE, CONTRACT_STATUS } from "@/constants";
+import { CONTRACT_STATUS_LABELS } from "@/constants";
 
 interface TeamMemberFilters {
   statuses?: string[];
@@ -32,14 +32,7 @@ interface FilterTag {
   onRemove: () => void;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "Experiência 1",
-  [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "Experiência 2",
-  [CONTRACT_TYPE.EFFECTED]: "Efetivado",
-  [CONTRACT_TYPE.APPRENTICE]: "Aprendiz",
-  [CONTRACT_TYPE.INTERMITTENT]: "Intermitente",
-  [CONTRACT_STATUS.DISMISSED]: "Desligado",
-};
+const STATUS_LABELS: Record<string, string> = CONTRACT_STATUS_LABELS;
 
 export function TeamMemberFilterTags({
   filters,

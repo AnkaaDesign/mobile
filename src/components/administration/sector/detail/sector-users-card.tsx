@@ -116,9 +116,9 @@ export function SectorUsersCard({ sector }: SectorUsersCardProps) {
 
                   {user.currentContractStatus && (
                     <View style={styles.statusContainer}>
-                      <Badge variant={user.currentContractStatus !== CONTRACT_STATUS.DISMISSED ? "success" : "secondary"}>
+                      <Badge variant={user.currentContractStatus !== CONTRACT_STATUS.TERMINATED ? "success" : "secondary"}>
                         <ThemedText style={{ fontSize: fontSize.xs }}>
-                          {user.currentContractStatus !== CONTRACT_STATUS.DISMISSED ? "Ativo" : "Inativo"}
+                          {user.currentContractStatus !== CONTRACT_STATUS.TERMINATED ? "Ativo" : "Inativo"}
                         </ThemedText>
                       </Badge>
                     </View>

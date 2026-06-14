@@ -46,7 +46,7 @@ export function PerformanceLevelFilterDrawerContent({
   const { data: sectorsData } = useSectors({ limit: 100, orderBy: { name: "asc" } });
   const { data: usersData } = useUsers({
     include: { position: true, sector: true },
-    where: { currentContractType: 'EFFECTED' },
+    where: { currentEmployeeType: 'CLT', currentContractStatus: 'ACTIVE' },
     orderBy: { name: 'asc' },
     limit: 100,
   });

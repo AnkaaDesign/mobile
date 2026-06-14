@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CONTRACT_TYPE, CONTRACT_STATUS } from "@/constants";
+import { CONTRACT_STATUS_LABELS } from "@/constants";
 
 export interface TeamUserFilters {
   statuses?: string[];
@@ -21,14 +21,7 @@ interface TeamUserFilterDrawerContentProps {
   onClose?: () => void;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "Experiência 1/2",
-  [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "Experiência 2/2",
-  [CONTRACT_TYPE.EFFECTED]: "Efetivado",
-  [CONTRACT_TYPE.APPRENTICE]: "Aprendiz",
-  [CONTRACT_TYPE.INTERMITTENT]: "Intermitente",
-  [CONTRACT_STATUS.DISMISSED]: "Desligado",
-};
+const STATUS_LABELS: Record<string, string> = CONTRACT_STATUS_LABELS;
 
 export function TeamUserFilterDrawerContent({
   filters,

@@ -15,7 +15,7 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
     switch (status) {
       case CONTRACT_STATUS.ACTIVE:
         return "success";
-      case CONTRACT_STATUS.DISMISSED:
+      case CONTRACT_STATUS.TERMINATED:
         return "destructive";
       default:
         return "secondary";

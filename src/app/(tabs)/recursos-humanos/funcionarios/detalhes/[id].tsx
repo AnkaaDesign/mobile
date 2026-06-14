@@ -3,7 +3,8 @@ import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert }
 import { useLocalSearchParams } from "expo-router";
 import { useUser, useScreenReady} from '@/hooks';
 import { useNav } from "@/contexts/nav";
-import { routes, CHANGE_LOG_ENTITY_TYPE, CONTRACT_TYPE, CONTRACT_STATUS, CONTRACT_TYPE_LABELS, EMPLOYEE_TYPE_LABELS } from '@/constants';
+import { routes, CHANGE_LOG_ENTITY_TYPE, CONTRACT_TYPE, CONTRACT_STATUS, CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, EMPLOYEE_TYPE_LABELS } from '@/constants';
+import { getExperiencePhase, getDaysRemainingInExperiencePeriod } from "@/utils/user";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,33 +34,36 @@ import {
   PpeDeliveriesTable,
 } from "@/components/administration/employee/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { UserPositionHistoryCard } from "@/components/human-resources/user-position-history";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// Helper function to get status badge variant. DISMISSED is a lifecycle status
-// (orthogonal to the contract type), so callers pass it through too.
-const getStatusBadgeVariant = (status: CONTRACT_TYPE | CONTRACT_STATUS | string | null | undefined) => {
+// Badge variant for the lifecycle STATUS (situação). Orthogonal to the modality.
+const getStatusBadgeVariant = (status: CONTRACT_STATUS | string | null | undefined) => {
   switch (status) {
-    case CONTRACT_TYPE.EFFECTED:
-    case CONTRACT_TYPE.APPRENTICE:
-    case CONTRACT_TYPE.INTERMITTENT:
-    case CONTRACT_TYPE.FIXED_TERM:
-    case CONTRACT_TYPE.TEMPORARY:
+    case CONTRACT_STATUS.ACTIVE:
       return "default";
-    case CONTRACT_TYPE.EXPERIENCE_PERIOD_1:
-    case CONTRACT_TYPE.EXPERIENCE_PERIOD_2:
+    case CONTRACT_STATUS.EXPERIENCE:
+    case CONTRACT_STATUS.NOTICE_PERIOD:
+    case CONTRACT_STATUS.ON_LEAVE:
       return "secondary";
-    case CONTRACT_STATUS.DISMISSED:
+    case CONTRACT_STATUS.TERMINATED:
       return "destructive";
     default:
       return "outline";
   }
 };
 
-// Helper function to get status label
-const getStatusLabel = (status: CONTRACT_TYPE | string | null | undefined) => {
+// Label for the lifecycle STATUS (situação).
+const getStatusLabel = (status: CONTRACT_STATUS | string | null | undefined) => {
   if (!status) return "Desconhecido";
-  return CONTRACT_TYPE_LABELS[status as CONTRACT_TYPE] || status;
+  return CONTRACT_STATUS_LABELS[status as CONTRACT_STATUS] || status;
+};
+
+// Label for the contract MODALITY (tipo de vínculo).
+const getModalityLabel = (type: CONTRACT_TYPE | string | null | undefined) => {
+  if (!type) return "—";
+  return CONTRACT_TYPE_LABELS[type as CONTRACT_TYPE] || type;
 };
 
 export default function EmployeeDetailScreen() {
@@ -233,19 +237,11 @@ export default function EmployeeDetailScreen() {
     ? differenceInDays(new Date(), new Date(employee.createdAt))
     : 0;
 
-  // Calculate experience period remaining days (dates live on the current vínculo)
+  // Experiência is now a STATUS; phase + remaining days are derived centrally.
   const contract = employee.currentContract;
-  const getExperienceDaysRemaining = () => {
-    if (employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_1 && contract?.exp1EndAt) {
-      return differenceInDays(new Date(contract.exp1EndAt), new Date());
-    }
-    if (employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_2 && contract?.exp2EndAt) {
-      return differenceInDays(new Date(contract.exp2EndAt), new Date());
-    }
-    return null;
-  };
-
-  const experienceDaysRemaining = getExperienceDaysRemaining();
+  const isInExperience = employee.currentContractStatus === CONTRACT_STATUS.EXPERIENCE;
+  const experiencePhase = getExperiencePhase(employee);
+  const experienceDaysRemaining = getDaysRemainingInExperiencePeriod(employee);
 
   return (
     <ScrollView
@@ -274,19 +270,21 @@ export default function EmployeeDetailScreen() {
                 </ThemedText>
                 <View style={styles.headerMeta}>
                   <Badge
-                    variant={getStatusBadgeVariant(
-                      employee.currentContractStatus === CONTRACT_STATUS.DISMISSED
-                        ? CONTRACT_STATUS.DISMISSED
-                        : employee.currentContractType
-                    )}
+                    variant={getStatusBadgeVariant(employee.currentContractStatus)}
                     size="sm"
                   >
                     <ThemedText style={{ fontSize: 11 }}>
-                      {employee.currentContractStatus === CONTRACT_STATUS.DISMISSED
-                        ? "Desligado"
-                        : getStatusLabel(employee.currentContractType)}
+                      {getStatusLabel(employee.currentContractStatus)}
+                      {isInExperience && experiencePhase ? ` (Fase ${experiencePhase})` : ""}
                     </ThemedText>
                   </Badge>
+                  {employee.currentContractType && (
+                    <Badge variant="outline" size="sm">
+                      <ThemedText style={{ fontSize: 11 }}>
+                        {getModalityLabel(employee.currentContractType)}
+                      </ThemedText>
+                    </Badge>
+                  )}
                   {experienceDaysRemaining !== null && experienceDaysRemaining > 0 && (
                     <ThemedText style={StyleSheet.flatten([styles.experienceRemaining, { color: colors.mutedForeground }])}>
                       {experienceDaysRemaining} dias restantes
@@ -543,15 +541,20 @@ export default function EmployeeDetailScreen() {
                   >
                     <View style={styles.headerMeta}>
                       <Badge
-                        variant={getStatusBadgeVariant(
-                          vinculo.status === CONTRACT_STATUS.DISMISSED ? CONTRACT_STATUS.DISMISSED : vinculo.contractType
-                        )}
+                        variant={getStatusBadgeVariant(vinculo.status)}
                         size="sm"
                       >
                         <ThemedText style={{ fontSize: 11 }}>
-                          {vinculo.status === CONTRACT_STATUS.DISMISSED ? "Desligado" : getStatusLabel(vinculo.contractType)}
+                          {getStatusLabel(vinculo.status)}
                         </ThemedText>
                       </Badge>
+                      {vinculo.contractType && (
+                        <Badge variant="outline" size="sm">
+                          <ThemedText style={{ fontSize: 11 }}>
+                            {getModalityLabel(vinculo.contractType)}
+                          </ThemedText>
+                        </Badge>
+                      )}
                       <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
                         #{vinculo.sequence}
                         {vinculo.employeeType ? ` · ${EMPLOYEE_TYPE_LABELS[vinculo.employeeType] || vinculo.employeeType}` : ""}
@@ -567,6 +570,9 @@ export default function EmployeeDetailScreen() {
             </CardContent>
           </Card>
         )}
+
+        {/* Histórico de Cargos (position-history timeline) */}
+        <UserPositionHistoryCard userId={employee.id} />
 
         {/* Relation Tables */}
         <WarningsTable employee={employee} maxHeight={400} />

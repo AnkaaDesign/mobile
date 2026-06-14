@@ -2,24 +2,18 @@ import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
-import { CONTRACT_TYPE, CONTRACT_STATUS } from '@/constants/enums'
+import { CONTRACT_TYPE } from '@/constants/enums'
+import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS } from '@/constants/enum-labels'
 import { Badge } from '@/components/ui/badge'
 import { getBadgeVariant } from '@/constants/badge-colors'
 
-const STATUS_LABELS: Record<string, string> = {
-  EXPERIENCE_PERIOD_1: 'Experiência 1',
-  EXPERIENCE_PERIOD_2: 'Experiência 2',
-  EFFECTED: 'Efetivado',
-  APPRENTICE: 'Aprendiz',
-  INTERMITTENT: 'Intermitente',
-  DISMISSED: 'Desligado',
-}
-
-// Resolve the contract-type label, falling back to "Desligado" when the user
-// has been dismissed (dismissal is a lifecycle status, orthogonal to the type).
+// Resolve the badge label: prefer the lifecycle STATUS (situação), falling back
+// to the contract MODALITY when the status is unavailable.
 const getContractLabel = (user: User): string => {
-  if (user.currentContractStatus === CONTRACT_STATUS.DISMISSED) return STATUS_LABELS.DISMISSED
-  return (user.currentContractType ? STATUS_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
+  if (user.currentContractStatus) {
+    return CONTRACT_STATUS_LABELS[user.currentContractStatus] || user.currentContractStatus
+  }
+  return (user.currentContractType ? CONTRACT_TYPE_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
 }
 
 export const collaboratorsListConfig: ListConfig<User> = {
@@ -121,7 +115,9 @@ export const collaboratorsListConfig: ListConfig<User> = {
         width: 1.8,
         align: 'left',
         render: (user) => {
-          const variant = getBadgeVariant(user.currentContractType ?? '', 'USER')
+          const variant = user.currentContractStatus
+            ? getBadgeVariant(user.currentContractStatus, 'CONTRACT_STATUS')
+            : getBadgeVariant(user.currentContractType ?? '', 'USER')
           const label = getContractLabel(user)
           return (
             <Badge
@@ -362,14 +358,14 @@ export const collaboratorsListConfig: ListConfig<User> = {
     fields: [
       {
         key: 'contractTypes',
-        label: 'Tipo de Contrato',
+        label: 'Modalidade do Vínculo',
         type: 'select',
         multiple: true,
-        options: Object.values(CONTRACT_TYPE).map((status) => ({
-          label: STATUS_LABELS[status],
-          value: status,
+        options: Object.values(CONTRACT_TYPE).map((type) => ({
+          label: CONTRACT_TYPE_LABELS[type],
+          value: type,
         })),
-        placeholder: 'Selecione os tipos de contrato',
+        placeholder: 'Selecione as modalidades',
       },
       {
         key: 'positionIds',
@@ -475,7 +471,8 @@ export const collaboratorsListConfig: ListConfig<User> = {
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       { key: 'ledSector', label: 'Setor Liderado', path: 'ledSector.name' },
-      { key: 'currentContractType', label: 'Tipo de Contrato', path: 'currentContractType', format: (value) => STATUS_LABELS[value] || value },
+      { key: 'currentContractType', label: 'Modalidade do Vínculo', path: 'currentContractType', format: (value) => CONTRACT_TYPE_LABELS[value as CONTRACT_TYPE] || value },
+      { key: 'currentContractStatus', label: 'Situação', path: 'currentContractStatus', format: (value) => CONTRACT_STATUS_LABELS[value as keyof typeof CONTRACT_STATUS_LABELS] || value },
       { key: 'birth', label: 'Data de Nascimento', path: 'birth', format: 'date' },
       { key: 'terminationDate', label: 'Data de Demissão', path: 'currentContract.terminationDate', format: 'date' },
       { key: 'admissionDate', label: 'Data de Admissão', path: 'currentContract.admissionDate', format: 'date' },

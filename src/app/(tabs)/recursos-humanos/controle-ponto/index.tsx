@@ -69,7 +69,7 @@ export default function TimeEntriesListScreen() {
 
   // Fetch users for selector
   const { data: usersData, isLoading: usersLoading } = useUsers({
-    where: { currentContractStatus: { not: CONTRACT_STATUS.DISMISSED }, secullumEmployeeId: { not: null } },
+    where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED }, secullumEmployeeId: { not: null } },
     orderBy: { name: "asc" },
     take: 100,
   });

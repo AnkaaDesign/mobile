@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconUsers } from "@tabler/icons-react-native";
 import type { Warning } from '../../../../types';
-import { WARNING_CATEGORY_LABELS } from "@/constants";
+import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY } from "@/constants";
 import { formatDate, formatDateTime } from "@/utils";
 
 interface WarningDetailsCardProps {
@@ -77,6 +77,23 @@ export function WarningDetailsCard({ warning }: WarningDetailsCardProps) {
             </View>
           </DetailSection>
         )}
+
+        {/* Suspension Section - only for SUSPENSION severity */}
+        {warning.severity === WARNING_SEVERITY.SUSPENSION && warning.suspensionDays ? (
+          <DetailSection title="Suspensão">
+            <DetailField
+              label="Dias de Suspensão"
+              icon="ban"
+              value={`${warning.suspensionDays} dia${warning.suspensionDays !== 1 ? 's' : ''}`}
+            />
+            {warning.terminationId ? (
+              <DetailField
+                label="Rescisão Vinculada"
+                value="Justa causa vinculada"
+              />
+            ) : null}
+          </DetailSection>
+        ) : null}
 
         {/* Dates Section */}
         <DetailSection title="Datas Importantes">
