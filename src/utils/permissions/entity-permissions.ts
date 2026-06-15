@@ -636,36 +636,35 @@ export function canViewAirbrushingFinancials(user: User | null): boolean {
 // =====================
 
 /**
- * Can user create observations?
- * Only ADMIN and COMMERCIAL can create new observations.
- * Edit/delete of existing observations is broader — see canEditObservations.
+ * Single source of truth for who may CREATE and EDIT observations.
+ * Per business rule, only these sectors may author or modify observations —
+ * the plain PRODUCTION worker sector (and any sector not listed) is excluded.
+ * Create and edit share this set intentionally; deletion is stricter (see
+ * canDeleteObservations). Exported so route-level guards can reference the same
+ * list instead of duplicating it.
  */
+export const OBSERVATION_WRITE_PRIVILEGES: SECTOR_PRIVILEGES[] = [
+  SECTOR_PRIVILEGES.ADMIN,
+  SECTOR_PRIVILEGES.COMMERCIAL,
+  SECTOR_PRIVILEGES.LOGISTIC,
+  SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+];
+
 export function canCreateObservations(user: User | null): boolean {
   if (!user) return false;
-  return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.ADMIN,
-    SECTOR_PRIVILEGES.COMMERCIAL,
-  ]);
+  return hasAnyPrivilege(user, OBSERVATION_WRITE_PRIVILEGES);
 }
 
 export function canEditObservations(user: User | null): boolean {
   if (!user) return false;
-  return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.ADMIN,
-    SECTOR_PRIVILEGES.FINANCIAL,
-    SECTOR_PRIVILEGES.COMMERCIAL,
-    SECTOR_PRIVILEGES.PRODUCTION,
-    SECTOR_PRIVILEGES.WAREHOUSE,
-    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
-  ]);
+  return hasAnyPrivilege(user, OBSERVATION_WRITE_PRIVILEGES);
 }
 
 export function canDeleteObservations(user: User | null): boolean {
   if (!user) return false;
-  return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.FINANCIAL,
-    SECTOR_PRIVILEGES.ADMIN,
-  ]);
+  // Deletion is destructive — restricted to ADMIN only. (Previously FINANCIAL
+  // could delete but not create/edit, which contradicted the write rule.)
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN]);
 }
 
 // =====================

@@ -12,7 +12,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useNav } from "@/contexts/nav";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
-import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { OBSERVATION_WRITE_PRIVILEGES } from "@/utils/permissions/entity-permissions";
+import { routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 
 
@@ -22,18 +23,10 @@ export default function CreateObservationScreen() {
   const formKey = useFormScreenKey();
   return (
     <PrivilegeGate
-      required={{
-        // PRODUCTION sector users cannot create observations (per business
-        // rule: only ADMIN and COMMERCIAL author them). Excluded here so
-        // direct URL navigation is blocked, not just the list FAB.
-        any: [
-          SECTOR_PRIVILEGES.ADMIN,
-          SECTOR_PRIVILEGES.FINANCIAL,
-          SECTOR_PRIVILEGES.COMMERCIAL,
-          SECTOR_PRIVILEGES.WAREHOUSE,
-          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
-        ],
-      }}
+      // Only ADMIN, COMMERCIAL, LOGISTIC and PRODUCTION_MANAGER may author
+      // observations. Gated here so direct URL navigation is blocked, not just
+      // the list FAB. Shared with edit/list via OBSERVATION_WRITE_PRIVILEGES.
+      required={{ any: OBSERVATION_WRITE_PRIVILEGES }}
       fallback="unauthorized"
     >
       <CreateObservationScreenInner key={formKey} />

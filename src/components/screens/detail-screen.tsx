@@ -74,6 +74,13 @@ export interface DetailScreenProps<T extends BaseEntity> {
    */
   deletePrivilege?: PrivilegeReq;
   /**
+   * Privilege required to EDIT this entity. Defaults to `privilege` (page
+   * access) for backwards compatibility. Pass a stricter requirement when
+   * editing must be gated separately from viewing — e.g. PRODUCTION may view
+   * an observation but must not edit it.
+   */
+  editPrivilege?: PrivilegeReq;
+  /**
    * Overflow-menu actions rendered in the header. Status / privilege
    * filtering is the consumer's responsibility — pass an empty array (or
    * filter the list) when an action is not currently allowed.
@@ -129,7 +136,9 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
   });
   const editGuardActive = !!props.editGuard;
 
-  const editPriv = usePrivilegeGate(props.privilege ?? SECTOR_PRIVILEGES.BASIC);
+  // Edit is gated separately so a sector can view an entity without being able
+  // to edit it. Falls back to the page privilege when not specified.
+  const editPriv = usePrivilegeGate(props.editPrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.BASIC);
   // Delete is gated separately so a sector can manage an entity without being
   // able to delete it. Falls back to the page privilege when not specified.
   const deletePriv = usePrivilegeGate(props.deletePrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.BASIC);

@@ -6,6 +6,7 @@ import {
   useObservationMutations,
 } from "@/hooks";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { OBSERVATION_WRITE_PRIVILEGES } from "@/utils/permissions/entity-permissions";
 import { mobileRoute } from "@/constants/routes.types";
 import { spacing } from "@/constants/design-system";
 import { IconNote } from "@tabler/icons-react-native";
@@ -47,6 +48,8 @@ export default function ObservationDetailsScreen() {
       title={(o) =>
         o.task?.name ? `Observação - ${o.task.name}` : "Observação"
       }
+      // Viewing is broad (incl. PRODUCTION read-only); editing/deleting are
+      // gated separately below so only the write-privileged sectors can act.
       privilege={{
         any: [
           SECTOR_PRIVILEGES.ADMIN,
@@ -54,10 +57,13 @@ export default function ObservationDetailsScreen() {
           SECTOR_PRIVILEGES.COMMERCIAL,
           SECTOR_PRIVILEGES.PRODUCTION,
           SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.LOGISTIC,
           SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
         ],
       }}
+      editPrivilege={{ any: OBSERVATION_WRITE_PRIVILEGES }}
       editRoute={(o) => mobileRoute(routes.production.observations.edit(o.id))}
+      deletePrivilege={{ any: [SECTOR_PRIVILEGES.ADMIN] }}
       deleteAction={{
         mutation: deleteMutation,
         confirmText:

@@ -1,6 +1,5 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Observation } from '@/types'
-import { SECTOR_PRIVILEGES } from '@/constants/enums'
 import { canCreateObservations, canEditObservations, canDeleteObservations } from '@/utils/permissions/entity-permissions'
 
 
@@ -160,11 +159,10 @@ export const observationsListConfig: ListConfig<Observation> = {
     create: {
       label: 'Nova Observação',
       route: '/producao/observacoes/cadastrar',
-      // Production-sector users cannot create observations — only ADMIN
-      // and COMMERCIAL can. Hide the FAB for them entirely.
-      canCreate: (user: any) =>
-        canCreateObservations(user) &&
-        user?.sector?.privileges !== SECTOR_PRIVILEGES.PRODUCTION,
+      // Create/edit access is centralized in canCreateObservations
+      // (OBSERVATION_WRITE_PRIVILEGES) — the plain PRODUCTION sector is already
+      // excluded there, so no extra guard is needed.
+      canCreate: (user: any) => canCreateObservations(user),
     },
     bulk: [
       {

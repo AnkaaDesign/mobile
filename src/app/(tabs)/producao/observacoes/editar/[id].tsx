@@ -14,7 +14,8 @@ import { ThemedText, Card, Input, SimpleFormField } from "@/components/ui";
 import { IconAlertCircle } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { routes } from "@/constants";
+import { OBSERVATION_WRITE_PRIVILEGES } from "@/utils/permissions/entity-permissions";
 import { mobileRoute } from "@/constants/routes.types";
 import { FormScreen } from "@/components/screens/form-screen";
 
@@ -81,16 +82,7 @@ function EditObservationScreenInner() {
       title="Editar Observação"
       form={form}
       flow={flow}
-      privilege={{
-        any: [
-          SECTOR_PRIVILEGES.ADMIN,
-          SECTOR_PRIVILEGES.FINANCIAL,
-          SECTOR_PRIVILEGES.COMMERCIAL,
-          SECTOR_PRIVILEGES.PRODUCTION,
-          SECTOR_PRIVILEGES.WAREHOUSE,
-          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
-        ],
-      }}
+      privilege={{ any: OBSERVATION_WRITE_PRIVILEGES }}
       submittingLabel="Salvando..."
       submitLabel="Salvar Alterações"
       loadQuery={query as any}
