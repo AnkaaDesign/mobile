@@ -13,19 +13,15 @@ import { mobileRoute } from "@/constants/routes.types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   IconChevronRight,
-  IconThumbUp,
-  IconThumbDown,
-  IconHourglass,
   IconWritingSign,
 } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useMyAssinaturas } from "@/hooks/secullum";
 import { APURACAO_ESTADO } from "@/types/secullum";
 import type { SecullumApuracaoListItem } from "@/types/secullum";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-
-const PENDING_COLOR = "#d97706"; // amber-600
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -33,14 +29,16 @@ function fmtDate(iso?: string): string {
   return y && m && d ? `${d}/${m}/${y}` : iso;
 }
 
-function estadoMeta(estado: number, colors: { primary: string; destructive: string }) {
+type BadgeVariant = "success" | "destructive" | "warning";
+
+function estadoMeta(estado: number): { label: string; variant: BadgeVariant } {
   switch (estado) {
     case APURACAO_ESTADO.APROVADO:
-      return { label: "Aprovado", color: colors.primary, Icon: IconThumbUp };
+      return { label: "Aprovado", variant: "success" };
     case APURACAO_ESTADO.REJEITADO:
-      return { label: "Rejeitado", color: colors.destructive, Icon: IconThumbDown };
+      return { label: "Rejeitado", variant: "destructive" };
     default:
-      return { label: "Pendente", color: PENDING_COLOR, Icon: IconHourglass };
+      return { label: "Pendente", variant: "warning" };
   }
 }
 
@@ -121,8 +119,7 @@ export default function AssinaturasListScreen() {
               </View>
             }
             renderItem={({ item }) => {
-              const meta = estadoMeta(item.estado, colors);
-              const StatusIcon = meta.Icon;
+              const meta = estadoMeta(item.estado);
               return (
                 <TouchableOpacity
                   activeOpacity={0.7}
@@ -132,18 +129,17 @@ export default function AssinaturasListScreen() {
                   }
                 >
                   <View style={{ flex: 1, gap: 6 }}>
-                    <ThemedText style={styles.rowTitle} numberOfLines={2}>
-                      {item.descricao}
-                    </ThemedText>
+                    <View style={styles.titleRow}>
+                      <ThemedText style={[styles.rowTitle, { flex: 1 }]} numberOfLines={2}>
+                        {item.descricao}
+                      </ThemedText>
+                      <Badge variant={meta.variant} size="sm">
+                        {meta.label}
+                      </Badge>
+                    </View>
                     <ThemedText style={[styles.rowPeriod, { color: colors.mutedForeground }]}>
                       {fmtDate(item.dataInicio)} - {fmtDate(item.dataFim)}
                     </ThemedText>
-                    <View style={[styles.badge, { backgroundColor: meta.color + "22" }]}>
-                      <StatusIcon size={13} color={meta.color} />
-                      <ThemedText style={[styles.badgeText, { color: meta.color }]}>
-                        {meta.label}
-                      </ThemedText>
-                    </View>
                   </View>
                   <IconChevronRight size={20} color={colors.mutedForeground} />
                 </TouchableOpacity>
@@ -184,17 +180,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 14,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
   rowTitle: { fontSize: 15, fontWeight: "600" },
   rowPeriod: { fontSize: 13, fontWeight: "500" },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    marginTop: 2,
-  },
-  badgeText: { fontSize: 12, fontWeight: "700" },
 });

@@ -15,7 +15,9 @@ import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useWarningsInfiniteMobile } from "@/hooks";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { WARNING_SEVERITY, WARNING_CATEGORY } from "@/constants";
+import { WARNING_SEVERITY, WARNING_CATEGORY, SECTOR_PRIVILEGES } from "@/constants";
+import { useAuth } from "@/contexts/auth-context";
+import { hasAnyPrivilege } from "@/utils";
 
 interface WarningsTableProps {
   employee: User;
@@ -87,6 +89,12 @@ const getCategoryLabel = (category: string) => {
 
 export function WarningsTable({ employee, maxHeight = 500 }: WarningsTableProps) {
   const { colors } = useTheme();
+  const { user: currentUser } = useAuth();
+  const canViewWarnings = hasAnyPrivilege(currentUser, [
+    SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.ACCOUNTING,
+  ]);
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -114,7 +122,7 @@ export function WarningsTable({ employee, maxHeight = 500 }: WarningsTableProps)
       collaboratorId: employee.id,
     },
     orderBy: { createdAt: "desc" },
-    enabled: true,
+    enabled: canViewWarnings,
   });
 
   // Filter warnings by search query

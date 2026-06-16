@@ -260,17 +260,10 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
           badges={props.badges?.(entity) ?? []}
           actions={overflowActions}
           showEditButton={showEditButton}
-          showRefreshButton={!props.hideRefresh}
+          showRefreshButton={false}
           isRefreshing={props.query.isRefetching}
         />
       </View>
-      {!props.hideTerminalBanner && !showEditButton && editGuardActive && guard.isTerminal ? (
-        <View style={[styles.banner, { backgroundColor: colors.muted }]}>
-          <ThemedText style={styles.bannerText}>
-            {guard.message ?? "Este registro está em um estado finalizado e não pode ser editado."}
-          </ThemedText>
-        </View>
-      ) : null}
       {props.status ? (
         <View style={styles.statusRow}>
           <Badge variant={(props.status(entity).variant as any) ?? "default"}>

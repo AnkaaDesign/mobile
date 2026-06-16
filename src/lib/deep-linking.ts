@@ -83,6 +83,8 @@ export const ROUTE_MAP = {
   TaskQuote: '/(tabs)/financeiro/orcamento/detalhes/[taskId]',
   // Secullum solicitation (RH approvers review under calculos; employee self-service is meus-pontos)
   SecullumSolicitacao: '/(tabs)/recursos-humanos/calculos',
+  // Secullum assinatura — HR notification when an employee signs or rejects their cartão-ponto
+  SecullumAssinatura: '/(tabs)/recursos-humanos/calculos',
   // Financial / billing (faturamento) detail screen
   Financial: '/(tabs)/financeiro/faturamento/detalhes/[id]',
   // NFS-e document detail screen
@@ -242,6 +244,7 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   TASKQUOTE: 'TaskQuote',
   SECULLUM_SOLICITACAO: 'SecullumSolicitacao',
   SECULLUMSOLICITACAO: 'SecullumSolicitacao',
+  SECULLUM_ASSINATURA: 'SecullumAssinatura',
   PAYROLL: 'Payroll',
   SECULLUM_PAYROLL: 'SecullumPayroll',
   SECULLUMPAYROLL: 'SecullumPayroll',
@@ -299,6 +302,7 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   MaintenanceSchedule: 'MaintenanceSchedule',
   TaskQuote: 'TaskQuote',
   SecullumSolicitacao: 'SecullumSolicitacao',
+  SecullumAssinatura: 'SecullumAssinatura',
   Payroll: 'Payroll',
   SecullumPayroll: 'SecullumPayroll',
   BankSlip: 'BankSlip',

@@ -278,24 +278,19 @@ export default function AssinaturaDetailScreen() {
         </ScrollView>
       </ThemedView>
 
-      {/* Reject modal — "Informe o motivo da reprovação" */}
+      {/* Reject modal */}
       <Modal visible={rejectOpen} onClose={() => setRejectOpen(false)} animationType="fade">
         <ModalContent>
-          <ThemedText style={styles.modalTitle}>Informe o motivo da reprovação</ThemedText>
-
-          <View style={[styles.readonlyField, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-            <ThemedText style={[styles.readonlyLabel, { color: colors.primary }]}>Descrição</ThemedText>
-            <ThemedText style={[styles.readonlyValue, { color: colors.foreground }]} numberOfLines={1}>
-              {apuracao.descricao}
-            </ThemedText>
+          <View style={styles.modalHeader}>
+            <IconThumbDown size={22} color={colors.destructive} />
+            <ThemedText style={styles.modalTitle}>Reprovar Apuração</ThemedText>
           </View>
 
-          <View style={[styles.readonlyField, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-            <ThemedText style={[styles.readonlyLabel, { color: colors.primary }]}>Período</ThemedText>
-            <ThemedText style={[styles.readonlyValue, { color: colors.foreground }]}>{period}</ThemedText>
-          </View>
+          <ThemedText style={[styles.modalSubtitle, { color: colors.mutedForeground }]} numberOfLines={2}>
+            {apuracao.descricao} · {period}
+          </ThemedText>
 
-          <ThemedText style={[styles.readonlyLabel, { color: colors.primary, marginBottom: 4 }]}>Motivo</ThemedText>
+          <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>Motivo</ThemedText>
           <Textarea
             value={rejectReason}
             onChangeText={setRejectReason}
@@ -307,7 +302,7 @@ export default function AssinaturaDetailScreen() {
           <View style={styles.modalActions}>
             <View style={{ flex: 1 }}>
               <Button
-                variant="outline"
+                variant="secondary"
                 onPress={() => setRejectOpen(false)}
                 disabled={rejectMutation.isPending}
               >
@@ -315,8 +310,12 @@ export default function AssinaturaDetailScreen() {
               </Button>
             </View>
             <View style={{ flex: 1 }}>
-              <Button onPress={handleReject} loading={rejectMutation.isPending}>
-                Enviar
+              <Button
+                variant="destructive"
+                onPress={handleReject}
+                loading={rejectMutation.isPending}
+              >
+                Reprovar
               </Button>
             </View>
           </View>
@@ -379,16 +378,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   actions: { flexDirection: "row", gap: 10, marginTop: 4 },
-  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16 },
-  readonlyField: {
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    gap: 2,
-  },
-  readonlyLabel: { fontSize: 13, fontWeight: "600" },
-  readonlyValue: { fontSize: 15, fontWeight: "500" },
+  modalHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+  modalTitle: { fontSize: 18, fontWeight: "700" },
+  modalSubtitle: { fontSize: 13, fontWeight: "500", marginBottom: 16, lineHeight: 18 },
+  motivoFieldLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
   modalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
 });

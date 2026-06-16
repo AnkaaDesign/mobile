@@ -3,8 +3,8 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconClockEdit,
-  IconList,
   IconMapPinPlus,
+  IconWritingSign,
 } from "@tabler/icons-react-native";
 import { useEffect, useRef } from "react";
 import {
@@ -48,29 +48,30 @@ type PontosColumn = {
 };
 
 const SCROLL_COLUMNS: PontosColumn[] = [
-  // Batidas — entradas e saídas registradas no relógio de ponto
+  // Batidas — todas as entradas e saídas registradas no relógio de ponto
   { key: "entrada1", label: "Entrada 1", group: "pessoalPontosColBatidas" },
-  { key: "saida1", label: "Saída 1", group: "pessoalPontosColBatidas" },
+  { key: "saida1",   label: "Saída 1",   group: "pessoalPontosColBatidas" },
   { key: "entrada2", label: "Entrada 2", group: "pessoalPontosColBatidas" },
-  { key: "saida2", label: "Saída 2", group: "pessoalPontosColBatidas" },
-  // Horas normais — jornada contratual cumprida
-  { key: "normais", label: "Normais", group: "pessoalPontosColNormais" },
-  // Faltas — horas não trabalhadas sem justificativa
-  { key: "faltas", label: "Faltas", group: "pessoalPontosColFaltas" },
+  { key: "saida2",   label: "Saída 2",   group: "pessoalPontosColBatidas" },
+  { key: "entrada3", label: "Entrada 3", group: "pessoalPontosColBatidas" },
+  { key: "saida3",   label: "Saída 3",   group: "pessoalPontosColBatidas" },
+  // Atraso, Faltas e Ajuste — logo após as batidas (impacto direto no salário)
+  { key: "atras",  label: "Atraso",  group: "pessoalPontosColAtrasoFaltas" },
+  { key: "faltas", label: "Faltas",  group: "pessoalPontosColAtrasoFaltas" },
+  { key: "ajuste", label: "Ajuste",  group: "pessoalPontosColAtrasoFaltas" },
   // Horas extras — três faixas de adicional
-  { key: "ex50", label: "Ex 50%", group: "pessoalPontosColExtras" },
+  { key: "ex50",  label: "Ex 50%",  group: "pessoalPontosColExtras" },
   { key: "ex100", label: "Ex 100%", group: "pessoalPontosColExtras" },
   { key: "ex150", label: "Ex 150%", group: "pessoalPontosColExtras" },
   // DSR + adicional noturno
-  { key: "dsr", label: "DSR", group: "pessoalPontosColDsrNoturno" },
-  { key: "dsrDeb", label: "DSR Déb", group: "pessoalPontosColDsrNoturno" },
-  { key: "not", label: "Noturno", group: "pessoalPontosColDsrNoturno" },
+  { key: "dsr",   label: "DSR",     group: "pessoalPontosColDsrNoturno" },
+  { key: "dsrDeb",label: "DSR Déb", group: "pessoalPontosColDsrNoturno" },
+  { key: "not",   label: "Noturno", group: "pessoalPontosColDsrNoturno" },
   { key: "exNot", label: "Ex Not.", group: "pessoalPontosColDsrNoturno" },
-  // Abonos + atraso + ajuste
-  { key: "ajuste", label: "Ajuste", group: "pessoalPontosColAbonosAtraso" },
-  { key: "abono2", label: "Abono 2", group: "pessoalPontosColAbonosAtraso" },
-  { key: "abono3", label: "Abono 3", group: "pessoalPontosColAbonosAtraso" },
-  { key: "atras", label: "Atraso", group: "pessoalPontosColAbonosAtraso" },
+  // Normais + abonos — horas da jornada cumprida e ausências justificadas
+  { key: "normais", label: "Normais", group: "pessoalPontosColAbonos" },
+  { key: "abono2",  label: "Abono 2", group: "pessoalPontosColAbonos" },
+  { key: "abono3",  label: "Abono 3", group: "pessoalPontosColAbonos" },
 ];
 
 // Mock cell values keyed by column key, one entry per fixture row. Hardcoded
@@ -82,23 +83,25 @@ const SCROLL_COLUMNS: PontosColumn[] = [
 //   - row 3: an overtime day (extra 50%) + a justified abono
 //   - row 4: a Sunday/holiday worked → 100% extra + noturno
 const CELLS: Record<string, [string, string, string, string, string]> = {
-  entrada1: ["08:00", "08:05", "—", "08:00", "13:00"],
-  saida1: ["12:00", "12:00", "—", "12:00", "17:00"],
-  entrada2: ["13:00", "13:00", "—", "13:00", "18:00"],
-  saida2: ["17:00", "17:00", "—", "18:00", "22:00"],
-  normais: ["8:00", "7:55", "0:00", "8:00", "0:00"],
-  faltas: ["0:00", "0:05", "8:00", "0:00", "0:00"],
-  ex50: ["0:00", "0:00", "0:00", "1:00", "0:00"],
-  ex100: ["0:00", "0:00", "0:00", "0:00", "4:00"],
-  ex150: ["0:00", "0:00", "0:00", "0:00", "0:00"],
-  dsr: ["1:30", "1:30", "0:00", "1:30", "1:30"],
-  dsrDeb: ["0:00", "0:00", "1:30", "0:00", "0:00"],
-  not: ["0:00", "0:00", "0:00", "0:00", "1:00"],
-  exNot: ["0:00", "0:00", "0:00", "0:00", "0:34"],
-  ajuste: ["0:00", "0:00", "0:00", "0:00", "0:00"],
-  abono2: ["0:00", "0:00", "0:00", "0:00", "0:00"],
-  abono3: ["0:00", "0:00", "8:00", "0:00", "0:00"],
-  atras: ["0:00", "0:05", "0:00", "0:00", "0:00"],
+  entrada1: ["08:00", "08:05", "—",    "08:00", "13:00"],
+  saida1:   ["12:00", "12:00", "—",    "12:00", "17:00"],
+  entrada2: ["13:00", "13:00", "—",    "13:00", "18:00"],
+  saida2:   ["17:00", "17:00", "—",    "18:00", "22:00"],
+  entrada3: ["—",     "—",     "—",    "—",     "—"    ],
+  saida3:   ["—",     "—",     "—",    "—",     "—"    ],
+  atras:    ["0:00",  "0:05",  "0:00", "0:00",  "0:00" ],
+  faltas:   ["0:00",  "0:05",  "8:00", "0:00",  "0:00" ],
+  ajuste:   ["0:00",  "0:00",  "0:00", "0:00",  "0:00" ],
+  ex50:     ["0:00",  "0:00",  "0:00", "1:00",  "0:00" ],
+  ex100:    ["0:00",  "0:00",  "0:00", "0:00",  "4:00" ],
+  ex150:    ["0:00",  "0:00",  "0:00", "0:00",  "0:00" ],
+  dsr:      ["1:30",  "1:30",  "0:00", "1:30",  "1:30" ],
+  dsrDeb:   ["0:00",  "0:00",  "1:30", "0:00",  "0:00" ],
+  not:      ["0:00",  "0:00",  "0:00", "0:00",  "1:00" ],
+  exNot:    ["0:00",  "0:00",  "0:00", "0:00",  "0:34" ],
+  normais:  ["8:00",  "7:55",  "0:00", "8:00",  "0:00" ],
+  abono2:   ["0:00",  "0:00",  "0:00", "0:00",  "0:00" ],
+  abono3:   ["0:00",  "0:00",  "8:00", "0:00",  "0:00" ],
 };
 
 // Each group's left x-offset inside the horizontal ScrollView content, so the
@@ -217,14 +220,11 @@ export function MeusPontosScene(_props: SceneProps) {
         </Pressable>
 
         <Pressable
-          ref={slot.registerRef("pessoalPontosColumnToggle") as any}
-          onLayout={slot.register("pessoalPontosColumnToggle")}
+          ref={slot.registerRef("pessoalPontosAssinaturaButton") as any}
+          onLayout={slot.register("pessoalPontosAssinaturaButton")}
           style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
-          <IconList size={20} color={colors.foreground} />
-          <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
-            <Text style={styles.columnBadgeText}>{SCROLL_COLUMNS.length + 1}</Text>
-          </View>
+          <IconWritingSign size={20} color={colors.foreground} />
         </Pressable>
       </View>
 
@@ -406,22 +406,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-  },
-  columnBadge: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  columnBadgeText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "700",
   },
   // Table card — radius 8, border 1, soft shadow (CalculationsTable.container:
   // elevation 2, shadowOpacity 0.1, shadowRadius 4).

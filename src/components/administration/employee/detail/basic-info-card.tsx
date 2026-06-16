@@ -44,6 +44,7 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
         {employee.phone && (
           <DetailPhoneField
             label="Telefone"
+            icon="phone"
             phone={employee.phone}
           />
         )}

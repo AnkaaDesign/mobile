@@ -4,12 +4,11 @@ import { secullumService } from '@/api-client';
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IconRefresh, IconCloudCheck, IconShieldLock, IconSettings } from "@tabler/icons-react-native";
+import { IconCloudCheck, IconShieldLock, IconSettings } from "@tabler/icons-react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
@@ -138,11 +137,6 @@ export default function SyncStatusScreen() {
         subtitle="Conexão e autenticação com a Secullum"
         showBackButton
         onBackPress={() => goBack()}
-        rightAction={
-          <Button variant="ghost" size="sm" onPress={onRefresh} disabled={isRefreshing}>
-            <IconRefresh size={20} color="#3B82F6" />
-          </Button>
-        }
       />
 
       <ScrollView

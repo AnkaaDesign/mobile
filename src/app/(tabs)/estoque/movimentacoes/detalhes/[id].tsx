@@ -97,7 +97,8 @@ export default function ActivityDetailScreen() {
       query={query as any}
       icon={IconBox}
       title={(a) => `Movimentação #${String(a.id).slice(0, 8)}`}
-      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION] }}
+      deletePrivilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
       deleteAction={{
         mutation: deleteMutation,
         confirmText:

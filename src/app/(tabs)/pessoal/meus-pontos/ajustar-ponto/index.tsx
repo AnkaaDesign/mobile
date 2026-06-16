@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,7 +7,10 @@ import {
   Alert,
   Modal,
   Platform,
+  Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   IconCalendar,
@@ -135,6 +138,20 @@ export default function AjustarPontoScreen() {
   // with the full justificativa list to recover the name.
   const justificativasQuery = useMyJustificativas();
   const createMutation = useCreateMyAjustePonto();
+  const insets = useSafeAreaInsets();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const isObsFocused = useRef(false);
+
+  // Scroll textarea into view when keyboard appears
+  useEffect(() => {
+    const event = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const sub = Keyboard.addListener(event, () => {
+      if (isObsFocused.current) {
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 50);
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   useScreenReady(
     !(batidasQuery.isLoading || existingQuery.isLoading),
@@ -344,7 +361,13 @@ export default function AjustarPontoScreen() {
     <ThemedView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
+      >
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
@@ -495,14 +518,18 @@ export default function AjustarPontoScreen() {
             placeholder="Detalhes adicionais (opcional)"
             numberOfLines={3}
             editable={!disabled}
+            onFocus={() => {
+              isObsFocused.current = true;
+              setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+            }}
+            onBlur={() => { isObsFocused.current = false; }}
           />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
-      {/* Action bar — matches the standard form footer used across the app.
-          FormActionBar already applies `marginBottom: insets.bottom +
-          cardMarginBottom` internally, so DON'T add another paddingBottom
-          here or the bar floats too high. */}
+      {/* Action bar sits outside KAV — it hides itself when keyboard is visible
+          so there is no layout conflict with the KAV padding. */}
       <View>
         <FormActionBar
           onCancel={() => nav.goBack()}
@@ -665,11 +692,11 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
-    minHeight: 64,
+    minHeight: 52,
     gap: 10,
   },
   fieldText: { flex: 1 },

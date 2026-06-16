@@ -8,7 +8,7 @@ import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { IconShield, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
+import { IconShield, IconEdit, IconHistory } from "@tabler/icons-react-native";
 import { mobileRoute } from "@/constants/routes.types";
 // import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -193,37 +193,20 @@ export default function PPEDetailsScreen() {
         showBackButton={true}
         onBackPress={() => goBack()}
         rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={handleEdit}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              backgroundColor: colors.primary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            activeOpacity={0.7}
+          >
+            <IconEdit size={18} color={colors.primaryForeground} />
+          </TouchableOpacity>
         }
       />
 

@@ -19,7 +19,6 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import {
   IconTags,
   IconEdit,
-  IconRefresh,
   IconPackage,
   IconCalendar,
   IconHistory,
@@ -212,37 +211,20 @@ export default function BrandDetailScreen() {
         showBackButton={true}
         onBackPress={() => nav.goBack()}
         rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={handleEdit}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              backgroundColor: colors.primary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            activeOpacity={0.7}
+          >
+            <IconEdit size={18} color={colors.primaryForeground} />
+          </TouchableOpacity>
         }
       />
       <ScrollView

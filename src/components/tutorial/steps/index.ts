@@ -15,8 +15,9 @@ import {
   meusPontosIntroSteps,
   meusPontosJustifyEntrySteps,
   meusPontosAjustarEntrySteps,
-  meusPontosOutroSteps,
+  meusPontosAssinaturaEntrySteps,
 } from "./meus-pontos";
+import { assinaturaSteps } from "./assinaturas";
 import { justificarSteps } from "./justificar";
 import { ajustarPontoSteps } from "./ajustar-ponto";
 import { incluirPontoSteps } from "./incluir-ponto";
@@ -56,7 +57,8 @@ export function buildSteps(ctx: TutorialUserContext): TutorialStep[] {
     ...ajustarPontoSteps,
     ...meusPontosJustifyEntrySteps,
     ...justificarSteps,
-    ...meusPontosOutroSteps,
+    ...meusPontosAssinaturaEntrySteps,
+    ...assinaturaSteps,
     ...mensagensSteps,
     ...advertenciasSteps,
     ...leaderSteps,

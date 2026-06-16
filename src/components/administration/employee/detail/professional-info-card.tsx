@@ -53,7 +53,7 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
       {/* Performance Level Section - only if > 0 */}
       {employee.performanceLevel > 0 && (
         <DetailSection title="Nível de Desempenho">
-          <DetailField label="Nível de Desempenho" value={employee.performanceLevel.toString()} />
+          <DetailField label="Nível de Desempenho" icon="star" value={employee.performanceLevel.toString()} />
         </DetailSection>
       )}
     </DetailCard>

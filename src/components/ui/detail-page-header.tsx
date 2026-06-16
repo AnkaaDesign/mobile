@@ -90,7 +90,7 @@ export function DetailPageHeader<T extends BaseEntity>({
   badges = [],
   actions = [],
   showEditButton = true,
-  showRefreshButton = true,
+  showRefreshButton = false,
   isRefreshing = false,
   style,
   iconBackgroundColor,
@@ -115,10 +115,9 @@ export function DetailPageHeader<T extends BaseEntity>({
     [actions],
   );
 
-  // Get icon background color
   const getIconBackgroundColor = () => {
     if (iconBackgroundColor) return iconBackgroundColor;
-    return colors.muted + "20";
+    return colors.muted;
   };
 
   return (
@@ -285,8 +284,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
     flex: 1,
     marginRight: spacing.sm,
   },
