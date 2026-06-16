@@ -317,4 +317,31 @@ rsync -avz --delay-updates ../api/updates/ user@server:/path/to/api/updates/
   but are effectively unused; build locally.
 - **No Play Store distribution** currently — Android APKs are hand-distributed.
   When you're ready, `bundleRelease` makes the `.aab` the Play Store needs.
+
+### pnpm + Android native build (`prefab` / `No matching variant`)
+This project uses **pnpm** (`node-linker=hoisted`). Two pnpm-specific traps can
+break `./gradlew assembleRelease`:
+
+1. **`Error: no such option …patch_hash` (prefab / CMake config fails for
+   reanimated/worklets/gesture-handler).** Cause: a dependency patched via pnpm's
+   `patchedDependencies` makes pnpm inject a `patch_hash=<hash>` segment into the
+   `.pnpm` dir name of that package *and every package that depends on it*. The
+   `=` in the path breaks Android's `prefab` CLI (clikt reads `…patch_hash=…` as
+   `--option=value`). **Fix:** do NOT patch `react-native` (or any widely-depended
+   native package) via `pnpm-workspace.yaml` `patchedDependencies`. Patch it with
+   **patch-package** instead (`patches/<name>+<version>.patch`, applied by the
+   `postinstall` script) — it edits files in place and never renames dirs. The
+   `react-native` patch is iOS-only, so this has zero effect on the Android build.
+   Avoid the `virtualStoreDirMaxLength` workaround — set low enough to hash the
+   `=` away, it truncates package names and breaks autolinking (trap #2).
+
+2. **`No matching variant of project :react-native-… (No variants exist)` at
+   configure time.** Usually stale Gradle/native build state after node_modules
+   paths changed (e.g. a reinstall). **Fix:** reset build state:
+   ```bash
+   cd android && ./gradlew --stop
+   rm -rf android/.gradle android/build android/app/build android/app/.cxx
+   find node_modules/.pnpm -type d \( -name build -o -name .cxx \) -path "*/android/*" -prune -exec rm -rf {} +
+   ```
+   then rebuild.
 ```
