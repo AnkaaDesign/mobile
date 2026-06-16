@@ -63,7 +63,7 @@ export interface User extends BaseEntity {
 
   // Relations
   avatar?: File;
-  employmentContracts?: EmploymentContract[];
+  contracts?: EmploymentContract[];
   currentContract?: EmploymentContract | null;
   ppeSize?: PpeSize;
   preference?: Preferences;
@@ -114,7 +114,7 @@ export interface User extends BaseEntity {
 
 export interface UserIncludes {
   avatar?: boolean;
-  employmentContracts?:
+  contracts?:
     | boolean
     | {
         include?: EmploymentContractIncludes;

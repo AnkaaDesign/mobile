@@ -362,7 +362,8 @@ export const employeesListConfig: ListConfig<User> = {
   filters: {
     fields: [
       {
-        key: 'contractTypes',
+        // contractKinds is the API convenience filter that maps to currentContractType.
+        key: 'contractKinds',
         label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
@@ -448,12 +449,10 @@ export const employeesListConfig: ListConfig<User> = {
         type: 'date-range',
         placeholder: 'Data de Nascimento',
       },
-      {
-        key: 'dismissedAt',
-        label: 'Data de Demissão',
-        type: 'date-range',
-        placeholder: 'Data de Demissão',
-      },
+      // NOTE: "Data de Demissão" (dismissedAt) date-range filter removed — that
+      // date moved onto the EmploymentContract (terminationDate) and the API has
+      // no convenience filter for it; this list framework only sends verbatim
+      // top-level params so it cannot express the nested currentContract where.
       {
         key: 'createdAt',
         label: 'Data de Cadastro',

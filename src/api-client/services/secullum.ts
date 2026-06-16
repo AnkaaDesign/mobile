@@ -1,4 +1,9 @@
 import { apiClient } from "../axiosClient";
+import type {
+  SecullumApuracaoListResponse,
+  SecullumApuracaoDetailResponse,
+  SecullumApuracaoActionResponse,
+} from "@/types/secullum";
 
 export interface SecullumAuthCredentials {
   email: string;
@@ -107,6 +112,21 @@ export const secullumService = {
         take: params?.take,
       }
     }),
+
+  // Apuração de Cartão Ponto (Assinatura Digital) — employee self-service.
+  // Lists the apurações the current user was asked to sign, loads detail (+pdfUrl),
+  // and approves (signs) / rejects (with motivo) the cartão-ponto.
+  getMyAssinaturas: () =>
+    apiClient.get<SecullumApuracaoListResponse>("/personal/my-assinaturas"),
+
+  getMyAssinaturaDetail: (id: number) =>
+    apiClient.get<SecullumApuracaoDetailResponse>(`/personal/my-assinaturas/${id}`),
+
+  approveMyAssinatura: (id: number) =>
+    apiClient.post<SecullumApuracaoActionResponse>(`/personal/my-assinaturas/${id}/aprovar`, {}),
+
+  rejectMyAssinatura: (id: number, motivo: string) =>
+    apiClient.post<SecullumApuracaoActionResponse>(`/personal/my-assinaturas/${id}/reprovar`, { motivo }),
 
   // Departments & Positions
   getDepartments: () => apiClient.get<{ success: boolean; data: any }>("/integrations/secullum/departments"),

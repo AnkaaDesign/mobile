@@ -9,7 +9,7 @@ import { mobileRoute } from "@/constants/routes.types";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useStatusGuard } from "@/hooks/use-status-guard";
 import { EDITABLE_TASK_STATUSES } from "@/constants/editable-statuses";
-import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { SECTOR_PRIVILEGES, TEAM_LEADER, routes } from "@/constants";
 import { ErrorScreen, ThemedText } from "@/components/ui";
 import { ThemedView } from "@/components/ui/themed-view";
 import { useTheme } from "@/lib/theme";
@@ -19,11 +19,15 @@ export default function EditServiceOrderScreen() {
   return (
     <PrivilegeGate
       required={{
+        // Regular PRODUCTION is read-only here: this route opens the full task
+        // editor. Regular PRODUCTION advances its own assigned SO status inline
+        // via the task-services-card state machine, not through this editor.
+        // The production LEADER (TEAM_LEADER) may handle production service orders.
         any: [
-          SECTOR_PRIVILEGES.PRODUCTION,
           SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
           SECTOR_PRIVILEGES.ADMIN,
           SECTOR_PRIVILEGES.COMMERCIAL,
+          TEAM_LEADER,
         ],
       }}
     >

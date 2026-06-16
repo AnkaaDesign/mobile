@@ -58,6 +58,18 @@ export default function ObservationDetailsScreen() {
         ],
       }}
       editRoute={(o) => mobileRoute(routes.production.observations.edit(o.id))}
+      editPrivilege={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ],
+      }}
+      deletePrivilege={{
+        any: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
+      }}
       deleteAction={{
         mutation: deleteMutation,
         confirmText:

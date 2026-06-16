@@ -2,14 +2,13 @@ import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
-import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint, IconCalendarOff, IconClockEdit, IconMapPinPlus } from "@tabler/icons-react-native";
+import { IconChevronLeft, IconChevronRight, IconWritingSign, IconFingerprint, IconCalendarOff, IconClockEdit, IconMapPinPlus } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
-import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { useTheme } from "@/lib/theme";
 import { useMySecullumCalculations } from "@/hooks/secullum";
 import { getBonusPeriod } from "@/utils";
-import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
+import { CalculationsTable } from "@/components/personal/calculations";
 import type { CalculationRow } from "@/types/secullum";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
@@ -45,25 +44,21 @@ const COLUMN_DEFINITIONS = [
   { key: "refeicao", label: "Refeição" },
 ];
 
-const DEFAULT_VISIBLE_COLUMNS = [
-  "date", "entrada1", "saida1", "entrada2", "saida2",
-  "normais", "ex50", "ex100", "dsr", "ajuste"
-];
+// All columns enabled by default — the per-column toggle was replaced by the
+// "Assinatura de Ponto" shortcut in the toolbar.
+const DEFAULT_VISIBLE_COLUMNS = COLUMN_DEFINITIONS.map((c) => c.key);
 
 export default function MeusPontosScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
-  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Month navigation state (start with current month)
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Visible columns state
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    () => new Set(DEFAULT_VISIBLE_COLUMNS)
-  );
+  // All columns are shown (the per-column visibility toggle was removed).
+  const visibleColumns = useMemo(() => new Set(DEFAULT_VISIBLE_COLUMNS), []);
 
   // Calculate period dates (25th to 25th)
   const periodDates = useMemo(() => {
@@ -172,10 +167,6 @@ export default function MeusPontosScreen() {
       newDate.setMonth(newDate.getMonth() + 1);
       return newDate;
     });
-  }, []);
-
-  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
-    setVisibleColumns(newColumns);
   }, []);
 
   // Check if user is not registered in Secullum (from hook response)
@@ -299,15 +290,15 @@ export default function MeusPontosScreen() {
             <IconCalendarOff size={20} color={colors.foreground} />
           </TouchableOpacity>
 
-          {/* Column Visibility Button - matches month selector height */}
+          {/* Assinatura de Cartão Ponto shortcut */}
           <TouchableOpacity
             style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setIsColumnPanelOpen(true)}
+            onPress={() =>
+              nav.push(mobileRoute("/pessoal/meus-pontos/assinaturas"))
+            }
+            accessibilityLabel="Assinatura de Ponto"
           >
-            <IconList size={20} color={colors.foreground} />
-            <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
-              <ThemedText style={styles.columnBadgeText}>{visibleColumns.size}</ThemedText>
-            </View>
+            <IconWritingSign size={20} color={colors.foreground} />
           </TouchableOpacity>
         </View>
 
@@ -321,17 +312,6 @@ export default function MeusPontosScreen() {
           loading={isLoading && !refreshing}
         />
       </ThemedView>
-
-      {/* Column Visibility Panel */}
-      <SlideInPanel isOpen={isColumnPanelOpen} onClose={() => setIsColumnPanelOpen(false)}>
-        <CalculationsColumnDrawer
-          columns={COLUMN_DEFINITIONS}
-          visibleColumns={visibleColumns}
-          onVisibilityChange={handleColumnsChange}
-          onClose={() => setIsColumnPanelOpen(false)}
-          defaultColumns={DEFAULT_VISIBLE_COLUMNS}
-        />
-      </SlideInPanel>
     </>
   );
 }

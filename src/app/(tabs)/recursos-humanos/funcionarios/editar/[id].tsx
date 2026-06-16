@@ -26,40 +26,14 @@ function EmployeeEditInner() {
   const { colors } = useTheme();
   const nav = useNav();
   const { data: user, isLoading, error } = useUser(id, {
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      cpf: true,
-      pis: true,
-      birth: true,
-      status: true,
-      isActive: true,
-      verified: true,
-      avatarId: true,
-      payrollNumber: true,
-      performanceLevel: true,
-      address: true,
-      addressNumber: true,
-      addressComplement: true,
-      neighborhood: true,
-      city: true,
-      state: true,
-      zipCode: true,
-      effectedAt: true,
-      exp1StartAt: true,
-      exp1EndAt: true,
-      exp2StartAt: true,
-      exp2EndAt: true,
-      dismissedAt: true,
-      sectorId: true,
-      positionId: true,
-      createdAt: true,
-      updatedAt: true,
-      sector: { select: { id: true, name: true } },
-      position: { select: { id: true, name: true } },
-      ledSector: { select: { id: true, name: true } },
+    // GetById honors `include` (not `select`) for relations. The employment
+    // dates (effectedAt/exp1/exp2/termination) live on the contract now, so
+    // read them via the currentContract relation rather than dead User fields.
+    include: {
+      currentContract: true,
+      sector: true,
+      position: true,
+      ledSector: true,
       ppeSize: true,
     },
     enabled: !!id && id !== "",

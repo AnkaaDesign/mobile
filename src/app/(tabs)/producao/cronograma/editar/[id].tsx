@@ -266,6 +266,8 @@ function EditScheduleInner() {
         'customerId', 'serialNumber', 'name', 'quote', 'serviceOrders',
         'artworkIds', 'artworkStatuses', 'truck', 'paintIds', 'paintId',
         'reimbursementIds', 'reimbursementInvoiceIds',
+        // PRODUCTION is read-only on observations.
+        'observation', 'observationData',
       ],
       [SECTOR_PRIVILEGES.FINANCIAL]: [
         'baseFileIds', 'artworkIds', 'artworkStatuses', 'paintIds', 'paintId',

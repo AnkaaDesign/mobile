@@ -24,8 +24,12 @@ export interface VacationPeriod extends BaseEntity {
 }
 
 export interface Vacation extends BaseEntity {
+  // userId stays non-null to mirror the API vacation type (and the create-form
+  // base type); the Prisma column is nullable only for soft-deleted/orphan rows.
   userId: string;
   contractId: string | null;
+  groupId?: string | null;
+  deletedAt?: Date | null;
   acquisitiveStart: Date;
   acquisitiveEnd: Date;
   concessiveEnd: Date | null;

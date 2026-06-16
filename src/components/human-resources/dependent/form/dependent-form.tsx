@@ -53,6 +53,8 @@ export function DependentForm({ mode, dependent, userId, onSuccess, onCancel }: 
   const { createAsync, updateAsync, createMutation, updateMutation } = useDependentMutations();
 
   const { data: users } = useUsers({
+    // Only active (not-terminated) collaborators can have dependents registered.
+    isActive: true,
     orderBy: { name: "asc" },
     include: { position: true },
   });

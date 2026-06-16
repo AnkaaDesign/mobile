@@ -81,70 +81,23 @@ export default function EmployeeDetailScreen() {
     error,
     refetch,
   } = useUser(id, {
-    // Use optimized select for better performance - fetches only fields needed for HR employee detail view
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      cpf: true,
-      pis: true,
-      birth: true,
-      currentContractType: true,
-      currentContractStatus: true,
-      currentEmployeeType: true,
-      isActive: true,
-      verified: true,
-      avatarId: true,
-      payrollNumber: true,
-      performanceLevel: true,
-      // Timestamps
-      createdAt: true,
-      updatedAt: true,
+    // NOTE: the GetById endpoint honors `include` (not `select`) for relations,
+    // so relations must be requested via include or they silently fall back to
+    // the default include and never load.
+    include: {
       // Current vínculo (employment contract) — carries the employment dates
       currentContract: true,
       // Full vínculo history (read-only "Histórico de Vínculos")
-      employmentContracts: {
+      contracts: {
         orderBy: { sequence: "asc" },
       },
-      // Relations with minimal select
-      position: {
-        select: {
-          id: true,
-          name: true,
-          hierarchy: true,
-        },
-      },
-      sector: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      position: true,
+      sector: true,
       ppeSize: true, // Full PPE size for detail display
-      warningsCollaborator: {
-        select: {
-          id: true,
-          severity: true,
-          category: true,
-          reason: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
+      warningsCollaborator: true,
       borrows: {
-        select: {
-          id: true,
-          quantity: true,
-          status: true,
-          createdAt: true,
-          item: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+        include: {
+          item: true,
         },
         where: {
           status: "ACTIVE",
@@ -152,16 +105,8 @@ export default function EmployeeDetailScreen() {
         take: 5,
       },
       ppeDeliveries: {
-        select: {
-          id: true,
-          quantity: true,
-          createdAt: true,
-          item: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+        include: {
+          item: true,
         },
         orderBy: { createdAt: "desc" },
         take: 5,
@@ -523,7 +468,7 @@ export default function EmployeeDetailScreen() {
         </Card>
 
         {/* Histórico de Vínculos (read-only) */}
-        {Array.isArray(employee.employmentContracts) && employee.employmentContracts.length > 0 && (
+        {Array.isArray(employee.contracts) && employee.contracts.length > 0 && (
           <Card>
             <CardContent>
               <View style={styles.cardHeaderRow}>
@@ -532,7 +477,7 @@ export default function EmployeeDetailScreen() {
                   Histórico de Vínculos
                 </ThemedText>
               </View>
-              {employee.employmentContracts.map((vinculo) => {
+              {employee.contracts.map((vinculo) => {
                 const admission = vinculo.admissionDate ?? vinculo.exp1StartAt;
                 return (
                   <View

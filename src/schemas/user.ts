@@ -20,7 +20,7 @@ export const userIncludeSchema = z
         }),
       ])
       .optional(),
-    employmentContracts: z
+    contracts: z
       .union([
         z.boolean(),
         z.object({
@@ -508,7 +508,7 @@ export const userWhereSchema: z.ZodSchema = z.lazy(() =>
         })
         .optional(),
 
-      employmentContracts: z
+      contracts: z
         .object({
           some: z.any().optional(),
           every: z.any().optional(),
@@ -573,8 +573,9 @@ const userFilters = {
   searchingFor: z.string().optional(),
   sectorIds: z.array(z.string()).optional(),
   positionIds: z.array(z.string()).optional(),
-  contractTypes: z.array(z.nativeEnum(CONTRACT_TYPE)).optional(),
-  contractStatuses: z.array(z.nativeEnum(CONTRACT_STATUS)).optional(),
+  // contractKinds is the API convenience filter that maps to currentContractType
+  // (the API does NOT accept `contractTypes`/`contractStatuses` convenience params).
+  contractKinds: z.array(z.nativeEnum(CONTRACT_TYPE)).optional(),
   employeeTypes: z.array(z.nativeEnum(EMPLOYEE_TYPE)).optional(),
   isActive: z.boolean().optional(),
   isVerified: z.boolean().optional(),
@@ -589,12 +590,6 @@ const userFilters = {
     .object({
       min: z.number().optional(),
       max: z.number().optional(),
-    })
-    .optional(),
-  exp1StartAtRange: z
-    .object({
-      gte: z.coerce.date().optional(),
-      lte: z.coerce.date().optional(),
     })
     .optional(),
   // Sector privilege filters - filter users by their sector's privilege level
@@ -646,16 +641,10 @@ const userTransform = (data: any) => {
     delete data.positionIds;
   }
 
-  // Handle contractTypes filter — maps to the current-vínculo type cache.
-  if (data.contractTypes && Array.isArray(data.contractTypes) && data.contractTypes.length > 0) {
-    andConditions.push({ currentContractType: { in: data.contractTypes } });
-    delete data.contractTypes;
-  }
-
-  // Handle contractStatuses filter — maps to the current-vínculo status cache.
-  if (data.contractStatuses && Array.isArray(data.contractStatuses) && data.contractStatuses.length > 0) {
-    andConditions.push({ currentContractStatus: { in: data.contractStatuses } });
-    delete data.contractStatuses;
+  // Handle contractKinds filter — maps to the current-vínculo type cache.
+  if (data.contractKinds && Array.isArray(data.contractKinds) && data.contractKinds.length > 0) {
+    andConditions.push({ currentContractType: { in: data.contractKinds } });
+    delete data.contractKinds;
   }
 
   // Handle employeeTypes filter (worker category — CLT/PJ/terceirizado/etc.)
@@ -751,32 +740,6 @@ const userTransform = (data: any) => {
       andConditions.push({ performanceLevel: levelCondition });
     }
     delete data.performanceLevelRange;
-  }
-
-  // Handle exp1StartAtRange filter
-  if (data.exp1StartAtRange && typeof data.exp1StartAtRange === "object") {
-    const dateCondition: any = {};
-    if (data.exp1StartAtRange.gte) {
-      const fromDate = data.exp1StartAtRange.gte instanceof Date
-        ? data.exp1StartAtRange.gte
-        : new Date(data.exp1StartAtRange.gte);
-      // Set to start of day (00:00:00)
-      fromDate.setHours(0, 0, 0, 0);
-      dateCondition.gte = fromDate;
-    }
-    if (data.exp1StartAtRange.lte) {
-      const toDate = data.exp1StartAtRange.lte instanceof Date
-        ? data.exp1StartAtRange.lte
-        : new Date(data.exp1StartAtRange.lte);
-      // Set to end of day (23:59:59.999)
-      toDate.setHours(23, 59, 59, 999);
-      dateCondition.lte = toDate;
-    }
-    if (Object.keys(dateCondition).length > 0) {
-      // Admission date now lives on the current employment contract.
-      andConditions.push({ currentContract: { is: { admissionDate: dateCondition } } });
-    }
-    delete data.exp1StartAtRange;
   }
 
   // Handle excludeSectorPrivileges filter - exclude users whose sector has specific privileges

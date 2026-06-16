@@ -357,7 +357,8 @@ export const collaboratorsListConfig: ListConfig<User> = {
   filters: {
     fields: [
       {
-        key: 'contractTypes',
+        // contractKinds is the API convenience filter that maps to currentContractType.
+        key: 'contractKinds',
         label: 'Modalidade do Vínculo',
         type: 'select',
         multiple: true,
@@ -437,18 +438,10 @@ export const collaboratorsListConfig: ListConfig<User> = {
         type: 'date-range',
         placeholder: 'Data de Nascimento',
       },
-      {
-        key: 'dismissedAt',
-        label: 'Data de Demissão',
-        type: 'date-range',
-        placeholder: 'Data de Demissão',
-      },
-      {
-        key: 'exp1EndAt',
-        label: 'Data de Contratação',
-        type: 'date-range',
-        placeholder: 'Data de Contratação',
-      },
+      // NOTE: "Data de Demissão" (dismissedAt) and "Data de Contratação"
+      // (exp1EndAt) date-range filters removed — those dates moved onto the
+      // EmploymentContract and the API has no convenience filter for them; the
+      // list framework only sends verbatim top-level params (no nested where).
     ],
   },
 

@@ -1,5 +1,5 @@
 import type { User } from '../types';
-import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE, SECTOR_PRIVILEGES, VERIFICATION_TYPE } from '../constants';
+import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE, SECTOR_PRIVILEGES, TEAM_LEADER, VERIFICATION_TYPE } from '../constants';
 import { dateUtils } from "./date";
 
 /**
@@ -346,7 +346,10 @@ export function isUserBlocked(user: User): boolean {
  * Uses EXACT privilege matching (not hierarchical) - ADMIN is special case with access to everything
  * FINANCIAL can edit tasks but not inventory, WAREHOUSE can edit inventory but not tasks
  */
-export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES | string): boolean {
+export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES | typeof TEAM_LEADER | string): boolean {
+  // TEAM_LEADER is a virtual privilege - resolved via the ledSector relation, not sector.privileges
+  if (requiredPrivilege === TEAM_LEADER) return isTeamLeader(user);
+
   if (!user?.sector?.privileges) return false;
 
   const userPrivilege = user.sector.privileges;
@@ -363,16 +366,16 @@ export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVIL
  * Matches backend @Roles decorator behavior - checks if user's privilege is IN the array
  * ADMIN can access everything, others need exact match
  */
-export function hasAnyPrivilege(user: User | null, requiredPrivileges: (SECTOR_PRIVILEGES | string)[]): boolean {
-  if (!user?.sector?.privileges || !requiredPrivileges.length) return false;
-
-  const userPrivilege = user.sector.privileges;
+export function hasAnyPrivilege(user: User | null, requiredPrivileges: (SECTOR_PRIVILEGES | typeof TEAM_LEADER | string)[]): boolean {
+  if (!requiredPrivileges.length) return false;
 
   // ADMIN has access to everything (special case)
-  if (userPrivilege === SECTOR_PRIVILEGES.ADMIN) return true;
+  if (user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // Check if user's privilege is in the allowed array (exact match)
-  return requiredPrivileges.includes(userPrivilege);
+  // Match each required privilege; TEAM_LEADER is resolved via the ledSector relation
+  return requiredPrivileges.some((privilege) =>
+    privilege === TEAM_LEADER ? isTeamLeader(user) : user?.sector?.privileges === privilege,
+  );
 }
 
 /**

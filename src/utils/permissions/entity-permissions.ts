@@ -504,33 +504,37 @@ export function canEditLayoutForTask(user: User | null, _taskSectorId: string | 
 
 /**
  * Can user create cuts?
- * Only ADMIN can create cuts directly
+ * Mirrors API POST /cuts roles: DESIGNER, ADMIN.
  */
 export function canCreateCuts(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.DESIGNER,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 /**
  * Can user edit cuts?
- * Only ADMIN can edit cut details
+ * Mirrors API PUT /cuts/:id roles: DESIGNER, PLOTTING, ADMIN.
  */
 export function canEditCuts(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.DESIGNER,
+    SECTOR_PRIVILEGES.PLOTTING,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 /**
  * Can user delete cuts?
- * Only ADMIN can delete cuts
+ * Mirrors API DELETE /cuts/:id roles: DESIGNER, ADMIN.
  */
 export function canDeleteCuts(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.DESIGNER,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
@@ -598,9 +602,12 @@ export function canEditAirbrushings(user: User | null): boolean {
 }
 
 export function canDeleteAirbrushings(user: User | null): boolean {
+  // Mirrors API DELETE /airbrushings/:id roles: ADMIN, COMMERCIAL, FINANCIAL.
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.FINANCIAL,
   ]);
 }
 
@@ -622,14 +629,18 @@ export function canViewAirbrushingFinancials(user: User | null): boolean {
 
 /**
  * Can user create observations?
- * Only ADMIN and COMMERCIAL can create new observations.
- * Edit/delete of existing observations is broader — see canEditObservations.
+ * Decided matrix (2026-06-10 audit, parity with API + web):
+ * create = ADMIN, COMMERCIAL, FINANCIAL, WAREHOUSE, PRODUCTION_MANAGER.
+ * PRODUCTION is read-only (view only).
  */
 export function canCreateObservations(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 

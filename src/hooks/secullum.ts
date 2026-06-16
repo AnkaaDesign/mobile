@@ -773,3 +773,53 @@ export const useOpenInclusaoPontoComprovante = () => {
     },
   });
 };
+
+// ============================================================================
+// Apuração de Cartão Ponto (Assinatura Digital) — employee self-service.
+// List the apurações the user must sign, load detail, approve (sign) / reject.
+// Writes auto-toast via the api-client interceptor.
+// ============================================================================
+
+export const useMyAssinaturas = () => {
+  return useQuery({
+    queryKey: [...secullumKeys.all, "my-assinaturas"],
+    queryFn: () => secullumService.getMyAssinaturas(),
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useMyAssinaturaDetail = (id?: number) => {
+  return useQuery({
+    queryKey: [...secullumKeys.all, "my-assinaturas", "detail", id],
+    queryFn: () => secullumService.getMyAssinaturaDetail(id as number),
+    enabled: id != null && Number.isFinite(id),
+    staleTime: 30 * 1000,
+  });
+};
+
+export const useApproveMyAssinatura = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => secullumService.approveMyAssinatura(id),
+    onSuccess: (_res, id) => {
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-assinaturas"] });
+      queryClient.invalidateQueries({
+        queryKey: [...secullumKeys.all, "my-assinaturas", "detail", id],
+      });
+    },
+  });
+};
+
+export const useRejectMyAssinatura = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
+      secullumService.rejectMyAssinatura(id, motivo),
+    onSuccess: (_res, { id }) => {
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-assinaturas"] });
+      queryClient.invalidateQueries({
+        queryKey: [...secullumKeys.all, "my-assinaturas", "detail", id],
+      });
+    },
+  });
+};

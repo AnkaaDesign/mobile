@@ -22,37 +22,13 @@ function EditCollaboratorInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { data: user, isLoading, error } = useUser(id, {
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      cpf: true,
-      pis: true,
-      birth: true,
-      currentContractType: true,
-      currentContractStatus: true,
-      isActive: true,
-      verified: true,
-      avatarId: true,
-      payrollNumber: true,
-      performanceLevel: true,
-      address: true,
-      addressNumber: true,
-      addressComplement: true,
-      neighborhood: true,
-      city: true,
-      state: true,
-      zipCode: true,
+    // GetById honors `include` (not `select`) for relations.
+    include: {
       currentContract: true,
-      employmentContracts: true,
-      sectorId: true,
-      positionId: true,
-      createdAt: true,
-      updatedAt: true,
-      sector: { select: { id: true, name: true } },
-      position: { select: { id: true, name: true } },
-      ledSector: { select: { id: true, name: true } },
+      contracts: true,
+      sector: true,
+      position: true,
+      ledSector: true,
       ppeSize: true,
     },
   });

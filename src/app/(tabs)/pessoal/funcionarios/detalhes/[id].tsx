@@ -89,29 +89,14 @@ export default function EmployeeDetailScreen() {
   const { colors } = useTheme();
 
   const query = useUser(id || "", {
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      currentContractType: true,
-      currentContractStatus: true,
-      currentEmployeeType: true,
-      avatarId: true,
-      performanceLevel: true,
+    // GetById honors `include` (not `select`) for relations — request relations
+    // via include or currentContract/avatar/etc. never load.
+    include: {
       currentContract: true,
-      avatar: {
-        select: { id: true, thumbnailUrl: true },
-      },
-      position: {
-        select: { id: true, name: true },
-      },
-      sector: {
-        select: { id: true, name: true },
-      },
-      ledSector: {
-        select: { id: true, name: true },
-      },
+      avatar: true,
+      position: true,
+      sector: true,
+      ledSector: true,
     },
     enabled: !!id && id !== "",
   });

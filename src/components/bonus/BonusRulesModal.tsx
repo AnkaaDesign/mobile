@@ -34,7 +34,9 @@ interface TierRow {
   hours: string;
   discount: string;
   isZero?: boolean;
-  losesExtra?: boolean;
+  // Assiduidade outcome for the band: "Mantém" keeps the full +1%/day (green);
+  // anything else is a graded loss (red) — "Perde o dia", "-50%" or "-100%".
+  assiduidade: string;
 }
 
 function TierTable({ rows, extraNote, colors }: { rows: TierRow[]; extraNote?: string; colors: any }) {
@@ -42,8 +44,9 @@ function TierTable({ rows, extraNote, colors }: { rows: TierRow[]; extraNote?: s
     <View style={{ gap: 6, marginTop: 4 }}>
       {/* Header */}
       <View style={[tierStyles.row, { backgroundColor: `${colors.mutedForeground}18`, borderRadius: 6 }]}>
-        <ThemedText style={[tierStyles.hoursCell, { color: colors.foreground, fontWeight: '700', fontSize: 12 }]}>Horas</ThemedText>
-        <ThemedText style={[tierStyles.discountCell, { color: colors.foreground, fontWeight: '700', fontSize: 12 }]}>Desconto do Bônus</ThemedText>
+        <ThemedText style={[tierStyles.hoursCell, { color: colors.foreground, fontWeight: '700', fontSize: 11 }]}>Horas</ThemedText>
+        <ThemedText style={[tierStyles.discountCell, { color: colors.foreground, fontWeight: '700', fontSize: 11 }]}>Bônus</ThemedText>
+        <ThemedText style={[tierStyles.assiduidadeCell, { color: colors.foreground, fontWeight: '700', fontSize: 11 }]}>Assiduidade</ThemedText>
       </View>
       {/* Data rows */}
       {rows.map((row, i) => (
@@ -57,9 +60,12 @@ function TierTable({ rows, extraNote, colors }: { rows: TierRow[]; extraNote?: s
             },
           ]}
         >
-          <ThemedText style={[tierStyles.hoursCell, { color: colors.foreground, fontSize: 13 }]}>{row.hours}</ThemedText>
-          <ThemedText style={[tierStyles.discountCell, { color: row.isZero ? '#059669' : colors.destructive, fontWeight: '700', fontSize: 13 }]}>
+          <ThemedText style={[tierStyles.hoursCell, { color: colors.foreground, fontSize: 12 }]}>{row.hours}</ThemedText>
+          <ThemedText style={[tierStyles.discountCell, { color: row.isZero ? '#059669' : colors.destructive, fontWeight: '700', fontSize: 12 }]}>
             {row.discount}
+          </ThemedText>
+          <ThemedText style={[tierStyles.assiduidadeCell, { color: row.assiduidade === 'Mantém' ? '#059669' : colors.destructive, fontWeight: '700', fontSize: 12 }]}>
+            {row.assiduidade}
           </ThemedText>
         </View>
       ))}
@@ -167,17 +173,16 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
             colors={colors}
           >
             <ThemedText style={[styles.bodyText, { color: colors.mutedForeground }]}>
-              A cada dia útil com o{' '}
-              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>ponto eletrônico completo</ThemedText>
-              {' '}(4 batidas: entrada, saída almoço, retorno, saída), o colaborador acumula{' '}
-              <ThemedText style={{ color: '#059669', fontWeight: '700' }}>+1% de bônus</ThemedText>.
+              A assiduidade é{' '}
+              <ThemedText style={{ color: '#059669', fontWeight: '700' }}>somada (+1% por dia útil)</ThemedText>
+              {' '}sempre que o colaborador{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>não solicita nenhuma correção</ThemedText>
+              ,{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>não deixa de registrar nenhuma batida</ThemedText>
+              {' '}e{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>não tem atrasos</ThemedText>
+              {' '}— ou seja, o dia tem o ponto eletrônico completo (4 batidas: entrada, saída almoço, retorno, saída).
             </ThemedText>
-            <View style={[styles.warningBox, { backgroundColor: `${colors.destructive}10`, borderColor: `${colors.destructive}30` }]}>
-              <ThemedText style={[styles.bodyText, { color: colors.destructive }]}>
-                <ThemedText style={{ fontWeight: '700' }}>Atenção: </ThemedText>
-                qualquer falta ou atestado acima de 02:00h zera todo o bônus de assiduidade.
-              </ThemedText>
-            </View>
           </Section>
 
           {/* Divider */}
@@ -193,8 +198,8 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
             icon={IconBan}
             title="Tarefas Suspensas"
             badge="Excluído do cálculo"
-            badgeBg="#f9731618"
-            badgeColor="#c2410c"
+            badgeBg={`${colors.destructive}18`}
+            badgeColor={colors.destructive}
             highlighted={highlighted === "suspensas"}
             colors={colors}
           >
@@ -204,13 +209,6 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
               , ela é{' '}
               <ThemedText style={{ color: colors.destructive, fontWeight: '700' }}>removida do cálculo do bônus</ThemedText>
               .
-            </ThemedText>
-            <ThemedText style={[styles.bodyText, { color: colors.mutedForeground }]}>
-              Tarefas suspensas{' '}
-              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>não contam</ThemedText>
-              {' '}na média ponderada por colaborador e portanto não geram bônus para nenhum dos elegíveis. O valor que seria recebido por aquela tarefa aparece como{' '}
-              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>desconto "Tarefas Suspensas"</ThemedText>
-              {' '}no bônus.
             </ThemedText>
             <ThemedText style={[styles.bodyText, { color: colors.mutedForeground, fontSize: 12, fontStyle: 'italic' }]}>
               Tarefas com{' '}
@@ -239,12 +237,13 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
             </ThemedText>
             <TierTable
               colors={colors}
-              extraNote="Qualquer valor acima de 0h também zera a assiduidade."
+              extraNote="Pequenas ausências fazem perder apenas o dia (−1%); a partir de 02:00h a assiduidade cai 50% ou 100%."
               rows={[
-                { hours: "Nenhuma", discount: "0%", isZero: true },
-                { hours: "até 02:00h", discount: "-25%" },
-                { hours: "02:00h – 08:00h", discount: "-50%" },
-                { hours: "Maior que 08:00h", discount: "-100%" },
+                { hours: "Nenhuma", discount: "0%", isZero: true, assiduidade: "Mantém" },
+                { hours: "até 02:00h", discount: "0%", isZero: true, assiduidade: "Perde o dia" },
+                { hours: "02:00h – 04:00h", discount: "-25%", assiduidade: "-50%" },
+                { hours: "04:00h – 08:00h", discount: "-50%", assiduidade: "-100%" },
+                { hours: "Maior que 08:00h", discount: "-100%", assiduidade: "-100%" },
               ]}
             />
           </Section>
@@ -259,17 +258,17 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
             colors={colors}
           >
             <ThemedText style={[styles.bodyText, { color: colors.mutedForeground }]}>
-              Afastamentos por atestado médico. Atestados até 02:00h não geram nenhuma penalidade.
+              Afastamentos por atestado médico. Atestados até 02:00h não geram nenhuma penalidade — mantêm o bônus e a assiduidade.
             </ThemedText>
             <TierTable
               colors={colors}
-              extraNote="A partir de 02:00h a assiduidade é perdida mesmo sem desconto no bônus."
+              extraNote="A partir de 02:00h a assiduidade começa a ser perdida mesmo enquanto o desconto no bônus ainda é 0%."
               rows={[
-                { hours: "até 02:00h", discount: "0%", isZero: true },
-                { hours: "02:00h – 08:00h", discount: "0%", isZero: true },
-                { hours: "08:00h – 16:00h", discount: "-25%" },
-                { hours: "16:00h – 25:00h", discount: "-50%" },
-                { hours: "Maior que 25:00h", discount: "-100%" },
+                { hours: "até 02:00h", discount: "0%", isZero: true, assiduidade: "Mantém" },
+                { hours: "02:00h – 04:00h", discount: "0%", isZero: true, assiduidade: "Perde o dia" },
+                { hours: "04:00h – 08:00h", discount: "-25%", assiduidade: "-50%" },
+                { hours: "08:00h – 25:00h", discount: "-50%", assiduidade: "-100%" },
+                { hours: "Maior que 25:00h", discount: "-100%", assiduidade: "-100%" },
               ]}
             />
             <View style={[styles.forgivenessBox, { backgroundColor: '#05966912', borderColor: '#05966945' }]}>
@@ -294,10 +293,14 @@ const tierStyles = StyleSheet.create({
     paddingVertical: 8,
   },
   hoursCell: {
-    flex: 1,
+    flex: 1.3,
   },
   discountCell: {
-    width: 120,
+    flex: 1,
+    textAlign: 'right',
+  },
+  assiduidadeCell: {
+    flex: 1.1,
     textAlign: 'right',
   },
 });

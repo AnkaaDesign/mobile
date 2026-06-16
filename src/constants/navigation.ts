@@ -613,7 +613,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Admissões",
         icon: "userCheck",
         path: "/recursos-humanos/admissoes/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        // ACCOUNTING-only: new accounting-sector item. HR/ADMIN keep the rest of their
+        // Recursos Humanos menu unchanged. (Page-level route privileges stay open.)
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
         children: [
           { id: "rh-admissoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/admissoes/cadastrar" },
           { id: "rh-admissoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/admissoes/detalhes/:id", isDynamic: true },
@@ -625,7 +627,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Rescisões",
         icon: "logOut",
         path: "/recursos-humanos/rescisoes/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
         children: [
           { id: "rh-rescisoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/rescisoes/cadastrar" },
           { id: "rh-rescisoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/rescisoes/detalhes/:id", isDynamic: true },
@@ -637,7 +639,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Férias",
         icon: "beach",
         path: "/recursos-humanos/ferias/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
         children: [
           { id: "rh-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
           { id: "rh-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
@@ -649,7 +651,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Salários e Cargos",
         icon: "salary",
         path: "/recursos-humanos/faixas-salariais",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
         children: [
           { id: "rh-faixas-salariais", title: "Faixas Salariais", icon: "salary", path: "/recursos-humanos/faixas-salariais" },
           {
@@ -677,7 +679,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Benefícios",
         icon: "coins",
         path: "/recursos-humanos/beneficios/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
         children: [
           { id: "rh-beneficios-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/beneficios/cadastrar" },
           { id: "rh-beneficios-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/beneficios/detalhes/:id", isDynamic: true },
@@ -697,7 +699,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Medicina do Trabalho",
     icon: "safety",
     path: "/recursos-humanos/medicina/aso/listar",
-    requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+    // ACCOUNTING-only: new accounting-sector group. HR/ADMIN keep their original
+    // Recursos Humanos menu unchanged. (Page-level route privileges stay open.)
+    requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
         id: "mt-aso",

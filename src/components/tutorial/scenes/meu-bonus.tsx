@@ -382,14 +382,11 @@ export function MeuBonusScene({ state }: SceneProps) {
                 colors={colors}
               >
                 <Text style={[styles.rulesBody, { color: colors.mutedForeground }]}>
-                  A cada dia útil com o ponto eletrônico completo (4 batidas: entrada,
-                  saída almoço, retorno, saída), o colaborador acumula +1% de bônus.
+                  A assiduidade é somada (+1% por dia útil) sempre que o colaborador não
+                  solicita nenhuma correção, não deixa de registrar nenhuma batida e não
+                  tem atrasos — ou seja, o dia tem o ponto eletrônico completo (4 batidas:
+                  entrada, saída almoço, retorno, saída).
                 </Text>
-                <View style={[styles.rulesWarningBox, { backgroundColor: `${colors.destructive}10`, borderColor: `${colors.destructive}30` }]}>
-                  <Text style={[styles.rulesBody, { color: colors.destructive }]}>
-                    Atenção: qualquer falta ou atestado acima de 02:00h zera todo o bônus de assiduidade.
-                  </Text>
-                </View>
               </RulesSection>
 
               {/* DESCONTOS */}
@@ -401,14 +398,12 @@ export function MeuBonusScene({ state }: SceneProps) {
                 icon={IconBan}
                 title="Tarefas Suspensas"
                 badge="Excluído do cálculo"
-                badgeBg="#f9731618"
-                badgeColor="#c2410c"
+                badgeBg={`${colors.destructive}18`}
+                badgeColor={colors.destructive}
                 colors={colors}
               >
                 <Text style={[styles.rulesBody, { color: colors.mutedForeground }]}>
-                  Tarefas com bonificação suspensa são removidas do cálculo do bônus e não
-                  contam na média ponderada. O valor que seria recebido aparece como
-                  desconto "Tarefas Suspensas".
+                  Tarefas com bonificação suspensa são removidas do cálculo do bônus.
                 </Text>
               </RulesSection>
               <RulesSection
@@ -421,12 +416,13 @@ export function MeuBonusScene({ state }: SceneProps) {
               >
                 <TierTable
                   colors={colors}
-                  extraNote="Qualquer valor acima de 0h também zera a assiduidade."
+                  extraNote="Pequenas ausências fazem perder apenas o dia (−1%); a partir de 02:00h a assiduidade cai 50% ou 100%."
                   rows={[
-                    { hours: "Nenhuma", discount: "0%", isZero: true },
-                    { hours: "até 02:00h", discount: "-25%" },
-                    { hours: "02:00h – 08:00h", discount: "-50%" },
-                    { hours: "Maior que 08:00h", discount: "-100%" },
+                    { hours: "Nenhuma", discount: "0%", isZero: true, assiduidade: "Mantém" },
+                    { hours: "até 02:00h", discount: "0%", isZero: true, assiduidade: "Perde o dia" },
+                    { hours: "02:00h – 04:00h", discount: "-25%", assiduidade: "-50%" },
+                    { hours: "04:00h – 08:00h", discount: "-50%", assiduidade: "-100%" },
+                    { hours: "Maior que 08:00h", discount: "-100%", assiduidade: "-100%" },
                   ]}
                 />
               </RulesSection>
@@ -440,13 +436,13 @@ export function MeuBonusScene({ state }: SceneProps) {
               >
                 <TierTable
                   colors={colors}
-                  extraNote="A partir de 02:00h a assiduidade é perdida mesmo sem desconto no bônus."
+                  extraNote="A partir de 02:00h a assiduidade começa a ser perdida mesmo enquanto o desconto no bônus ainda é 0%."
                   rows={[
-                    { hours: "até 02:00h", discount: "0%", isZero: true },
-                    { hours: "02:00h – 08:00h", discount: "0%", isZero: true },
-                    { hours: "08:00h – 16:00h", discount: "-25%" },
-                    { hours: "16:00h – 25:00h", discount: "-50%" },
-                    { hours: "Maior que 25:00h", discount: "-100%" },
+                    { hours: "até 02:00h", discount: "0%", isZero: true, assiduidade: "Mantém" },
+                    { hours: "02:00h – 04:00h", discount: "0%", isZero: true, assiduidade: "Perde o dia" },
+                    { hours: "04:00h – 08:00h", discount: "-25%", assiduidade: "-50%" },
+                    { hours: "08:00h – 25:00h", discount: "-50%", assiduidade: "-100%" },
+                    { hours: "Maior que 25:00h", discount: "-100%", assiduidade: "-100%" },
                   ]}
                 />
                 <View style={[styles.rulesForgivenessBox, { backgroundColor: "#05966912", borderColor: "#05966945" }]}>
@@ -468,14 +464,16 @@ interface TierRow {
   hours: string;
   discount: string;
   isZero?: boolean;
+  assiduidade: string;
 }
 
 function TierTable({ rows, extraNote, colors }: { rows: TierRow[]; extraNote?: string; colors: any }) {
   return (
     <View style={{ gap: 6, marginTop: 4 }}>
       <View style={[styles.tierRow, { backgroundColor: `${colors.mutedForeground}18`, borderRadius: 6 }]}>
-        <Text style={[styles.tierHoursCell, { color: colors.foreground, fontWeight: "700", fontSize: 12 }]}>Horas</Text>
-        <Text style={[styles.tierDiscountCell, { color: colors.foreground, fontWeight: "700", fontSize: 12 }]}>Desconto do Bônus</Text>
+        <Text style={[styles.tierHoursCell, { color: colors.foreground, fontWeight: "700", fontSize: 11 }]}>Horas</Text>
+        <Text style={[styles.tierDiscountCell, { color: colors.foreground, fontWeight: "700", fontSize: 11 }]}>Bônus</Text>
+        <Text style={[styles.tierAssiduidadeCell, { color: colors.foreground, fontWeight: "700", fontSize: 11 }]}>Assiduidade</Text>
       </View>
       {rows.map((row, i) => (
         <View
@@ -488,9 +486,12 @@ function TierTable({ rows, extraNote, colors }: { rows: TierRow[]; extraNote?: s
             },
           ]}
         >
-          <Text style={[styles.tierHoursCell, { color: colors.foreground, fontSize: 13 }]}>{row.hours}</Text>
-          <Text style={[styles.tierDiscountCell, { color: row.isZero ? "#059669" : colors.destructive, fontWeight: "700", fontSize: 13 }]}>
+          <Text style={[styles.tierHoursCell, { color: colors.foreground, fontSize: 12 }]}>{row.hours}</Text>
+          <Text style={[styles.tierDiscountCell, { color: row.isZero ? "#059669" : colors.destructive, fontWeight: "700", fontSize: 12 }]}>
             {row.discount}
+          </Text>
+          <Text style={[styles.tierAssiduidadeCell, { color: row.assiduidade === "Mantém" ? "#059669" : colors.destructive, fontWeight: "700", fontSize: 12 }]}>
+            {row.assiduidade}
           </Text>
         </View>
       ))}
@@ -804,6 +805,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  tierHoursCell: { flex: 1 },
-  tierDiscountCell: { width: 120, textAlign: "right" },
+  tierHoursCell: { flex: 1.3 },
+  tierDiscountCell: { flex: 1, textAlign: "right" },
+  tierAssiduidadeCell: { flex: 1.1, textAlign: "right" },
 });

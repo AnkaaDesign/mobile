@@ -139,7 +139,8 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         max: 5,
       },
       {
-        key: 'contractTypes',
+        // contractKinds is the API convenience filter that maps to currentContractType.
+        key: 'contractKinds',
         label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,

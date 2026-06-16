@@ -142,3 +142,60 @@ export interface CalculationRow {
   refeicao?: string;
   [key: string]: string | undefined;
 }
+
+// ============================================================================
+// Apuração de Cartão Ponto (Assinatura Digital) — employee self-service.
+// The colaborador reviews their monthly cartão-ponto and approves (signs) or
+// rejects it. estado: 0=Pendente, 1=Aprovado, 2=Rejeitado.
+// ============================================================================
+
+export const APURACAO_ESTADO = {
+  PENDENTE: 0,
+  APROVADO: 1,
+  REJEITADO: 2,
+} as const;
+
+export interface SecullumApuracaoListItem {
+  id: number; // record id (used for detail / approve / reject)
+  assinaturaDigitalCartaoPontoId: number; // PDF id
+  descricao: string;
+  dataInicio: string;
+  dataFim: string;
+  dataInclusao: string;
+  estado: number; // 0=Pendente, 1=Aprovado, 2=Rejeitado
+  motivo: string | null;
+}
+
+export interface SecullumApuracao extends SecullumApuracaoListItem {
+  estadoGerente: number | null;
+  dataResposta: string | null;
+  dataRespostaGerente: string | null;
+  motivoGerente: string | null;
+  senha: string | null;
+  versao: number;
+  idioma: string;
+  geolocalizacao: unknown | null;
+  funcionarioId: number;
+  funcionarioNome: string;
+  compactada: boolean;
+  /** Absolute cartão-ponto PDF URL minted by the API (detail endpoint only). */
+  pdfUrl?: string;
+}
+
+export interface SecullumApuracaoListResponse {
+  success: boolean;
+  message: string;
+  data: SecullumApuracaoListItem[];
+}
+
+export interface SecullumApuracaoDetailResponse {
+  success: boolean;
+  message: string;
+  data?: SecullumApuracao;
+}
+
+export interface SecullumApuracaoActionResponse {
+  success: boolean;
+  message: string;
+  data?: SecullumApuracao;
+}

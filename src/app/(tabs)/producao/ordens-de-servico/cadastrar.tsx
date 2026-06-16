@@ -6,18 +6,21 @@ import { useTaskMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
-import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { SECTOR_PRIVILEGES, TEAM_LEADER, routes } from "@/constants";
 import type { TaskCreateFormData } from "@/schemas";
 
 export default function CreateServiceOrderScreen() {
   return (
     <PrivilegeGate
       required={{
+        // This opens the full task creator. Regular PRODUCTION is read-only and
+        // must not create service orders, but the production LEADER (TEAM_LEADER)
+        // may handle production service orders.
         any: [
-          SECTOR_PRIVILEGES.PRODUCTION,
           SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
           SECTOR_PRIVILEGES.ADMIN,
           SECTOR_PRIVILEGES.COMMERCIAL,
+          TEAM_LEADER,
         ],
       }}
     >

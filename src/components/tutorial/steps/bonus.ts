@@ -99,7 +99,7 @@ export const bonusSteps: TutorialStep[] = [
     highlight: "pessoalBonusRulesModal",
     title: "Assiduidade, faltas e atestados",
     description:
-      "Aqui estão as regras: cada dia com o ponto completo (4 batidas) rende +1% de assiduidade; faltas e atrasos sem justificativa descontam 25%, 50% ou 100% conforme as horas — e zeram a assiduidade do mês; atestados acima dos limites também descontam, mas têm regra de perdão; e tarefas suspensas saem do cálculo.",
+      "Aqui estão as regras: cada dia sem correção, sem batida faltando e sem atrasos rende +1% de assiduidade (uma correção justificada por atestado mantém o dia); faltas e atrasos sem justificativa descontam 25%, 50% ou 100% conforme as horas e reduzem a assiduidade (perde o dia, 50% ou 100%); atestados são mais leves e têm regra de perdão; e tarefas suspensas saem do cálculo.",
     placement: "center",
     condition: (ctx) => ctx.isBonifiable,
   },

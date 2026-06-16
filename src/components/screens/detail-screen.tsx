@@ -67,6 +67,13 @@ export interface DetailScreenProps<T extends BaseEntity> {
     successRoute?: AppRoute;
   };
   /**
+   * Privilege required to EDIT this entity (controls Edit button visibility).
+   * Defaults to `privilege` (page access) for backwards compatibility. Pass a
+   * stricter requirement when editing must be gated separately from viewing —
+   * e.g. PRODUCTION may VIEW observations but must never edit them.
+   */
+  editPrivilege?: PrivilegeReq;
+  /**
    * Privilege required to DELETE this entity. Defaults to `privilege` (page
    * access) for backwards compatibility. Pass a stricter requirement (e.g.
    * ADMIN-only) when deletion must be gated separately from edit/view — e.g.
@@ -135,7 +142,10 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
   // authenticated user). ADMIN-only was chosen over hiding entirely so admins
   // are never locked out by a missing prop; screens should still pass
   // explicit privileges matching their API roles.
-  const editPriv = usePrivilegeGate(props.privilege ?? SECTOR_PRIVILEGES.ADMIN);
+  // Edit is gated separately so a sector can VIEW an entity without being able
+  // to edit it (e.g. PRODUCTION may view observations but not edit them). Falls
+  // back to the page privilege when not specified.
+  const editPriv = usePrivilegeGate(props.editPrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.ADMIN);
   // Delete is gated separately so a sector can manage an entity without being
   // able to delete it. Falls back to the page privilege when not specified.
   const deletePriv = usePrivilegeGate(props.deletePrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.ADMIN);

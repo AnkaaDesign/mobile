@@ -1,11 +1,12 @@
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
-import { CONTRACT_TYPE, CONTRACT_STATUS } from '@/constants/enums'
+import { CONTRACT_TYPE } from '@/constants/enums'
 import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS } from '@/constants/enum-labels'
 
-const getContractLabel = (user: User): string => {
-  if (user.currentContractStatus === CONTRACT_STATUS.TERMINATED) return CONTRACT_STATUS_LABELS[CONTRACT_STATUS.TERMINATED]
-  return (user.currentContractType ? CONTRACT_TYPE_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
+// Lifecycle status (Ativo / Em experiência / Aviso prévio / Afastado / Desligado)
+// derived from the current vínculo status cache.
+const getStatusLabel = (user: User): string => {
+  return (user.currentContractStatus ? CONTRACT_STATUS_LABELS[user.currentContractStatus] : undefined) || '-'
 }
 
 export const teamMembersListConfig: ListConfig<User> = {
@@ -58,12 +59,12 @@ export const teamMembersListConfig: ListConfig<User> = {
         render: (user) => user.sector?.name || '-',
       },
       {
-        key: 'currentContractType',
-        label: 'TIPO DE CONTRATO',
+        key: 'currentContractStatus',
+        label: 'STATUS',
         sortable: true,
         width: 1.5,
         align: 'center',
-        render: (user) => getContractLabel(user),
+        render: (user) => getStatusLabel(user),
         format: 'badge',
         badgeEntity: 'USER',
       },
@@ -76,7 +77,7 @@ export const teamMembersListConfig: ListConfig<User> = {
         render: (user) => user.phone || '-',
       },
     ],
-    defaultVisible: ['name', 'position', 'currentContractType'],
+    defaultVisible: ['name', 'position', 'currentContractStatus'],
     rowHeight: 72,
     actions: [],
     onRowPress: (user: User, router: any) => {
@@ -86,11 +87,12 @@ export const teamMembersListConfig: ListConfig<User> = {
 
   filters: {
     defaultValues: {
-      contractTypes: Object.values(CONTRACT_TYPE),
+      // contractKinds is the API convenience filter that maps to currentContractType.
+      contractKinds: Object.values(CONTRACT_TYPE),
     },
     fields: [
       {
-        key: 'contractTypes',
+        key: 'contractKinds',
         label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
@@ -170,18 +172,12 @@ export const teamMembersListConfig: ListConfig<User> = {
         type: 'date-range',
         placeholder: 'Data de Nascimento',
       },
-      {
-        key: 'dismissedAt',
-        label: 'Data de Demissão',
-        type: 'date-range',
-        placeholder: 'Data de Demissão',
-      },
-      {
-        key: 'exp1EndAt',
-        label: 'Data de Contratação',
-        type: 'date-range',
-        placeholder: 'Data de Contratação',
-      },
+      // NOTE: "Data de Demissão" (dismissedAt) and "Data de Contratação"
+      // (exp1EndAt) date-range filters were removed: those dates moved onto the
+      // EmploymentContract and the API exposes no convenience filter for them.
+      // This list framework only sends verbatim top-level params, so it cannot
+      // express the nested `where: { currentContract: { is: {...} } }` form the
+      // API requires. Re-add only if/when a nested-where filter type is added.
     ],
   },
 

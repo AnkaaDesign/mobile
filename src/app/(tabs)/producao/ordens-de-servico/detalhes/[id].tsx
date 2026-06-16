@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useServiceOrderDetail } from "@/hooks";
-import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, TEAM_LEADER, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { EDITABLE_SERVICE_ORDER_STATUSES } from "@/constants/editable-statuses";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -59,6 +59,22 @@ export default function ServiceOrderDetailScreen() {
           SECTOR_PRIVILEGES.DESIGNER,
           SECTOR_PRIVILEGES.LOGISTIC,
           SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ],
+      }}
+      // Regular PRODUCTION may VIEW service orders (and advance their own assigned
+      // SO status inline via the task-services-card state machine), but must NOT
+      // reach the full task editor that this Edit button opens. The production
+      // LEADER (TEAM_LEADER) may handle production service orders. Mirrors the
+      // API PUT /service-orders/:id roles (minus regular PRODUCTION).
+      editPrivilege={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.DESIGNER,
+          SECTOR_PRIVILEGES.LOGISTIC,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+          TEAM_LEADER,
         ],
       }}
       editGuard={{ editable: EDITABLE_SERVICE_ORDER_STATUSES }}
