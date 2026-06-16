@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { IconStethoscope } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -15,10 +16,11 @@ import {
 import { mobileRoute } from "@/constants/routes.types";
 import { TERMINATION_STATUS_LABELS } from "@/constants/enum-labels";
 import { TERMINATION_STATUS_ORDER } from "@/constants/sortOrders";
-import { useTerminationAdvance } from "@/hooks/useTermination";
+import { useTerminationAdvance, useTerminationRegress } from "@/hooks/useTermination";
 import { useMedicalExamMutations } from "@/hooks";
 import { useNav } from "@/contexts/nav";
 import { LinkedExamStatus, useLinkedMedicalExam } from "@/components/human-resources/medical-exam/detail/linked-exam-status";
+import { CancelReasonModal } from "@/components/human-resources/shared/cancel-reason-modal";
 
 interface Props {
   termination: Termination;
@@ -42,7 +44,9 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
   const { colors } = useTheme();
   const nav = useNav();
   const advance = useTerminationAdvance();
+  const regress = useTerminationRegress();
   const { createAsync } = useMedicalExamMutations();
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const currentOrder = TERMINATION_STATUS_ORDER[t.status] ?? 0;
   const isCancelled = t.status === TERMINATION_STATUS.CANCELLED;
@@ -50,6 +54,8 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
   const isTerminal = isCancelled || isCompleted;
 
   const nextStep = STEPS.find((s) => (TERMINATION_STATUS_ORDER[s] ?? 0) > currentOrder);
+  // Last step strictly before the current one (retrocede uma etapa).
+  const prevStep = [...STEPS].reverse().find((s) => (TERMINATION_STATUS_ORDER[s] ?? 0) < currentOrder);
 
   // DISMISSAL exam linked to this termination (auto-created by the server on the
   // medical step; restricted to exams from the current process via createdAt).
@@ -110,20 +116,18 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
     );
   };
 
-  const handleCancel = () => {
+  const handleRegress = () => {
+    if (!prevStep) return;
     Alert.alert(
-      "Cancelar Rescisão",
-      "Tem certeza que deseja CANCELAR esta rescisão? O colaborador não será desligado.",
+      "Voltar Etapa",
+      `Retroceder para "${TERMINATION_STATUS_LABELS[prevStep]}"?`,
       [
-        { text: "Voltar", style: "cancel" },
+        { text: "Cancelar", style: "cancel" },
         {
-          text: "Cancelar Rescisão",
-          style: "destructive",
+          text: "Voltar Etapa",
           onPress: async () => {
             try {
-              await nav.withLoading(async () =>
-                advance.mutateAsync({ id: t.id, data: { status: TERMINATION_STATUS.CANCELLED } }),
-              );
+              await nav.withLoading(async () => regress.mutateAsync({ id: t.id }));
             } catch {
               /* interceptor toasts */
             }
@@ -131,6 +135,19 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
         },
       ],
     );
+  };
+
+  // The API hard-requires a non-empty trimmed `reason` when cancelling, so we
+  // collect it via a modal instead of the previous Alert (which 400'd).
+  const handleCancelConfirm = async (reason: string) => {
+    try {
+      await nav.withLoading(async () =>
+        advance.mutateAsync({ id: t.id, data: { status: TERMINATION_STATUS.CANCELLED, reason } }),
+      );
+      setShowCancelModal(false);
+    } catch {
+      /* interceptor toasts */
+    }
   };
 
   return (
@@ -209,12 +226,33 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
                 {`Avançar para ${TERMINATION_STATUS_LABELS[nextStep]}`}
               </Button>
             ) : null}
-            <Button variant="outline" disabled={advance.isPending} onPress={handleCancel}>
+            {prevStep ? (
+              <Button
+                variant="outline"
+                loading={regress.isPending}
+                disabled={advance.isPending}
+                onPress={handleRegress}
+                icon={<Icon name="arrow-left" size={16} color={colors.foreground} />}
+              >
+                {`Voltar para ${TERMINATION_STATUS_LABELS[prevStep]}`}
+              </Button>
+            ) : null}
+            <Button variant="outline" disabled={advance.isPending || regress.isPending} onPress={() => setShowCancelModal(true)}>
               Cancelar Rescisão
             </Button>
           </View>
         ) : null}
       </View>
+
+      <CancelReasonModal
+        visible={showCancelModal}
+        title="Cancelar Rescisão"
+        description={`A rescisão${t.user?.name ? ` de "${t.user.name}"` : ""} será marcada como cancelada na etapa atual e não poderá mais ser avançada. Informe o motivo de não ter sido concluída.`}
+        confirmLabel="Cancelar Rescisão"
+        loading={advance.isPending}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelConfirm}
+      />
     </DetailCard>
   );
 }

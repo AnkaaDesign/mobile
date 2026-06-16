@@ -27,6 +27,17 @@ export function getNextAdmissionStatus(status: ADMISSION_STATUS): ADMISSION_STAT
 }
 
 /**
+ * Previous status in the chain, or null when there is none (first step /
+ * CANCELLED). The server accepts the previous status as a "retroceder etapa"
+ * move on the advance endpoint (api admission.service advance guard).
+ */
+export function getPreviousAdmissionStatus(status: ADMISSION_STATUS): ADMISSION_STATUS | null {
+  const index = ADMISSION_STATUS_CHAIN.indexOf(status);
+  if (index <= 0) return null;
+  return ADMISSION_STATUS_CHAIN[index - 1];
+}
+
+/**
  * Mirrors the server guard: an admission cannot leave DOCS_PENDING (forward)
  * while ANY document with required && status === PENDING exists.
  */

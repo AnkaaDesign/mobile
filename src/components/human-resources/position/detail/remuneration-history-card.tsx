@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconTrendingUp, IconTrendingDown, IconMinus, IconCurrencyReal } from "@tabler/icons-react-native";
-import type { Position, PositionRemuneration } from '../../../../types';
+import type { Position, MonetaryValue } from '../../../../types';
 import { formatCurrency, formatDateTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -34,7 +34,7 @@ export function RemunerationHistoryCard({ position }: RemunerationHistoryCardPro
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  const getChangeInfo = (current: PositionRemuneration, previous?: PositionRemuneration) => {
+  const getChangeInfo = (current: MonetaryValue, previous?: MonetaryValue) => {
     if (!previous) return null;
 
     const difference = current.value - previous.value;

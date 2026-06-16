@@ -29,6 +29,10 @@ export const discountCreateSchema = z.object({
   data => (data.percentage !== null && data.percentage !== undefined) ||
          (data.value !== null && data.value !== undefined),
   { message: "Deve informar porcentagem ou valor fixo para o desconto" }
+).refine(
+  data => !data.currentInstallment ||
+         (data.totalInstallments != null && data.currentInstallment <= data.totalInstallments),
+  { message: "A parcela atual não pode exceder o total de parcelas", path: ["currentInstallment"] }
 );
 
 export type DiscountCreateFormData = z.infer<typeof discountCreateSchema>;
@@ -41,6 +45,9 @@ export const discountUpdateSchema = z.object({
   isPersistent: z.boolean().optional(),
   isActive: z.boolean().optional(),
   expirationDate: nullableDate.optional(),
+  // Parcelamento (ex.: empréstimo CLT)
+  totalInstallments: z.number().int().min(1).max(120).nullable().optional(),
+  currentInstallment: z.number().int().min(1).nullable().optional(),
 }).refine(
   data => {
     // If any field is provided, we need to validate the percentage/value constraint
@@ -174,13 +181,14 @@ export const payrollIncludeSchema = z
           users: z.union([z.boolean(), z.object({})]).optional(),
           user: z.union([z.boolean(), z.object({})]).optional(),
           discounts: z.union([z.boolean(), z.object({})]).optional(),
+          bonusDiscounts: z.union([z.boolean(), z.object({})]).optional(),
         }).optional()
       })
     ]).optional(),
     discounts: z.union([z.boolean(), z.object({
       where: z.object({}).optional(),
+      // The API only accepts createdAt here (discountType sort was dropped).
       orderBy: z.object({
-        discountType: z.enum(["asc", "desc"]).optional(),
         createdAt: z.enum(["asc", "desc"]).optional()
       }).optional()
     })]).optional(),
@@ -190,7 +198,26 @@ export const payrollIncludeSchema = z
         z.object({
           include: z
             .object({
-              position: z.boolean().optional(),
+              position: z
+                .union([
+                  z.boolean(),
+                  z.object({
+                    include: z
+                      .object({
+                        remunerations: z
+                          .union([
+                            z.boolean(),
+                            z.object({
+                              orderBy: z.object({ createdAt: z.enum(["asc", "desc"]) }).optional(),
+                              take: z.number().optional(),
+                            }),
+                          ])
+                          .optional(),
+                      })
+                      .optional(),
+                  }),
+                ])
+                .optional(),
               sector: z.boolean().optional(),
             })
             .optional(),

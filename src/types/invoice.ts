@@ -87,7 +87,7 @@ export interface NfseDocument {
   errorCount?: number;
   retryAfter?: Date | null;
   // Cancellation lifecycle (set when a cancellation is requested at the prefeitura)
-  cancelRequestId?: string | null;
+  cancelRequestId?: number | null;
   cancelRequestStatus?: string | null;
   cancelReason?: string | null;
   cancelReasonCode?: number | null;

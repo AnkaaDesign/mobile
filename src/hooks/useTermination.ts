@@ -10,6 +10,7 @@ import {
   deleteTermination,
   calculateTermination,
   advanceTermination,
+  regressTermination,
   computeTerminationTaxes,
   uploadTerminationDocument,
   updateTerminationDocument,
@@ -121,6 +122,15 @@ export function useTerminationAdvance() {
   const invalidate = useInvalidateTerminations();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data?: TerminationAdvanceFormData }) => advanceTermination(id, data ?? {}),
+    onSuccess: invalidate,
+  });
+}
+
+/** PUT /terminations/:id/regress — retrocede uma etapa na máquina de status. */
+export function useTerminationRegress() {
+  const invalidate = useInvalidateTerminations();
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => regressTermination(id),
     onSuccess: invalidate,
   });
 }

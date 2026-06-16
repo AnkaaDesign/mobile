@@ -239,12 +239,35 @@ export const discountCreateSchema = z
     discountType: z.string().optional(),
     isPersistent: z.boolean().default(false),
     expirationDate: nullableDate.optional(),
+    // Parcelamento (ex.: empréstimo CLT): total de parcelas e parcela corrente
+    totalInstallments: z
+      .number()
+      .int("O total de parcelas deve ser um número inteiro")
+      .min(1, "O total de parcelas deve ser pelo menos 1")
+      .max(120, "O total de parcelas deve ser no máximo 120")
+      .nullable()
+      .optional(),
+    currentInstallment: z
+      .number()
+      .int("A parcela atual deve ser um número inteiro")
+      .min(1, "A parcela atual deve ser pelo menos 1")
+      .nullable()
+      .optional(),
   })
   .refine(
     (data) => data.percentage !== undefined || data.value !== undefined,
     {
       message: "Pelo menos um dos campos 'percentual' ou 'valor fixo' deve ser fornecido",
       path: ["percentage", "value"],
+    }
+  )
+  .refine(
+    (data) =>
+      !data.currentInstallment ||
+      (data.totalInstallments != null && data.currentInstallment <= data.totalInstallments),
+    {
+      message: "A parcela atual não pode exceder o total de parcelas",
+      path: ["currentInstallment"],
     }
   );
 
@@ -266,6 +289,20 @@ export const discountUpdateSchema = z
     isPersistent: z.boolean().optional(),
     isActive: z.boolean().optional(),
     expirationDate: nullableDate.optional(),
+    // Parcelamento (ex.: empréstimo CLT)
+    totalInstallments: z
+      .number()
+      .int("O total de parcelas deve ser um número inteiro")
+      .min(1, "O total de parcelas deve ser pelo menos 1")
+      .max(120, "O total de parcelas deve ser no máximo 120")
+      .nullable()
+      .optional(),
+    currentInstallment: z
+      .number()
+      .int("A parcela atual deve ser um número inteiro")
+      .min(1, "A parcela atual deve ser pelo menos 1")
+      .nullable()
+      .optional(),
   })
   .refine(
     (data) => {
@@ -285,6 +322,34 @@ export const discountUpdateSchema = z
       path: ["percentage", "value"],
     }
   );
+
+// =====================
+// Employee-anchored MASTER loan (registered once, applied to future folhas)
+// =====================
+
+export const loanMasterCreateSchema = z.object({
+  userId: z.string().uuid("Colaborador inválido"),
+  value: z
+    .number()
+    .positive("O valor da parcela deve ser maior que zero")
+    .transform((val) => Math.round(val * 100) / 100),
+  totalInstallments: z
+    .number()
+    .int("O total de parcelas deve ser um número inteiro")
+    .min(1, "O total de parcelas deve ser pelo menos 1")
+    .max(120, "O total de parcelas deve ser no máximo 120"),
+  startCompetence: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Competência inválida (formato esperado: YYYY-MM)"),
+  discountType: z.enum(["LOAN", "ADVANCE"]).default("LOAN"),
+  // Modalidade: COMPANY = empréstimo/adiantamento da própria empresa; PAYROLL_CONSIGNED = consignado (banco).
+  loanKind: z.enum(["COMPANY", "PAYROLL_CONSIGNED"]).default("COMPANY"),
+  // Banco/credor — usado quando loanKind = PAYROLL_CONSIGNED.
+  lenderName: z.string().max(200, "Nome do credor muito longo").optional(),
+  description: z.string().max(200, "Descrição muito longa").optional(),
+});
+
+export type LoanMasterCreateFormData = z.infer<typeof loanMasterCreateSchema>;
 
 // =====================
 // Batch Operations
@@ -405,4 +470,6 @@ export const mapToDiscountFormData = createMapToFormDataHelper<Discount, Discoun
   isPersistent: discount.isPersistent ?? undefined,
   isActive: discount.isActive ?? undefined,
   expirationDate: discount.expirationDate ?? undefined,
+  totalInstallments: discount.totalInstallments ?? undefined,
+  currentInstallment: discount.currentInstallment ?? undefined,
 }));

@@ -101,8 +101,10 @@ export {
   discountGetManySchema,
   discountGetByIdSchema,
   discountQuerySchema,
+  loanMasterCreateSchema,
   mapToDiscountFormData,
   // Types
+  type LoanMasterCreateFormData,
   type DiscountGetManyFormData,
   type DiscountGetByIdFormData,
   type DiscountQueryFormData,

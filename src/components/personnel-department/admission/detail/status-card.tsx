@@ -3,6 +3,7 @@
 // Exame → Contrato → Registro → Concluída) with the current-status badge and the
 // server-rule guards (blocking required docs / cancelled).
 
+import { useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { IconCheck, IconBan, IconAlertTriangle, IconStethoscope } from "@tabler/icons-react-native";
 
@@ -14,6 +15,7 @@ import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { useNav } from "@/contexts/nav";
 import { useMedicalExamMutations } from "@/hooks";
+import { useAdmissionAdvance } from "@/hooks/useAdmission";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import {
   routes,
@@ -25,8 +27,14 @@ import {
 } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import type { Admission } from "@/types/admission";
-import { ADMISSION_STATUS_CHAIN, hasBlockingRequiredDocs } from "../utils";
+import {
+  ADMISSION_STATUS_CHAIN,
+  getNextAdmissionStatus,
+  getPreviousAdmissionStatus,
+  hasBlockingRequiredDocs,
+} from "../utils";
 import { LinkedExamStatus, useLinkedMedicalExam } from "@/components/human-resources/medical-exam/detail/linked-exam-status";
+import { CancelReasonModal } from "@/components/human-resources/shared/cancel-reason-modal";
 
 interface StatusCardProps {
   admission: Admission;
@@ -47,10 +55,72 @@ export function StatusCard({ admission, canManage }: StatusCardProps) {
   const { colors } = useTheme();
   const nav = useNav();
   const { createAsync } = useMedicalExamMutations();
+  const advance = useAdmissionAdvance();
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const isCancelled = admission.status === ADMISSION_STATUS.CANCELLED;
+  const isCompleted = admission.status === ADMISSION_STATUS.COMPLETED;
+  const isTerminal = isCancelled || isCompleted;
   const currentIndex = ADMISSION_STATUS_CHAIN.indexOf(admission.status as ADMISSION_STATUS);
   const stepperIndex = currentIndex + 1; // offset by the always-done registration step
   const blockedByDocs = hasBlockingRequiredDocs(admission);
+
+  const nextStatus = getNextAdmissionStatus(admission.status as ADMISSION_STATUS);
+  const prevStatus = getPreviousAdmissionStatus(admission.status as ADMISSION_STATUS);
+
+  const handleAdvance = () => {
+    if (!nextStatus) return;
+    Alert.alert(
+      "Avançar Etapa",
+      `Avançar para "${ADMISSION_STATUS_LABELS[nextStatus]}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Avançar",
+          onPress: async () => {
+            try {
+              await nav.withLoading(async () => advance.mutateAsync({ id: admission.id }));
+            } catch {
+              /* interceptor toasts */
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // The server accepts the previous status as a "retroceder etapa" move.
+  const handleRegress = () => {
+    if (!prevStatus) return;
+    Alert.alert(
+      "Voltar Etapa",
+      `Retroceder para "${ADMISSION_STATUS_LABELS[prevStatus]}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Voltar Etapa",
+          onPress: async () => {
+            try {
+              await nav.withLoading(async () => advance.mutateAsync({ id: admission.id, data: { status: prevStatus } }));
+            } catch {
+              /* interceptor toasts */
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Cancelling hard-requires a non-empty trimmed `reason` server-side.
+  const handleCancelConfirm = async (reason: string) => {
+    try {
+      await nav.withLoading(async () =>
+        advance.mutateAsync({ id: admission.id, data: { status: ADMISSION_STATUS.CANCELLED, reason } }),
+      );
+      setShowCancelModal(false);
+    } catch {
+      /* interceptor toasts */
+    }
+  };
 
   const medicalExamIndex = ADMISSION_STATUS_CHAIN.indexOf(ADMISSION_STATUS.MEDICAL_EXAM);
   // ADMISSION exam linked to this collaborator (auto-created by the server when
@@ -207,6 +277,45 @@ export function StatusCard({ admission, canManage }: StatusCardProps) {
           </View>
         </View>
       )}
+
+      {canManage && !isTerminal && (
+        <View style={styles.actions}>
+          {nextStatus && (
+            <Button
+              variant="default"
+              loading={advance.isPending}
+              disabled={blockedByDocs || awaitingExam}
+              onPress={handleAdvance}
+              icon={<Icon name="arrow-right" size={16} color={colors.primaryForeground ?? "#fff"} />}
+            >
+              {`Avançar para ${ADMISSION_STATUS_LABELS[nextStatus]}`}
+            </Button>
+          )}
+          {prevStatus && (
+            <Button
+              variant="outline"
+              loading={advance.isPending}
+              onPress={handleRegress}
+              icon={<Icon name="arrow-left" size={16} color={colors.foreground} />}
+            >
+              {`Voltar para ${ADMISSION_STATUS_LABELS[prevStatus]}`}
+            </Button>
+          )}
+          <Button variant="outline" disabled={advance.isPending} onPress={() => setShowCancelModal(true)}>
+            Cancelar Admissão
+          </Button>
+        </View>
+      )}
+
+      <CancelReasonModal
+        visible={showCancelModal}
+        title="Cancelar Admissão"
+        description={`A admissão${admission.user?.name ? ` de "${admission.user.name}"` : ""} será marcada como cancelada e não poderá mais ser avançada. Informe o motivo de não ter sido concluída.`}
+        confirmLabel="Cancelar Admissão"
+        loading={advance.isPending}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelConfirm}
+      />
     </DetailCard>
   );
 }
@@ -227,4 +336,5 @@ const styles = StyleSheet.create({
   bannerTextWrap: { flex: 1, gap: 2 },
   bannerTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   bannerBody: { fontSize: fontSize.xs },
+  actions: { gap: spacing.sm, marginTop: spacing.sm },
 });

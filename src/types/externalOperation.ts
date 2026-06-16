@@ -21,13 +21,21 @@ export interface ExternalOperation extends BaseEntity {
   notes: string | null;
   totalPrice?: number;
 
-  // Billing fields (CHARGEABLE withdrawals — "Operação Externa" billing)
-  customerId: string | null;
-  generateInvoice: boolean;
-  generateBankSlip: boolean;
-  paymentCondition: string | null;
-  paymentConfig: Record<string, any> | null;
-  billedAt: Date | null;
+  // Billing fields (CHARGEABLE withdrawals — "Operação Externa" billing).
+  // Optional to match the API/web: only CHARGEABLE operations carry these.
+  customerId?: string | null;
+  generateInvoice?: boolean;
+  generateBankSlip?: boolean;
+  paymentCondition?: string | null;
+  paymentConfig?: {
+    type: "CASH" | "INSTALLMENTS";
+    cashDays?: number;
+    installmentCount?: number;
+    installmentStep?: number;
+    entryDays?: number;
+    specificDate?: string;
+  } | null;
+  billedAt?: Date | null;
 
   // Relations (optional, populated based on query) — M:N File relations (plural)
   invoices?: File[];

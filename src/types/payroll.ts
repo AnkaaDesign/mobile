@@ -15,7 +15,14 @@ export interface Discount extends BaseEntity {
   discountType: string;
   isPersistent: boolean;
   isActive: boolean;
-  expirationDate: Date | null;
+  taxYear?: number | null;
+  taxTableId?: string | null;
+  expirationDate?: Date | null;
+  baseValue?: number | null;
+  /** Parcelamento (ex.: empréstimo CLT): total de parcelas contratadas */
+  totalInstallments?: number | null;
+  /** Parcela corrente (1-based); avança a cada folha mensal */
+  currentInstallment?: number | null;
   payrollId: string;
 
   // Relations (optional, populated based on query)
@@ -27,6 +34,7 @@ export interface Payroll extends BaseEntity {
   year: number;
   month: number;
   userId: string;
+  contractId?: string | null;
   positionId?: string | null;
 
   // Calculated fields (from bonus/discounts)
@@ -37,11 +45,35 @@ export interface Payroll extends BaseEntity {
   status?: BONUS_STATUS;
   statusOrder?: number;
 
+  // Persisted holerite columns (snapshot of the complete-payroll calculation;
+  // null on legacy rows generated before the calc rewrite). Mirrors the Prisma
+  // Payroll model so mobile can read the saved values directly.
+  workingDaysInMonth?: number | null;
+  workedDaysInMonth?: number | null;
+  absenceHours?: number | null;
+  overtime50Hours?: number | null;
+  overtime50Amount?: number | null;
+  overtime100Hours?: number | null;
+  overtime100Amount?: number | null;
+  nightHours?: number | null;
+  nightDifferentialAmount?: number | null;
+  dsrAmount?: number | null;
+  dsrDays?: number | null;
+  grossSalary?: number | null;
+  inssBase?: number | null;
+  inssAmount?: number | null;
+  irrfBase?: number | null;
+  irrfAmount?: number | null;
+  fgtsAmount?: number | null;
+  netSalary?: number | null;
+  totalDiscounts?: number | null;
+
   // Relations (optional, populated based on query)
   bonus?: Bonus;
   discounts?: Discount[];
   user?: User;
   position?: Position;
+  contract?: any; // EmploymentContract
   bonusDetails?: any; // BonusDetail type
 
   // Count fields (when included)

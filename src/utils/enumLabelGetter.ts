@@ -46,7 +46,6 @@ import {
   ORDER_TRIGGER_TYPE_LABELS,
   ACTIVITY_REASON_LABELS,
   ACTIVITY_LEVEL_LABELS,
-  CONTRACT_TYPE_LABELS,
   CHANGE_LOG_ENTITY_TYPE_LABELS,
   CHANGE_LOG_ACTION_LABELS,
   NOTIFICATION_ACTION_TYPE_LABELS,
@@ -66,7 +65,6 @@ import {
   ORDER_TRIGGER_TYPE,
   ACTIVITY_REASON,
   ACTIVITY_LEVEL,
-  CONTRACT_TYPE,
   RESCHEDULE_REASON,
   CHANGE_LOG_ENTITY_TYPE,
   CHANGE_LOG_ACTION,
@@ -103,15 +101,6 @@ export function getActivityReasonLabel(reason: ACTIVITY_REASON): string {
 
 export function getActivityLevelLabel(level: ACTIVITY_LEVEL): string {
   return ACTIVITY_LEVEL_LABELS[level] || level;
-}
-
-/**
- * Get the display label for a user status
- * @param status - The user status enum value
- * @returns The localized label for the status
- */
-export function getUserStatusLabel(status: CONTRACT_TYPE): string {
-  return CONTRACT_TYPE_LABELS[status] || status;
 }
 
 /**
