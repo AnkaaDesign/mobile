@@ -24,6 +24,10 @@ export interface Admission extends BaseEntity {
   statusOrder: number;
   hireDate: Date | null;
   notes: string | null;
+  // Cancelamento: preserva a etapa em que o processo estava ao ser cancelado
+  // e a justificativa do porquê não foi concluído.
+  cancelledFromStatus: ADMISSION_STATUS | null;
+  cancellationReason: string | null;
   createdById: string | null;
 
   // Relations (optional, populated based on query)

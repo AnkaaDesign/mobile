@@ -37,7 +37,6 @@ const STATUS_OPTIONS: StatusOption[] = Object.values(TASK_QUOTE_STATUS).map(
 const STATUS_TRIGGER_COLORS: Record<TASK_QUOTE_STATUS, { bg: string; border: string }> = {
   [TASK_QUOTE_STATUS.PENDING]: { bg: "#737373", border: "#525252" },            // neutral-500
   [TASK_QUOTE_STATUS.BUDGET_APPROVED]: { bg: "#15803d", border: "#166534" },    // green-700
-  [TASK_QUOTE_STATUS.COMMERCIAL_APPROVED]: { bg: "#1d4ed8", border: "#1e40af" }, // blue-700
   [TASK_QUOTE_STATUS.BILLING_APPROVED]: { bg: "#15803d", border: "#166534" },   // green-700
   [TASK_QUOTE_STATUS.UPCOMING]: { bg: "#d97706", border: "#b45309" },           // amber-600
   [TASK_QUOTE_STATUS.DUE]: { bg: "#b91c1c", border: "#991b1b" },                // red-700

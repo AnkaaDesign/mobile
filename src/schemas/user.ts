@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, emailSchema, phoneSchema, cpfSchema, pisSchema, createNameSchema, nullableDate, createDateSchema } from "./common";
 import type { User } from '../types';
-import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE, VERIFICATION_TYPE, SECTOR_PRIVILEGES } from '../constants';
+import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE, VERIFICATION_TYPE, SECTOR_PRIVILEGES, INSALUBRITY_DEGREE, STABILITY_TYPE, TERMINATION_TYPE } from '../constants';
 
 // =====================
 // Include Schema Based on Prisma Schema (Second Level Only)
@@ -1045,6 +1045,37 @@ export const userUpdateSchema = z
         },
         { message: "O colaborador deve ter pelo menos 18 anos" }
       )
+      .optional(),
+
+    // Payroll fields (parity with api/src/schemas/user.ts userUpdateSchema).
+    unionMember: z.boolean().optional(),
+    unionAuthorizationDate: nullableDate.optional(),
+    dependentsCount: z.number().int().min(0).optional(),
+    hasSimplifiedDeduction: z.boolean().optional(),
+
+    // Current vínculo (EmploymentContract) date edits — applied to the user's
+    // current contract by the service, then mirrored back into the User cache.
+    admissionDate: nullableDate.optional(),
+    effectedAt: nullableDate.optional(),
+    exp1StartAt: nullableDate.optional(),
+    exp1EndAt: nullableDate.optional(),
+    exp2StartAt: nullableDate.optional(),
+    exp2EndAt: nullableDate.optional(),
+    // Fase de experiência (1|2) do vínculo atual. NULL = derivar das datas.
+    experiencePhase: z.number().int().min(1).max(2).nullable().optional(),
+    // Art. 481 CLT — cláusula assecuratória do direito recíproco de rescisão.
+    hasArt481Clause: z.boolean().optional(),
+    // Overrides per-vínculo da insalubridade/periculosidade do cargo (NULL = herda).
+    insalubrityDegreeOverride: z.nativeEnum(INSALUBRITY_DEGREE).nullable().optional(),
+    hazardPayOverride: z.boolean().nullable().optional(),
+    // Estabilidade — janela que bloqueia o desligamento do vínculo atual.
+    stabilityType: z.nativeEnum(STABILITY_TYPE).nullable().optional(),
+    stabilityStart: nullableDate.optional(),
+    stabilityEnd: nullableDate.optional(),
+    terminationDate: nullableDate.optional(),
+    terminationType: z
+      .enum(Object.values(TERMINATION_TYPE) as [string, ...string[]])
+      .nullable()
       .optional(),
 
     // Payroll info

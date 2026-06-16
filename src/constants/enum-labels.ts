@@ -1499,6 +1499,8 @@ export const CHANGE_LOG_ENTITY_TYPE_LABELS: Record<CHANGE_LOG_ENTITY_TYPE, strin
   [CHANGE_LOG_ENTITY_TYPE.TERMINATION]: "Rescisão",
   [CHANGE_LOG_ENTITY_TYPE.MEDICAL_EXAM]: "Exame Médico",
   [CHANGE_LOG_ENTITY_TYPE.LEAVE]: "Afastamento",
+  [CHANGE_LOG_ENTITY_TYPE.DEPENDENT]: "Dependente",
+  [CHANGE_LOG_ENTITY_TYPE.POSTIT]: "Post-it",
 };
 
 export const CHANGE_LOG_ACTION_LABELS: Record<CHANGE_LOG_ACTION, string> = {
@@ -1999,7 +2001,6 @@ export const STATISTICS_PERIOD_LABELS: Record<STATISTICS_PERIOD, string> = {
 export const TASK_QUOTE_STATUS_LABELS: Record<TASK_QUOTE_STATUS, string> = {
   [TASK_QUOTE_STATUS.PENDING]: "Pendente",
   [TASK_QUOTE_STATUS.BUDGET_APPROVED]: "Orçamento Aprovado",
-  [TASK_QUOTE_STATUS.COMMERCIAL_APPROVED]: "Aprovado pelo Comercial",
   [TASK_QUOTE_STATUS.BILLING_APPROVED]: "Faturamento Aprovado",
   [TASK_QUOTE_STATUS.UPCOMING]: "A Vencer",
   [TASK_QUOTE_STATUS.DUE]: "Vencido",
@@ -2079,6 +2080,8 @@ export const NFSE_STATUS_LABELS: Record<NFSE_STATUS, string> = {
   [NFSE_STATUS.PENDING]: "Pendente",
   [NFSE_STATUS.PROCESSING]: "Processando",
   [NFSE_STATUS.AUTHORIZED]: "Autorizada",
+  [NFSE_STATUS.CANCEL_REQUESTED]: "Cancelamento Solicitado",
+  [NFSE_STATUS.CANCEL_REJECTED]: "Cancelamento Rejeitado",
   [NFSE_STATUS.CANCELLED]: "Cancelada",
   [NFSE_STATUS.ERROR]: "Erro",
 };

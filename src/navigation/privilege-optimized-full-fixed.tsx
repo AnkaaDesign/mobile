@@ -342,6 +342,8 @@ const ALL_ROUTES = [
   { name: "pessoal/meus-pontos/ajustar-ponto/index", title: "Ajustar Ponto" },
   { name: "pessoal/meus-pontos/incluir-ponto/index", title: "Incluir Ponto" },
   { name: "pessoal/meus-pontos/incluir-ponto/capture", title: "Incluir Ponto" },
+  { name: "pessoal/meus-pontos/assinaturas/index", title: "Assinatura de Ponto" },
+  { name: "pessoal/meus-pontos/assinaturas/[id]", title: "Detalhes da Apuração" },
   { name: "pessoal/minhas-notificacoes/index", title: "Notificações" },
   { name: "pessoal/minhas-notificacoes/configuracoes", title: "Configurações de Notificações" },
   { name: "pessoal/minhas-notificacoes/detalhes/[id]", title: "Detalhes da Notificação" },

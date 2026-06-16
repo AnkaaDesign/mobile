@@ -12,7 +12,7 @@ import { EXTERNAL_OPERATION_STATUS, EXTERNAL_OPERATION_TYPE } from '../constants
 // Include Schema
 export const externalOperationIncludeSchema = z
   .object({
-    nfe: z
+    invoices: z
       .union([
         z.boolean(),
         z.object({
@@ -24,7 +24,7 @@ export const externalOperationIncludeSchema = z
         }),
       ])
       .optional(),
-    receipt: z
+    receipts: z
       .union([
         z.boolean(),
         z.object({
@@ -252,29 +252,10 @@ export const externalOperationWhereSchema: z.ZodType<any> = z
       ])
       .optional(),
 
-    nfeId: z
-      .union([
-        z.string().nullable(),
-        z.object({
-          equals: z.string().nullable().optional(),
-          not: z.string().nullable().optional(),
-          in: z.array(z.string()).optional(),
-          notIn: z.array(z.string()).optional(),
-        }),
-      ])
-      .optional(),
-
-    receiptId: z
-      .union([
-        z.string().nullable(),
-        z.object({
-          equals: z.string().nullable().optional(),
-          not: z.string().nullable().optional(),
-          in: z.array(z.string()).optional(),
-          notIn: z.array(z.string()).optional(),
-        }),
-      ])
-      .optional(),
+    // File relations (plural M:N) — relation filters only; the scalar
+    // nfeId/receiptId columns do NOT exist on the model.
+    invoices: z.object({}).passthrough().optional(),
+    receipts: z.object({}).passthrough().optional(),
 
     notes: z
       .union([
@@ -327,7 +308,7 @@ const externalOperationFilters = {
   withdrawerNames: z.array(z.string()).optional(),
   statuses: z.array(z.nativeEnum(EXTERNAL_OPERATION_STATUS)).optional(),
   types: z.array(z.nativeEnum(EXTERNAL_OPERATION_TYPE)).optional(),
-  hasNfe: z.boolean().optional(),
+  hasInvoice: z.boolean().optional(),
   hasReceipt: z.boolean().optional(),
   hasItems: z.boolean().optional(),
   searchingFor: z.string().optional(),
@@ -363,13 +344,15 @@ const externalOperationTransform = (data: any) => {
     delete data.types;
   }
 
-  if (data.hasNfe !== undefined) {
-    andConditions.push({ nfeId: data.hasNfe ? { not: null } : null });
-    delete data.hasNfe;
+  if (data.hasInvoice !== undefined) {
+    // invoices is a M:N File relation — there is no nfeId scalar
+    andConditions.push({ invoices: data.hasInvoice ? { some: {} } : { none: {} } });
+    delete data.hasInvoice;
   }
 
   if (data.hasReceipt !== undefined) {
-    andConditions.push({ receiptId: data.hasReceipt ? { not: null } : null });
+    // receipts is a M:N File relation — there is no receiptId scalar
+    andConditions.push({ receipts: data.hasReceipt ? { some: {} } : { none: {} } });
     delete data.hasReceipt;
   }
 
@@ -468,8 +451,8 @@ export const externalOperationCompleteFormSchema = z
 
     // Optional fields for complete form
     status: z.nativeEnum(EXTERNAL_OPERATION_STATUS).default(EXTERNAL_OPERATION_STATUS.PENDING).optional(),
-    nfeId: z.string().uuid("NFe inválida").nullable().optional(),
-    receiptId: z.string().uuid("Recibo inválido").nullable().optional(),
+    invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),
+    receiptIds: z.array(z.string().uuid("Recibo inválido")).optional(),
   })
   // Conditional validation: if type is CHARGEABLE, all items must have price
   .refine(
@@ -510,8 +493,6 @@ export const externalOperationCreateSchema = z
     withdrawerName: createNameSchema(2, 200, "Nome do retirador").optional(),
     type: z.nativeEnum(EXTERNAL_OPERATION_TYPE).default(EXTERNAL_OPERATION_TYPE.RETURNABLE),
     status: z.nativeEnum(EXTERNAL_OPERATION_STATUS).default(EXTERNAL_OPERATION_STATUS.PENDING).optional(),
-    nfeId: z.string().uuid("NFe inválida").nullable().optional(),
-    receiptId: z.string().uuid("Recibo inválido").nullable().optional(),
     invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),
     receiptIds: z.array(z.string().uuid("Recibo inválido")).optional(),
     notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").nullable().optional(),
@@ -676,8 +657,8 @@ export const externalOperationItemIncludeSchema = z
         z.object({
           include: z
             .object({
-              nfe: z.boolean().optional(),
-              receipt: z.boolean().optional(),
+              invoices: z.boolean().optional(),
+              receipts: z.boolean().optional(),
               items: z.boolean().optional(),
             })
             .optional(),
@@ -1076,14 +1057,14 @@ export type ExternalOperationItemOrderBy = z.infer<typeof externalOperationItemO
 
 // Multi-stage form helpers
 export const mapExternalOperationToStage1FormData = createMapToFormDataHelper<ExternalOperation, ExternalOperationStage1FormData>((externalOperation) => ({
-  withdrawerName: externalOperation.withdrawerName,
+  withdrawerName: externalOperation.withdrawerName ?? "",
   type: externalOperation.type,
   notes: externalOperation.notes,
 }));
 
 export const mapExternalOperationToCompleteFormData = createMapToFormDataHelper<ExternalOperation & { items?: ExternalOperationItem[] }, ExternalOperationCompleteFormData>(
   (externalOperation) => ({
-    withdrawerName: externalOperation.withdrawerName,
+    withdrawerName: externalOperation.withdrawerName ?? "",
     type: externalOperation.type,
     notes: externalOperation.notes,
     items:
@@ -1093,18 +1074,18 @@ export const mapExternalOperationToCompleteFormData = createMapToFormDataHelper<
         price: item.price,
       })) || [],
     status: externalOperation.status,
-    nfeId: externalOperation.nfeId,
-    receiptId: externalOperation.receiptId,
+    invoiceIds: externalOperation.invoices?.map((invoice) => invoice.id) || [],
+    receiptIds: externalOperation.receipts?.map((receipt) => receipt.id) || [],
   }),
 );
 
 // Existing helpers (backward compatibility)
 export const mapExternalOperationToFormData = createMapToFormDataHelper<ExternalOperation, ExternalOperationUpdateFormData>((externalOperation) => ({
-  withdrawerName: externalOperation.withdrawerName,
+  withdrawerName: externalOperation.withdrawerName ?? undefined,
   type: externalOperation.type,
   status: externalOperation.status,
-  nfeId: externalOperation.nfeId,
-  receiptId: externalOperation.receiptId,
+  invoiceIds: externalOperation.invoices?.map((invoice) => invoice.id),
+  receiptIds: externalOperation.receipts?.map((receipt) => receipt.id),
   notes: externalOperation.notes,
 }));
 
@@ -1133,16 +1114,16 @@ export const combineFormStages = (
   stage2Data: ExternalOperationStage2FormData,
   additionalData?: {
     status?: EXTERNAL_OPERATION_STATUS;
-    nfeId?: string | null;
-    receiptId?: string | null;
+    invoiceIds?: string[];
+    receiptIds?: string[];
   },
 ): ExternalOperationCompleteFormData => {
   return {
     ...stage1Data,
     ...stage2Data,
     status: additionalData?.status || EXTERNAL_OPERATION_STATUS.PENDING,
-    nfeId: additionalData?.nfeId || null,
-    receiptId: additionalData?.receiptId || null,
+    invoiceIds: additionalData?.invoiceIds || [],
+    receiptIds: additionalData?.receiptIds || [],
   };
 };
 
@@ -1158,7 +1139,7 @@ export const convertCompleteFormToCreateData = (completeData: ExternalOperationC
       price: item.price,
     })),
     status: completeData.status,
-    nfeId: completeData.nfeId,
-    receiptId: completeData.receiptId,
+    invoiceIds: completeData.invoiceIds,
+    receiptIds: completeData.receiptIds,
   };
 };

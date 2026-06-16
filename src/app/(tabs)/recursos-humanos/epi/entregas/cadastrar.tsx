@@ -17,7 +17,7 @@ import { usePpeDeliveryMutations, useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useNav } from "@/contexts/nav";
 import { getItems, getUsers } from "@/api-client";
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, CONTRACT_STATUS, PPE_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, PPE_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { ppeDeliveryCreateSchema, type PpeDeliveryCreateFormData } from "../../../../../schemas";
 import { mobileRoute } from "@/constants/routes.types";
@@ -85,7 +85,7 @@ function CreateHRPPEDeliveryScreenInner() {
       const response = await getUsers({
         take: pageSize,
         skip: (page - 1) * pageSize,
-        where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } },
+        where: { isActive: true }, // EPI eligibility follows the account flag — includes terceirizado/dismissed-now-third-party
         orderBy: { name: "asc" },
         include: { ppeSize: true },
         searchingFor: search || undefined,

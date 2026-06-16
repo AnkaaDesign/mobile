@@ -22,6 +22,9 @@ export const discountCreateSchema = z.object({
   discountType: z.string().optional(),
   isPersistent: z.boolean().default(false),
   expirationDate: nullableDate.optional(),
+  // Parcelamento (ex.: empréstimo CLT)
+  totalInstallments: z.number().int().min(1).max(120).nullable().optional(),
+  currentInstallment: z.number().int().min(1).nullable().optional(),
 }).refine(
   data => (data.percentage !== null && data.percentage !== undefined) ||
          (data.value !== null && data.value !== undefined),

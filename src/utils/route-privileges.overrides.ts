@@ -133,4 +133,11 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
 
   // ---- Servidor: file-manager open to COMMERCIAL alongside ADMIN ----
   "/(tabs)/servidor/file-manager": ["ADMIN", "COMMERCIAL"],
+
+  // ---- Estoque operações externas: ADMIN-only (API restricts every endpoint to ADMIN; matches WEB) ----
+  "/(tabs)/estoque/operacoes-externas": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/listar": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/cadastrar": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/detalhes/[id]": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/editar/[id]": "ADMIN",
 };

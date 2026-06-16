@@ -62,8 +62,12 @@ export default function PpeDeliveryDetailScreen() {
       icon={IconShieldCheck}
       title={(d) => d.item?.name || "Entrega de EPI"}
       subtitle={(d) => `Entrega #${d.id.slice(0, 8)}`}
-      // Read-only mirror — user signs from card actions, no edit page.
+      // Read-only mirror — user signs from card actions, no edit page. The
+      // production user can't edit anything, so hide the redundant refresh
+      // button (pull-to-refresh covers it) and the terminal-state banner.
       editGuard={{ editable: [] }}
+      hideRefresh
+      hideTerminalBanner
       notFoundFallback={mobileRoute(routes.personal.myPpes.root)}
       scrollRef={scrollRef}
     >

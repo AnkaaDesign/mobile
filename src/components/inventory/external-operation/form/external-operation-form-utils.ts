@@ -44,8 +44,8 @@ export interface ExternalOperationFormData {
   selectedItems: Map<string, ExternalOperationFormItem>;
   quantities: Record<string, number>;
   prices: Record<string, number>;
-  nfeId?: string | null;
-  receiptId?: string | null;
+  invoiceIds?: string[];
+  receiptIds?: string[];
 }
 
 export interface ValidationError {
@@ -284,8 +284,8 @@ export function transformFormDataForAPI(formData: ExternalOperationFormData): Ex
     type: formData.type,
     status: EXTERNAL_OPERATION_STATUS.PENDING,
     notes: formData.notes?.trim() || null,
-    nfeId: formData.nfeId || null,
-    receiptId: formData.receiptId || null,
+    invoiceIds: formData.invoiceIds || [],
+    receiptIds: formData.receiptIds || [],
     items,
   };
 }
@@ -331,11 +331,11 @@ export function transformAPIDataToFormData(externalOperation: ExternalOperation,
   }
 
   return {
-    withdrawerName: externalOperation.withdrawerName,
+    withdrawerName: externalOperation.withdrawerName ?? "",
     type: externalOperation.type,
     notes: externalOperation.notes,
-    nfeId: externalOperation.nfeId,
-    receiptId: externalOperation.receiptId,
+    invoiceIds: externalOperation.invoices?.map((invoice) => invoice.id) || [],
+    receiptIds: externalOperation.receipts?.map((receipt) => receipt.id) || [],
     selectedItems,
     quantities,
     prices,
@@ -350,8 +350,8 @@ export function cloneFormData(formData: ExternalOperationFormData): ExternalOper
     withdrawerName: formData.withdrawerName,
     type: formData.type,
     notes: formData.notes,
-    nfeId: formData.nfeId,
-    receiptId: formData.receiptId,
+    invoiceIds: formData.invoiceIds,
+    receiptIds: formData.receiptIds,
     selectedItems: new Map(formData.selectedItems),
     quantities: { ...formData.quantities },
     prices: { ...formData.prices },

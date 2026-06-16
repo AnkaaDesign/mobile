@@ -182,23 +182,7 @@ export function useBudgetApproveTaskQuote() {
 }
 
 /**
- * Commercial approve quote mutation (BUDGET_APPROVED -> COMMERCIAL_APPROVED)
- */
-export function useCommercialApproveTaskQuote() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => taskQuoteService.commercialApprove(id),
-    onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
-    },
-  });
-}
-
-/**
- * Internal approve quote mutation (COMMERCIAL_APPROVED -> BILLING_APPROVED, triggers invoice generation)
+ * Internal approve quote mutation (BUDGET_APPROVED -> BILLING_APPROVED, triggers invoice generation)
  */
 export function useInternalApproveTaskQuote() {
   const queryClient = useQueryClient();

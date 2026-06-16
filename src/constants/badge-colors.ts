@@ -405,7 +405,6 @@ export const ENTITY_BADGE_CONFIG = {
   TASK_QUOTE: {
     [TASK_QUOTE_STATUS.PENDING]: "secondary" as BadgeVariant,              // Neutral - awaiting action
     [TASK_QUOTE_STATUS.BUDGET_APPROVED]: "approved" as BadgeVariant,       // Green - budget approved
-    [TASK_QUOTE_STATUS.COMMERCIAL_APPROVED]: "processing" as BadgeVariant, // Blue - commercial approved
     [TASK_QUOTE_STATUS.BILLING_APPROVED]: "approved" as BadgeVariant,      // Green - billing approved
     [TASK_QUOTE_STATUS.UPCOMING]: "pending" as BadgeVariant,               // Amber - payment upcoming
     [TASK_QUOTE_STATUS.DUE]: "destructive" as BadgeVariant,                // Red - payment overdue

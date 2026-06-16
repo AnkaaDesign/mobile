@@ -38,6 +38,32 @@ export class NfseService {
     });
     return response.data;
   }
+
+  // =====================
+  // Cancellation Lifecycle
+  // =====================
+
+  // Current cancellation-request status + timeline at the prefeitura (read-only).
+  // GET /nfse/:elotechNfseId/cancellation
+  async getCancellationStatus(elotechNfseId: number): Promise<any> {
+    const response = await apiClient.get(`${this.basePath}/${elotechNfseId}/cancellation`);
+    return response.data;
+  }
+
+  // Cancel an NFS-e by its local document id — works for ANY note (incl. invoice-less orphans).
+  // Registers an async cancellation request at the prefeitura (AGUARDANDO_FISCAL).
+  // `substituteNfseNumber` is required when reasonCode = 4 (Duplicidade).
+  // PUT /nfse/document/:nfseDocumentId/cancel
+  async cancelByDocument(
+    nfseDocumentId: string,
+    data: { reason: string; reasonCode: number; substituteNfseNumber?: number },
+  ): Promise<any> {
+    const response = await apiClient.put(
+      `${this.basePath}/document/${nfseDocumentId}/cancel`,
+      data,
+    );
+    return response.data;
+  }
 }
 
 // =====================
@@ -53,3 +79,8 @@ export const nfseService = new NfseService();
 export const getNfseList = (params?: Parameters<NfseService['list']>[0]) => nfseService.list(params);
 export const getNfseDetail = (elotechNfseId: number) => nfseService.detail(elotechNfseId);
 export const getNfsePdf = (elotechNfseId: number) => nfseService.getPdf(elotechNfseId);
+export const getNfseCancellationStatus = (elotechNfseId: number) => nfseService.getCancellationStatus(elotechNfseId);
+export const cancelNfseByDocument = (
+  nfseDocumentId: string,
+  data: { reason: string; reasonCode: number; substituteNfseNumber?: number },
+) => nfseService.cancelByDocument(nfseDocumentId, data);

@@ -89,6 +89,18 @@ export interface DetailScreenProps<T extends BaseEntity> {
   privilege?: PrivilegeReq;
   /** Status allowlist for edit visibility. */
   editGuard?: StatusGuardConfig<T>;
+  /**
+   * Hide the header refresh button. Pull-to-refresh still works. Use on
+   * read-only mirror screens (e.g. personal self-service) where the explicit
+   * "Atualizar" action is redundant.
+   */
+  hideRefresh?: boolean;
+  /**
+   * Suppress the "Este registro está em um estado finalizado..." terminal
+   * banner. Use on read-only screens where the user can never edit anything,
+   * so the not-editable notice carries no useful meaning.
+   */
+  hideTerminalBanner?: boolean;
   /** Where to dismissTo on a 404 / load failure. */
   notFoundFallback?: AppRoute;
   /**
@@ -248,10 +260,11 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
           badges={props.badges?.(entity) ?? []}
           actions={overflowActions}
           showEditButton={showEditButton}
+          showRefreshButton={!props.hideRefresh}
           isRefreshing={props.query.isRefetching}
         />
       </View>
-      {!showEditButton && editGuardActive && guard.isTerminal ? (
+      {!props.hideTerminalBanner && !showEditButton && editGuardActive && guard.isTerminal ? (
         <View style={[styles.banner, { backgroundColor: colors.muted }]}>
           <ThemedText style={styles.bannerText}>
             {guard.message ?? "Este registro está em um estado finalizado e não pode ser editado."}

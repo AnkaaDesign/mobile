@@ -24,9 +24,9 @@ export const BorrowUserInfoCard: React.FC<BorrowUserInfoCardProps> = ({ borrow }
 
   if (!borrow.user) {
     return (
-      <DetailCard title="Informações do Usuário" icon="user">
+      <DetailCard title="Colaborador" icon="user">
         <ThemedText style={{ fontSize: fontSize.sm, fontStyle: "italic", color: colors.mutedForeground }}>
-          Usuário não encontrado
+          Colaborador não encontrado
         </ThemedText>
       </DetailCard>
     );
@@ -35,9 +35,9 @@ export const BorrowUserInfoCard: React.FC<BorrowUserInfoCardProps> = ({ borrow }
   const { user } = borrow;
 
   return (
-    <DetailCard title="Informações do Usuário" icon="user">
-      {/* User Name */}
-      <DetailField label="Nome" value={user.name} icon="user" />
+    <DetailCard title="Colaborador" icon="user">
+      {/* Collaborator Name */}
+      <DetailField label="Colaborador" value={user.name} icon="user" />
 
       {/* Position */}
       <DetailField label="Cargo" value={user.position ? user.position.name : "-"} icon="briefcase" />

@@ -7,7 +7,6 @@ import {
   IconAlertCircle,
   IconDivide,
   IconCircleCheckFilled,
-  IconFileCheck,
   type Icon as TablerIcon,
 } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -33,7 +32,6 @@ interface StatusVisual {
 const STATUS_VISUAL: Record<TASK_QUOTE_STATUS, StatusVisual> = {
   [TASK_QUOTE_STATUS.PENDING]: { color: "#737373", icon: IconClock },
   [TASK_QUOTE_STATUS.BUDGET_APPROVED]: { color: "#15803d", icon: IconCheck },
-  [TASK_QUOTE_STATUS.COMMERCIAL_APPROVED]: { color: "#1d4ed8", icon: IconFileCheck },
   [TASK_QUOTE_STATUS.BILLING_APPROVED]: { color: "#15803d", icon: IconCheck },
   [TASK_QUOTE_STATUS.UPCOMING]: { color: "#d97706", icon: IconAlarm },
   [TASK_QUOTE_STATUS.DUE]: { color: "#b91c1c", icon: IconAlertCircle },

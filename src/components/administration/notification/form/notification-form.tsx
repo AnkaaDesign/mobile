@@ -28,7 +28,6 @@ import {
   NOTIFICATION_TYPE,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_IMPORTANCE,
-  CONTRACT_STATUS,
 } from "@/constants";
 import {
   NOTIFICATION_TYPE_LABELS,
@@ -507,7 +506,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
                     render={({ field: { onChange, value }, fieldState: { error } }) => (
                       <Combobox
                         async
-                        queryKey={[...userKeys.list({ currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } })]}
+                        queryKey={[...userKeys.list({ isActive: true })]}
                         queryFn={fetchUsers}
                         minSearchLength={0}
                         pageSize={50}

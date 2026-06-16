@@ -333,9 +333,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
-        hidden: true, // TEMP: bonus feature hidden from navigation
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT available for DESIGNER
-        requiresBonifiable: true, // Only show if user's position is bonifiable
+        requiresBonifiable: true, // Sole gate: show only if user's position is bonifiable (CLT + ACTIVE + bonifiable)
         children: [
           { id: "meu-bonus-historico", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },
           { id: "meu-bonus-simulacao", title: "Simulação", icon: "calculator", path: "/pessoal/meu-bonus/simulacao", requiresBonifiable: true },
@@ -370,6 +368,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "meus-pontos-incluir", title: "Incluir Ponto", icon: "map-pin-plus", path: "/pessoal/meus-pontos/incluir-ponto" },
           { id: "meus-pontos-ajustar", title: "Ajustar Ponto", icon: "clock-edit", path: "/pessoal/meus-pontos/ajustar-ponto" },
           { id: "meus-pontos-justificar", title: "Justificar Ausência", icon: "calendar-off", path: "/pessoal/meus-pontos/justificar-ausencia" },
+          { id: "meus-pontos-assinaturas", title: "Assinatura de Ponto", icon: "file-check", path: "/pessoal/meus-pontos/assinaturas" },
         ],
       },
       {
@@ -1161,7 +1160,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
-        hidden: true, // TEMP: bonus feature hidden from navigation
         requiresBonifiable: true,
         children: [
           { id: "meu-bonus-historico-production", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },
@@ -1195,6 +1193,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "meus-pontos-incluir-production", title: "Incluir Ponto", icon: "map-pin-plus", path: "/pessoal/meus-pontos/incluir-ponto" },
           { id: "meus-pontos-ajustar-production", title: "Ajustar Ponto", icon: "clock-edit", path: "/pessoal/meus-pontos/ajustar-ponto" },
           { id: "meus-pontos-justificar-production", title: "Justificar Ausência", icon: "calendar-off", path: "/pessoal/meus-pontos/justificar-ausencia" },
+          { id: "meus-pontos-assinaturas-production", title: "Assinatura de Ponto", icon: "file-check", path: "/pessoal/meus-pontos/assinaturas" },
         ],
       },
       {

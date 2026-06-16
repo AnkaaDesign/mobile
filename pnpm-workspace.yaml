@@ -1,0 +1,6 @@
+allowBuilds:
+  '@firebase/util': true
+  protobufjs: true
+
+patchedDependencies:
+  react-native: patches/react-native.patch

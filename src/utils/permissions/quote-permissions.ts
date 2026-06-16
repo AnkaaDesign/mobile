@@ -46,7 +46,7 @@ export function canUpdateQuoteStatus(userRole: string): boolean {
  * Valid status transitions for task quote.
  *
  * Typical flow:
- *   PENDING -> BUDGET_APPROVED -> COMMERCIAL_APPROVED -> BILLING_APPROVED -> UPCOMING -> PARTIAL -> SETTLED
+ *   PENDING -> BUDGET_APPROVED -> BILLING_APPROVED -> UPCOMING -> PARTIAL -> SETTLED
  *
  * DUE status represents overdue installments:
  *   UPCOMING -> DUE (when installments become overdue)
@@ -63,11 +63,9 @@ export function canUpdateQuoteStatus(userRole: string): boolean {
  */
 const VALID_TRANSITIONS: Record<TASK_QUOTE_STATUS, TASK_QUOTE_STATUS[]> = {
   PENDING: ['BUDGET_APPROVED'],
-  BUDGET_APPROVED: ['COMMERCIAL_APPROVED', 'PENDING'],
-  // COMMERCIAL_APPROVED -> PENDING allows cancel/reject back to pending.
-  // COMMERCIAL_APPROVED -> SETTLED covers "direct" quotes (orçamento direto)
+  // SETTLED from BUDGET_APPROVED covers "direct" quotes (orçamento direto)
   // paid upfront with no billing/installment phase; settleManually is safe here.
-  COMMERCIAL_APPROVED: ['BILLING_APPROVED', 'BUDGET_APPROVED', 'PENDING', 'SETTLED'],
+  BUDGET_APPROVED: ['BILLING_APPROVED', 'PENDING', 'SETTLED'],
   // BILLING_APPROVED -> SETTLED supports prepayment + stuck-quote recovery.
   BILLING_APPROVED: ['UPCOMING', 'SETTLED'],
   UPCOMING: ['PARTIAL', 'DUE', 'BILLING_APPROVED', 'SETTLED'],
@@ -89,14 +87,10 @@ export function getAvailableQuoteStatusTransitions(
 ): TASK_QUOTE_STATUS[] {
   const transitions = VALID_TRANSITIONS[currentStatus] || [];
 
-  // COMMERCIAL cannot set BILLING_APPROVED
+  // COMMERCIAL can approve the budget (BUDGET_APPROVED) but cannot approve
+  // billing (BILLING_APPROVED) — that belongs to ADMIN/FINANCIAL.
   if (userRole === SECTOR_PRIVILEGES.COMMERCIAL) {
     return transitions.filter((s) => s !== 'BILLING_APPROVED');
-  }
-
-  // FINANCIAL cannot set COMMERCIAL_APPROVED (that step belongs to the commercial sector)
-  if (userRole === SECTOR_PRIVILEGES.FINANCIAL) {
-    return transitions.filter((s) => s !== 'COMMERCIAL_APPROVED');
   }
 
   return transitions;

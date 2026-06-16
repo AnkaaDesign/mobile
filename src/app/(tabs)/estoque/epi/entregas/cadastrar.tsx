@@ -14,7 +14,6 @@ import { getItems, getUsers } from "@/api-client";
 import {
   PPE_DELIVERY_STATUS,
   PPE_DELIVERY_STATUS_ORDER,
-  CONTRACT_STATUS,
   PPE_TYPE,
   routes,
   SECTOR_PRIVILEGES,
@@ -63,7 +62,7 @@ function CreatePPEDeliveryScreenInner() {
       const response = await getUsers({
         take: pageSize,
         skip: (page - 1) * pageSize,
-        where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } },
+        where: { isActive: true }, // EPI eligibility follows the account flag — includes terceirizado/dismissed-now-third-party
         orderBy: { name: "asc" },
         include: { ppeSize: true },
         searchingFor: search || undefined,

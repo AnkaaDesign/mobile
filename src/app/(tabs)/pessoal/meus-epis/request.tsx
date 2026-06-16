@@ -15,7 +15,6 @@ import { mobileRoute } from "@/constants/routes.types";
 import { getItemPpeSize } from "@/utils/ppe-size-mapping";
 import { getPpeSizeByType, allowsOnDemandDelivery } from "@/utils/ppe";
 import { cn } from "@/lib/utils";
-import { formatQuantity } from "@/utils";
 import type { PpeRequestFormData } from "@/schemas/ppe-request";
 import type { Item } from "@/types";
 import { useTheme } from "@/lib/theme";
@@ -27,7 +26,6 @@ export default function RequestPPEScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [stockAvailable, setStockAvailable] = useState<number | null>(null);
   const loadedItemsRef = useRef<Map<string, Item>>(new Map());
 
   const ppeSizeId = typeof user?.ppeSize === "object" ? user.ppeSize?.id : user?.ppeSize;
@@ -129,14 +127,6 @@ export default function RequestPPEScreen() {
     [],
   );
 
-  useEffect(() => {
-    if (selectedItem) {
-      const stock = selectedItem.quantity ?? (selectedItem as any).currentStock;
-      setStockAvailable(stock !== undefined ? stock : null);
-    } else {
-      setStockAvailable(null);
-    }
-  }, [selectedItem]);
 
   const getOptionValue = useCallback((item: Item) => item.id, []);
   const getOptionLabel = useCallback((item: Item) => item.name, []);
@@ -151,16 +141,6 @@ export default function RequestPPEScreen() {
           {item.ppeCA && (
             <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
               CA: {item.ppeCA}
-            </ThemedText>
-          )}
-          {item.quantity !== undefined && (
-            <ThemedText
-              style={{
-                fontSize: 12,
-                color: item.quantity > 0 ? colors.mutedForeground : colors.destructive,
-              }}
-            >
-              Estoque: {formatQuantity(item.quantity)}
             </ThemedText>
           )}
         </View>
@@ -267,17 +247,6 @@ export default function RequestPPEScreen() {
                 style={{ fontSize: 12, color: colors.mutedForeground, marginTop: 4 }}
               >
                 CA: {selectedItem.ppeCA}
-              </ThemedText>
-            )}
-            {stockAvailable !== null && (
-              <ThemedText
-                style={{
-                  fontSize: 12,
-                  color: stockAvailable > 0 ? colors.mutedForeground : colors.destructive,
-                  marginTop: 4,
-                }}
-              >
-                Estoque disponível: {stockAvailable} unidades
               </ThemedText>
             )}
           </View>

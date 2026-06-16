@@ -117,7 +117,13 @@ export class OrderService {
 
   /** Unified Contas a Pagar feed: open orders + airbrushing painter payments + scheduled/expected outflows. */
   async getPayables(): Promise<PayablesResponse> {
-    const response = await apiClient.get<PayablesResponse>(`${this.basePath}/payables`);
+    const response = await apiClient.get<PayablesResponse>(`/financial/payables`);
+    return response.data;
+  }
+
+  /** Settle facade — currently the payroll competence month (folha batch). */
+  async settlePayrollMonth(year: number, month: number, amount: number | null): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post<{ success: boolean; message: string }>(`/financial/payables/settle`, { source: "PAYROLL", year, month, amount });
     return response.data;
   }
 
@@ -316,6 +322,7 @@ export const batchUpdateOrders = (data: OrderBatchUpdateFormData, query?: OrderQ
 export const batchDeleteOrders = (data: OrderBatchDeleteFormData) => orderService.batchDeleteOrders(data);
 export const requestOrderPayment = (id: string) => orderService.requestOrderPayment(id);
 export const getPayables = () => orderService.getPayables();
+export const settlePayrollMonth = (year: number, month: number, amount: number | null) => orderService.settlePayrollMonth(year, month, amount);
 
 // OrderItem exports
 export const getOrderItems = (params: OrderItemGetManyFormData) => orderService.getOrderItems(params);

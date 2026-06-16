@@ -220,7 +220,6 @@ export function toneForTaskQuoteStatus(
     case TASK_QUOTE_STATUS.PENDING:
       return tone("amber", isDark);
     case TASK_QUOTE_STATUS.BUDGET_APPROVED:
-    case TASK_QUOTE_STATUS.COMMERCIAL_APPROVED:
     case TASK_QUOTE_STATUS.BILLING_APPROVED:
       return tone("blue", isDark);
     case TASK_QUOTE_STATUS.UPCOMING:

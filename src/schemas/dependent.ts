@@ -24,6 +24,19 @@ export const dependentIncludeSchema = z
         }),
       ])
       .optional(),
+    healthPlanBenefit: z
+      .union([
+        z.boolean(),
+        z.object({
+          include: z
+            .object({
+              benefit: z.boolean().optional(),
+              user: z.boolean().optional(),
+            })
+            .optional(),
+        }),
+      ])
+      .optional(),
   })
   .partial();
 
@@ -59,6 +72,7 @@ export const dependentWhereSchema: z.ZodSchema = z.lazy(() =>
 
       id: createUuidWhereSchema().optional(),
       userId: createUuidWhereSchema().optional(),
+      healthPlanBenefitId: z.union([createUuidWhereSchema(), z.null()]).optional(),
 
       name: createStringWhereSchema().optional(),
       cpf: z.union([createStringWhereSchema(), z.null()]).optional(),
@@ -96,6 +110,7 @@ const dependentFilters = {
     )
     .optional(),
   userIds: z.array(z.string()).optional(),
+  healthPlanBenefitIds: z.array(z.string()).optional(),
   irrfDeduction: z.coerce.boolean().optional(),
   salarioFamilia: z.coerce.boolean().optional(),
 };
@@ -132,6 +147,11 @@ const dependentTransform = (data: any) => {
   if (data.userIds && Array.isArray(data.userIds) && data.userIds.length > 0) {
     andConditions.push({ userId: { in: data.userIds } });
     delete data.userIds;
+  }
+
+  if (data.healthPlanBenefitIds && Array.isArray(data.healthPlanBenefitIds) && data.healthPlanBenefitIds.length > 0) {
+    andConditions.push({ healthPlanBenefitId: { in: data.healthPlanBenefitIds } });
+    delete data.healthPlanBenefitIds;
   }
 
   if (typeof data.irrfDeduction === "boolean") {

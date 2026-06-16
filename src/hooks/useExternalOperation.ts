@@ -41,6 +41,7 @@ import type {
   ExternalOperationItemGetManyFormData,
 } from '@/schemas';
 import type {
+  ExternalOperation,
   ExternalOperationGetManyResponse,
   ExternalOperationGetUniqueResponse,
   ExternalOperationCreateResponse,
@@ -90,9 +91,9 @@ const baseHooks = createEntityHooks<
   ExternalOperationUpdateResponse,
   ExternalOperationDeleteResponse,
   ExternalOperationBatchCreateFormData,
-  ExternalOperationBatchCreateResponse<ExternalOperationCreateFormData>,
+  ExternalOperationBatchCreateResponse<ExternalOperation>,
   ExternalOperationBatchUpdateFormData,
-  ExternalOperationBatchUpdateResponse<ExternalOperationUpdateFormData>,
+  ExternalOperationBatchUpdateResponse<ExternalOperation>,
   ExternalOperationBatchDeleteFormData,
   ExternalOperationBatchDeleteResponse
 >({

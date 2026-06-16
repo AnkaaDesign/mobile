@@ -14,6 +14,12 @@ import { useEmitNfse, useCancelNfse } from "@/hooks/useInvoice";
 import { IconSend, IconX } from "@tabler/icons-react-native";
 import type { NfseDocument } from "@/types/invoice";
 
+const CANCEL_REASONS = [
+  { code: 1, label: "Erro na emissão" },
+  { code: 2, label: "Serviço não prestado" },
+  { code: 4, label: "Duplicidade da nota" },
+];
+
 interface NfseActionsProps {
   invoiceId: string;
   nfseDocuments: NfseDocument[];
@@ -23,8 +29,13 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
   const { colors } = useTheme();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelReasonCode, setCancelReasonCode] = useState(1);
+  const [cancelSubstituteNumber, setCancelSubstituteNumber] = useState("");
   const emitNfse = useEmitNfse();
   const cancelNfse = useCancelNfse();
+
+  // Substitute NF number is required by the prefeitura for Duplicidade (code 4)
+  const substituteRequired = cancelReasonCode === 4;
 
   const authorizedNfse = nfseDocuments.find((doc) => doc.status === "AUTHORIZED");
   const pendingOrErrorNfse = nfseDocuments.find(
@@ -50,6 +61,12 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
     );
   };
 
+  const resetCancelForm = () => {
+    setCancelReason("");
+    setCancelReasonCode(1);
+    setCancelSubstituteNumber("");
+  };
+
   const handleCancelSubmit = () => {
     if (!cancelReason.trim() || cancelReason.trim().length < 15) {
       Alert.alert(
@@ -59,14 +76,32 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
       return;
     }
 
+    if (substituteRequired && !cancelSubstituteNumber.trim()) {
+      Alert.alert(
+        "Erro",
+        "Informe o numero da nota fiscal substituta para cancelamento por duplicidade.",
+      );
+      return;
+    }
+
     if (!authorizedNfse) return;
 
     cancelNfse.mutate(
-      { invoiceId, nfseDocumentId: authorizedNfse.id, data: { reason: cancelReason, reasonCode: 1 } },
+      {
+        invoiceId,
+        nfseDocumentId: authorizedNfse.id,
+        data: {
+          reason: cancelReason,
+          reasonCode: cancelReasonCode,
+          substituteNfseNumber: cancelSubstituteNumber.trim()
+            ? Number(cancelSubstituteNumber)
+            : undefined,
+        },
+      },
       {
         onSuccess: () => {
           setShowCancelModal(false);
-          setCancelReason("");
+          resetCancelForm();
         },
       },
     );
@@ -117,10 +152,46 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
               Informe o motivo do cancelamento da NFS-e. Esta acao nao pode ser desfeita.
             </ThemedText>
 
+            {/* Reason code selector */}
+            <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+              Motivo
+            </ThemedText>
+            <View style={styles.reasonOptions}>
+              {CANCEL_REASONS.map((r) => {
+                const selected = cancelReasonCode === r.code;
+                return (
+                  <TouchableOpacity
+                    key={r.code}
+                    onPress={() => setCancelReasonCode(r.code)}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.reasonOption,
+                      {
+                        borderColor: selected ? colors.primary : colors.border,
+                        backgroundColor: selected ? colors.primary : colors.muted,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.reasonOptionText,
+                        { color: selected ? "#fff" : colors.foreground },
+                      ]}
+                    >
+                      {r.label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+              Justificativa
+            </ThemedText>
             <TextInput
               value={cancelReason}
               onChangeText={setCancelReason}
-              placeholder="Motivo do cancelamento..."
+              placeholder="Descreva o motivo do cancelamento..."
               placeholderTextColor={colors.mutedForeground}
               multiline
               numberOfLines={3}
@@ -134,11 +205,42 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
               ]}
             />
 
+            {/* Substitute NFS-e number — required for Duplicidade (code 4) */}
+            <ThemedText
+              style={[
+                styles.fieldLabel,
+                { color: substituteRequired ? colors.destructive : colors.foreground },
+              ]}
+            >
+              {`Nota fiscal substituta (No)${substituteRequired ? " *" : ""}`}
+            </ThemedText>
+            <TextInput
+              value={cancelSubstituteNumber}
+              onChangeText={setCancelSubstituteNumber}
+              placeholder="Numero da NFS-e que substitui esta nota"
+              placeholderTextColor={colors.mutedForeground}
+              keyboardType="number-pad"
+              style={[
+                styles.reasonInput,
+                styles.substituteInput,
+                {
+                  color: colors.foreground,
+                  borderColor: substituteRequired ? colors.destructive : colors.border,
+                  backgroundColor: colors.muted,
+                },
+              ]}
+            />
+            {substituteRequired && (
+              <ThemedText style={[styles.helperText, { color: colors.destructive }]}>
+                Obrigatorio para cancelamento por duplicidade.
+              </ThemedText>
+            )}
+
             <View style={styles.modalActions}>
               <TouchableOpacity
                 onPress={() => {
                   setShowCancelModal(false);
-                  setCancelReason("");
+                  resetCancelForm();
                 }}
                 style={[styles.modalButton, { borderColor: colors.border, borderWidth: 1 }]}
                 activeOpacity={0.7}
@@ -213,6 +315,32 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     minHeight: 80,
     textAlignVertical: "top",
+  },
+  substituteInput: {
+    minHeight: 0,
+    textAlignVertical: "center",
+  },
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  reasonOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  reasonOption: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  reasonOptionText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  helperText: {
+    fontSize: fontSize.xs,
   },
   modalActions: {
     flexDirection: "row",

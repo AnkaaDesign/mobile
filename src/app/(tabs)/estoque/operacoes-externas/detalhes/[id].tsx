@@ -228,7 +228,7 @@ export default function ExternalOperationDetailScreen() {
                 <ChangelogTimeline
                   entityType={CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION}
                   entityId={withdrawal.id}
-                  entityName={withdrawal.withdrawerName}
+                  entityName={withdrawal.withdrawerName ?? undefined}
                   entityCreatedAt={withdrawal.createdAt}
                   maxHeight={400}
                 />

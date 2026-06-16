@@ -91,12 +91,7 @@ export class TaskQuoteService {
     return response.data;
   }
 
-  async commercialApprove(id: string): Promise<TaskQuoteResponse> {
-    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/commercial-approve`);
-    return response.data;
-  }
-
-  // Revert billing approval back to COMMERCIAL_APPROVED (requires all bank slips + NFS-e cancelled)
+  // Revert billing approval back to BUDGET_APPROVED (requires all bank slips + NFS-e cancelled)
   async revertBilling(id: string): Promise<TaskQuoteResponse> {
     const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/revert-billing`);
     return response.data;
@@ -164,7 +159,6 @@ export const deleteTaskQuote = (id: string) => taskQuoteService.delete(id);
 export const updateTaskQuoteStatus = (id: string, status: TASK_QUOTE_STATUS, reason?: string) => taskQuoteService.updateStatus(id, status, reason);
 export const approveTaskQuote = (id: string) => taskQuoteService.approve(id);
 export const budgetApproveTaskQuote = (id: string) => taskQuoteService.budgetApprove(id);
-export const commercialApproveTaskQuote = (id: string) => taskQuoteService.commercialApprove(id);
 export const revertBillingTaskQuote = (id: string) => taskQuoteService.revertBilling(id);
 export const internalApproveTaskQuote = (id: string) => taskQuoteService.internalApprove(id);
 export const rejectTaskQuote = (id: string, reason?: string) => taskQuoteService.reject(id, reason);

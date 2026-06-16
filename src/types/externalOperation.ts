@@ -12,13 +12,12 @@ import type { Invoice, Installment } from "./invoice";
 // =====================
 
 export interface ExternalOperation extends BaseEntity {
-  withdrawerName: string;
-  willReturn: boolean;
+  withdrawerName: string | null;
   type: EXTERNAL_OPERATION_TYPE;
   status: EXTERNAL_OPERATION_STATUS;
   statusOrder: number;
-  nfeId: string | null;
-  receiptId: string | null;
+  invoiceIds?: string[];
+  receiptIds?: string[];
   notes: string | null;
   totalPrice?: number;
 
@@ -30,9 +29,11 @@ export interface ExternalOperation extends BaseEntity {
   paymentConfig: Record<string, any> | null;
   billedAt: Date | null;
 
-  // Relations (optional, populated based on query)
-  nfe?: File;
-  receipt?: File;
+  // Relations (optional, populated based on query) — M:N File relations (plural)
+  invoices?: File[];
+  invoiceReimbursements?: File[];
+  receipts?: File[];
+  reimbursements?: File[];
   items?: ExternalOperationItem[];
   customer?: Customer | null;
   services?: ExternalOperationServiceItem[];
@@ -68,12 +69,12 @@ export interface ExternalOperationItem extends BaseEntity {
 // =====================
 
 export interface ExternalOperationIncludes {
-  nfe?:
+  invoices?:
     | boolean
     | {
         include?: FileIncludes;
       };
-  receipt?:
+  receipts?:
     | boolean
     | {
         include?: FileIncludes;
@@ -139,7 +140,6 @@ export interface ExternalOperationItemIncludes {
 export interface ExternalOperationOrderBy {
   id?: ORDER_BY_DIRECTION;
   withdrawerName?: ORDER_BY_DIRECTION;
-  willReturn?: ORDER_BY_DIRECTION;
   type?: ORDER_BY_DIRECTION;
   status?: ORDER_BY_DIRECTION;
   statusOrder?: ORDER_BY_DIRECTION;

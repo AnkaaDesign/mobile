@@ -255,11 +255,30 @@ export function getUserStatusBadgeText(user: User): string {
     [CONTRACT_TYPE.TEMPORARY]: "Temporário",
   };
 
-  let baseLabel =
-    (user.currentContractStatus ? statusLabels[user.currentContractStatus] : undefined) ||
-    (user.currentContractType ? typeLabels[user.currentContractType] : undefined) ||
-    user.currentContractType ||
-    "";
+  // Off-payroll categories (terceirizado/PJ/estagiário/autônomo) carry no
+  // CONTRACT_TYPE modality and aren't "Efetivado" — label them by worker
+  // category. Terminated bonds still fall through to the "Demitido" status label.
+  const employeeTypeLabels: Record<string, string> = {
+    [EMPLOYEE_TYPE.INTERN]: "Estagiário",
+    [EMPLOYEE_TYPE.TERCEIRIZADO]: "Terceirizado",
+    [EMPLOYEE_TYPE.PJ]: "PJ",
+    [EMPLOYEE_TYPE.AUTONOMOUS]: "Autônomo",
+  };
+
+  let baseLabel: string;
+  if (
+    user.currentContractStatus !== CONTRACT_STATUS.TERMINATED &&
+    user.currentEmployeeType &&
+    user.currentEmployeeType !== EMPLOYEE_TYPE.CLT
+  ) {
+    baseLabel = employeeTypeLabels[user.currentEmployeeType] || user.currentEmployeeType;
+  } else {
+    baseLabel =
+      (user.currentContractStatus ? statusLabels[user.currentContractStatus] : undefined) ||
+      (user.currentContractType ? typeLabels[user.currentContractType] : undefined) ||
+      user.currentContractType ||
+      "";
+  }
 
   // For experiência, show the phase alongside the countdown.
   if (user.currentContractStatus === CONTRACT_STATUS.EXPERIENCE) {
@@ -460,19 +479,22 @@ export function isNewUser(user: User, daysThreshold: number = 30): boolean {
 /**
  * Group users by status
  */
-export function groupUsersByStatus(users: User[]): Record<CONTRACT_TYPE, User[]> {
+export function groupUsersByStatus(users: User[]): Record<string, User[]> {
   const groups = {
     [CONTRACT_TYPE.INDETERMINATE]: [],
     [CONTRACT_TYPE.FIXED_TERM]: [],
     [CONTRACT_TYPE.INTERMITTENT]: [],
     [CONTRACT_TYPE.APPRENTICE]: [],
     [CONTRACT_TYPE.TEMPORARY]: [],
-  } as Record<CONTRACT_TYPE, User[]>;
+  } as Record<string, User[]>;
 
   users.forEach((user) => {
-    if (user.currentContractType && groups[user.currentContractType]) {
-      groups[user.currentContractType].push(user);
-    }
+    // CLT bonds group by contract modality. Off-payroll categories carry no
+    // modality, so group them under their EMPLOYEE_TYPE instead of dropping them.
+    const key = user.currentContractType ?? user.currentEmployeeType ?? null;
+    if (!key) return;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(user);
   });
 
   return groups;
