@@ -16,15 +16,17 @@ fingerprints won't match and OTA silently won't apply.
 ## Pinned state for THIS release
 
 - **Branch:** `pre-accounting-implementation`
-- **Release commit:** `3fdc8c03` or newer on this branch (docs-only commits after
-  it keep the same fingerprints; `ota:verify` is the real gate).
+- **Release commit:** the latest commit on this branch (it bakes the
+  `pod install`-regenerated `ios/Podfile.lock` that the iOS build used).
+  `ota:verify` is the real gate — match the fingerprints below, not a SHA.
 - **Expected fingerprints** (the consistency anchor — `npm run ota:verify` must
   print these, matching what's embedded in the committed native files):
-  - iOS:     `a9eb301de8753db841eb5804301f2950d78dc2c1`  (built on the Mac)
+  - iOS:     `77cbbd1a8705277a6f859279e4958bf6a4c6bd05`  (already built+installed on the Mac)
   - Android: `367b668accf94352a99076777441c0b5da49afc2`  (you build this)
-- These hold only if `node_modules` is installed from the committed lockfile and
-  you're on the same commit as the Mac. The exact commit SHA is in the chat
-  handoff; if unsure, `git log --oneline -1` should match the SHA you were given.
+- These hold only if `node_modules` is installed from the committed lockfile
+  (`npm ci`) and you're on the same commit as the Mac. The committed
+  `ios/Podfile.lock` is what makes the iOS fingerprint reproducible here without
+  running `pod install` (you only build Android).
 
 ## Steps
 
