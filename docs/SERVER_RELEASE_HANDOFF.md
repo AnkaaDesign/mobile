@@ -16,6 +16,8 @@ fingerprints won't match and OTA silently won't apply.
 ## Pinned state for THIS release
 
 - **Branch:** `pre-accounting-implementation`
+- **Release commit:** `3fdc8c03` or newer on this branch (docs-only commits after
+  it keep the same fingerprints; `ota:verify` is the real gate).
 - **Expected fingerprints** (the consistency anchor — `npm run ota:verify` must
   print these, matching what's embedded in the committed native files):
   - iOS:     `a9eb301de8753db841eb5804301f2950d78dc2c1`  (built on the Mac)
