@@ -32,6 +32,18 @@ focusManager.setEventListener((handleFocus) => {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      // ALWAYS run queries regardless of onlineManager's online/offline state.
+      // The default ('online') PAUSES queries whenever NetInfo reports
+      // isConnected !== true — including the `null`/undetermined window that
+      // occurs right after app resume or a WiFi handoff. A paused query sits in
+      // status:'pending' / fetchStatus:'paused' forever (never runs, never
+      // errors), which is what left navigation loading overlays stuck until a
+      // minimize/maximize re-emitted `isConnected:true` and resumed them.
+      // This app is meant to work on LAN-without-internet, so connectivity must
+      // never gate execution — let axios/the API be the source of truth and
+      // surface a real error (handled by `retry` below) instead of an infinite
+      // pause. `refetchOnReconnect` still works via onlineManager transitions.
+      networkMode: 'always',
       // Keep data fresh for 5 minutes. Lower than before (10m) so screens that
       // re-enter view get reasonably fresh data without paying for a refetch
       // every visit — the previous value made the app feel stuck.
@@ -64,6 +76,9 @@ export const queryClient = new QueryClient({
       structuralSharing: true,
     },
     mutations: {
+      // Same rationale as queries: never let a transient offline/undetermined
+      // NetInfo state pause a mutation into a permanent pending spinner.
+      networkMode: 'always',
       retry: (failureCount, error: any) => {
         if (error?.isOffline) return false
         // Never retry mutations on client errors

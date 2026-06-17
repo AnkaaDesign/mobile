@@ -44,6 +44,8 @@ export default function MyQuestionnairesScreen() {
   const pending = useMemo(() => entries.filter(isPending), [entries]);
 
   // Direct-open: a single pending entry redirects straight to the fill screen.
+  // No pending entries: this screen has nothing to show, so bounce home instead
+  // of rendering an empty state (the drawer entry is hidden in this case too).
   // Runs on focus so returning from a submit (which removes it from `pending`)
   // does not bounce the user back into the now-submitted questionnaire.
   useFocusEffect(
@@ -51,16 +53,18 @@ export default function MyQuestionnairesScreen() {
       if (isLoading) return;
       if (pending.length === 1) {
         router.replace(`/pessoal/questionarios/preencher/${pending[0].id}` as any);
+      } else if (pending.length === 0) {
+        router.replace("/" as any);
       }
     }, [isLoading, pending, router]),
   );
 
   const goToEntry = (id: string) => router.push(`/pessoal/questionarios/preencher/${id}` as any);
 
-  // While loading or about to direct-open (single pending entry), render only a
-  // themed spinner — never the "Meus Questionários" heading, which would flash
-  // for a moment before the redirect.
-  if (isLoading || pending.length === 1) {
+  // While loading or about to redirect (0 pending → home, 1 pending → fill),
+  // render only a themed spinner — never the "Meus Questionários" heading or
+  // empty state, which would flash for a moment before the redirect.
+  if (isLoading || pending.length <= 1) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
         <View className="flex-1 items-center justify-center">
@@ -77,13 +81,9 @@ export default function MyQuestionnairesScreen() {
         <Text className="text-xl font-bold text-foreground">Meus Questionários</Text>
       </View>
 
-      {pending.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-center text-sm text-muted-foreground">Nenhum questionário aberto.</Text>
-        </View>
-      ) : (
-        <ScrollView contentContainerClassName="gap-3 p-4">
-          {pending.map((entry) => {
+      {/* Only ≥2 pending entries reach here — 0 redirects home, 1 direct-opens. */}
+      <ScrollView contentContainerClassName="gap-3 p-4">
+        {pending.map((entry) => {
             const status = entry.status as QuestionnaireEntryStatus;
             return (
               <Pressable
@@ -110,8 +110,7 @@ export default function MyQuestionnairesScreen() {
               </Pressable>
             );
           })}
-        </ScrollView>
-      )}
+      </ScrollView>
     </SafeAreaView>
   );
 }

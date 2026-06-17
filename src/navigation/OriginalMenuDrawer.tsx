@@ -85,7 +85,10 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   // the queue loads so the item doesn't flash in after the drawer renders.
   const { data: questionnaireResp } = useMyQuestionnaireEntries();
   const hasOpenQuestionnaire = useMemo(() => {
-    if (!questionnaireResp) return true;
+    // Default to hidden until the query resolves — the "Questionários" entry
+    // should only appear once we've confirmed an open (non-submitted) entry,
+    // otherwise it flashes in the drawer for users who have none.
+    if (!questionnaireResp) return false;
     return ((questionnaireResp.data ?? []) as { status: string }[]).some(
       (e) => e.status !== "SUBMITTED",
     );

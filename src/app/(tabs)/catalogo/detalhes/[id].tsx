@@ -77,7 +77,10 @@ export default function CatalogoDetailsScreen() {
         },
       },
       // Formulas with _count instead of full components array
-      // This is the key optimization - we only need component count for display
+      // This is the key optimization - we only need component count for display.
+      // NOTE: the API paintSelectSchema.formulas only supports `_count` (a nested
+      // `components` select is silently stripped), so we must use _count here or
+      // the displayed component count falls back to 0.
       formulas: {
         select: {
           id: true,
@@ -85,10 +88,10 @@ export default function CatalogoDetailsScreen() {
           density: true,
           pricePerLiter: true,
           createdAt: true,
-          // Fetch only component IDs so we can count them without loading full component data
-          components: {
+          // Count components without loading the full component data
+          _count: {
             select: {
-              id: true,
+              components: true,
             },
           },
         },
@@ -243,8 +246,11 @@ export default function CatalogoDetailsScreen() {
           {/* Ground Paints Card - Recommended base paints */}
           <PaintGroundPaintsCard paint={paint!} />
 
-          {/* Formulas Card - Read-only view */}
-          <PaintFormulasCard paint={paint!} />
+          {/* Formulas Card - Read-only view. canNavigate=false hides the
+              "Nova Formula"/"Mostrar Todos" actions and disables formula
+              navigation, since these leader/designer/etc. users cannot access
+              the formula edit form or the warehouse-gated formula detail route. */}
+          <PaintFormulasCard paint={paint!} canNavigate={false} />
 
           {/* Related Paints Card */}
           <PaintRelatedPaintsCard paint={paint!} />

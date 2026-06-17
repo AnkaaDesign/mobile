@@ -88,6 +88,7 @@ export const routes = {
     login: "/autenticacao/entrar", // fazer login
     recoverPassword: "/autenticacao/recuperar-senha", // recuperar senha
     resetPassword: (token: string) => `/autenticacao/redefinir-senha/${token}`, // redefinir senha com token
+    changePassword: "/autenticacao/alterar-senha", // troca de senha obrigatória (requirePasswordChange)
     verifyCode: "/autenticacao/verificar-codigo", // código de verificação (unificado)
     verifyPasswordReset: "/autenticacao/verificar-redefinicao-senha", // verificação de redefinição de senha
   },

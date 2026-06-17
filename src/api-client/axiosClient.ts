@@ -747,7 +747,9 @@ const createApiClient = (
         // on every input change in the simulator, so a "salvo com sucesso" toast
         // per keystroke is pure noise. Treat them like analytics reads and never
         // toast. Covers POST /bonus/simulate and POST /bonuses/my-bonus-simulate.
-        const isSimulation = config.url?.includes("/simulate");
+        // NOTE: match the bare "simulate" substring — the personal route ends in
+        // "-simulate" (no leading slash), so includes("/simulate") would miss it.
+        const isSimulation = config.url?.includes("simulate");
 
         // Only show success if the response indicates success
         const isSuccess = response.data?.success !== (false as boolean); // Show success unless explicitly false

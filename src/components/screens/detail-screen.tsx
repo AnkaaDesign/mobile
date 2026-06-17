@@ -15,13 +15,14 @@
  * is consumer-owned.
  */
 import React, { ReactNode, useCallback, useMemo } from "react";
-import { View, ScrollView, RefreshControl, Alert, StyleSheet, ActivityIndicator } from "react-native";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query";
 
 import { useTheme } from "@/lib/theme";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { DetailPageHeader, type BaseEntity, type IconComponent, type BadgeConfig } from "@/components/ui/detail-page-header";
+import { Icon } from "@/components/ui/icon";
 import type { PageAction } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -283,12 +284,16 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
       </View>
       {props.deleteAction && deletePriv.allowed ? (
         <View style={styles.deleteRow}>
-          <ThemedText
+          <TouchableOpacity
             onPress={handleDelete}
-            style={{ color: colors.destructive, fontWeight: "600" }}
+            activeOpacity={0.7}
+            style={[styles.deleteButton, { borderColor: colors.destructive }]}
           >
-            Excluir
-          </ThemedText>
+            <Icon name="trash" size={16} color={colors.destructive} />
+            <ThemedText style={{ color: colors.destructive, fontWeight: "600" }}>
+              Excluir
+            </ThemedText>
+          </TouchableOpacity>
         </View>
       ) : null}
       <View style={{ height: spacing.xxl * 2 }} />
@@ -337,7 +342,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   deleteRow: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  deleteButton: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm + 2,
+    borderWidth: 1,
+    borderRadius: 8,
   },
 });

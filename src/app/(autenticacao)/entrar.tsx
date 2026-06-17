@@ -59,13 +59,19 @@ export default function LoginScreen() {
   // Result is `'home'` for a clean login (navigate to home), `'verify'` when
   // the account needs verification (we navigated there manually), or `'noop'`
   // when AuthContext already redirected (e.g. VERIFICATION_REDIRECT).
-  type LoginResult = "home" | "verify" | "noop";
+  type LoginResult = "home" | "password-change" | "verify" | "noop";
   const flow = useFormFlow<SignInFormData, LoginResult>({
     form,
     mutation: async (data): Promise<LoginResult> => {
       try {
-        await login(data.contact, data.password);
+        const loggedUser = await login(data.contact, data.password);
         clearHistory();
+        // Forced password change: the API guard 403s every protected request
+        // until the password is changed, so route to the change-password screen
+        // instead of dropping the user into the app.
+        if (loggedUser && (loggedUser as any).requirePasswordChange) {
+          return "password-change";
+        }
         return "home";
       } catch (error: any) {
         const errorMessage = error?.message || error?.toString() || "Ocorreu um erro ao fazer login";
@@ -101,6 +107,8 @@ export default function LoginScreen() {
       // manually (verify) or AuthContext already redirected (noop).
       if (result === "home") {
         nav.replace(mobileRoute(routes.home));
+      } else if (result === "password-change") {
+        nav.replace(authRoute(routes.authentication.changePassword));
       }
     },
     onError: (err) => {

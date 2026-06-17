@@ -95,13 +95,15 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // CATALOGO - View-only for Designers, Team Leaders, Warehouse, Commercial, Logistic (NOT ADMIN - admin accesses via Pintura menu)
+  // CATALOGO - View-only for Designers, Team Leaders, Commercial, Logistic, Production Manager.
+  // NOT ADMIN or WAREHOUSE - they access the full (manageable) catalog via the Pintura menu,
+  // so including them here would duplicate the entry in their drawer.
   {
     id: "catalogo",
     title: "Catalogo",
     icon: "palette",
     path: "/catalogo",
-    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, TEAM_LEADER, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, TEAM_LEADER, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/catalogo/detalhes/:id", isDynamic: true }],
   },
 
@@ -445,7 +447,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Aerografia",
         icon: "paintBrush",
         path: "/producao/aerografia",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
+        // Aerografia is not available to WAREHOUSE on mobile.
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "aerografia-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/aerografia/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
           { id: "aerografia-detalhes", title: "Detalhes", icon: "eye", path: "/producao/aerografia/detalhes/:id", isDynamic: true },

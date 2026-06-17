@@ -66,7 +66,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | void>;
   logout: (showAlert?: boolean, alertMessage?: string) => Promise<void>;
   accessToken: string | null;
   refreshUserData: () => Promise<User | null>;
@@ -611,11 +611,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setAccessToken(access_token);
       setCachedToken(access_token);
 
+      // The resolved user drives the post-login redirect decision (e.g. forced
+      // password change). Prefer the fresh /me payload; fall back to the login
+      // response when /me is skipped/unavailable.
+      let resolvedUser: User = userData as User;
       try {
         const completeUserData = await fetchAndUpdateUserData(access_token);
         if (completeUserData === 'SKIP' || !completeUserData) {
           setUser(userData as User);
           await storeUserData(userData as User);
+        } else {
+          resolvedUser = completeUserData;
         }
       } catch {
         setUser(userData as User);
@@ -627,6 +633,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           queryClient.setQueryData(USER_QUERY_KEYS.detail(decodedToken.sub), { data: userData });
         }
       } catch {}
+
+      return resolvedUser;
     } catch (error: any) {
       await removeStoredToken();
       setAccessToken(null);

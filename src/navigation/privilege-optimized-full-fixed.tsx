@@ -787,6 +787,7 @@ function InnerLayout() {
   const { startNavigation, isNavigatingRef } = useNavigationLoading();
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
+  const hasRedirectedToPasswordChange = useRef(false);
   const { setDrawerMode } = useDrawerMode();
   const lastSeenUserIdRef = useRef<string | null>(null);
   const hasRefreshedOnMountRef = useRef(false);
@@ -907,8 +908,22 @@ function InnerLayout() {
     // Wait for auth to be ready
     if (!isAuthReady || isLoading) return;
 
-    // If user is set, nothing to do.
-    if (user) return;
+    // Forced password change backstop: the API guard 403s every protected
+    // request while `requirePasswordChange` is set. Covers restored sessions
+    // (the login screen handles the fresh-login case directly). Once the flag
+    // clears (after a successful change + user refresh), the reset effect below
+    // re-arms this so it can fire again on a future requirement.
+    if (user) {
+      if ((user as any).requirePasswordChange) {
+        if (!hasRedirectedToPasswordChange.current) {
+          hasRedirectedToPasswordChange.current = true;
+          nav.replace(authRoute(routes.authentication.changePassword));
+        }
+      } else {
+        hasRedirectedToPasswordChange.current = false;
+      }
+      return;
+    }
 
     // An explicit/forced logout is definitive — redirect immediately WITHOUT
     // reading the stored token. The async token read races the logout's own
