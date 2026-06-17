@@ -1,9 +1,8 @@
 
 import { Linking } from "react-native";
 import type { User } from '../../../../types';
-import { formatBrazilianPhone, getUserStatusBadgeText } from "@/utils";
+import { formatBrazilianPhone, getUserStatusBadgeText, getCollaboratorStatus } from "@/utils";
 import { Badge } from "@/components/ui/badge";
-import { CONTRACT_STATUS } from "@/constants";
 import { DetailCard, DetailField, DetailPhoneField, DetailSection } from "@/components/ui/detail-page-layout";
 
 interface BasicInfoCardProps {
@@ -11,16 +10,9 @@ interface BasicInfoCardProps {
 }
 
 export function BasicInfoCard({ employee }: BasicInfoCardProps) {
-  const getBadgeVariant = (status: User["currentContractStatus"]) => {
-    switch (status) {
-      case CONTRACT_STATUS.ACTIVE:
-        return "success";
-      case CONTRACT_STATUS.TERMINATED:
-        return "destructive";
-      default:
-        return "secondary";
-    }
-  };
+  // Single canonical derivation drives the badge color; the label keeps the
+  // time-since suffix from getUserStatusBadgeText.
+  const status = getCollaboratorStatus(employee);
 
   const handleEmailPress = () => {
     if (employee.email) {
@@ -53,7 +45,7 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
           label="Status"
           icon="shield-check"
           value={
-            <Badge variant={getBadgeVariant(employee.currentContractStatus)}>
+            <Badge variant={status.variant}>
               {getUserStatusBadgeText(employee)}
             </Badge>
           }

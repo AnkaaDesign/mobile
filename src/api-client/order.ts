@@ -109,9 +109,15 @@ export class OrderService {
   // Payment / Payables Operations
   // =====================
 
-  /** Move an open order to the "Solicitado" payment sub-state (Contas a Pagar pipeline). */
-  async requestOrderPayment(id: string): Promise<OrderUpdateResponse> {
-    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/request-payment`);
+  /** Mark an order as paid (Contas a Pagar pipeline). */
+  async markOrderPaid(id: string): Promise<OrderUpdateResponse> {
+    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/mark-paid`);
+    return response.data;
+  }
+
+  /** Revert a paid order back to the "Aguardando Pagamento" sub-state. */
+  async markOrderAwaitingPayment(id: string): Promise<OrderUpdateResponse> {
+    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/mark-awaiting-payment`);
     return response.data;
   }
 
@@ -320,7 +326,8 @@ export const deleteOrder = (id: string) => orderService.deleteOrder(id);
 export const batchCreateOrders = (data: OrderBatchCreateFormData, query?: OrderQueryFormData) => orderService.batchCreateOrders(data, query);
 export const batchUpdateOrders = (data: OrderBatchUpdateFormData, query?: OrderQueryFormData) => orderService.batchUpdateOrders(data, query);
 export const batchDeleteOrders = (data: OrderBatchDeleteFormData) => orderService.batchDeleteOrders(data);
-export const requestOrderPayment = (id: string) => orderService.requestOrderPayment(id);
+export const markOrderPaid = (id: string) => orderService.markOrderPaid(id);
+export const markOrderAwaitingPayment = (id: string) => orderService.markOrderAwaitingPayment(id);
 export const getPayables = () => orderService.getPayables();
 export const settlePayrollMonth = (year: number, month: number, amount: number | null) => orderService.settlePayrollMonth(year, month, amount);
 

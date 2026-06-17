@@ -12,9 +12,12 @@ const MOBILE_USERS_PAGE_SIZE = 25;
  * Uses smaller page sizes and provides flattened data for FlatList
  */
 export function useUsersInfiniteMobile(params?: Partial<UserGetManyFormData> & { enabled?: boolean }) {
-  // Prepare parameters with mobile-optimized page size
-  // Default to isActive: true (matching web behavior: hide dismissed users)
-  // The API's userTransform converts isActive:true → currentContractStatus: { not: 'TERMINATED' }
+  // Prepare parameters with mobile-optimized page size.
+  // DEFAULT to isActive: true (matching web behavior: hide dismissed users).
+  // This is OVERRIDABLE: `...params` is spread AFTER, so a caller / list filter
+  // can pass isActive:false (Demitidos) or isActive:'__all__' (Todos — stripped
+  // by the schema transform → omits the filter) to reach dismissed users.
+  // The userTransform maps isActive → currentContractStatus { not: TERMINATED } / TERMINATED.
   const queryParams = useMemo(
     () => ({
       isActive: true,

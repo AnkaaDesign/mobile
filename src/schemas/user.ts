@@ -405,6 +405,16 @@ export const userWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
+      isActive: z
+        .union([
+          z.boolean(),
+          z.object({
+            equals: z.boolean().optional(),
+            not: z.boolean().optional(),
+          }),
+        ])
+        .optional(),
+
       birth: z
         .union([
           z.date(),
@@ -573,11 +583,19 @@ const userFilters = {
   searchingFor: z.string().optional(),
   sectorIds: z.array(z.string()).optional(),
   positionIds: z.array(z.string()).optional(),
-  // contractKinds is the API convenience filter that maps to currentContractType
-  // (the API does NOT accept `contractTypes`/`contractStatuses` convenience params).
+  // Canonical current-vínculo filters (match the API + web param names).
+  // - contractStatuses → currentContractStatus (Situação)
+  // - contractTypes    → currentContractType   (Modalidade)
+  // - employeeTypes    → currentEmployeeType    (Categoria)
+  // contractKinds is the legacy alias for contractTypes (kept for back-compat).
+  contractStatuses: z.array(z.nativeEnum(CONTRACT_STATUS)).optional(),
+  contractTypes: z.array(z.nativeEnum(CONTRACT_TYPE)).optional(),
   contractKinds: z.array(z.nativeEnum(CONTRACT_TYPE)).optional(),
   employeeTypes: z.array(z.nativeEnum(EMPLOYEE_TYPE)).optional(),
-  isActive: z.boolean().optional(),
+  // isActive is THE employed signal (Exibir: Ativos/Demitidos). The '__all__'
+  // sentinel emitted by the single-select "Todos" option is stripped in the
+  // transform so it omits the filter entirely.
+  isActive: z.union([z.boolean(), z.literal("__all__")]).optional(),
   isVerified: z.boolean().optional(),
   hasPosition: z.boolean().optional(),
   hasSector: z.boolean().optional(),
@@ -641,11 +659,20 @@ const userTransform = (data: any) => {
     delete data.positionIds;
   }
 
-  // Handle contractKinds filter — maps to the current-vínculo type cache.
-  if (data.contractKinds && Array.isArray(data.contractKinds) && data.contractKinds.length > 0) {
-    andConditions.push({ currentContractType: { in: data.contractKinds } });
-    delete data.contractKinds;
+  // Handle contractTypes / contractKinds (alias) filter — maps to the current
+  // vínculo MODALITY cache (currentContractType). Mirrors the API param names.
+  const contractTypeFilter = data.contractTypes ?? data.contractKinds;
+  if (contractTypeFilter && Array.isArray(contractTypeFilter) && contractTypeFilter.length > 0) {
+    andConditions.push({ currentContractType: { in: contractTypeFilter } });
   }
+  delete data.contractTypes;
+  delete data.contractKinds;
+
+  // Handle contractStatuses filter — current vínculo lifecycle status (Situação).
+  if (data.contractStatuses && Array.isArray(data.contractStatuses) && data.contractStatuses.length > 0) {
+    andConditions.push({ currentContractStatus: { in: data.contractStatuses } });
+  }
+  delete data.contractStatuses;
 
   // Handle employeeTypes filter (worker category — CLT/PJ/terceirizado/etc.)
   if (data.employeeTypes && Array.isArray(data.employeeTypes) && data.employeeTypes.length > 0) {
@@ -653,15 +680,14 @@ const userTransform = (data: any) => {
     delete data.employeeTypes;
   }
 
-  // Handle isActive filter
-  // isActive now mirrors the current contract's lifecycle status: a collaborator
-  // is active when their current vínculo is not TERMINATED.
-  if (typeof data.isActive === "boolean") {
-    andConditions.push({
-      currentContractStatus: data.isActive
-        ? { not: CONTRACT_STATUS.TERMINATED }  // Active = current vínculo not terminated
-        : CONTRACT_STATUS.TERMINATED            // Inactive = current vínculo terminated
-    });
+  // Handle isActive filter — THE canonical "currently employed" signal.
+  // The '__all__' sentinel (Exibir → "Todos") means "no filter": omit it.
+  if (data.isActive === "__all__") {
+    delete data.isActive;
+  } else if (typeof data.isActive === "boolean") {
+    // Mirror web: key off the null-safe User.isActive column so dismissed
+    // (isActive:false) users — including zero-contract users — are reachable.
+    andConditions.push({ isActive: data.isActive });
     delete data.isActive;
   }
 
@@ -871,8 +897,8 @@ const notificationPreferenceCreateNestedSchema = z.object({
 });
 
 // First employment contract (vínculo) created together with the collaborator.
-// When omitted, the service defaults employeeType=CLT, status=EXPERIENCE
-// and uses the user's admissionDate (positionId/sectorId mirror the user).
+// When omitted, the service defaults employeeType=CLT, contractType=EXPERIENCE_PERIOD_1,
+// status=ACTIVE and uses the user's admissionDate (positionId/sectorId mirror the user).
 export const userContractCreateNestedSchema = z.object({
   employeeType: z
     .enum(Object.values(EMPLOYEE_TYPE) as [string, ...string[]], {
@@ -884,6 +910,11 @@ export const userContractCreateNestedSchema = z.object({
       errorMap: () => ({ message: "Tipo de contrato inválido" }),
     })
     .nullable()
+    .optional(),
+  status: z
+    .enum(Object.values(CONTRACT_STATUS) as [string, ...string[]], {
+      errorMap: () => ({ message: "Situação do vínculo inválida" }),
+    })
     .optional(),
   admissionDate: nullableDate.optional(),
   positionId: z.string().uuid("Cargo inválido").nullable().optional(),
@@ -902,7 +933,7 @@ export const userCreateSchema = z
     name: createNameSchema(2, 200, "Nome"),
     avatarId: z.string().uuid("Avatar inválido").nullable().optional(),
     // First vínculo (EmploymentContract) created with the collaborator. Optional;
-    // the service defaults employeeType=CLT, status=EXPERIENCE.
+    // the service defaults employeeType=CLT, contractType=EXPERIENCE_PERIOD_1, status=ACTIVE.
     contract: userContractCreateNestedSchema.optional(),
     phone: phoneSchema.nullable().optional(),
     // Cargo (position) — required at create time. The bound Secullum função is
@@ -1061,8 +1092,6 @@ export const userUpdateSchema = z
     exp1EndAt: nullableDate.optional(),
     exp2StartAt: nullableDate.optional(),
     exp2EndAt: nullableDate.optional(),
-    // Fase de experiência (1|2) do vínculo atual. NULL = derivar das datas.
-    experiencePhase: z.number().int().min(1).max(2).nullable().optional(),
     // Art. 481 CLT — cláusula assecuratória do direito recíproco de rescisão.
     hasArt481Clause: z.boolean().optional(),
     // Overrides per-vínculo da insalubridade/periculosidade do cargo (NULL = herda).

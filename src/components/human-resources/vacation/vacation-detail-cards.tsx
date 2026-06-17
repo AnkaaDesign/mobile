@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import {
   IconCalendar,
@@ -10,10 +10,10 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { formatDate, formatCurrency } from "@/utils/formatters";
 import { VACATION_STATUS_LABELS } from "@/constants/enum-labels";
+import { useVacationPeriodBalance } from "@/hooks/useVacation";
 import type { Vacation } from "@/types";
 import {
   concessiveExpiryLevel,
@@ -61,6 +61,7 @@ export function VacationStatusCard({ vacation }: { vacation: Vacation }) {
         <Badge variant={vacationStatusVariant(vacation.status) as any}>
           {VACATION_STATUS_LABELS[vacation.status] ?? vacation.status}
         </Badge>
+        {vacation.groupId && <Badge variant="secondary">Coletiva</Badge>}
         <VacationExpiryBadge vacation={vacation} />
       </View>
     </Card>
@@ -68,6 +69,10 @@ export function VacationStatusCard({ vacation }: { vacation: Vacation }) {
 }
 
 export function VacationPeriodsCard({ vacation }: { vacation: Vacation }) {
+  const gozoEnd =
+    vacation.startDate && vacation.days
+      ? new Date(new Date(vacation.startDate).getTime() + (vacation.days - 1) * 24 * 60 * 60 * 1000)
+      : null;
   return (
     <Card style={styles.card}>
       <SectionHeader icon={<IconCalendar size={20} />} title="Períodos" />
@@ -75,6 +80,9 @@ export function VacationPeriodsCard({ vacation }: { vacation: Vacation }) {
       <Row label="Início Aquisitivo" value={formatDate(vacation.acquisitiveStart)} />
       <Row label="Fim Aquisitivo" value={formatDate(vacation.acquisitiveEnd)} />
       <Row label="Limite Concessivo" value={formatDate(vacation.concessiveEnd)} />
+      <Row label="Início do Gozo" value={vacation.startDate ? formatDate(vacation.startDate) : "Não agendado"} />
+      <Row label="Dias de Gozo" value={`${vacation.days ?? 0} dias`} />
+      {gozoEnd ? <Row label="Fim do Gozo" value={formatDate(gozoEnd)} /> : null}
       {vacation.paymentDueDate ? (
         <Row label="Pagamento Previsto" value={formatDate(vacation.paymentDueDate)} />
       ) : null}
@@ -96,15 +104,50 @@ export function VacationEntitlementCard({ vacation }: { vacation: Vacation }) {
   );
 }
 
-export function VacationFracionamentoCard({ vacation }: { vacation: Vacation }) {
-  const periods = vacation.periods ?? [];
-  if (periods.length === 0) return null;
+/**
+ * Remaining-days history for the vacation's acquisitive period. Groups all sibling
+ * takings (via GET /vacations/period-balance) and shows entitled / abono / scheduled
+ * / remaining plus the list of takings (date, days, status).
+ */
+export function VacationPeriodBalanceCard({ vacation }: { vacation: Vacation }) {
+  const { data, isLoading } = useVacationPeriodBalance(vacation.id, { enabled: !!vacation.id });
+  const balance = data?.data;
+
   return (
     <Card style={styles.card}>
-      <SectionHeader icon={<IconCalendarTime size={20} />} title="Fracionamento" />
-      {periods.map((p, i) => (
-        <Row key={p.id ?? i} label={`Período ${i + 1}`} value={`${formatDate(p.startDate)} · ${p.days} dias`} />
-      ))}
+      <SectionHeader icon={<IconCalendarTime size={20} />} title="Saldo do Período" />
+      {isLoading ? (
+        <ThemedText style={styles.muted}>Calculando saldo...</ThemedText>
+      ) : !balance ? (
+        <ThemedText style={styles.muted}>Saldo indisponível.</ThemedText>
+      ) : (
+        <>
+          <Row label="Dias de Direito" value={`${balance.entitledDays} dias`} />
+          <Row label="Abono Pecuniário" value={`${balance.abonoDays} dias`} />
+          <Row label="Gozo do Período" value={`${balance.gozoEntitled} dias`} />
+          <Row label="Agendado" value={`${balance.scheduledDays} dias`} />
+          <Row label="Restante" value={`${balance.remainingDays} dias`} />
+
+          {balance.takings.length > 0 ? (
+            <View style={styles.takingsBlock}>
+              <ThemedText style={styles.takingsHeader}>Tomadas do período</ThemedText>
+              {balance.takings.map((t) => {
+                const isCurrent = t.id === vacation.id;
+                return (
+                  <View key={t.id} style={styles.takingRow}>
+                    <ThemedText style={[styles.takingText, isCurrent && styles.takingCurrent]}>
+                      {t.startDate ? formatDate(t.startDate) : "Não agendado"} · {t.days} dias
+                    </ThemedText>
+                    <Badge variant={vacationStatusVariant(t.status) as any}>
+                      {VACATION_STATUS_LABELS[t.status] ?? t.status}
+                    </Badge>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
+        </>
+      )}
     </Card>
   );
 }
@@ -149,4 +192,15 @@ const styles = StyleSheet.create({
   },
   rowLabel: { fontSize: 14, opacity: 0.7, flexShrink: 1, marginRight: spacing.md },
   rowValue: { fontSize: 14, fontWeight: "500", textAlign: "right", flexShrink: 1 },
+  muted: { fontSize: 14, opacity: 0.7 },
+  takingsBlock: { marginTop: spacing.sm, gap: spacing.xs },
+  takingsHeader: { fontSize: 13, fontWeight: "600", opacity: 0.8, marginBottom: spacing.xs },
+  takingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+  },
+  takingText: { fontSize: 14, flexShrink: 1, marginRight: spacing.md },
+  takingCurrent: { fontWeight: "700" },
 });

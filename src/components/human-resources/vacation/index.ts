@@ -4,8 +4,9 @@ export {
   VacationStatusCard,
   VacationPeriodsCard,
   VacationEntitlementCard,
-  VacationFracionamentoCard,
+  VacationPeriodBalanceCard,
   VacationValuesCard,
   VacationExpiryBadge,
 } from "./vacation-detail-cards";
 export { VacationReciboCard } from "./vacation-recibo-card";
+export { VacationSecullumCard } from "./vacation-secullum-card";

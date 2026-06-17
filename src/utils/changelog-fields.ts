@@ -1413,17 +1413,23 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     typeof value === "string"
   ) {
     const employmentLabels: Record<string, string> = {
-      // Contract types
+      // Contract types (current)
       EXPERIENCE_PERIOD_1: "Experiência - 1º Período",
       EXPERIENCE_PERIOD_2: "Experiência - 2º Período",
-      EFFECTED: "Efetivado",
+      INDETERMINATE: "Prazo Indeterminado",
       FIXED_TERM: "Prazo Determinado",
       INTERMITTENT: "Intermitente",
       APPRENTICE: "Aprendiz",
       TEMPORARY: "Temporário",
-      // Contract status
+      // Contract status (current)
       ACTIVE: "Ativo",
+      TERMINATED: "Desligado",
+      // Historical/legacy values — kept so old changelog entries still resolve.
+      EFFECTED: "Efetivado",
       DISMISSED: "Demitido",
+      EXPERIENCE: "Em experiência",
+      NOTICE_PERIOD: "Aviso prévio",
+      ON_LEAVE: "Afastado",
       // Employee categories
       CLT: "CLT",
       INTERN: "Estagiário",

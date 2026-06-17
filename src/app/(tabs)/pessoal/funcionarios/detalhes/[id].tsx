@@ -41,10 +41,7 @@ const getStatusLabel = (status: string | null | undefined) => {
 // Color keyed on the lifecycle STATUS (situação).
 const getStatusColor = (status: string | null | undefined, colors: any) => {
   const statusColors: Record<string, string> = {
-    [CONTRACT_STATUS.EXPERIENCE]: colors.warning,
     [CONTRACT_STATUS.ACTIVE]: colors.success,
-    [CONTRACT_STATUS.NOTICE_PERIOD]: colors.warning,
-    [CONTRACT_STATUS.ON_LEAVE]: colors.warning,
     [CONTRACT_STATUS.TERMINATED]: colors.destructive,
   };
   return (status && statusColors[status]) || colors.mutedForeground;
@@ -115,7 +112,9 @@ export default function EmployeeDetailScreen() {
         const admissionDate = contract?.admissionDate ?? contract?.exp1StartAt;
         const terminationDate = contract?.terminationDate;
         const isDismissed = employee.currentContractStatus === CONTRACT_STATUS.TERMINATED;
-        const isInExperience = employee.currentContractStatus === CONTRACT_STATUS.EXPERIENCE;
+        const isInExperience =
+          employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_1 ||
+          employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_2;
         const employmentDuration = getEmploymentDuration(admissionDate, terminationDate);
         const experiencePhase = getExperiencePhase(employee);
         const experienceDaysLeft = getDaysRemainingInExperiencePeriod(employee);

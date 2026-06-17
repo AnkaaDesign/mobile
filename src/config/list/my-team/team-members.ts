@@ -1,13 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
-import { CONTRACT_TYPE } from '@/constants/enums'
-import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS } from '@/constants/enum-labels'
-
-// Lifecycle status (Ativo / Em experiência / Aviso prévio / Afastado / Desligado)
-// derived from the current vínculo status cache.
-const getStatusLabel = (user: User): string => {
-  return (user.currentContractStatus ? CONTRACT_STATUS_LABELS[user.currentContractStatus] : undefined) || '-'
-}
+import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE } from '@/constants/enums'
+import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, EMPLOYEE_TYPE_LABELS } from '@/constants/enum-labels'
+import { getCollaboratorStatus } from '@/utils/user'
 
 export const teamMembersListConfig: ListConfig<User> = {
   key: 'my-team-members',
@@ -64,9 +59,11 @@ export const teamMembersListConfig: ListConfig<User> = {
         sortable: true,
         width: 1.5,
         align: 'center',
-        render: (user) => getStatusLabel(user),
+        render: (user) => getCollaboratorStatus(user).label,
         format: 'badge',
-        badgeEntity: 'USER',
+        // Unified status derivation drives the color (the type-keyed 'USER'
+        // map had no CONTRACT_STATUS keys → status badges rendered gray).
+        badge: (user) => ({ variant: getCollaboratorStatus(user).variant }),
       },
       {
         key: 'phone',
@@ -86,13 +83,39 @@ export const teamMembersListConfig: ListConfig<User> = {
   },
 
   filters: {
+    // Default to active-only (matches useUsersInfiniteMobile + web behavior).
     defaultValues: {
-      // contractKinds is the API convenience filter that maps to currentContractType.
-      contractKinds: Object.values(CONTRACT_TYPE),
+      isActive: true,
     },
     fields: [
       {
-        key: 'contractKinds',
+        // "Exibir": Ativos (isActive:true) | Demitidos (isActive:false) | Todos (omit).
+        key: 'isActive',
+        label: 'Exibir',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ativos', value: true },
+          { label: 'Desligados', value: false },
+          { label: 'Todos', value: '__all__' },
+        ],
+        placeholder: 'Ativos',
+      },
+      {
+        // Situação — maps to currentContractStatus (API param: contractStatuses).
+        key: 'contractStatuses',
+        label: 'Situação',
+        type: 'select',
+        multiple: true,
+        options: Object.values(CONTRACT_STATUS).map((status) => ({
+          label: CONTRACT_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione as situações',
+      },
+      {
+        // Modalidade — maps to currentContractType (API param: contractTypes).
+        key: 'contractTypes',
         label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
@@ -101,6 +124,18 @@ export const teamMembersListConfig: ListConfig<User> = {
           value: type,
         })),
         placeholder: 'Selecione os tipos de contrato',
+      },
+      {
+        // Categoria — maps to currentEmployeeType (API param: employeeTypes).
+        key: 'employeeTypes',
+        label: 'Categoria',
+        type: 'select',
+        multiple: true,
+        options: Object.values(EMPLOYEE_TYPE).map((type) => ({
+          label: EMPLOYEE_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Selecione as categorias',
       },
       {
         key: 'positionIds',

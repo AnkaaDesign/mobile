@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { CONTRACT_STATUS, CONTRACT_STATUS_LABELS } from "@/constants";
+import { getCollaboratorStatus } from "@/utils/user";
 import { formatDate } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
@@ -19,26 +19,20 @@ interface TeamUserTableProps {
   loading?: boolean;
 }
 
-// Helper function to get status colors (driven by contract STATUS)
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case CONTRACT_STATUS.EXPERIENCE:
-    case CONTRACT_STATUS.NOTICE_PERIOD:
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case CONTRACT_STATUS.ACTIVE:
-      return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case CONTRACT_STATUS.ON_LEAVE:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
-    case CONTRACT_STATUS.TERMINATED:
-      return { background: badgeColors.error.background, text: badgeColors.error.text };
-    default:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
-  }
+// Map a canonical collaborator-status variant token to a badge color pair.
+const STATUS_VARIANT_COLORS: Record<string, { background: string; text: string }> = {
+  green: badgeColors.success,
+  red: badgeColors.error,
+  gray: badgeColors.muted,
+  orange: badgeColors.warning,
+  amber: badgeColors.pending,
+  blue: badgeColors.info,
+  teal: { background: extendedColors.teal[600], text: "#ffffff" },
+  purple: { background: extendedColors.purple[600], text: "#ffffff" },
 };
 
-// Helper function to get status label (canonical CONTRACT_STATUS labels)
-const getStatusLabel = (status: string) =>
-  CONTRACT_STATUS_LABELS[status as CONTRACT_STATUS] ?? status;
+const getStatusColorForVariant = (variant: string) =>
+  STATUS_VARIANT_COLORS[variant] ?? badgeColors.muted;
 
 export const TeamUserTable = React.memo<TeamUserTableProps>(
   ({ users, onUserPress, onRefresh, refreshing = false, loading = false }) => {
@@ -47,9 +41,9 @@ export const TeamUserTable = React.memo<TeamUserTableProps>(
     // Row component
     const renderRow = useCallback(
       ({ item }: { item: User }) => {
-        const statusValue = item.currentContractStatus ?? "";
-        const statusColor = getStatusColor(statusValue);
-        const statusLabel = getStatusLabel(statusValue);
+        const status = getCollaboratorStatus(item);
+        const statusColor = getStatusColorForVariant(status.variant);
+        const statusLabel = status.label;
 
         const handlePress = () => {
           if (onUserPress) {

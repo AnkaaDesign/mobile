@@ -17,6 +17,7 @@ import {
   PpeSizesCard,
   LoginInfoCard,
   ProfessionalInfoCard,
+  ContractPhasesCard,
   WarningsTable,
   PpeDeliveriesTable,
 } from "@/components/administration/employee/detail";
@@ -30,8 +31,8 @@ export default function EmployeeDetailsScreen() {
     // GetById honors `include` (not `select`) for relations — request relations
     // here or they fall back to the default include and never load.
     include: {
-      currentContract: true,
-      contracts: { orderBy: { sequence: "asc" } },
+      currentContract: { include: { phaseHistory: { orderBy: { startDate: "asc" } } } },
+      contracts: { orderBy: { sequence: "asc" }, include: { phaseHistory: { orderBy: { startDate: "asc" } } } },
       avatar: true,
       position: true,
       sector: true,
@@ -56,6 +57,7 @@ export default function EmployeeDetailsScreen() {
           <BasicInfoCard employee={employee} />
           <AddressCard employee={employee} />
           <ProfessionalInfoCard employee={employee} />
+          <ContractPhasesCard employee={employee} />
           <LoginInfoCard employee={employee} />
           <PpeSizesCard employee={employee} />
           <WarningsTable employee={employee} maxHeight={400} />

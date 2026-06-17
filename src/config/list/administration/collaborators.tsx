@@ -2,19 +2,10 @@ import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
-import { CONTRACT_TYPE } from '@/constants/enums'
-import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS } from '@/constants/enum-labels'
+import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE } from '@/constants/enums'
+import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, EMPLOYEE_TYPE_LABELS } from '@/constants/enum-labels'
 import { Badge } from '@/components/ui/badge'
-import { getBadgeVariant } from '@/constants/badge-colors'
-
-// Resolve the badge label: prefer the lifecycle STATUS (situação), falling back
-// to the contract MODALITY when the status is unavailable.
-const getContractLabel = (user: User): string => {
-  if (user.currentContractStatus) {
-    return CONTRACT_STATUS_LABELS[user.currentContractStatus] || user.currentContractStatus
-  }
-  return (user.currentContractType ? CONTRACT_TYPE_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
-}
+import { getCollaboratorStatus } from '@/utils/user'
 
 export const collaboratorsListConfig: ListConfig<User> = {
   key: 'administration-collaborators',
@@ -115,10 +106,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         width: 1.8,
         align: 'left',
         render: (user) => {
-          const variant = user.currentContractStatus
-            ? getBadgeVariant(user.currentContractStatus, 'CONTRACT_STATUS')
-            : getBadgeVariant(user.currentContractType ?? '', 'USER')
-          const label = getContractLabel(user)
+          const { label, variant } = getCollaboratorStatus(user)
           return (
             <Badge
               variant={variant}
@@ -355,10 +343,40 @@ export const collaboratorsListConfig: ListConfig<User> = {
   },
 
   filters: {
+    // Default to active-only (matches useUsersInfiniteMobile + web behavior).
+    defaultValues: {
+      isActive: true,
+    },
     fields: [
       {
-        // contractKinds is the API convenience filter that maps to currentContractType.
-        key: 'contractKinds',
+        // "Exibir": Ativos (isActive:true) | Demitidos (isActive:false) | Todos (omit).
+        // The '__all__' sentinel is stripped by the user schema transform → omits isActive.
+        key: 'isActive',
+        label: 'Exibir',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ativos', value: true },
+          { label: 'Desligados', value: false },
+          { label: 'Todos', value: '__all__' },
+        ],
+        placeholder: 'Ativos',
+      },
+      {
+        // Situação — maps to currentContractStatus (API param: contractStatuses).
+        key: 'contractStatuses',
+        label: 'Situação',
+        type: 'select',
+        multiple: true,
+        options: Object.values(CONTRACT_STATUS).map((status) => ({
+          label: CONTRACT_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione as situações',
+      },
+      {
+        // Modalidade — maps to currentContractType (API param: contractTypes).
+        key: 'contractTypes',
         label: 'Modalidade do Vínculo',
         type: 'select',
         multiple: true,
@@ -367,6 +385,18 @@ export const collaboratorsListConfig: ListConfig<User> = {
           value: type,
         })),
         placeholder: 'Selecione as modalidades',
+      },
+      {
+        // Categoria — maps to currentEmployeeType (API param: employeeTypes).
+        key: 'employeeTypes',
+        label: 'Categoria',
+        type: 'select',
+        multiple: true,
+        options: Object.values(EMPLOYEE_TYPE).map((type) => ({
+          label: EMPLOYEE_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Selecione as categorias',
       },
       {
         key: 'positionIds',

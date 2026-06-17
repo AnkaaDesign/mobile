@@ -52,20 +52,19 @@ interface EmployeeTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Status badge variant helper - driven by the lifecycle STATUS (situação),
-// falling back to the contract MODALITY when the status is unknown.
+// Status badge variant helper - experiência is derived from the contract
+// MODALITY (EXPERIENCE_PERIOD_n); afastado/aviso prévio are no longer statuses.
 const getStatusBadgeVariant = (employee: User): BadgeVariant => {
-  switch (employee.currentContractStatus) {
-    case CONTRACT_STATUS.ACTIVE:
-      return "success";
-    case CONTRACT_STATUS.EXPERIENCE:
+  switch (employee.currentContractType) {
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_1:
+    case CONTRACT_TYPE.EXPERIENCE_PERIOD_2:
       return "pending";
-    case CONTRACT_STATUS.NOTICE_PERIOD:
-      return "warning";
-    case CONTRACT_STATUS.ON_LEAVE:
-      return "info";
+  }
+  switch (employee.currentContractStatus) {
     case CONTRACT_STATUS.TERMINATED:
       return "error";
+    case CONTRACT_STATUS.ACTIVE:
+      return "success";
   }
   switch (employee.currentContractType) {
     case CONTRACT_TYPE.INDETERMINATE:

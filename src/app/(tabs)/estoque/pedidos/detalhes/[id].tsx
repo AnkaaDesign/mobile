@@ -30,9 +30,9 @@ export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const nav = useNav();
-  const { deleteMutation, requestPaymentMutation } = useOrderMutations();
-  // Solicitar Pagamento is restricted to finance/admin (mirrors web).
-  const { allowed: canRequestPayment } = usePrivilegeGate({
+  const { deleteMutation, markPaidMutation, markAwaitingPaymentMutation } = useOrderMutations();
+  // Payment actions are restricted to finance/admin (mirrors web).
+  const { allowed: canManagePayment } = usePrivilegeGate({
     any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL],
   });
 
@@ -68,18 +68,18 @@ export default function OrderDetailScreen() {
 
   const order = (query.data as any)?.data ?? (query.data as any);
 
-  const handleRequestPayment = () => {
+  const handleMarkPaid = () => {
     if (!order?.id) return;
     Alert.alert(
-      "Solicitar Pagamento",
-      "Confirmar a solicitação de pagamento deste pedido? Ele entrará na fila de Contas a Pagar.",
+      "Marcar como Pago",
+      "Confirmar que este pedido foi pago?",
       [
         { text: "Cancelar", style: "cancel" },
         {
-          text: "Solicitar",
+          text: "Marcar como Pago",
           onPress: async () => {
             try {
-              await nav.withLoading(async () => requestPaymentMutation.mutateAsync(order.id));
+              await nav.withLoading(async () => markPaidMutation.mutateAsync(order.id));
             } catch {
               /* interceptor toasts */
             }
@@ -89,21 +89,53 @@ export default function OrderDetailScreen() {
     );
   };
 
-  // "Solicitar Pagamento" shows only for an open order awaiting a request,
-  // and only for ADMIN/FINANCIAL. The trigger lives on the order detail
-  // (moved off the Contas-a-Pagar context menu per the wiring contract).
-  const actions: PageAction[] =
-    canRequestPayment && order?.paymentStatus === ORDER_PAYMENT_STATUS.NOT_REQUESTED
+  const handleMarkAwaitingPayment = () => {
+    if (!order?.id) return;
+    Alert.alert(
+      "Desfazer pagamento",
+      "Reverter este pedido para Aguardando Pagamento?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Desfazer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await nav.withLoading(async () => markAwaitingPaymentMutation.mutateAsync(order.id));
+            } catch {
+              /* interceptor toasts */
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Payment actions are restricted to ADMIN/FINANCIAL. An order is payable
+  // (show "Marcar como Pago") while paymentStatus !== PAID; once PAID, offer
+  // "Desfazer pagamento" to revert to awaiting payment.
+  const isPaid = order?.paymentStatus === ORDER_PAYMENT_STATUS.PAID;
+  const actions: PageAction[] = !canManagePayment
+    ? []
+    : isPaid
       ? [
           {
-            key: "request-payment",
-            label: "Solicitar Pagamento",
+            key: "mark-awaiting-payment",
+            label: "Desfazer pagamento",
             icon: "receipt",
-            loading: requestPaymentMutation.isPending,
-            onPress: handleRequestPayment,
+            loading: markAwaitingPaymentMutation.isPending,
+            onPress: handleMarkAwaitingPayment,
           },
         ]
-      : [];
+      : [
+          {
+            key: "mark-paid",
+            label: "Marcar como Pago",
+            icon: "receipt",
+            loading: markPaidMutation.isPending,
+            onPress: handleMarkPaid,
+          },
+        ];
 
   return (
     <DetailScreen<Order>

@@ -127,6 +127,8 @@ export interface Order extends BaseEntity {
   paymentStatusOrder?: number;
   paymentRequestedAt?: Date | null;
   paidAt?: Date | null;
+  paidById: string | null;
+  installmentCount: number;
   budgetIds?: string[];
   invoiceIds?: string[];
   receiptIds?: string[];
@@ -516,8 +518,6 @@ export type PayableSource =
   | "RECURRING";
 
 export type PayableState =
-  | "NOT_REQUESTED"
-  | "REQUESTED"
   | "AWAITING_PAYMENT"
   | "PARTIALLY_PAID"
   | "EXPECTED"
@@ -558,6 +558,8 @@ export interface PayableRow {
   competence?: string | null;
   /** Deep-link target for RECONCILIATION/SCHEDULE settle actions. */
   settleHref?: string | null;
+  /** Boleto installment (parcela) id when this row settles a single installment. */
+  installmentId?: string | null;
 }
 
 export interface PayablesSummaryBucket {
@@ -566,8 +568,6 @@ export interface PayablesSummaryBucket {
 }
 
 export interface PayablesSummary {
-  NOT_REQUESTED: PayablesSummaryBucket;
-  REQUESTED: PayablesSummaryBucket;
   AWAITING_PAYMENT: PayablesSummaryBucket;
   PARTIALLY_PAID: PayablesSummaryBucket;
   EXPECTED: PayablesSummaryBucket;

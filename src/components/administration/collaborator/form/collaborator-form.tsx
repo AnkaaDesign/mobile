@@ -24,7 +24,7 @@ import type { User } from "@/types";
 import { useUserMutations } from "@/hooks/useUser";
 import { useSectors } from "@/hooks/useSector";
 import { usePositions } from "@/hooks/usePosition";
-import { CONTRACT_TYPE, SHIRT_SIZE, BOOT_SIZE, PANTS_SIZE, SLEEVES_SIZE, MASK_SIZE, GLOVES_SIZE, RAIN_BOOTS_SIZE, SECTOR_PRIVILEGES } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_STATUS, SHIRT_SIZE, BOOT_SIZE, PANTS_SIZE, SLEEVES_SIZE, MASK_SIZE, GLOVES_SIZE, RAIN_BOOTS_SIZE, SECTOR_PRIVILEGES } from "@/constants";
 import { CONTRACT_TYPE_LABELS, SHIRT_SIZE_LABELS, BOOT_SIZE_LABELS, PANTS_SIZE_LABELS, SLEEVES_SIZE_LABELS, MASK_SIZE_LABELS, GLOVES_SIZE_LABELS, RAIN_BOOTS_SIZE_LABELS } from "@/constants/enum-labels";
 
 interface CollaboratorFormProps {
@@ -115,9 +115,10 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             pis: "",
             birth: getDefaultBirthDate(),
             contract: {
-              // New hires start as a FIXED_TERM modality; the bond enters EXPERIENCE
-              // status server-side and converts to INDETERMINATE on efetivação.
-              contractType: CONTRACT_TYPE.FIXED_TERM,
+              // New hires start in the first experience period (EXPERIENCE_PERIOD_1)
+              // with an ACTIVE status; the bond converts to INDETERMINATE on efetivação.
+              contractType: CONTRACT_TYPE.EXPERIENCE_PERIOD_1,
+              status: CONTRACT_STATUS.ACTIVE,
               admissionDate: new Date(),
             },
             sectorId: null,

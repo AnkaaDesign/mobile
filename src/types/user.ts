@@ -2,7 +2,8 @@
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseMergeResponse, BaseBatchResponse } from "./common";
 import type { ORDER_BY_DIRECTION, CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE } from '@/constants';
-import type { EmploymentContract, EmploymentContractIncludes } from "./employment-contract";
+import type { EmploymentContract, EmploymentContractIncludes, ContractPhaseHistory } from "./employment-contract";
+import type { Admission } from "./admission";
 import type { PpeSize, PpeDelivery, PpeDeliverySchedule, PpeSizeIncludes, PpeDeliveryIncludes, PpeDeliveryScheduleIncludes } from "./ppe";
 import type { SeenNotification, Notification, SeenNotificationIncludes, NotificationIncludes } from "./notification";
 import type { Position, PositionIncludes, PositionOrderBy } from "./position";
@@ -65,6 +66,8 @@ export interface User extends BaseEntity {
   avatar?: File;
   contracts?: EmploymentContract[];
   currentContract?: EmploymentContract | null;
+  contractPhaseHistory?: ContractPhaseHistory[];
+  admissions?: Admission[];
   ppeSize?: PpeSize;
   preference?: Preferences;
   position?: Position;

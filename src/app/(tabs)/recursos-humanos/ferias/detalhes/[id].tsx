@@ -13,7 +13,7 @@ import {
   VacationStatusCard,
   VacationPeriodsCard,
   VacationEntitlementCard,
-  VacationFracionamentoCard,
+  VacationPeriodBalanceCard,
   VacationValuesCard,
   VacationReciboCard,
 } from "@/components/human-resources/vacation";
@@ -43,7 +43,6 @@ export default function VacationDetailScreen() {
   const query = useVacation(vacationId, {
     include: {
       user: { include: { position: true, sector: true } },
-      periods: { orderBy: { startDate: "asc" } },
     },
     enabled: !!vacationId,
   });
@@ -116,7 +115,7 @@ export default function VacationDetailScreen() {
           <VacationStatusCard vacation={v} />
           <VacationPeriodsCard vacation={v} />
           <VacationEntitlementCard vacation={v} />
-          <VacationFracionamentoCard vacation={v} />
+          <VacationPeriodBalanceCard vacation={v} />
           <VacationValuesCard vacation={v} />
           <VacationReciboCard vacation={v} />
           <ChangelogTimeline

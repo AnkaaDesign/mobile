@@ -10,7 +10,8 @@ import {
   batchCreateOrders,
   batchUpdateOrders,
   batchDeleteOrders,
-  requestOrderPayment,
+  markOrderPaid,
+  markOrderAwaitingPayment,
   getPayables,
 } from '@/api-client';
 import type {
@@ -198,9 +199,9 @@ export const useOrderMutations = (options?: {
     },
   });
 
-  // REQUEST PAYMENT (Contas a Pagar: Não Solicitado → Solicitado)
-  const requestPaymentMutation = useMutation({
-    mutationFn: (id: string) => requestOrderPayment(id),
+  // MARK PAID (Contas a Pagar: Aguardando Pagamento → Pago)
+  const markPaidMutation = useMutation({
+    mutationFn: (id: string) => markOrderPaid(id),
     onSuccess: (data) => {
       invalidateQueries(data.data?.supplierId || undefined);
       // Refresh the unified payables feed too.
@@ -208,10 +209,28 @@ export const useOrderMutations = (options?: {
     },
   });
 
-  const isLoading =
-    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || requestPaymentMutation.isPending;
+  // MARK AWAITING PAYMENT (undo: Pago → Aguardando Pagamento)
+  const markAwaitingPaymentMutation = useMutation({
+    mutationFn: (id: string) => markOrderAwaitingPayment(id),
+    onSuccess: (data) => {
+      invalidateQueries(data.data?.supplierId || undefined);
+      queryClient.invalidateQueries({ queryKey: orderKeys.payables() });
+    },
+  });
 
-  const error = createMutation.error || updateMutation.error || deleteMutation.error || requestPaymentMutation.error;
+  const isLoading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    markPaidMutation.isPending ||
+    markAwaitingPaymentMutation.isPending;
+
+  const error =
+    createMutation.error ||
+    updateMutation.error ||
+    deleteMutation.error ||
+    markPaidMutation.error ||
+    markAwaitingPaymentMutation.error;
 
   return {
     create: createMutation.mutate,
@@ -220,8 +239,10 @@ export const useOrderMutations = (options?: {
     updateAsync: updateMutation.mutateAsync,
     delete: deleteMutation.mutate,
     deleteAsync: deleteMutation.mutateAsync,
-    requestPayment: requestPaymentMutation.mutate,
-    requestPaymentAsync: requestPaymentMutation.mutateAsync,
+    markPaid: markPaidMutation.mutate,
+    markPaidAsync: markPaidMutation.mutateAsync,
+    markAwaitingPayment: markAwaitingPaymentMutation.mutate,
+    markAwaitingPaymentAsync: markAwaitingPaymentMutation.mutateAsync,
     isLoading,
     error,
     refresh: () => invalidateQueries(),
@@ -229,7 +250,8 @@ export const useOrderMutations = (options?: {
     createMutation,
     updateMutation,
     deleteMutation,
-    requestPaymentMutation,
+    markPaidMutation,
+    markAwaitingPaymentMutation,
   };
 };
 

@@ -17,12 +17,6 @@ import type { User } from "./user";
 // Entities
 // =====================
 
-export interface VacationPeriod extends BaseEntity {
-  vacationId: string;
-  startDate: Date;
-  days: number;
-}
-
 export interface Vacation extends BaseEntity {
   // userId stays non-null to mirror the API vacation type (and the create-form
   // base type); the Prisma column is nullable only for soft-deleted/orphan rows.
@@ -35,6 +29,11 @@ export interface Vacation extends BaseEntity {
   concessiveEnd: Date | null;
   unjustifiedAbsencesInPeriod: number;
   entitledDays: number;
+  // Single-period gozo "taking": startDate is null while not scheduled, days is
+  // the gozo days of THIS taking. Multiple Vacation rows may share an acquisitive
+  // period; remaining gozo days are computed by grouping siblings.
+  startDate?: Date | null;
+  days: number;
   status: VACATION_STATUS;
   statusOrder: number;
   abonoPecuniarioDays: number;
@@ -51,8 +50,29 @@ export interface Vacation extends BaseEntity {
 
   // Relations
   user?: User;
-  periods?: VacationPeriod[];
 }
+
+// =====================
+// Period balance (remaining-days history across sibling takings)
+// =====================
+
+export interface VacationPeriodTaking {
+  id: string;
+  startDate: Date | null;
+  days: number;
+  status: VACATION_STATUS;
+}
+
+export interface VacationPeriodBalance {
+  entitledDays: number;
+  abonoDays: number;
+  gozoEntitled: number;
+  scheduledDays: number;
+  remainingDays: number;
+  takings: VacationPeriodTaking[];
+}
+
+export type VacationPeriodBalanceResponse = BaseGetUniqueResponse<VacationPeriodBalance>;
 
 // =====================
 // Recibo (payable férias receipt) — NOT embedded in the monthly folha

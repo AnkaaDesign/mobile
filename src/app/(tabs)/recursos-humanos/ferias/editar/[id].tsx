@@ -18,7 +18,7 @@ export default function VacationEditScreen() {
 function VacationEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isLoading, error, refetch } = useVacation(id!, {
-    include: { user: { include: { position: true } }, periods: true },
+    include: { user: { include: { position: true } } },
     enabled: !!id,
   });
 

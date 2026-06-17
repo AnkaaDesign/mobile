@@ -1,5 +1,6 @@
 import type { User } from '../types';
-import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE, SECTOR_PRIVILEGES, TEAM_LEADER, VERIFICATION_TYPE } from '../constants';
+import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE, SECTOR_PRIVILEGES, TEAM_LEADER, VERIFICATION_TYPE, CONTRACT_STATUS_LABELS } from '../constants';
+import type { BadgeVariant } from '../constants';
 import { dateUtils } from "./date";
 
 /**
@@ -43,43 +44,25 @@ export function mapMaskSizeToPrisma(size: string | null | undefined): string | n
 }
 
 /**
- * Whether the user's current vínculo is in the experiência (probation) status.
- * Experiência is a STATUS (orthogonal to contract MODALITY), not a contract type.
+ * Whether the user's current vínculo is in the experiência (probation) period.
+ * Experiência is now a contract MODALITY (EXPERIENCE_PERIOD_1 / EXPERIENCE_PERIOD_2)
+ * combined with an ACTIVE status, NOT a lifecycle status.
  */
 export function isInExperience(user: User): boolean {
-  return user.currentContractStatus === CONTRACT_STATUS.EXPERIENCE;
+  return (
+    user.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_1 ||
+    user.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_2
+  );
 }
 
 /**
- * Derive the experiência phase (1 or 2) of the current vínculo.
- * Prefers an explicit `experiencePhase` on the contract; otherwise derives from
- * the exp1/exp2 date windows. Returns null when not in experiência or undeterminable.
+ * Derive the experiência phase (1 or 2) of the current vínculo, directly from the
+ * contract MODALITY (EXPERIENCE_PERIOD_1 → 1, EXPERIENCE_PERIOD_2 → 2).
+ * Returns null when not in experiência.
  */
 export function getExperiencePhase(user: User): 1 | 2 | null {
-  if (user.currentContractStatus !== CONTRACT_STATUS.EXPERIENCE) {
-    return null;
-  }
-
-  const contract = user.currentContract;
-  if (!contract) return null;
-
-  // Explicit phase wins when present.
-  if (contract.experiencePhase === 1 || contract.experiencePhase === 2) {
-    return contract.experiencePhase;
-  }
-
-  // Derive from date windows: if exp2 has started (or exp1 has ended), we're in phase 2.
-  const now = new Date();
-  if (contract.exp2StartAt && new Date(contract.exp2StartAt) <= now) {
-    return 2;
-  }
-  if (contract.exp1EndAt && new Date(contract.exp1EndAt) <= now && contract.exp2EndAt) {
-    return 2;
-  }
-  if (contract.exp1StartAt) {
-    return 1;
-  }
-
+  if (user.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_1) return 1;
+  if (user.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_2) return 2;
   return null;
 }
 
@@ -89,7 +72,7 @@ export function getExperiencePhase(user: User): 1 | 2 | null {
  * Returns null if the user is not in experiência or no end date is set.
  */
 export function getDaysRemainingInExperiencePeriod(user: User): number | null {
-  if (user.currentContractStatus !== CONTRACT_STATUS.EXPERIENCE) {
+  if (!isInExperience(user)) {
     return null;
   }
 
@@ -182,7 +165,7 @@ export function getDaysSinceExperienceStart(user: User): number | null {
   const now = new Date();
   const contract = user.currentContract;
 
-  if (user.currentContractStatus !== CONTRACT_STATUS.EXPERIENCE || !contract) {
+  if (!isInExperience(user) || !contract) {
     return null;
   }
 
@@ -234,72 +217,132 @@ export function getDaysSinceExperienceStart(user: User): number | null {
 }
 
 /**
- * Get user status badge text with time information
+ * Result of the single collaborator-status derivation.
+ * `variant` is a valid mobile Badge / getBadgeVariant token.
  */
-export function getUserStatusBadgeText(user: User): string {
-  // Lifecycle STATUS short labels (situação), the primary driver of the badge.
-  const statusLabels: Record<CONTRACT_STATUS, string> = {
-    [CONTRACT_STATUS.EXPERIENCE]: "Experiência",
-    [CONTRACT_STATUS.ACTIVE]: "Efetivado",
-    [CONTRACT_STATUS.NOTICE_PERIOD]: "Aviso prévio",
-    [CONTRACT_STATUS.ON_LEAVE]: "Afastado",
-    [CONTRACT_STATUS.TERMINATED]: "Demitido",
-  };
+export interface CollaboratorStatus {
+  key: string;
+  label: string;
+  variant: BadgeVariant;
+}
 
-  // Contract MODALITY short labels (used as fallback when status is unknown).
-  const typeLabels: Record<CONTRACT_TYPE, string> = {
-    [CONTRACT_TYPE.INDETERMINATE]: "Prazo indeterminado",
-    [CONTRACT_TYPE.FIXED_TERM]: "Prazo determinado",
-    [CONTRACT_TYPE.INTERMITTENT]: "Intermitente",
-    [CONTRACT_TYPE.APPRENTICE]: "Aprendiz",
-    [CONTRACT_TYPE.TEMPORARY]: "Temporário",
-  };
-
-  // Off-payroll categories (terceirizado/PJ/estagiário/autônomo) carry no
-  // CONTRACT_TYPE modality and aren't "Efetivado" — label them by worker
-  // category. Terminated bonds still fall through to the "Demitido" status label.
-  const employeeTypeLabels: Record<string, string> = {
-    [EMPLOYEE_TYPE.INTERN]: "Estagiário",
-    [EMPLOYEE_TYPE.TERCEIRIZADO]: "Terceirizado",
-    [EMPLOYEE_TYPE.PJ]: "PJ",
-    [EMPLOYEE_TYPE.AUTONOMOUS]: "Autônomo",
-  };
-
-  let baseLabel: string;
-  if (
-    user.currentContractStatus !== CONTRACT_STATUS.TERMINATED &&
-    user.currentEmployeeType &&
-    user.currentEmployeeType !== EMPLOYEE_TYPE.CLT
-  ) {
-    baseLabel = employeeTypeLabels[user.currentEmployeeType] || user.currentEmployeeType;
-  } else {
-    baseLabel =
-      (user.currentContractStatus ? statusLabels[user.currentContractStatus] : undefined) ||
-      (user.currentContractType ? typeLabels[user.currentContractType] : undefined) ||
-      user.currentContractType ||
-      "";
+/**
+ * SINGLE canonical derivation of a collaborator's display status (label +
+ * badge variant). This must match the web implementation exactly.
+ *
+ * Canonical semantics:
+ * - "Efetivado" = currentContractType === INDETERMINATE && currentContractStatus === ACTIVE (GREEN).
+ *   It is NEVER a contract type by itself.
+ * - "Demitido" / dismissed = isActive === false (RED). `isActive` is THE employed signal.
+ *
+ * afastado / aviso prévio are NO LONGER contract statuses. They are OPTIONAL
+ * overlays sourced from the Leave feature / an in-progress Termination, passed in
+ * via `opts`.
+ *
+ * Precedence (first match wins):
+ * 1. isActive === false && status === TERMINATED        → TERMINATED, "Demitido", red
+ * 2. isActive === false (no/empty contract)             → NO_CONTRACT, "Sem vínculo", gray
+ * 3. opts.activeLeave (overlay)                          → ON_LEAVE, "Afastado", purple
+ * 4. opts.inNoticePeriod (overlay)                       → NOTICE_PERIOD, "Aviso prévio", orange
+ * 5. off-CLT currentEmployeeType                         → labelled by category, teal/blue
+ * 6. type === EXPERIENCE_PERIOD_1/2                      → "Em experiência 1/2" (+days), amber
+ * 7. status === ACTIVE && type === INDETERMINATE         → EFFECTED, "Efetivado", green
+ * 8. status === ACTIVE                                   → ACTIVE, "Ativo", blue
+ * 9. fallback                                            → CONTRACT_STATUS_LABELS or "—", gray
+ */
+export function getCollaboratorStatus(
+  user: User,
+  opts?: { activeLeave?: boolean; inNoticePeriod?: boolean },
+): CollaboratorStatus {
+  // 1. Demitido — dismissed with an explicit terminated contract.
+  if (user.isActive === false && user.currentContractStatus === CONTRACT_STATUS.TERMINATED) {
+    return { key: "TERMINATED", label: "Desligado", variant: "red" };
   }
 
-  // For experiência, show the phase alongside the countdown.
-  if (user.currentContractStatus === CONTRACT_STATUS.EXPERIENCE) {
+  // 2. Dismissed with no/empty contract — "Sem vínculo".
+  if (user.isActive === false) {
+    return { key: "NO_CONTRACT", label: "Sem vínculo", variant: "gray" };
+  }
+
+  // 3. Afastado (overlay from the Leave feature).
+  if (opts?.activeLeave) {
+    return { key: "ON_LEAVE", label: "Afastado", variant: "purple" };
+  }
+
+  // 4. Aviso prévio (overlay from an in-progress Termination).
+  if (opts?.inNoticePeriod) {
+    return { key: "NOTICE_PERIOD", label: "Aviso prévio", variant: "orange" };
+  }
+
+  // 5. Off-payroll categories (terceirizado/PJ/estagiário/autônomo): label by
+  //    worker category. These carry no CONTRACT_TYPE modality and aren't "Efetivado".
+  if (user.currentEmployeeType && user.currentEmployeeType !== EMPLOYEE_TYPE.CLT) {
+    const offCltLabels: Record<string, string> = {
+      [EMPLOYEE_TYPE.INTERN]: "Estagiário",
+      [EMPLOYEE_TYPE.TERCEIRIZADO]: "Terceirizado",
+      [EMPLOYEE_TYPE.PJ]: "PJ",
+      [EMPLOYEE_TYPE.AUTONOMOUS]: "Autônomo",
+    };
+    const offCltVariants: Record<string, BadgeVariant> = {
+      [EMPLOYEE_TYPE.INTERN]: "blue",
+      [EMPLOYEE_TYPE.TERCEIRIZADO]: "teal",
+      [EMPLOYEE_TYPE.PJ]: "teal",
+      [EMPLOYEE_TYPE.AUTONOMOUS]: "blue",
+    };
+    return {
+      key: user.currentEmployeeType,
+      label: offCltLabels[user.currentEmployeeType] || user.currentEmployeeType,
+      variant: offCltVariants[user.currentEmployeeType] || "teal",
+    };
+  }
+
+  // 6. Em experiência — phase derived directly from the contract MODALITY.
+  if (isInExperience(user)) {
     const phase = getExperiencePhase(user);
-    if (phase) {
-      baseLabel = `Exp${phase}`;
-    }
+    let label = phase ? `Em experiência ${phase}` : "Em experiência";
     const daysRemaining = getDaysRemainingInExperiencePeriod(user);
     if (daysRemaining !== null) {
-      return `${baseLabel} - ${daysRemaining}d`;
+      label = `${label} - ${daysRemaining}d`;
     }
-    return baseLabel;
+    return { key: "EXPERIENCE", label, variant: phase === 2 ? "orange" : "blue" };
   }
 
-  // For active/terminated, show time since the status change in compact format.
-  const timeSince = formatTimeSinceStatusChangeCompact(user);
-  if (timeSince) {
-    return `${baseLabel} - ${timeSince}`;
+  // 7. Efetivado — confirmed indefinite CLT bond.
+  if (
+    user.currentContractStatus === CONTRACT_STATUS.ACTIVE &&
+    user.currentContractType === CONTRACT_TYPE.INDETERMINATE
+  ) {
+    return { key: "EFFECTED", label: "Efetivado", variant: "green" };
   }
 
-  return baseLabel;
+  // 8. Ativo — active bond without an indefinite modality (e.g. fixed-term).
+  if (user.currentContractStatus === CONTRACT_STATUS.ACTIVE) {
+    return { key: "ACTIVE", label: "Ativo", variant: "blue" };
+  }
+
+  // 9. Fallback.
+  const fallbackLabel =
+    (user.currentContractStatus ? CONTRACT_STATUS_LABELS[user.currentContractStatus] : undefined) || "—";
+  return { key: user.currentContractStatus ?? "UNKNOWN", label: fallbackLabel, variant: "gray" };
+}
+
+/**
+ * Get user status badge text with time information.
+ * Delegates to the single canonical derivation; for ACTIVE/EFFECTED bonds it
+ * appends the compact "time since status change" suffix (preserved behavior).
+ */
+export function getUserStatusBadgeText(user: User): string {
+  const { key, label } = getCollaboratorStatus(user);
+
+  // For active/effected bonds, show time since the status change in compact format.
+  if (key === "ACTIVE" || key === "EFFECTED" || key === "TERMINATED") {
+    const timeSince = formatTimeSinceStatusChangeCompact(user);
+    if (timeSince) {
+      return `${label} - ${timeSince}`;
+    }
+  }
+
+  return label;
 }
 
 /**
@@ -324,12 +367,11 @@ export function isExperiencePeriodExpired(user: User): boolean {
 export function getUserStatusColor(status: CONTRACT_TYPE | CONTRACT_STATUS | string): string {
   const colors: Record<string, string> = {
     // Lifecycle STATUS colors (situação).
-    [CONTRACT_STATUS.EXPERIENCE]: "orange",
     [CONTRACT_STATUS.ACTIVE]: "green",
-    [CONTRACT_STATUS.NOTICE_PERIOD]: "orange",
-    [CONTRACT_STATUS.ON_LEAVE]: "purple",
     [CONTRACT_STATUS.TERMINATED]: "gray",
     // Contract MODALITY colors (fallback).
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "blue",
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "orange",
     [CONTRACT_TYPE.INDETERMINATE]: "green",
     [CONTRACT_TYPE.FIXED_TERM]: "blue",
     [CONTRACT_TYPE.INTERMITTENT]: "blue",
@@ -505,10 +547,7 @@ export function groupUsersByStatus(users: User[]): Record<string, User[]> {
  */
 export function groupUsersByContractStatus(users: User[]): Record<CONTRACT_STATUS, User[]> {
   const groups = {
-    [CONTRACT_STATUS.EXPERIENCE]: [],
     [CONTRACT_STATUS.ACTIVE]: [],
-    [CONTRACT_STATUS.NOTICE_PERIOD]: [],
-    [CONTRACT_STATUS.ON_LEAVE]: [],
     [CONTRACT_STATUS.TERMINATED]: [],
   } as Record<CONTRACT_STATUS, User[]>;
 

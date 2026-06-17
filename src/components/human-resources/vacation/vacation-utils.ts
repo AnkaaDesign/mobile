@@ -18,33 +18,6 @@ export function entitledDaysForAbsences(absences: number): number {
   return 0;
 }
 
-/**
- * Reforma 2017 fracionamento rule. Returns a PT-BR error string, or null when valid.
- *   - up to 3 períodos
- *   - one período must be ≥ 14 dias
- *   - the remaining períodos must each be ≥ 5 dias
- * Empty list (no fracionamento) is considered valid (single 30-day gozo).
- */
-export function validateFracionamento(periods: { days: number }[]): string | null {
-  if (!periods || periods.length === 0) return null;
-  if (periods.length > 3) return "São permitidos no máximo 3 períodos.";
-  if (periods.some((p) => !p.days || p.days < 1)) return "Cada período deve ter ao menos 1 dia.";
-
-  const hasLong = periods.some((p) => p.days >= 14);
-  if (!hasLong) return "Um dos períodos deve ter ao menos 14 dias.";
-
-  // All periods other than the (first) long one must be ≥ 5 dias.
-  let longConsumed = false;
-  for (const p of periods) {
-    if (!longConsumed && p.days >= 14) {
-      longConsumed = true;
-      continue;
-    }
-    if (p.days < 5) return "Os demais períodos devem ter ao menos 5 dias cada.";
-  }
-  return null;
-}
-
 /** Days until concessivo expiry (art. 137). Negative → expired. null → no date. */
 export function daysUntilConcessiveEnd(concessiveEnd?: Date | string | null): number | null {
   if (!concessiveEnd) return null;

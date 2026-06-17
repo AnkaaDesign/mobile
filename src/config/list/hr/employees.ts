@@ -2,9 +2,13 @@ import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import {
   CONTRACT_TYPE,
+  CONTRACT_STATUS,
+  EMPLOYEE_TYPE,
   CONTRACT_TYPE_LABELS,
+  CONTRACT_STATUS_LABELS,
+  EMPLOYEE_TYPE_LABELS,
 } from '@/constants'
-import { getUserStatusBadgeText } from '@/utils/user'
+import { getUserStatusBadgeText, getCollaboratorStatus } from '@/utils/user'
 import { formatCPF, formatBrazilianPhone} from '@/utils'
 import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
 
@@ -165,6 +169,8 @@ export const employeesListConfig: ListConfig<User> = {
         align: 'left',
         render: (employee) => getUserStatusBadgeText(employee),
         format: 'badge',
+        // Color via the unified status derivation (no badgeEntity → was gray).
+        badge: (employee) => ({ variant: getCollaboratorStatus(employee).variant }),
       },
       {
         key: 'birth',
@@ -360,18 +366,59 @@ export const employeesListConfig: ListConfig<User> = {
   },
 
   filters: {
+    // Default to active-only (matches useUsersInfiniteMobile + web behavior).
+    defaultValues: {
+      isActive: true,
+    },
     fields: [
       {
-        // contractKinds is the API convenience filter that maps to currentContractType.
-        key: 'contractKinds',
+        // "Exibir": Ativos (isActive:true) | Demitidos (isActive:false) | Todos (omit).
+        key: 'isActive',
+        label: 'Exibir',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ativos', value: true },
+          { label: 'Desligados', value: false },
+          { label: 'Todos', value: '__all__' },
+        ],
+        placeholder: 'Ativos',
+      },
+      {
+        // Situação — maps to currentContractStatus (API param: contractStatuses).
+        key: 'contractStatuses',
+        label: 'Situação',
+        type: 'select',
+        multiple: true,
+        options: Object.values(CONTRACT_STATUS).map((status) => ({
+          label: CONTRACT_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione as situações',
+      },
+      {
+        // Modalidade — maps to currentContractType (API param: contractTypes).
+        key: 'contractTypes',
         label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
-        options: Object.values(CONTRACT_TYPE).map((status) => ({
-          label: CONTRACT_TYPE_LABELS[status],
-          value: status,
+        options: Object.values(CONTRACT_TYPE).map((type) => ({
+          label: CONTRACT_TYPE_LABELS[type],
+          value: type,
         })),
         placeholder: 'Selecione os tipos de contrato',
+      },
+      {
+        // Categoria — maps to currentEmployeeType (API param: employeeTypes).
+        key: 'employeeTypes',
+        label: 'Categoria',
+        type: 'select',
+        multiple: true,
+        options: Object.values(EMPLOYEE_TYPE).map((type) => ({
+          label: EMPLOYEE_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Selecione as categorias',
       },
       {
         key: 'verified',

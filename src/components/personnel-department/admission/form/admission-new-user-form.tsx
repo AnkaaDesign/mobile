@@ -119,9 +119,9 @@ export function AdmissionNewUserForm({ onSuccess, onCancel }: AdmissionNewUserFo
       pis: "",
       birth: getDefaultBirthDate(),
       contract: {
-        // New CLT hires start as a FIXED_TERM modality (server enters EXPERIENCE).
+        // New CLT hires start in the first experience period (EXPERIENCE_PERIOD_1).
         employeeType: EMPLOYEE_TYPE.CLT,
-        contractType: CONTRACT_TYPE.FIXED_TERM,
+        contractType: CONTRACT_TYPE.EXPERIENCE_PERIOD_1,
         admissionDate: new Date(),
         providerName: null,
         providerCnpj: null,
@@ -217,7 +217,7 @@ export function AdmissionNewUserForm({ onSuccess, onCancel }: AdmissionNewUserFo
     try {
       const { notes, contract: contractInput, ...userData } = data as any;
       const et: EMPLOYEE_TYPE = contractInput?.employeeType ?? EMPLOYEE_TYPE.CLT;
-      const ct: CONTRACT_TYPE | null = et !== EMPLOYEE_TYPE.CLT ? null : (contractInput?.contractType ?? CONTRACT_TYPE.FIXED_TERM);
+      const ct: CONTRACT_TYPE | null = et !== EMPLOYEE_TYPE.CLT ? null : (contractInput?.contractType ?? CONTRACT_TYPE.EXPERIENCE_PERIOD_1);
       const admissionDate = (contractInput?.admissionDate as Date | null) ?? null;
 
       // Upload pending document files → fileIds (inline documents[]).

@@ -2,16 +2,11 @@ import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { canEditUsers, canDeleteUsers } from '@/utils/permissions/entity-permissions'
-import { SECTOR_PRIVILEGES, CONTRACT_STATUS, CONTRACT_TYPE } from '@/constants/enums'
-import { SECTOR_PRIVILEGES_LABELS, CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS } from '@/constants/enum-labels'
+import { SECTOR_PRIVILEGES, CONTRACT_STATUS, CONTRACT_TYPE, EMPLOYEE_TYPE } from '@/constants/enums'
+import { SECTOR_PRIVILEGES_LABELS, CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, EMPLOYEE_TYPE_LABELS } from '@/constants/enum-labels'
 import { Badge } from '@/components/ui/badge'
 import { getBadgeVariant } from '@/constants/badge-colors'
-
-// Resolve the contract-type label, falling back to "Desligado" when terminated.
-const getContractLabel = (user: User): string => {
-  if (user.currentContractStatus === CONTRACT_STATUS.TERMINATED) return CONTRACT_STATUS_LABELS[CONTRACT_STATUS.TERMINATED]
-  return (user.currentContractType ? CONTRACT_TYPE_LABELS[user.currentContractType] : undefined) || user.currentContractType || '-'
-}
+import { getCollaboratorStatus } from '@/utils/user'
 
 // Get all sector privileges as options
 const PRIVILEGE_OPTIONS = Object.values(SECTOR_PRIVILEGES).map((privilege) => ({
@@ -151,8 +146,7 @@ export const usersListConfig: ListConfig<User> = {
         width: 1.5,
         align: 'center',
         render: (user) => {
-          const variant = getBadgeVariant(user.currentContractType ?? '', 'USER')
-          const label = getContractLabel(user)
+          const { label, variant } = getCollaboratorStatus(user)
           return (
             <Badge
               variant={variant}
@@ -308,7 +302,60 @@ export const usersListConfig: ListConfig<User> = {
   },
 
   filters: {
+    // Default to active-only (matches useUsersInfiniteMobile + web behavior).
+    defaultValues: {
+      isActive: true,
+    },
     fields: [
+      {
+        // "Exibir": Ativos (isActive:true) | Demitidos (isActive:false) | Todos (omit).
+        key: 'isActive',
+        label: 'Exibir',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ativos', value: true },
+          { label: 'Desligados', value: false },
+          { label: 'Todos', value: '__all__' },
+        ],
+        placeholder: 'Ativos',
+      },
+      {
+        // Situação — maps to currentContractStatus (API param: contractStatuses).
+        key: 'contractStatuses',
+        label: 'Situação',
+        type: 'select',
+        multiple: true,
+        options: Object.values(CONTRACT_STATUS).map((status) => ({
+          label: CONTRACT_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione as situações',
+      },
+      {
+        // Modalidade — maps to currentContractType (API param: contractTypes).
+        key: 'contractTypes',
+        label: 'Modalidade do Vínculo',
+        type: 'select',
+        multiple: true,
+        options: Object.values(CONTRACT_TYPE).map((type) => ({
+          label: CONTRACT_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Selecione as modalidades',
+      },
+      {
+        // Categoria — maps to currentEmployeeType (API param: employeeTypes).
+        key: 'employeeTypes',
+        label: 'Categoria',
+        type: 'select',
+        multiple: true,
+        options: Object.values(EMPLOYEE_TYPE).map((type) => ({
+          label: EMPLOYEE_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Selecione as categorias',
+      },
       {
         key: 'sectorIds',
         label: 'Setores',

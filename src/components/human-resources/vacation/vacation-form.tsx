@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -9,13 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useNav } from "@/contexts/nav";
@@ -23,12 +21,9 @@ import { useNav } from "@/contexts/nav";
 import { vacationCreateSchema, vacationUpdateSchema } from "@/schemas/vacation";
 import type { VacationCreateFormData, VacationUpdateFormData } from "@/schemas/vacation";
 import type { Vacation } from "@/types";
-import { useVacationMutations, useVacationSetPeriods } from "@/hooks/useVacation";
+import { useVacationMutations } from "@/hooks/useVacation";
 import { getUsers } from "@/api-client";
-import {
-  entitledDaysForAbsences,
-  validateFracionamento,
-} from "@/components/human-resources/vacation/vacation-utils";
+import { entitledDaysForAbsences } from "@/components/human-resources/vacation/vacation-utils";
 
 interface VacationFormProps {
   mode: "create" | "update";
@@ -43,27 +38,30 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useVacationMutations();
-  const setPeriods = useVacationSetPeriods();
 
   const createDefaults: VacationCreateFormData = {
     userId: "",
     // contractId/acquisitive* omitted → service derives from the current
     // contract's admissionDate.
+    startDate: null,
+    days: 30,
     unjustifiedAbsencesInPeriod: 0,
     abonoPecuniarioDays: 0,
     soldThird: false,
     notes: "",
-    periods: [],
   };
 
   const updateDefaults: VacationUpdateFormData =
     mode === "update" && vacation
       ? {
+          startDate: vacation.startDate ? new Date(vacation.startDate) : null,
+          days: vacation.days ?? undefined,
           unjustifiedAbsencesInPeriod: vacation.unjustifiedAbsencesInPeriod ?? 0,
           abonoPecuniarioDays: vacation.abonoPecuniarioDays ?? 0,
           soldThird: vacation.soldThird ?? false,
           acquisitiveStart: vacation.acquisitiveStart ? new Date(vacation.acquisitiveStart) : undefined,
           acquisitiveEnd: vacation.acquisitiveEnd ? new Date(vacation.acquisitiveEnd) : undefined,
+          paymentDate: vacation.paymentDate ? new Date(vacation.paymentDate) : null,
           notes: vacation.notes || "",
         }
       : ({} as VacationUpdateFormData);
@@ -76,19 +74,7 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
     criteriaMode: "all",
   });
 
-  const isLoading = createMutation.isPending || updateMutation.isPending || setPeriods.isPending;
-
-  // ---- Fracionamento editor (≤3 períodos; one ≥14d; others ≥5d) ----
-  const { fields, append, remove } = useFieldArray({
-    control: form.control as any,
-    name: "periods" as any,
-  });
-
-  const watchedPeriods = form.watch("periods" as any) as { startDate?: Date; days?: number }[] | undefined;
-  const fracError = useMemo(
-    () => validateFracionamento((watchedPeriods ?? []).map((p) => ({ days: Number(p?.days) || 0 }))),
-    [watchedPeriods]
-  );
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   // ---- entitledDays preview (art. 130 scale by faltas) ----
   const watchedAbsences = Number(form.watch("unjustifiedAbsencesInPeriod" as any)) || 0;
@@ -137,7 +123,6 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
   }, [mode, vacation?.user]);
 
   const handleSubmit = async (data: VacationCreateFormData | VacationUpdateFormData) => {
-    if (fracError) return;
     try {
       if (mode === "create") {
         const result = await createAsync(data as VacationCreateFormData);
@@ -149,17 +134,7 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
           goBack();
         }
       } else if (vacation) {
-        const { periods, ...rest } = data as VacationUpdateFormData & {
-          periods?: { startDate: Date; days: number }[];
-        };
-        await updateAsync({ id: vacation.id, data: rest as VacationUpdateFormData });
-        // Persist fracionamento separately via the dedicated endpoint.
-        if (Array.isArray(periods) && periods.length > 0) {
-          await setPeriods.mutateAsync({
-            id: vacation.id,
-            data: { periods: periods.map((p) => ({ startDate: p.startDate, days: Number(p.days) })) },
-          });
-        }
+        await updateAsync({ id: vacation.id, data: data as VacationUpdateFormData });
         onSuccess?.();
         nav.replace(`/recursos-humanos/ferias/detalhes/${vacation.id}` as any);
       }
@@ -343,66 +318,74 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
               </FormRow>
             </FormCard>
 
-            {/* Fracionamento (Reforma 2017) */}
+            {/* Gozo (uma única tomada de férias) */}
             <FormCard
-              title="Fracionamento"
-              description="Até 3 períodos; um deve ter ≥14 dias e os demais ≥5 dias."
+              title="Gozo"
+              description="Período de gozo desta tomada. Crie outra tomada para fracionar o período aquisitivo."
               icon="IconCalendarTime"
             >
-              {fields.map((f, index) => (
-                <View key={f.id} style={[styles.periodRow, { borderColor: colors.border }]}>
-                  <View style={styles.periodFields}>
-                    <FormFieldGroup label={`Período ${index + 1} — Início`}>
-                      <Controller
-                        control={form.control}
-                        name={`periods.${index}.startDate` as any}
-                        render={({ field: { onChange, value } }) => (
-                          <DatePicker
-                            value={value || undefined}
-                            onChange={onChange}
-                            placeholder="Início"
-                            disabled={isLoading}
-                          />
-                        )}
-                      />
-                    </FormFieldGroup>
-                    <FormFieldGroup label="Dias">
-                      <Controller
-                        control={form.control}
-                        name={`periods.${index}.days` as any}
-                        render={({ field: { onChange, onBlur, value } }) => (
-                          <Input
-                            value={value != null ? String(value) : ""}
-                            onChangeText={(t) => onChange(t === "" ? 0 : Number(t.replace(/[^0-9]/g, "")))}
-                            onBlur={onBlur}
-                            keyboardType="number-pad"
-                            placeholder="0"
-                            editable={!isLoading}
-                          />
-                        )}
-                      />
-                    </FormFieldGroup>
-                  </View>
-                  <Button variant="ghost" size="sm" onPress={() => remove(index)} disabled={isLoading}>
-                    Remover
-                  </Button>
-                </View>
-              ))}
-
-              {fields.length < 3 ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onPress={() => append({ startDate: new Date(), days: 0 } as any)}
-                  disabled={isLoading}
-                  style={styles.addPeriodBtn}
+              <FormRow>
+                <FormFieldGroup
+                  label="Início do Gozo"
+                  helper="Opcional — defina ao agendar"
+                  error={(form.formState.errors as any).startDate?.message}
                 >
-                  Adicionar período
-                </Button>
-              ) : null}
+                  <Controller
+                    control={form.control}
+                    name={"startDate" as any}
+                    render={({ field: { onChange, value } }) => (
+                      <DatePicker
+                        value={value || undefined}
+                        onChange={onChange}
+                        placeholder="Selecione a data"
+                        disabled={isLoading}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
 
-              {fracError ? (
-                <ThemedText style={[styles.fracError, { color: colors.destructive }]}>{fracError}</ThemedText>
+                <FormFieldGroup
+                  label="Dias de Gozo"
+                  required
+                  helper="1 a 30 dias"
+                  error={(form.formState.errors as any).days?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name={"days" as any}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <Input
+                        value={value != null ? String(value) : ""}
+                        onChangeText={(t) => onChange(t === "" ? undefined : Math.min(30, Number(t.replace(/[^0-9]/g, ""))))}
+                        onBlur={onBlur}
+                        keyboardType="number-pad"
+                        placeholder="0"
+                        editable={!isLoading}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+              </FormRow>
+
+              {mode === "update" ? (
+                <FormFieldGroup
+                  label="Pago em"
+                  helper="Data de pagamento do recibo de férias"
+                  error={(form.formState.errors as any).paymentDate?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name={"paymentDate" as any}
+                    render={({ field: { onChange, value } }) => (
+                      <DatePicker
+                        value={value || undefined}
+                        onChange={onChange}
+                        placeholder="Selecione a data"
+                        disabled={isLoading}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
               ) : null}
             </FormCard>
 
@@ -432,7 +415,6 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
           onCancel={handleCancel}
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}
-          canSubmit={!fracError}
           submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
         />
       </KeyboardAvoidingView>
@@ -451,14 +433,4 @@ const styles = StyleSheet.create({
   },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end" },
   readonlyValue: { fontSize: 16, fontWeight: "500" },
-  periodRow: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  periodFields: { flexDirection: "row", gap: spacing.md },
-  addPeriodBtn: { alignSelf: "flex-start" },
-  fracError: { fontSize: 13, marginTop: spacing.xs },
 });

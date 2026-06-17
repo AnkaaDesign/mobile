@@ -641,7 +641,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Férias",
         icon: "beach",
         path: "/recursos-humanos/ferias/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        // Match the screen-level gates (cadastrar/editar require HR/ADMIN; detalhes
+        // also allows ACCOUNTING). Nav was ACCOUNTING-only, hiding it from HR/ADMIN.
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "rh-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
           { id: "rh-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },

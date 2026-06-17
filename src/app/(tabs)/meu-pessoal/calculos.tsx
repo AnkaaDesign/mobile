@@ -69,9 +69,10 @@ export default function TeamCalculationsScreen() {
   // Fetch users for selector - automatically filtered by led sector on backend
   const { data: usersData, isLoading: usersLoading } = useTeamStaffUsers({
     where: {
-      // Working staff = em experiência ou ativos (situação do vínculo).
+      // Working staff = vínculos ativos (inclui experiência, que agora é uma
+      // modalidade EXPERIENCE_PERIOD_n com status ACTIVE).
       currentContractStatus: {
-        in: [CONTRACT_STATUS.EXPERIENCE, CONTRACT_STATUS.ACTIVE],
+        in: [CONTRACT_STATUS.ACTIVE],
       },
     },
     orderBy: { name: "asc" },

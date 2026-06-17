@@ -46,7 +46,6 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     pageSize: 25,
     include: {
       user: { include: { position: true } },
-      periods: true,
     },
   },
 
@@ -72,10 +71,27 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         badge: (v) => ({ variant: STATUS_VARIANT[v.status] ?? 'default' }),
       },
       {
-        key: 'entitledDays',
-        label: 'DIAS',
+        key: 'days',
+        label: 'GOZO (DIAS)',
         sortable: true,
-        width: 0.8,
+        width: 0.9,
+        align: 'center',
+        render: (v) => `${v.days ?? 0}d`,
+      },
+      {
+        key: 'startDate',
+        label: 'INÍCIO DO GOZO',
+        sortable: true,
+        width: 1.5,
+        align: 'left',
+        render: (v) => v.startDate ?? '—',
+        format: 'date',
+      },
+      {
+        key: 'entitledDays',
+        label: 'DIREITO (DIAS)',
+        sortable: true,
+        width: 1.0,
         align: 'center',
         render: (v) => `${v.entitledDays ?? 0}d`,
       },
@@ -134,7 +150,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['user.name', 'status', 'concessiveEnd'],
+    defaultVisible: ['user.name', 'status', 'days', 'startDate'],
     rowHeight: 72,
     actions: [
       {
@@ -245,7 +261,9 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     columns: [
       { key: 'user', label: 'Colaborador', path: 'user.name' },
       { key: 'status', label: 'Status', path: 'status', format: (value: any): string => value ? VACATION_STATUS_LABELS[value as VACATION_STATUS] : '—' },
-      { key: 'entitledDays', label: 'Dias', path: 'entitledDays' },
+      { key: 'days', label: 'Dias de Gozo', path: 'days' },
+      { key: 'startDate', label: 'Início do Gozo', path: 'startDate', format: 'date' },
+      { key: 'entitledDays', label: 'Dias de Direito', path: 'entitledDays' },
       { key: 'acquisitiveStart', label: 'Início Aquisitivo', path: 'acquisitiveStart', format: 'date' },
       { key: 'acquisitiveEnd', label: 'Fim Aquisitivo', path: 'acquisitiveEnd', format: 'date' },
       { key: 'concessiveEnd', label: 'Limite Concessivo', path: 'concessiveEnd', format: 'date' },

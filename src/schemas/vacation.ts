@@ -22,7 +22,6 @@ export const vacationIncludeSchema = z
   .object({
     user: relationIncludeSchema.optional(),
     contract: relationIncludeSchema.optional(),
-    periods: relationIncludeSchema.optional(),
   })
   .partial();
 
@@ -40,6 +39,8 @@ const vacationOrderByFields = z.object({
   acquisitiveEnd: orderByDirection.optional(),
   concessiveEnd: orderByDirection.optional(),
   entitledDays: orderByDirection.optional(),
+  startDate: orderByDirection.optional(),
+  days: orderByDirection.optional(),
   paymentDueDate: orderByDirection.optional(),
   paymentDate: orderByDirection.optional(),
   userId: orderByDirection.optional(),
@@ -103,10 +104,12 @@ export const vacationWhereSchema: z.ZodSchema = z.lazy(() =>
       status: stringWhere.optional(),
       statusOrder: numberWhere.optional(),
       entitledDays: numberWhere.optional(),
+      days: numberWhere.optional(),
       unjustifiedAbsencesInPeriod: numberWhere.optional(),
 
       acquisitiveStart: dateWhere.optional(),
       acquisitiveEnd: dateWhere.optional(),
+      startDate: z.union([dateWhere, z.null()]).optional(),
       concessiveEnd: z.union([dateWhere, z.null()]).optional(),
       paymentDueDate: z.union([dateWhere, z.null()]).optional(),
       paymentDate: z.union([dateWhere, z.null()]).optional(),
@@ -196,21 +199,14 @@ export const vacationBatchQuerySchema = z.object({
 });
 
 // =====================
-// Period child schema (fracionamento)
+// CRUD schemas (single-period taking: startDate? + days)
 // =====================
 
-const vacationPeriodInputSchema = z.object({
-  startDate: z.coerce.date({ invalid_type_error: "data de início inválida" }),
-  days: z.coerce
-    .number({ invalid_type_error: "dias inválidos" })
-    .int({ message: "Dias deve ser inteiro" })
-    .min(1, { message: "O período deve ter ao menos 1 dia" })
-    .max(30, { message: "Um período não pode exceder 30 dias" }),
-});
-
-// =====================
-// CRUD schemas
-// =====================
+const gozoDaysSchema = z.coerce
+  .number({ invalid_type_error: "dias inválidos" })
+  .int({ message: "Dias deve ser inteiro" })
+  .min(1, { message: "O gozo deve ter ao menos 1 dia" })
+  .max(30, { message: "O gozo não pode exceder 30 dias" });
 
 export const vacationCreateSchema = z.object({
   userId: z.string().uuid({ message: "Colaborador inválido" }),
@@ -219,6 +215,10 @@ export const vacationCreateSchema = z.object({
   contractId: z.string().uuid({ message: "Vínculo inválido" }).nullable().optional(),
   acquisitiveStart: z.coerce.date().optional(),
   acquisitiveEnd: z.coerce.date().optional(),
+  // Gozo start of this taking; null/omitted while not yet scheduled.
+  startDate: z.coerce.date({ invalid_type_error: "data de início inválida" }).nullable().optional(),
+  // Gozo days of THIS taking.
+  days: gozoDaysSchema,
   unjustifiedAbsencesInPeriod: z.coerce
     .number({ invalid_type_error: "faltas injustificadas inválidas" })
     .int()
@@ -232,10 +232,11 @@ export const vacationCreateSchema = z.object({
     .optional(),
   soldThird: z.boolean().optional(),
   notes: z.string().max(2000).nullable().optional(),
-  periods: z.array(vacationPeriodInputSchema).max(3).optional(),
 });
 
 export const vacationUpdateSchema = z.object({
+  startDate: z.coerce.date({ invalid_type_error: "data de início inválida" }).nullable().optional(),
+  days: gozoDaysSchema.optional(),
   unjustifiedAbsencesInPeriod: z.coerce.number().int().min(0).optional(),
   abonoPecuniarioDays: z.coerce
     .number()
@@ -263,15 +264,18 @@ export const vacationBatchDeleteSchema = z.object({
 });
 
 // =====================
-// Status machine + periods (fracionamento)
+// Status machine + period balance
 // =====================
 
 export const vacationAdvanceSchema = z.object({
   status: z.enum(Object.values(VACATION_STATUS) as [string, ...string[]]).optional(),
 });
 
-export const vacationSetPeriodsSchema = z.object({
-  periods: z.array(vacationPeriodInputSchema).min(1).max(3),
+// GET /vacations/period-balance query params.
+export const vacationPeriodBalanceQuerySchema = z.object({
+  userId: z.string().uuid({ message: "Colaborador inválido" }),
+  acquisitiveStart: z.coerce.date(),
+  acquisitiveEnd: z.coerce.date(),
 });
 
 // =====================
@@ -287,6 +291,5 @@ export type VacationBatchCreateFormData = z.infer<typeof vacationBatchCreateSche
 export type VacationBatchUpdateFormData = z.infer<typeof vacationBatchUpdateSchema>;
 export type VacationBatchDeleteFormData = z.infer<typeof vacationBatchDeleteSchema>;
 export type VacationAdvanceFormData = z.infer<typeof vacationAdvanceSchema>;
-export type VacationSetPeriodsFormData = z.infer<typeof vacationSetPeriodsSchema>;
-export type VacationPeriodInput = z.infer<typeof vacationPeriodInputSchema>;
+export type VacationPeriodBalanceQuery = z.infer<typeof vacationPeriodBalanceQuerySchema>;
 export type VacationInclude = z.infer<typeof vacationIncludeSchema>;

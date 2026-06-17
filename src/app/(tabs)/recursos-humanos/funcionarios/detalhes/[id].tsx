@@ -43,10 +43,6 @@ const getStatusBadgeVariant = (status: CONTRACT_STATUS | string | null | undefin
   switch (status) {
     case CONTRACT_STATUS.ACTIVE:
       return "default";
-    case CONTRACT_STATUS.EXPERIENCE:
-    case CONTRACT_STATUS.NOTICE_PERIOD:
-    case CONTRACT_STATUS.ON_LEAVE:
-      return "secondary";
     case CONTRACT_STATUS.TERMINATED:
       return "destructive";
     default:
@@ -182,9 +178,12 @@ export default function EmployeeDetailScreen() {
     ? differenceInDays(new Date(), new Date(employee.createdAt))
     : 0;
 
-  // Experiência is now a STATUS; phase + remaining days are derived centrally.
+  // Experiência is now derived from the contract MODALITY (EXPERIENCE_PERIOD_n);
+  // phase + remaining days are derived centrally.
   const contract = employee.currentContract;
-  const isInExperience = employee.currentContractStatus === CONTRACT_STATUS.EXPERIENCE;
+  const isInExperience =
+    employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_1 ||
+    employee.currentContractType === CONTRACT_TYPE.EXPERIENCE_PERIOD_2;
   const experiencePhase = getExperiencePhase(employee);
   const experienceDaysRemaining = getDaysRemainingInExperiencePeriod(employee);
 

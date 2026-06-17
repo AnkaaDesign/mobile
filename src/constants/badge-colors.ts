@@ -16,6 +16,7 @@
 import {
   ORDER_STATUS,
   ORDER_PAYMENT_STATUS,
+  ORDER_INSTALLMENT_STATUS,
   TASK_STATUS,
   MAINTENANCE_STATUS,
   CONTRACT_TYPE,
@@ -386,10 +387,18 @@ export const ENTITY_BADGE_CONFIG = {
 
   // Order Payment Status (Contas a Pagar)
   ORDER_PAYMENT: {
-    [ORDER_PAYMENT_STATUS.NOT_REQUESTED]: "gray" as BadgeVariant,      // Gray - not requested yet
-    [ORDER_PAYMENT_STATUS.REQUESTED]: "pending" as BadgeVariant,       // Amber - payment requested
-    [ORDER_PAYMENT_STATUS.AWAITING_PAYMENT]: "orange" as BadgeVariant, // Orange - awaiting payment
+    [ORDER_PAYMENT_STATUS.AWAITING_PAYMENT]: "pending" as BadgeVariant, // Amber - awaiting payment
+    [ORDER_PAYMENT_STATUS.PARTIALLY_PAID]: "orange" as BadgeVariant,    // Orange - partially paid
     [ORDER_PAYMENT_STATUS.PAID]: "green" as BadgeVariant,              // Green - paid
+  },
+
+  // Order Installment Status (parcelas)
+  ORDER_INSTALLMENT: {
+    [ORDER_INSTALLMENT_STATUS.PENDING]: "secondary" as BadgeVariant,    // Neutral - pending
+    [ORDER_INSTALLMENT_STATUS.PARTIALLY_PAID]: "orange" as BadgeVariant, // Orange - partially paid
+    [ORDER_INSTALLMENT_STATUS.PAID]: "green" as BadgeVariant,           // Green - paid
+    [ORDER_INSTALLMENT_STATUS.OVERDUE]: "destructive" as BadgeVariant,  // Red - overdue
+    [ORDER_INSTALLMENT_STATUS.CANCELLED]: "gray" as BadgeVariant,       // Muted - cancelled
   },
 
   // Task Status
@@ -423,6 +432,8 @@ export const ENTITY_BADGE_CONFIG = {
 
   // User Contract Type (the legal MODALITY of the current vínculo)
   USER: {
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_1]: "blue" as BadgeVariant,    // Blue - em experiência 1
+    [CONTRACT_TYPE.EXPERIENCE_PERIOD_2]: "orange" as BadgeVariant,  // Orange - em experiência 2
     [CONTRACT_TYPE.INDETERMINATE]: "green" as BadgeVariant,          // Entity-specific: use green (efetivo)
     [CONTRACT_TYPE.FIXED_TERM]: "created" as BadgeVariant,           // Blue - fixed term
     [CONTRACT_TYPE.INTERMITTENT]: "purple" as BadgeVariant,          // Purple - intermittent contract
@@ -432,10 +443,7 @@ export const ENTITY_BADGE_CONFIG = {
 
   // Employment contract lifecycle status
   CONTRACT_STATUS: {
-    [CONTRACT_STATUS.EXPERIENCE]: "pending" as BadgeVariant,         // Amber - em experiência
     [CONTRACT_STATUS.ACTIVE]: "green" as BadgeVariant,
-    [CONTRACT_STATUS.NOTICE_PERIOD]: "orange" as BadgeVariant,       // Aviso prévio
-    [CONTRACT_STATUS.ON_LEAVE]: "purple" as BadgeVariant,            // Afastado
     [CONTRACT_STATUS.TERMINATED]: "red" as BadgeVariant,
   },
 
@@ -864,9 +872,11 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   RATE_LIMITED: "onHold",
   BOUNCED: "bounced",
   // Contract statuses (EmploymentContract redesign — replaced legacy DISMISSED/EFFECTED)
-  EXPERIENCE: "pending",
+  // Experience is now a CONTRACT_TYPE (EXPERIENCE_PERIOD_1/2), not a status.
+  EXPERIENCE_PERIOD_1: "blue",
+  EXPERIENCE_PERIOD_2: "orange",
+  // NOTICE_PERIOD kept: it is still a TERMINATION_STATUS value sharing this flat lookup.
   NOTICE_PERIOD: "orange",
-  ON_LEAVE: "purple",
   TERMINATED: "red",
   REPROVED: "reproved",
 

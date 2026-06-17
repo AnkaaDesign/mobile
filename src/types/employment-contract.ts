@@ -14,6 +14,25 @@ import type { ORDER_BY_DIRECTION, CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE,
 import type { User, UserIncludes } from "./user";
 
 // =====================
+// Contract Phase History
+// =====================
+
+/**
+ * Audit row recording each MODALITY (CONTRACT_TYPE) a contract held over time.
+ * The single continuous vínculo advances EXPERIENCE_PERIOD_1 → EXPERIENCE_PERIOD_2
+ * → INDETERMINATE on dates. `endDate === null` means the phase is current/open.
+ */
+export interface ContractPhaseHistory extends BaseEntity {
+  contractId: string;
+  userId: string;
+  contractType: CONTRACT_TYPE;
+  startDate: Date;
+  endDate: Date | null;
+  triggeredBy?: string | null;
+  reason?: string | null;
+}
+
+// =====================
 // Main Entity Interface
 // =====================
 
@@ -38,8 +57,6 @@ export interface EmploymentContract extends BaseEntity {
   exp2StartAt: Date | null;
   exp2EndAt: Date | null;
   effectedAt: Date | null;
-  /** Fase de experiência (1 ou 2). Normalmente DERIVADA das datas de experiência. NULL = derivar. */
-  experiencePhase: number | null;
   /** Art. 481 CLT — cláusula assecuratória do direito recíproco de rescisão. */
   hasArt481Clause: boolean;
   terminationDate: Date | null;
@@ -60,6 +77,7 @@ export interface EmploymentContract extends BaseEntity {
   admission?: any;
   terminations?: any[];
   payrolls?: any[];
+  phaseHistory?: ContractPhaseHistory[];
 }
 
 // =====================
@@ -73,6 +91,7 @@ export interface EmploymentContractIncludes {
   admission?: boolean | { include?: any };
   terminations?: boolean | { include?: any };
   payrolls?: boolean | { include?: any };
+  phaseHistory?: boolean | { include?: any; orderBy?: any };
 }
 
 // =====================

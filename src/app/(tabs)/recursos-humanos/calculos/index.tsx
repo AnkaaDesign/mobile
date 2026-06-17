@@ -70,9 +70,10 @@ export default function CalculationsListScreen() {
   // Fetch users for selector
   const { data: usersData, isLoading: usersLoading } = useUsers({
     where: {
-      // Working staff = em experiência ou ativos (situação do vínculo).
+      // Working staff = vínculos ativos (inclui experiência, que agora é uma
+      // modalidade EXPERIENCE_PERIOD_n com status ACTIVE).
       currentContractStatus: {
-        in: [CONTRACT_STATUS.EXPERIENCE, CONTRACT_STATUS.ACTIVE],
+        in: [CONTRACT_STATUS.ACTIVE],
       },
       secullumEmployeeId: { not: null },
     },
