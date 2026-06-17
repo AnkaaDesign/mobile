@@ -15,6 +15,7 @@ import React, { useEffect, useCallback, useRef } from "react";
 import { MessageModal } from "./MessageModal";
 import { useUnviewedMessages } from "@/hooks/useUnviewedMessages";
 import { useAuth } from "@/contexts/auth-context";
+import { useOptionalTutorial } from "@/components/tutorial";
 import { messageService } from "@/api-client/message";
 
 interface MessageModalProviderProps {
@@ -53,6 +54,14 @@ export function MessageModalProvider({
 
   // Use provided userId or fall back to auth context
   const userId = providedUserId || user?.id;
+
+  // Enforce login -> tutorial -> messages ordering. While the tutorial is queued
+  // (isPendingStart, set synchronously before its async completion check) or
+  // running (isActive), suppress the messages auto-show so a message popup never
+  // races/covers the tutorial. When the tutorial ends (or there's none to show,
+  // e.g. already completed), this flips false and queued messages display.
+  const tutorial = useOptionalTutorial();
+  const tutorialBlocking = !!(tutorial?.isPendingStart || tutorial?.isActive);
 
   // Track if we've already logged the endpoint error (to avoid spam)
   const hasLoggedEndpointError = useRef(false);
@@ -101,7 +110,7 @@ export function MessageModalProvider({
     error,
   } = useUnviewedMessages({
     userId,
-    autoShow,
+    autoShow: autoShow && !tutorialBlocking,
     fetchMessages,
   });
 

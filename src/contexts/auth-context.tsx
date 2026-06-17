@@ -24,10 +24,16 @@ function classifyAuthError(error: any): AuthErrorType {
   if (!error) return AuthErrorType.UNKNOWN;
 
   const message = error.message?.toLowerCase() || '';
-  const status = error.status || error.statusCode || error.response?.status;
+  // ApiError (from axiosClient) exposes the HTTP status as `_statusCode`; older
+  // shapes use status/statusCode/response.status. Read all so a real 401 is
+  // actually classified as TOKEN_INVALID instead of falling through to UNKNOWN.
+  const status = error._statusCode ?? error.status ?? error.statusCode ?? error.response?.status;
+  const category = error.category;
 
   // Network connectivity issues
   if (
+    category === 'network' ||
+    category === 'timeout' ||
     message.includes('network') ||
     message.includes('timeout') ||
     message.includes('econnaborted') ||
@@ -342,6 +348,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (cachedUser) {
         console.log('[Auth] Using cached user data for fast startup');
         setUser(cachedUser);
+        // OPTIMISTIC RENDER: a valid token + cached user is enough to show the
+        // app NOW. Releasing the auth gate here (instead of only in `finally`,
+        // after the /me round-trip) stops the "Verificando autenticação" splash
+        // from flashing on every cold start / OTA reload. The server validation
+        // below still runs in the background and only clears on a genuine 401.
+        setLoading(false);
+        setIsAuthReady(true);
       }
 
       // Check network connectivity before trying to validate with server

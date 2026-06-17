@@ -224,31 +224,16 @@ function OfflineBanner() {
  * This component is inside NetworkProvider, so it can use useNetwork()
  */
 function AppContent() {
-  const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const { currentBaseUrl } = useNetwork();
 
   // Check the self-hosted OTA server for new JS bundles (no-op in dev).
   useOtaUpdates();
 
-  // Mark hydration complete quickly - no artificial delay needed
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsHydrated(true);
-    }, 50);
-    return () => clearTimeout(timer);
-  }, []);
+  // No artificial hydration gate here: the AuthProvider gate already covers the
+  // genuine auth-loading window (and now releases optimistically from cache), so
+  // an extra 50 ms "Carregando dados..." splash only adds a visible flash.
 
-  if (!isHydrated) {
-    // Show loading screen during hydration
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" className="text-primary" />
-        <Text>Carregando dados...</Text>
-      </View>
-    );
-  }
-
-  // Show app content after hydration
+  // Show app content
   // FileViewerProvider uses currentBaseUrl which updates dynamically based on connectivity
   return (
     <FileViewerProvider baseUrl={currentBaseUrl}>

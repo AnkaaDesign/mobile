@@ -8,7 +8,7 @@ import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants/routes";
 import { authRoute } from "@/components/auth/auth-routes";
-import { getStoredToken } from "@/utils/storage";
+import { authStorage, getStoredToken } from "@/utils/auth-storage";
 
 /**
  * Root index — boot redirect. Decides between home (when a token is present
@@ -30,6 +30,12 @@ export default function Index() {
   // Check for stored token on mount - this is the source of truth for authentication
   useEffect(() => {
     const checkToken = async () => {
+      // Run legacy-key migration first so the token we read here is the SAME
+      // key login writes (@ankaa:auth:token). Previously this gate imported
+      // getStoredToken from utils/storage (key @ankaa_token), which login never
+      // writes — so hasToken was always false and a valid session fell back to
+      // the login screen after every OTA reload / cold start.
+      await authStorage.initialize();
       const token = await getStoredToken();
       setHasToken(!!token);
       setTokenChecked(true);

@@ -7,6 +7,7 @@ import { DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform, AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
+import { getStoredToken } from "@/utils/auth-storage";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useNav } from "@/contexts/nav";
@@ -906,13 +907,29 @@ function InnerLayout() {
     // Wait for auth to be ready
     if (!isAuthReady || isLoading) return;
 
-    // If user is null after auth is ready, redirect to login
-    if (!user) {
-      hasRedirectedToLogin.current = true;
-      console.log("[PrivilegeOptimizedFullLayout] User logged out, redirecting to login");
-      // Use replace to prevent back navigation to protected screens
-      nav.replace(authRoute(routes.authentication.login));
-    }
+    // If user is set, nothing to do.
+    if (user) return;
+
+    // user is null after auth is ready. Before redirecting, confirm there is no
+    // stored token: a transient null user with a valid token (background
+    // re-validation / recovery) must NOT be bounced to login — only a genuinely
+    // tokenless state is a real logout.
+    let cancelled = false;
+    (async () => {
+      const token = await getStoredToken();
+      if (cancelled || hasRedirectedToLogin.current) return;
+      if (!token) {
+        hasRedirectedToLogin.current = true;
+        console.log("[PrivilegeOptimizedFullLayout] No user and no token, redirecting to login");
+        // Use replace to prevent back navigation to protected screens
+        nav.replace(authRoute(routes.authentication.login));
+      } else {
+        console.log("[PrivilegeOptimizedFullLayout] No user but token present — waiting for session restore");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user, isAuthReady, isLoading, nav]);
 
   // Reset redirect flag when user logs in (so we can redirect again on next logout)
