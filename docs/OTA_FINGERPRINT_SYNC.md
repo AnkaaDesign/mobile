@@ -41,15 +41,17 @@ re-syncs. Guards:
 ## The discipline (this is the whole rule)
 
 > Build iOS, build Android, and publish OTA from the **same git commit**, each on
-> a **frozen install** (`npm ci`). Per-platform fingerprints then match
-> automatically across machines.
+> a **frozen install with the pinned pnpm** (`corepack pnpm install
+> --frozen-lockfile`; pnpm is pinned to `pnpm@10.15.1` via `package.json` →
+> `packageManager`). Per-platform fingerprints then match automatically across
+> machines.
 
 ### Release a native build + OTA
 
 1. Commit everything. Confirm the tree is clean (`git status`).
-2. **iOS (this Mac):** `npm ci && npm run ios:release`
+2. **iOS (this Mac):** `corepack pnpm install --frozen-lockfile && npm run ios:release`
    (syncs the fingerprint, builds Release, installs to the connected iPhone).
-3. **Android (server):** `npm ci && npm run android:release`
+3. **Android (server):** `corepack pnpm install --frozen-lockfile && npm run android:release`
    (whatever the server's build pipeline is, it must run `ota:sync-version`
    first — `android:release` does this for you).
 4. **Publish OTA (from the same commit/deps):** `npm run ota:publish`
@@ -64,9 +66,14 @@ re-syncs. Guards:
 
 ## Cross-machine reproducibility
 
-The fingerprint depends on installed dependencies, so the iOS Mac and the Android
-server **must install from the committed lockfile** (`npm ci`, not `npm install`)
-and build from the same commit. Otherwise the same source can fingerprint
+The fingerprint depends on the installed dependency tree, which depends on BOTH
+the lockfile AND the package-manager version. The iOS Mac and the Android server
+**must install from the committed lockfile with the pinned pnpm**
+(`corepack pnpm install --frozen-lockfile`, `pnpm@10.15.1` via `packageManager`)
+and build from the same commit. A different pnpm version (or npm) hoists deps
+differently → a different fingerprint (this bit us once: npm vs pnpm and pnpm
+10.15.1 vs another 10.x produced different hashes). Otherwise the same source can
+fingerprint
 differently per machine.
 
 ## Quick reference

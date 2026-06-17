@@ -24,7 +24,8 @@ fingerprints won't match and OTA silently won't apply.
   - iOS:     `77cbbd1a8705277a6f859279e4958bf6a4c6bd05`  (already built+installed on the Mac)
   - Android: `367b668accf94352a99076777441c0b5da49afc2`  (you build this)
 - These hold only if `node_modules` is installed from the committed lockfile
-  (`npm ci`) and you're on the same commit as the Mac. The committed
+  (`corepack pnpm install --frozen-lockfile`, pinned pnpm@10.15.1) and you're on
+  the same commit as the Mac. The committed
   `ios/Podfile.lock` is what makes the iOS fingerprint reproducible here without
   running `pod install` (you only build Android).
 
@@ -37,9 +38,14 @@ fingerprints won't match and OTA silently won't apply.
    git checkout main
    git pull --ff-only
    ```
-2. **Frozen install** (reproducible fingerprint — do NOT use `npm install`):
+2. **Frozen install with the PINNED pnpm** (reproducible fingerprint). pnpm is
+   pinned to `pnpm@10.15.1` via `package.json` → `packageManager`; corepack uses
+   it automatically. Using a DIFFERENT pnpm (or npm) version computes a DIFFERENT
+   fingerprint — that exact mismatch is what this pin fixes. Do NOT run plain
+   `npm install`/`pnpm install` without the frozen flag.
    ```sh
-   npm ci
+   corepack enable
+   corepack pnpm install --frozen-lockfile
    ```
 3. **Verify you're consistent with the iOS build** — this MUST pass and print the
    fingerprints above. If it reports drift or different hashes, STOP: you're on
@@ -77,7 +83,9 @@ fingerprints won't match and OTA silently won't apply.
 ## If `ota:verify` shows different hashes than above
 
 That means the source/deps here don't match the Mac's iOS build. Do **not**
-force-publish. Most likely causes: wrong commit, `npm install` instead of
-`npm ci`, or uncommitted local changes (`git status` must be clean). Fix the
+force-publish. Most likely causes: wrong commit, the wrong pnpm version (must be
+the pinned `pnpm@10.15.1` via corepack — a different version changes the
+fingerprint), a non-frozen install, or uncommitted local changes (`git status`
+must be clean). Fix the
 cause, not the symptom — overriding with `OTA_SKIP_VERIFY=1` will serve a bundle
 no binary can use.
