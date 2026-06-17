@@ -16,7 +16,11 @@
     "ios:build": "eas build --platform ios",
     "preview": "eas build --platform android --profile preview",
     "ota:sync-version": "node scripts/sync-runtime-version.mjs",
+    "ota:verify": "node scripts/verify-runtime-version.mjs",
     "ota:publish": "node scripts/publish-ota.mjs",
+    "ios:release": "node scripts/ios-release.mjs",
+    "android:release": "npm run ota:sync-version && expo run:android --variant release",
+    "android:apk": "npm run ota:sync-version && cd android && ./gradlew assembleRelease",
     "test": "jest",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit"

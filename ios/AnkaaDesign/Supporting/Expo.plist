@@ -9,7 +9,7 @@
     <key>EXUpdatesLaunchWaitMs</key>
     <integer>0</integer>
     <key>EXUpdatesRuntimeVersion</key>
-    <string>7e48aecbd96deae925e0ef87cbdd07379c2b6c92</string>
+    <string>a9eb301de8753db841eb5804301f2950d78dc2c1</string>
     <key>EXUpdatesURL</key>
     <string>https://api.ankaadesign.com.br/updates/manifest</string>
   </dict>

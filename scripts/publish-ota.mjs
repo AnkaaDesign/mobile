@@ -27,6 +27,15 @@ import { cpSync, existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from
 import { join, resolve } from "node:path";
 import { computeRuntimeVersions, mobileRoot } from "./ota-version.mjs";
 
+// Guard: refuse to publish unless the native files already embed the current
+// fingerprint. Otherwise we'd serve an update under a runtimeVersion that no
+// freshly-built binary embeds. Skip with OTA_SKIP_VERIFY=1 only if you know
+// the binaries were built from this exact tree by another means.
+if (process.env.OTA_SKIP_VERIFY !== "1") {
+  console.log("[ota] verifying native files are in sync before publishing...");
+  execSync("node scripts/verify-runtime-version.mjs", { cwd: mobileRoot, stdio: "inherit" });
+}
+
 console.log("[ota] computing runtimeVersion fingerprints...");
 const { ios, android } = computeRuntimeVersions();
 console.log(`[ota] iOS runtimeVersion:     ${ios}`);
