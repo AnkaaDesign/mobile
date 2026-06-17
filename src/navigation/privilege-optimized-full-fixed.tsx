@@ -780,7 +780,7 @@ const HeaderRightButtons = React.memo(function HeaderRightButtons({
 
 // Inner layout component that uses drawer mode context
 function InnerLayout() {
-  const { user, isAuthReady, isLoading, silentRefreshUserData } = useAuth();
+  const { user, isAuthReady, isLoading, isLoggingOut, silentRefreshUserData } = useAuth();
   const { theme, isDark } = useTheme();
   const nav = useNav();
   const { canGoBack, goBack } = nav;
@@ -910,8 +910,20 @@ function InnerLayout() {
     // If user is set, nothing to do.
     if (user) return;
 
-    // user is null after auth is ready. Before redirecting, confirm there is no
-    // stored token: a transient null user with a valid token (background
+    // An explicit/forced logout is definitive — redirect immediately WITHOUT
+    // reading the stored token. The async token read races the logout's own
+    // async storage-clear: it usually still sees the token, takes the
+    // "waiting for session restore" branch, and then never re-runs (token
+    // clearing is not a React dep), leaving the gate stuck on "Carregando...".
+    if (isLoggingOut) {
+      hasRedirectedToLogin.current = true;
+      console.log("[PrivilegeOptimizedFullLayout] Logout in progress, redirecting to login");
+      nav.replace(authRoute(routes.authentication.login));
+      return;
+    }
+
+    // user is null without an explicit logout. Before redirecting, confirm there
+    // is no stored token: a transient null user with a valid token (background
     // re-validation / recovery) must NOT be bounced to login — only a genuinely
     // tokenless state is a real logout.
     let cancelled = false;
@@ -930,7 +942,7 @@ function InnerLayout() {
     return () => {
       cancelled = true;
     };
-  }, [user, isAuthReady, isLoading, nav]);
+  }, [user, isAuthReady, isLoading, isLoggingOut, nav]);
 
   // Reset redirect flag when user logs in (so we can redirect again on next logout)
   useEffect(() => {

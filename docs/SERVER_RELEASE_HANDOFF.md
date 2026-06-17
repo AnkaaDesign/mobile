@@ -15,8 +15,8 @@ fingerprints won't match and OTA silently won't apply.
 
 ## Pinned state for THIS release
 
-- **Branch:** `pre-accounting-implementation`
-- **Release commit:** the latest commit on this branch (it bakes the
+- **Branch:** `main`
+- **Release commit:** the latest commit on `main` (it bakes the
   `pod install`-regenerated `ios/Podfile.lock` that the iOS build used).
   `ota:verify` is the real gate — match the fingerprints below, not a SHA.
 - **Expected fingerprints** (the consistency anchor — `npm run ota:verify` must
@@ -34,7 +34,7 @@ fingerprints won't match and OTA silently won't apply.
    ```sh
    cd mobile
    git fetch origin
-   git checkout pre-accounting-implementation
+   git checkout main
    git pull --ff-only
    ```
 2. **Frozen install** (reproducible fingerprint — do NOT use `npm install`):

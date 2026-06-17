@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { usePositions, useUsers, useScreenReady } from "@/hooks";
+import { useUsers, useScreenReady, useDebouncedValue } from "@/hooks";
 import { bonusKeys } from "@/hooks/queryKeys";
 import { formatCurrency, getCurrentPayrollPeriod } from "@/utils";
 import { CONTRACT_STATUS, EMPLOYEE_TYPE } from "@/constants";
@@ -130,10 +130,20 @@ export default function BonusSimulationScreen() {
     return historical;
   }, [liveBonusData, historicalBonusesQuery.data, currentUser, periodYear, periodMonth]);
 
-  // Fetch all positions to determine hierarchy
-  const { data: positionsData, isLoading: positionsLoading } = usePositions({
-    orderBy: { hierarchy: "asc" },
-    limit: 100,
+  // Personal position ladder (current + next 2 by hierarchy), resolved by the
+  // API. We deliberately do NOT use the HR-only GET /position list here: that
+  // endpoint is restricted to HR/ACCOUNTING/ADMIN and 403s PRODUCTION (and every
+  // other basic sector), which is exactly what surfaced the global "Acesso
+  // Negado" toast on this screen. This endpoint is open to all roles and returns
+  // no salary data.
+  const { data: myPositions, isLoading: positionsLoading } = useQuery({
+    queryKey: [...bonusKeys.all, 'my-positions', currentUser?.id],
+    queryFn: async () => {
+      const response = await bonusService.getMyPositions();
+      return ((response.data as any)?.data ?? []) as Array<{ id: string; name: string; hierarchy: number | null }>;
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 60 * 10,
   });
 
   // Fetch eligible users for the B1 denominator. We filter the two relation
@@ -197,21 +207,13 @@ export default function BonusSimulationScreen() {
     }
   }, [currentUser?.performanceLevel, selectedPerformanceLevel]);
 
-  // Get available positions (current + next 2 based on hierarchy = 3 total)
+  // The API already returns the current + next 2 positions (sorted by
+  // hierarchy). Fall back to the user's own position while the query loads so
+  // the selector always renders at least their current cargo.
   const availablePositions = useMemo(() => {
-    if (!positionsData?.data || !currentUser?.position) return [];
-
-    const currentPosition = currentUser.position;
-    const currentHierarchy = currentPosition.hierarchy ?? 0;
-
-    // Sort positions by hierarchy and get current + next 2 (3 total)
-    const sortedPositions = positionsData.data
-      .filter((pos) => (pos.hierarchy ?? 0) >= currentHierarchy)
-      .sort((a, b) => (a.hierarchy ?? 0) - (b.hierarchy ?? 0));
-
-    // Return only current + next 2 positions (3 total)
-    return sortedPositions.slice(0, 3);
-  }, [positionsData, currentUser]);
+    if (myPositions && myPositions.length > 0) return myPositions;
+    return currentUser?.position ? [currentUser.position] : [];
+  }, [myPositions, currentUser?.position]);
 
   // Set initial position
   useEffect(() => {
@@ -254,15 +256,22 @@ export default function BonusSimulationScreen() {
     };
   }, [selectedPosition?.id, selectedPosition?.name, selectedPerformanceLevel, simulatedAverage, currentUser?.id, periodYear, periodMonth]);
 
-  const { data: simulationResult } = useQuery({
-    queryKey: [...bonusKeys.all, 'my-bonus-simulate', simulateMyInput],
+  // Debounce the simulation payload so rapid typing / level taps don't fire a
+  // request per keystroke. Combined with placeholderData below, the result
+  // recalculates smoothly without flickering to R$ 0,00 between requests.
+  const debouncedSimulateInput = useDebouncedValue(simulateMyInput, 350);
+
+  const { data: simulationResult, isFetching: isSimulating } = useQuery({
+    queryKey: [...bonusKeys.all, 'my-bonus-simulate', debouncedSimulateInput],
     queryFn: async () => {
-      const response = await bonusService.simulateMyBonus(simulateMyInput!);
+      const response = await bonusService.simulateMyBonus(debouncedSimulateInput!);
       const data = (response.data as any)?.data ?? response.data;
       return data as SimulateResponse;
     },
-    enabled: simulateMyInput !== null,
+    enabled: debouncedSimulateInput !== null,
     staleTime: 1000 * 5,
+    // Keep the last computed bonus on screen while the next one is in flight.
+    placeholderData: (previousData) => previousData,
   });
 
   const calculatedBonus = simulationResult?.users?.[0]?.bonus ?? 0;
@@ -563,7 +572,16 @@ export default function BonusSimulationScreen() {
 
         {/* Simulation Result Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <ThemedText style={styles.sectionTitle}>Resultado da Simulação</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <ThemedText style={styles.sectionTitle}>Resultado da Simulação</ThemedText>
+            {isSimulating && (
+              <View style={[styles.stalePill, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                <ThemedText style={[styles.stalePillText, { color: colors.mutedForeground }]}>
+                  calculando…
+                </ThemedText>
+              </View>
+            )}
+          </View>
           <ThemedText style={[styles.resultAmount, { color: colors.primary }]}>
             {formatCurrency(calculatedBonus)}
           </ThemedText>

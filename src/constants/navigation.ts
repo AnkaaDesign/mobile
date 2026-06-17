@@ -1212,6 +1212,84 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
     ],
   },
+
+  // ============================================================
+  // AUXILIAR DE SERVIÇOS GERAIS (MAINTENANCE) PERSONAL ITEMS
+  // Direct (flat) access at root — like the DESIGNER pattern, but the full
+  // "Pessoal" set. Every entry is gated SOLELY to [SECTOR_PRIVILEGES.MAINTENANCE]
+  // so no other sector inherits these root items.
+  // Notes:
+  //  - "Minhas Mensagens" is intentionally NOT repeated here: MAINTENANCE already
+  //    gets it at root via `minhas-mensagens-direct` (avoids a duplicate entry).
+  //  - The Manutenção menu (gated to [MAINTENANCE]) is kept untouched — additive.
+  //  - All /pessoal/* routes are globally reachable in the route guard
+  //    (privilege-optimized-full-fixed.tsx), so none of these are dead links.
+  // ============================================================
+  {
+    id: "meus-feriados-maintenance",
+    title: "Feriados",
+    icon: "holiday",
+    path: "/pessoal/meus-feriados",
+    requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
+  },
+  {
+    id: "meus-questionarios-maintenance",
+    title: "Questionarios",
+    icon: "clipboardList",
+    path: "/pessoal/questionarios",
+    requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
+    requiresOpenQuestionnaire: true,
+  },
+  // Meu Bônus intentionally omitted: the Auxiliar de Serviços Gerais position is
+  // never bonifiable, so the bonus pages never apply to this sector.
+  {
+    id: "meus-emprestimos-maintenance",
+    title: "Meus Emprestimos",
+    icon: "loan",
+    path: "/pessoal/meus-emprestimos",
+    requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
+    children: [{ id: "meus-emprestimos-detalhes-maintenance", title: "Detalhes", icon: "eye", path: "/pessoal/meus-emprestimos/detalhes/:id", isDynamic: true }],
+  },
+  {
+    id: "meus-epis-maintenance",
+    title: "Meus EPIs",
+    icon: "helmet",
+    path: "/pessoal/meus-epis",
+    requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
+    children: [
+      { id: "meus-epis-detalhes-maintenance", title: "Detalhes", icon: "eye", path: "/pessoal/meus-epis/detalhes/:id", isDynamic: true },
+      { id: "meus-epis-solicitar-maintenance", title: "Solicitar EPI", icon: "plus", path: "/pessoal/meus-epis/request", isDynamic: true },
+    ],
+  },
+  {
+    id: "meus-pontos-maintenance",
+    title: "Meus Pontos",
+    icon: "fingerprint",
+    path: "/pessoal/meus-pontos",
+    requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
+    children: [
+      { id: "meus-pontos-incluir-maintenance", title: "Incluir Ponto", icon: "map-pin-plus", path: "/pessoal/meus-pontos/incluir-ponto" },
+      { id: "meus-pontos-ajustar-maintenance", title: "Ajustar Ponto", icon: "clock-edit", path: "/pessoal/meus-pontos/ajustar-ponto" },
+      { id: "meus-pontos-justificar-maintenance", title: "Justificar Ausência", icon: "calendar-off", path: "/pessoal/meus-pontos/justificar-ausencia" },
+      { id: "meus-pontos-assinaturas-maintenance", title: "Assinatura de Ponto", icon: "file-check", path: "/pessoal/meus-pontos/assinaturas" },
+    ],
+  },
+  {
+    id: "minhas-advertencias-maintenance",
+    title: "Minhas Advertencias",
+    icon: "alertTriangle",
+    path: "/pessoal/minhas-advertencias",
+    requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
+    children: [{ id: "minhas-advertencias-detalhes-maintenance", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
+  },
+  {
+    id: "minhas-movimentacoes-maintenance",
+    title: "Minhas Movimentacoes",
+    icon: "movement",
+    path: "/pessoal/minhas-movimentacoes",
+    requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
+    children: [{ id: "minhas-movimentacoes-detalhes-maintenance", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-movimentacoes/detalhes/:id", isDynamic: true }],
+  },
 ];
 
 // Export the menu items for use in applications

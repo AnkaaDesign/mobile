@@ -212,6 +212,17 @@ export const bonusService = {
     apiClient.get<any>(`/bonuses/my-period-stats/${year}/${month}`),
 
   /**
+   * Get the authenticated user's position ladder for the personal bonus
+   * simulator (current position + next 2 by hierarchy). Returns only
+   * id/name/hierarchy (no salary). Open to ALL roles — unlike the HR-only
+   * GET /position list, which 403s PRODUCTION and other basic sectors.
+   */
+  getMyPositions: () =>
+    apiClient.get<{ success: boolean; data: Array<{ id: string; name: string; hierarchy: number | null }> }>(
+      '/bonuses/my-positions',
+    ),
+
+  /**
    * Run the salary-based logistic bonus simulation (HR/admin).
    *
    * The bonus ALGORITHM lives in exactly one place — the API. Mobile must NOT

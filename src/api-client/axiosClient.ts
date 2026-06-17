@@ -742,6 +742,13 @@ const createApiClient = (
           config.url?.includes("/analytics/") ||
           config.url?.includes("/statistics/");
 
+        // Bonus simulations are READS exposed as POST (they carry a salary/level
+        // payload and just compute a value — nothing is persisted). They re-fire
+        // on every input change in the simulator, so a "salvo com sucesso" toast
+        // per keystroke is pure noise. Treat them like analytics reads and never
+        // toast. Covers POST /bonus/simulate and POST /bonuses/my-bonus-simulate.
+        const isSimulation = config.url?.includes("/simulate");
+
         // Only show success if the response indicates success
         const isSuccess = response.data?.success !== (false as boolean); // Show success unless explicitly false
 
@@ -750,6 +757,7 @@ const createApiClient = (
           !isAuthOperation &&
           !isBackgroundOperation &&
           !isAnalyticsRead &&
+          !isSimulation &&
           isSuccess &&
           !metadata?.suppressToast
         ) {

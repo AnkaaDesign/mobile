@@ -72,6 +72,9 @@ interface AuthContextType {
   refreshUserData: () => Promise<User | null>;
   silentRefreshUserData: () => Promise<User | null>;
   isAuthReady: boolean;
+  // True while an explicit/forced logout is in progress (until the next login).
+  // Auth gates use this to redirect to login without consulting the stored token.
+  isLoggingOut: boolean;
   recoverPassword: (data: PasswordResetRequestFormData) => Promise<void>;
   verifyCode: ReturnType<typeof useMutation<any, Error, VerifyCodeFormData>>;
   resendVerification: ReturnType<typeof useMutation<any, Error, SendVerificationFormData>>;
@@ -102,6 +105,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [isValidatingSession, setIsValidatingSession] = useState<boolean>(false);
   const [isFetchingUser, setIsFetchingUser] = useState<boolean>(false);
+  // Explicit-logout signal. True from the moment a logout (manual or forced 401)
+  // begins until the next login. The root auth gate keys on this to redirect to
+  // the login screen DEFINITIVELY, instead of consulting the stored token — which
+  // races the logout's async storage-clear and can dead-lock on "Carregando...".
+  const [loggingOut, setLoggingOut] = useState<boolean>(false);
   const [isOffline, setIsOffline] = useState<boolean>(false);
   const [lastValidatedAt, setLastValidatedAt] = useState<number | null>(null);
   const isFetchingUserRef = useRef<boolean>(false);
@@ -133,6 +141,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         cancelAllRequests();
 
         // Batch state updates first (synchronous)
+        setLoggingOut(true);
         setUser(null);
         setAccessToken(null);
         setCachedToken(null);
@@ -561,6 +570,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (contact: string, password: string) => {
     try {
+      // A fresh login cancels any prior logout signal so the auth gate stops
+      // forcing the login redirect once this user's session is established.
+      setLoggingOut(false);
       setLoading(true);
 
       // CRITICAL: Clear all cached data from previous user session before login
@@ -631,7 +643,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoggingOut(true);
     cancelAllRequests();
 
-    // Batch state updates first (synchronous)
+    // Batch state updates first (synchronous). setLoggingOut(true) must land in
+    // the same render as setUser(null) so the auth gate sees an explicit logout
+    // and redirects immediately, rather than racing the storage-clear below.
+    setLoggingOut(true);
     setUser(null);
     setAccessToken(null);
     setCachedToken(null);
@@ -736,13 +751,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     refreshUserData,
     silentRefreshUserData,
     isAuthReady,
+    isLoggingOut: loggingOut,
     recoverPassword,
     verifyCode: verifyCodeMutation,
     resendVerification: resendVerificationMutation,
     // Offline mode support
     isOffline,
     lastValidatedAt,
-  }), [user, loading, accessToken, isAuthReady, silentRefreshUserData, verifyCodeMutation, resendVerificationMutation, isOffline, lastValidatedAt]);
+  }), [user, loading, accessToken, isAuthReady, loggingOut, silentRefreshUserData, verifyCodeMutation, resendVerificationMutation, isOffline, lastValidatedAt]);
 
   if (!isAuthReady) {
     return (
