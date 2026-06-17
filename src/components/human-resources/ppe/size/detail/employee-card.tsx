@@ -3,7 +3,7 @@ import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import type { PpeSize } from '../../../../../types';
-import { USER_STATUS_LABELS } from "@/constants";
+import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS } from "@/constants";
 import { formatCPF } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -28,9 +28,9 @@ export function EmployeeCard({ ppeSize }: EmployeeCardProps) {
       <View style={styles.employeeHeader}>
         <View style={styles.nameSection}>
           <ThemedText style={StyleSheet.flatten([styles.employeeName, { color: colors.foreground }])}>{user.name}</ThemedText>
-          {user.status && (
-            <Badge variant={user.status !== "DISMISSED" ? "success" : "secondary"}>
-              <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>{USER_STATUS_LABELS[user.status]}</ThemedText>
+          {user.currentContractType && (
+            <Badge variant={user.currentContractStatus !== CONTRACT_STATUS.TERMINATED ? "success" : "secondary"}>
+              <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>{CONTRACT_TYPE_LABELS[user.currentContractType]}</ThemedText>
             </Badge>
           )}
         </View>

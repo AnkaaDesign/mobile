@@ -1,10 +1,16 @@
 
 import { Badge, BadgeProps } from "@/components/ui/badge";
-import { USER_STATUS, USER_STATUS_LABELS, getBadgeVariant } from "@/constants";
+import {
+  CONTRACT_TYPE,
+  CONTRACT_STATUS,
+  CONTRACT_TYPE_LABELS,
+  CONTRACT_STATUS_LABELS,
+  getBadgeVariant,
+} from "@/constants";
 import type { User } from "@/types";
 
 interface UserStatusBadgeProps {
-  status: USER_STATUS;
+  status: CONTRACT_TYPE | CONTRACT_STATUS | string;
   user?: User; // Optional user object for time tracking
   size?: BadgeProps["size"];
   style?: BadgeProps["style"];
@@ -20,17 +26,20 @@ export function UserStatusBadge({
   textStyle,
   showTime = false,
 }: UserStatusBadgeProps) {
-  // Use centralized badge configuration with entity context
-  const variant = getBadgeVariant(status, "USER");
+  // The lifecycle STATUS (situação) is the primary signal — it carries
+  // Experiência / Efetivado (Ativo) / Aviso prévio / Afastado / Desligado.
+  // When the user object provides it, surface that; otherwise fall back to the
+  // contract MODALITY passed in via `status`.
+  const userStatus = user?.currentContractStatus ?? null;
 
-  // Get display text - use time-aware text if user is provided and showTime is true
-  let displayText = USER_STATUS_LABELS[status] || status;
+  const variant = userStatus
+    ? getBadgeVariant(userStatus, "CONTRACT_STATUS")
+    : getBadgeVariant(status, "USER");
 
-  if (user && showTime) {
-    // TODO: Implement time-aware text function for mobile if needed
-    // For now, just use the label
-    displayText = USER_STATUS_LABELS[status];
-  }
+  const displayText =
+    (userStatus
+      ? CONTRACT_STATUS_LABELS[userStatus as CONTRACT_STATUS]
+      : CONTRACT_TYPE_LABELS[status as CONTRACT_TYPE]) || status;
 
   return (
     <Badge variant={variant} size={size} style={style} textStyle={textStyle}>

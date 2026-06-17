@@ -176,7 +176,7 @@ export const TABLER_ICONS = {
 
   // Payments
   dollarSign: "IconCurrencyDollar",
-  coins: "IconCoins", // Coins icon (for favorites - commissions)
+  coins: "IconCoins", // Coins icon
   salary: "IconCurrencyDollar",
   deviceIpadDollar: "IconDeviceIpadDollar",
   payroll: "IconCalendarDollar",

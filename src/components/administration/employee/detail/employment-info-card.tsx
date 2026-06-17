@@ -9,15 +9,19 @@ interface EmploymentInfoCardProps {
 }
 
 export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
-  const formattedAdmissional = employee.exp1StartAt ? formatDate(employee.exp1StartAt) : "Não informado";
-  const formattedDismissal = employee.dismissedAt ? formatDate(employee.dismissedAt) : "-";
+  const contract = employee.currentContract;
+  const admissionDate = contract?.admissionDate ?? contract?.exp1StartAt ?? null;
+  const terminationDate = contract?.terminationDate ?? null;
+
+  const formattedAdmissional = admissionDate ? formatDate(admissionDate) : "Não informado";
+  const formattedDismissal = terminationDate ? formatDate(terminationDate) : "-";
 
   // Calculate time at company
   const getTimeAtCompany = () => {
-    if (!employee.exp1StartAt) return "Não informado";
+    if (!admissionDate) return "Não informado";
 
-    const now = employee.dismissedAt ? new Date(employee.dismissedAt) : new Date();
-    const startDate = new Date(employee.exp1StartAt);
+    const now = terminationDate ? new Date(terminationDate) : new Date();
+    const startDate = new Date(admissionDate);
     const years = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
     const months = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
 
@@ -45,7 +49,7 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
 
       <DetailField label="Data de Admissão" icon="calendar" value={formattedAdmissional} />
 
-      {employee.dismissedAt && (
+      {terminationDate && (
         <DetailField label="Data de Desligamento" icon="calendar" value={formattedDismissal} />
       )}
 

@@ -83,13 +83,13 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
       <CardContent className="pt-0">
         <ScrollView className="space-y-2" showsVerticalScrollIndicator={false}>
           {displayItems.map((item) => {
-            const stockLevel = determineStockLevel(
-              item.quantity,
-              ((item as any).minimumQuantity),
-              item.maxQuantity,
-              false,
-              item.category?.type ?? null
-            );
+            const stockLevel = determineStockLevel({
+              quantity: item.quantity,
+              reorderPoint: ((item as any).minimumQuantity),
+              maxQuantity: item.maxQuantity,
+              stockModel: item.stockModel ?? null,
+              fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+            });
             const stockLevelColor = getStockLevelTextColor(stockLevel);
 
             return (

@@ -1,8 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import {
-  USER_STATUS,
-  USER_STATUS_LABELS,
+  CONTRACT_TYPE,
+  CONTRACT_TYPE_LABELS,
 } from '@/constants'
 import { badgeColors } from '@/lib/theme/extended-colors'
 
@@ -114,12 +114,12 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         format: 'badge',
       },
       {
-        key: 'status',
-        label: 'STATUS',
+        key: 'currentContractType',
+        label: 'TIPO DE CONTRATO',
         sortable: true,
         width: 1.5,
         align: 'center',
-        render: (user) => USER_STATUS_LABELS[user.status] || user.status,
+        render: (user) => (user.currentContractType ? CONTRACT_TYPE_LABELS[user.currentContractType] : undefined) || user.currentContractType,
         format: 'badge',
       },
     ],
@@ -139,15 +139,16 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         max: 5,
       },
       {
-        key: 'status',
-        label: 'Status',
+        // contractKinds is the API convenience filter that maps to currentContractType.
+        key: 'contractKinds',
+        label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
-        options: Object.values(USER_STATUS).map((status) => ({
-          label: USER_STATUS_LABELS[status],
+        options: Object.values(CONTRACT_TYPE).map((status) => ({
+          label: CONTRACT_TYPE_LABELS[status],
           value: status,
         })),
-        placeholder: 'Selecione os status',
+        placeholder: 'Selecione os tipos de contrato',
       },
       {
         key: 'isActive',
@@ -252,10 +253,10 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         format: (value) => getMultiplierPercentage(Number(value) || 0)
       },
       {
-        key: 'status',
-        label: 'Status',
-        path: 'status',
-        format: (value: any): string => USER_STATUS_LABELS[value as USER_STATUS] || String(value)
+        key: 'currentContractType',
+        label: 'Tipo de Contrato',
+        path: 'currentContractType',
+        format: (value: any): string => CONTRACT_TYPE_LABELS[value as CONTRACT_TYPE] || String(value)
       },
     ],
   },

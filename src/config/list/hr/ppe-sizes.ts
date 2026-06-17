@@ -231,6 +231,7 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
     create: {
       label: 'Cadastrar Tamanho',
       route: '/recursos-humanos/epi/tamanhos/cadastrar',
+      canCreate: canEditPpeDeliveries,
     },
     bulk: [
       {
@@ -245,6 +246,7 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ ppeSizeIds: Array.from(ids) })
         },
+        canPerform: canDeletePpeDeliveries,
       },
     ],
   },

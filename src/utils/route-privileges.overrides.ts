@@ -104,14 +104,40 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
   "/(tabs)/recursos-humanos/cargos/cadastrar": "ADMIN",
   "/(tabs)/recursos-humanos/setores/cadastrar": "ADMIN",
 
-  // ---- Financeiro: FINANCIAL + COMMERCIAL + ADMIN ----
-  "/(tabs)/financeiro": ["FINANCIAL", "COMMERCIAL", "ADMIN"],
+  // ---- Financeiro: FINANCIAL + COMMERCIAL + ADMIN (+ ACCOUNTING where granted) ----
+  "/(tabs)/financeiro": ["FINANCIAL", "COMMERCIAL", "ADMIN", "ACCOUNTING"],
   "/(tabs)/financeiro/faturamento": ["FINANCIAL", "COMMERCIAL", "ADMIN"],
   "/(tabs)/financeiro/orcamento": ["FINANCIAL", "COMMERCIAL", "ADMIN"],
   "/(tabs)/financeiro/orcamento/cadastrar": ["COMMERCIAL", "ADMIN"],
-  "/(tabs)/financeiro/notas-fiscais": ["FINANCIAL", "COMMERCIAL", "ADMIN"],
+  "/(tabs)/financeiro/notas-fiscais": ["FINANCIAL", "COMMERCIAL", "ADMIN", "ACCOUNTING"],
   "/(tabs)/financeiro/clientes": ["FINANCIAL", "COMMERCIAL", "ADMIN"],
+
+  // ---- ACCOUNTING (Contabilidade): departamento-pessoal reads over RH routes ----
+  // Create special-cases above (funcionarios/cargos/setores cadastrar) stay ADMIN-only.
+  "/(tabs)/recursos-humanos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/funcionarios": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/funcionarios/listar": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/funcionarios/detalhes/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/funcionarios/editar/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/colaboradores": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/epi": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/feriados": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/advertencias": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/cargos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/folha-de-pagamento": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/niveis-de-desempenho": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/bonus": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/calculos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/controle-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/recursos-humanos/requisicoes-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
 
   // ---- Servidor: file-manager open to COMMERCIAL alongside ADMIN ----
   "/(tabs)/servidor/file-manager": ["ADMIN", "COMMERCIAL"],
+
+  // ---- Estoque operações externas: ADMIN-only (API restricts every endpoint to ADMIN; matches WEB) ----
+  "/(tabs)/estoque/operacoes-externas": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/listar": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/cadastrar": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/detalhes/[id]": "ADMIN",
+  "/(tabs)/estoque/operacoes-externas/editar/[id]": "ADMIN",
 };

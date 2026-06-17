@@ -7,12 +7,11 @@ export * from "./timeClockEntry";
 export * from "./airbrushing";
 export * from "./borrow";
 export * from "./changelog";
-export * from "./commission";
 export * from "./customer";
 export * from "./cut";
 export * from "./epi";
 export * from "./ppe-request";
-export * from "./externalWithdrawal";
+export * from "./externalOperation";
 export * from "./file";
 export * from "./garage";
 export * from "./holiday";
@@ -102,8 +101,10 @@ export {
   discountGetManySchema,
   discountGetByIdSchema,
   discountQuerySchema,
+  loanMasterCreateSchema,
   mapToDiscountFormData,
   // Types
+  type LoanMasterCreateFormData,
   type DiscountGetManyFormData,
   type DiscountGetByIdFormData,
   type DiscountQueryFormData,
@@ -114,4 +115,16 @@ export {
 // export * from "./statistics"; // Disabled - file doesn't exist
 export * from "./deployment";
 export * from "./economic-activity";
+// HR / Departamento Pessoal + Medicina do Trabalho schemas
+export * from "./vacation";
+export * from "./thirteenth";
+export * from "./work-accident";
+export * from "./leave";
+export * from "./medical-exam";
+export * from "./benefit";
+export * from "./dependent";
+export * from "./termination";
+export * from "./salary-adjustment";
+export * from "./user-position-history";
+export * from "./admission";
 // export * from "./driver"; // Disabled - not currently used

@@ -214,6 +214,10 @@ export default function PaintDetailsScreen() {
             </View>
           </Card>
 
+          {!canEdit ? (
+            /* PRODUCTION: show only paint color info, no formula access */
+            <PaintCatalogCard paint={paint!} />
+          ) : (
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
@@ -308,6 +312,7 @@ export default function PaintDetailsScreen() {
               )}
             </TabsContent>
           </Tabs>
+          )}
         </View>
       </ScrollView>
     </>

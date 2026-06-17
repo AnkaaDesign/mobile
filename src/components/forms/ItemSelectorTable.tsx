@@ -25,7 +25,6 @@
  * ### Basic Implementation (Tool Borrowing)
  * ```tsx
  * import { ItemSelectorTable } from "@/components/forms";
- * import { ITEM_CATEGORY_TYPE } from "@/constants";
  *
  * export default function BorrowToolsStep() {
  *   const [selectedItems, setSelectedItems] = useState(new Set<string>());
@@ -53,7 +52,7 @@
  *       minQuantity={1}
  *       maxQuantity={10}
  *       allowZeroStock={false}
- *       categoryType={ITEM_CATEGORY_TYPE.TOOL}
+ *       borrowableOnly
  *       searchTerm={searchTerm}
  *       onSearchTermChange={setSearchTerm}
  *     />
@@ -186,8 +185,10 @@ export interface ItemSelectorTableProps {
   minQuantity?: number;
   maxQuantity?: number;
   allowZeroStock?: boolean;
-  // Filter by category type (e.g., TOOL for borrow)
+  // Filter by category type (UI grouping only)
   categoryType?: string;
+  // Restrict to borrowable items (e.g., borrow flows)
+  borrowableOnly?: boolean;
   // Filters
   showSelectedOnly?: boolean;
   searchTerm?: string;
@@ -215,13 +216,13 @@ const StockLevelIcon = memo(function StockLevelIcon({
   item: any;
 }) {
   const quantity = item.quantity || 0;
-  const stockLevel = determineStockLevel(
+  const stockLevel = determineStockLevel({
     quantity,
-    item.reorderPoint || null,
-    item.maxQuantity || null,
-    false,
-    item.category?.type ?? null
-  );
+    reorderPoint: item.reorderPoint || null,
+    maxQuantity: item.maxQuantity || null,
+    stockModel: item.stockModel ?? null,
+    fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+  });
 
   const getColor = () => {
     switch (stockLevel) {
@@ -728,6 +729,7 @@ export function ItemSelectorTable({
   minQuantity = 1,
   maxQuantity,
   categoryType,
+  borrowableOnly = false,
   showSelectedOnly = false,
   searchTerm = "",
   showInactive = false,
@@ -787,9 +789,14 @@ export function ItemSelectorTable({
       whereConditions.isActive = true;
     }
 
-    // Filter by category type (e.g., TOOL for borrow)
+    // Filter by category type (UI grouping only)
     if (categoryType) {
       whereConditions.category = { type: categoryType };
+    }
+
+    // Restrict to borrowable items (e.g., borrow flows)
+    if (borrowableOnly) {
+      whereConditions.isBorrowable = true;
     }
 
     if (debouncedSearch) {
@@ -825,6 +832,7 @@ export function ItemSelectorTable({
     sortDirection,
     showInactive,
     categoryType,
+    borrowableOnly,
     debouncedSearch,
     categoryIds,
     brandIds,

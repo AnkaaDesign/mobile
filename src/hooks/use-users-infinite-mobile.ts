@@ -14,7 +14,7 @@ const MOBILE_USERS_PAGE_SIZE = 25;
 export function useUsersInfiniteMobile(params?: Partial<UserGetManyFormData> & { enabled?: boolean }) {
   // Prepare parameters with mobile-optimized page size
   // Default to isActive: true (matching web behavior: hide dismissed users)
-  // The API's userTransform converts isActive:true → status: { not: 'DISMISSED' }
+  // The API's userTransform converts isActive:true → currentContractStatus: { not: 'TERMINATED' }
   const queryParams = useMemo(
     () => ({
       isActive: true,

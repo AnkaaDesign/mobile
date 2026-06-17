@@ -1,8 +1,8 @@
 /**
- * Tutorial first-launch trigger (v5, unchanged behavior).
+ * Tutorial first-launch trigger (v5).
  *
- * Auto-starts the tutorial for PRODUCTION users on first login. Replaces the
- * old `TutorialFirstLaunchTrigger` import path.
+ * Auto-starts the tutorial for PRODUCTION-sector users on first login, once each
+ * (per-user completion is persisted in `tutorialStorage`).
  */
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -22,6 +22,8 @@ export function TutorialFirstLaunchTrigger() {
       tutorial.setPendingStart(false);
       return;
     }
+    // Tutorial is restricted to the PRODUCTION sector. Non-production users get
+    // no tutorial — clear the pending flag so the messages modal isn't blocked.
     if (user.sector?.privileges !== SECTOR_PRIVILEGES.PRODUCTION) {
       tutorial.setPendingStart(false);
       return;

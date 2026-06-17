@@ -10,8 +10,10 @@ import type { Bonus, BonusIncludes } from "./bonus";
 
 export interface BonusDiscount extends BaseEntity {
   bonusId: string;
-  percentage: number | null;
-  value: number | null;
+  // Decimal from Prisma — may arrive as a Decimal object ({ toNumber }) or a
+  // plain number. Modelled like web's DecimalValue to avoid NaN on render.
+  percentage: number | { toNumber: () => number } | null;
+  value: number | { toNumber: () => number } | null;
   reference: string;
   calculationOrder: number;
 

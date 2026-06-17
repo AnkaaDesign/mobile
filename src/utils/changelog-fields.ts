@@ -77,6 +77,11 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     shouldAssignToUser: "Deve ser Atribuído a Usuário",
     isForEpi: "É EPI",
 
+    // Capability fields
+    isBorrowable: "Emprestável",
+    stockModel: "Modelo de Estoque",
+    fixedTargetQuantity: "Quantidade Alvo",
+
     // Stock management
     leadTime: "Tempo de Entrega",
     estimatedLeadTime: "Tempo de Entrega Estimado",
@@ -175,6 +180,10 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     paymentDueDays: "Prazo de Vencimento",
     paymentResponsibleId: "Responsável pelo Pagamento",
     paymentAssignedById: "Atribuído por",
+    paymentStatus: "Status de Pagamento",
+    paymentStatusOrder: "Ordem do Status de Pagamento",
+    paymentRequestedAt: "Pagamento Solicitado em",
+    paidAt: "Pago em",
     items: "Itens do Pedido",
   },
   [CHANGE_LOG_ENTITY_TYPE.ORDER_ITEM]: {
@@ -227,9 +236,23 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     ledSectorId: "Setor Liderado",
     performanceLevel: "Nível de Desempenho",
 
-    // Status and employment
-    status: "Status",
-    statusOrder: "Ordem do Status",
+    // Employment contract (vínculo) cache fields on the user
+    currentContractType: "Tipo de Contrato",
+    currentContractStatus: "Situação do Vínculo",
+    currentEmployeeType: "Categoria do Colaborador",
+    // EmploymentContract entity fields
+    employeeType: "Categoria do Colaborador",
+    contractType: "Tipo de Contrato",
+    terminationDate: "Data de Demissão",
+    terminationType: "Tipo de Demissão",
+    admissionDate: "Data de Admissão",
+    matricula: "Matrícula",
+    sequence: "Sequência do Vínculo",
+    // Legacy field names (old changelogs recorded before the vínculo rename)
+    contractKind: "Tipo de Contrato",
+    contractKindOrder: "Ordem do Tipo de Contrato",
+    status: "Tipo de Contrato",
+    statusOrder: "Ordem do Tipo de Contrato",
     isActive: "Ativo",
     effectedAt: "Data de Contratação",
     exp1StartAt: "Data de Admissão / Início Exp. 1",
@@ -281,7 +304,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     forecastDate: "Data de Previsão",
     cleared: "Liberado",
     paintId: "Tinta",
-    commission: "Comissão",
+    bonification: "Bonificação",
     bonusDiscountId: "Desconto Bônus",
     customerId: "Cliente",
     invoiceToId: "Faturar Para",
@@ -315,7 +338,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     paints: "Tintas da logomarca",
     groundPaints: "Fundos da Tinta",
     layouts: "Layouts do Veículo",
-    commissions: "Comissões",
+    bonifications: "Bonificações",
     services: "Serviços", // Legacy - for historical changelog records
     serviceOrders: "Ordens de Serviço",
     quoteId: "Orçamento",
@@ -483,7 +506,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "user.name": "Nome do Usuário",
     "order.description": "Descrição do Pedido",
   },
-  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL]: {
+  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION]: {
     withdrawerName: "Nome do Retirador",
     withdrawerDocument: "Documento do Retirador",
     withdrawerContact: "Contato do Retirador",
@@ -511,8 +534,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "budget.filename": "Nome do Orçamento",
     "responsibleUser.name": "Nome do Responsável",
   },
-  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL_ITEM]: {
-    externalWithdrawalId: "Retirada Externa",
+  [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION_ITEM]: {
+    externalOperationId: "Operação Externa",
     itemId: "Item",
     withdrawedQuantity: "Quantidade Retirada",
     returnedQuantity: "Quantidade Devolvida",
@@ -535,14 +558,14 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "item.barcode": "Código de Barras do Item",
     "item.unicode": "Código Único do Item",
     "item.uniCode": "Código Único do Item",
-    "externalWithdrawal.withdrawerName": "Nome do Retirador",
+    "externalOperation.withdrawerName": "Nome do Retirador",
   },
   [CHANGE_LOG_ENTITY_TYPE.POSITION]: {
     name: "Nome",
     level: "Nível",
     sectorId: "Setor",
     privileges: "Privilégios",
-    commissionEligible: "Elegível para Comissão",
+    bonificationEligible: "Elegível para Bonificação",
     remuneration: "Remuneração",
     sector: "Setor",
     "sector.name": "Nome do Setor",
@@ -811,8 +834,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     orderReceipts: "Recibos de Pedidos",
     airbrushingReceipts: "Recibos de Aerografia",
     airbrushingInvoices: "Notas Fiscais de Aerografia",
-    externalWithdrawalInvoices: "Notas Fiscais de Retirada Externa",
-    externalWithdrawalReceipts: "Recibos de Retirada Externa",
+    externalOperationInvoices: "Notas Fiscais de Operação Externa",
+    externalOperationReceipts: "Recibos de Operação Externa",
   },
   [CHANGE_LOG_ENTITY_TYPE.NOTIFICATION]: {
     title: "Título",
@@ -947,6 +970,109 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "user.position.name": "Cargo do Funcionário",
     "user.sector.name": "Setor do Funcionário",
   },
+  [CHANGE_LOG_ENTITY_TYPE.TERMINATION]: {
+    userId: "Colaborador",
+    status: "Status",
+    statusOrder: "Ordem do Status",
+    type: "Tipo",
+    noticeType: "Aviso Prévio",
+    noticeReduction: "Redução do Aviso",
+    noticeDays: "Dias de Aviso",
+    noticeStartDate: "Início do Aviso",
+    lastWorkingDate: "Último Dia Trabalhado",
+    terminationDate: "Data da Rescisão",
+    projectedEndDate: "Projeção do Contrato",
+    paymentDueDate: "Vencimento do Pagamento",
+    paymentDate: "Data de Pagamento",
+    paidAmount: "Valor Pago",
+    baseRemuneration: "Remuneração Base",
+    fgtsBalance: "Saldo FGTS",
+    accruedVacationPeriods: "Períodos de Férias Vencidas",
+    reason: "Motivo",
+    justCauseArticle: "Artigo (Justa Causa)",
+    initiatedById: "Iniciada por",
+    // Nested relationship fields
+    "user.name": "Nome do Colaborador",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.ADMISSION]: {
+    userId: "Colaborador",
+    status: "Status",
+    statusOrder: "Ordem do Status",
+    hireDate: "Data de Admissão",
+    notes: "Observações",
+    createdById: "Criada por",
+    documents: "Documentos",
+    // Nested relationship fields
+    "user.name": "Nome do Colaborador",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.MEDICAL_EXAM]: {
+    userId: "Colaborador",
+    type: "Tipo",
+    status: "Status",
+    statusOrder: "Ordem do Status",
+    result: "Resultado",
+    restrictions: "Restrições",
+    periodicityMonths: "Periodicidade (meses)",
+    scheduledAt: "Agendado para",
+    examDate: "Data do Exame",
+    expiresAt: "Validade",
+    physicianName: "Médico",
+    crm: "CRM",
+    clinic: "Clínica",
+    notes: "Observações",
+    fileId: "Arquivo",
+    // Nested relationship fields
+    "user.name": "Nome do Colaborador",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.LEAVE]: {
+    userId: "Colaborador",
+    type: "Tipo",
+    status: "Status",
+    statusOrder: "Ordem do Status",
+    startDate: "Data de Início",
+    expectedEndDate: "Término Previsto",
+    actualEndDate: "Término Efetivo",
+    cid: "CID",
+    inssBenefitSpecies: "Espécie do Benefício INSS",
+    inssBenefitNumber: "Número do Benefício INSS",
+    returnExamRequired: "Exame de Retorno Obrigatório",
+    notes: "Observações",
+    // Nested relationship fields
+    "user.name": "Nome do Colaborador",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.BENEFIT]: {
+    kind: "Tipo",
+    name: "Nome",
+    provider: "Fornecedor",
+    defaultValue: "Valor Padrão",
+    defaultEmployeeDiscountPercent: "Desconto Padrão do Colaborador (%)",
+    isActive: "Ativo",
+    notes: "Observações",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.DEPENDENT]: {
+    userId: "Colaborador",
+    name: "Nome",
+    cpf: "CPF",
+    birthDate: "Data de Nascimento",
+    relationship: "Parentesco",
+    irrfDeduction: "Dedução de IRRF",
+    salarioFamilia: "Salário-Família",
+    healthPlanBenefitId: "Plano de Saúde",
+    healthPlanValue: "Valor do Plano",
+    notes: "Observações",
+    // Nested relationship fields
+    "user.name": "Nome do Colaborador",
+    "healthPlanBenefit.benefit.name": "Nome do Plano",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.SALARY_ADJUSTMENT]: {
+    type: "Tipo",
+    percentage: "Percentual",
+    effectiveDate: "Data de Vigência",
+    note: "Observação",
+    appliedById: "Aplicado por",
+    // Nested relationship fields
+    "appliedBy.name": "Nome do Responsável",
+  },
   // Add more entity-specific mappings as needed
 };
 
@@ -982,8 +1108,8 @@ interface FieldMetadata {
  * @returns The formatted value as a string
  */
 export function formatFieldValue(value: ComplexFieldValue, field?: string | null, entityType?: CHANGE_LOG_ENTITY_TYPE, metadata?: FieldMetadata): string {
-  // Handle null/undefined commission field specifically
-  if ((value === null || value === undefined) && field === "commission" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+  // Handle null/undefined bonification field specifically
+  if ((value === null || value === undefined) && field === "bonification" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
     return "Não Definida";
   }
 
@@ -1115,8 +1241,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
         // Fallback to count
         return `${value.length} ${value.length === 1 ? "serviço" : "serviços"}`;
       }
-      if (field === "commissions") {
-        return `${value.length} ${value.length === 1 ? "comissão" : "comissões"}`;
+      if (field === "bonifications") {
+        return `${value.length} ${value.length === 1 ? "bonificação" : "bonificações"}`;
       }
       if (field === "airbrushings") {
         return `${value.length} ${value.length === 1 ? "aerografia" : "aerografias"}`;
@@ -1206,8 +1332,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   }
 
   // Handle external withdrawal status
-  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL && typeof value === "string") {
-    const externalWithdrawalStatusLabels: Record<string, string> = {
+  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION && typeof value === "string") {
+    const externalOperationStatusLabels: Record<string, string> = {
       PENDING: "Pendente",
       PARTIALLY_RETURNED: "Parcialmente Devolvido",
       FULLY_RETURNED: "Totalmente Devolvido",
@@ -1216,7 +1342,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       DELIVERED: "Entregue",
       CANCELLED: "Cancelado",
     };
-    return externalWithdrawalStatusLabels[value] || value;
+    return externalOperationStatusLabels[value] || value;
   }
 
   // Handle task status
@@ -1272,15 +1398,40 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return maintenanceStatusLabels[value] || value;
   }
 
-  // Handle user status
-  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.USER && typeof value === "string") {
-    const userStatusLabels: Record<string, string> = {
+  // Handle user/employment-contract type, status and employee category values.
+  // Old changelogs may still carry the legacy field names (contractKind/status).
+  if (
+    (field === "currentContractType" ||
+      field === "contractType" ||
+      field === "currentContractStatus" ||
+      field === "currentEmployeeType" ||
+      field === "employeeType" ||
+      field === "contractKind" ||
+      field === "contractKind_transition" ||
+      field === "status" ||
+      field === "status_transition") &&
+    typeof value === "string"
+  ) {
+    const employmentLabels: Record<string, string> = {
+      // Contract types
       EXPERIENCE_PERIOD_1: "Experiência - 1º Período",
       EXPERIENCE_PERIOD_2: "Experiência - 2º Período",
       EFFECTED: "Efetivado",
+      FIXED_TERM: "Prazo Determinado",
+      INTERMITTENT: "Intermitente",
+      APPRENTICE: "Aprendiz",
+      TEMPORARY: "Temporário",
+      // Contract status
+      ACTIVE: "Ativo",
       DISMISSED: "Demitido",
+      // Employee categories
+      CLT: "CLT",
+      INTERN: "Estagiário",
+      TERCEIRIZADO: "Terceirizado",
+      PJ: "Pessoa Jurídica (PJ)",
+      AUTONOMOUS: "Autônomo",
     };
-    return userStatusLabels[value] || value;
+    return employmentLabels[value] || value;
   }
 
   // Handle PPE size fields for User entity
@@ -1370,15 +1521,15 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return cutReasonLabels[value] || value;
   }
 
-  // Handle commission status
-  if (field === "commission" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK && typeof value === "string") {
-    const commissionStatusLabels: Record<string, string> = {
-      NO_COMMISSION: "Sem Comissão",
-      PARTIAL_COMMISSION: "Comissão Parcial",
-      FULL_COMMISSION: "Comissão Integral",
-      SUSPENDED_COMMISSION: "Comissão Suspensa",
+  // Handle bonification status
+  if (field === "bonification" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK && typeof value === "string") {
+    const bonificationStatusLabels: Record<string, string> = {
+      NO_BONIFICATION: "Sem Bonificação",
+      PARTIAL_BONIFICATION: "Bonificação Parcial",
+      FULL_BONIFICATION: "Bonificação Integral",
+      SUSPENDED_BONIFICATION: "Bonificação Suspensa",
     };
-    return commissionStatusLabels[value] || value;
+    return bonificationStatusLabels[value] || value;
   }
 
   // Handle maintenance type
@@ -1564,8 +1715,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       PPE_DELIVERY: "Entrega de EPI",
       BORROW: "Empréstimo",
       RETURN: "Devolução",
-      EXTERNAL_WITHDRAWAL: "Retirada Externa",
-      EXTERNAL_WITHDRAWAL_RETURN: "Devolução de Retirada Externa",
+      EXTERNAL_OPERATION: "Operação Externa",
+      EXTERNAL_OPERATION_RETURN: "Devolução de Operação Externa",
       INVENTORY_COUNT: "Contagem de Inventário",
       MANUAL_ADJUSTMENT: "Ajuste Manual",
       MAINTENANCE: "Manutenção",
@@ -1599,8 +1750,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       VACATION_REJECTED: "Férias Rejeitadas",
       VACATION_STARTED: "Férias Iniciadas",
       VACATION_ENDED: "Férias Finalizadas",
-      EXTERNAL_WITHDRAWAL_CREATED: "Retirada Externa Criada",
-      EXTERNAL_WITHDRAWAL_OVERDUE: "Retirada Externa Atrasada",
+      EXTERNAL_OPERATION_CREATED: "Operação Externa Criada",
+      EXTERNAL_OPERATION_OVERDUE: "Operação Externa Atrasada",
       SYSTEM_UPDATE: "Atualização do Sistema",
       SYSTEM_MAINTENANCE: "Manutenção do Sistema",
       GENERAL_ANNOUNCEMENT: "Comunicado Geral",
@@ -1653,6 +1804,15 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       FACE_SHIELD: "Protetor Facial",
     };
     return ppeTypeLabels[value] || value;
+  }
+
+  // Handle stock model (capability-fields contract)
+  if (field === "stockModel" && typeof value === "string") {
+    const stockModelLabels: Record<string, string> = {
+      CONSUMPTION: "Consumo",
+      FIXED_TARGET: "Alvo fixo",
+    };
+    return stockModelLabels[value] || value;
   }
 
   // Handle PPE delivery mode
@@ -2095,7 +2255,9 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     field === "exp1StartAt" ||
     field === "exp1EndAt" ||
     field === "exp2StartAt" ||
-    field === "exp2EndAt"
+    field === "exp2EndAt" ||
+    field === "admissionDate" ||
+    field === "terminationDate"
   ) {
     const date = new Date(value as any);
     if (!isNaN(date.getTime())) {

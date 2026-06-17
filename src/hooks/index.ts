@@ -88,7 +88,7 @@ export * from "./useItem";
 export * from "./useItemBrand";
 export * from "./useItemCategory";
 export * from "./useSupplier";
-export * from "./useExternalWithdrawal";
+export * from "./useExternalOperation";
 export * from "./useMaintenance";
 export * from "./use-auto-order-analysis";
 
@@ -139,7 +139,7 @@ export * from "./use-my-borrows-infinite-mobile";
 export * from "./use-change-logs-infinite-mobile";
 export * from "./use-customers-infinite-mobile";
 export * from "./use-responsibles-infinite-mobile";
-export * from "./use-external-withdrawals-infinite-mobile";
+export * from "./use-external-operations-infinite-mobile";
 export * from "./use-files-infinite-mobile";
 export * from "./use-holidays-infinite-mobile";
 export * from "./use-item-brands-infinite-mobile";
@@ -170,6 +170,9 @@ export * from "./use-users-infinite-mobile";
 export * from "./use-warnings-infinite-mobile";
 export * from "./use-my-warnings-infinite-mobile";
 export * from "./use-team-warnings-infinite-mobile";
+export * from "./use-medical-exams-infinite-mobile";
+export * from "./use-leaves-infinite-mobile";
+export * from "./use-work-accidents-infinite-mobile";
 export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
 export * from "./use-airbrushings-infinite-mobile";
@@ -206,7 +209,7 @@ export * from "./useDebouncedSearch";
 // =====================================================
 // Form State Management Hooks
 // =====================================================
-export * from "./use-external-withdrawal-form-state";
+export * from "./use-external-operation-form-state";
 export * from "./use-multi-step-form";
 export * from "./use-form-screen-key";
 
@@ -255,3 +258,20 @@ export * from "./use-invoices-infinite-mobile";
 // It should be imported directly when needed: import { queryErrorMonitor } from './query-error-monitor'
 // This prevents the monitor from being bundled with every hooks import, avoiding QueryClient race conditions
 export * from "./useQuestionnaire";
+
+// =====================================================
+// HR / Departamento Pessoal + Medicina do Trabalho Hooks
+// =====================================================
+export * from "./useVacation";
+export * from "./useThirteenth";
+export * from "./useLeave";
+export * from "./useMedicalExam";
+export * from "./useWorkAccident";
+export * from "./useBenefit";
+export * from "./useUserBenefit";
+export * from "./useDependent";
+export * from "./useTermination";
+export * from "./useSalaryAdjustment";
+export * from "./useUserPositionHistory";
+export * from "./useAdmission";
+export * from "./useAdmissionDocumentSignature";

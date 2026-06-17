@@ -10,7 +10,6 @@ import {
   IconClock,
   IconPackage,
   IconHistory,
-  IconRefresh,
   IconBolt,
   IconDotsVertical,
 } from "@tabler/icons-react-native";
@@ -449,13 +448,6 @@ function OrderScheduleDetailsScreenInner() {
               </View>
             </View>
             <View style={styles.headerActions}>
-              <Pressable
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </Pressable>
               {canEdit && (
                 <Pressable
                   onPress={handleEdit}

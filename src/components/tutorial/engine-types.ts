@@ -92,6 +92,8 @@ export type SceneId =
   | "justificar-form"
   | "ajustar-ponto"
   | "incluir-ponto"
+  | "assinaturas"
+  | "assinatura-detail"
   | "meus-feriados"
   | "meus-epis"
   | "epis-request"

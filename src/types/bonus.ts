@@ -23,9 +23,32 @@ export interface Bonus extends BaseEntity {
   netBonus: number | { toNumber: () => number }; // Decimal - baseBonus after deductions
   weightedTasks: number | { toNumber: () => number }; // Decimal - weighted task count for this user
   averageTaskPerUser: number | { toNumber: () => number }; // Decimal - average tasks per eligible user
-  eligibleUsersCount?: number; // Number of eligible users at the time of calculation
-  calculationPeriodStart?: Date | null; // Start of calculation period
-  calculationPeriodEnd?: Date | null; // End of calculation period
+
+  // Legacy denormalized fields kept for the existing detail/list UIs. The API
+  // computes the eligible-user count and period on the fly (see _computed),
+  // so these may be undefined on freshly-calculated rows.
+  eligibleUsersCount?: number;
+  calculationPeriodStart?: Date | null;
+  calculationPeriodEnd?: Date | null;
+
+  // Audit-trail fields for the salary-based logistic algorithm.
+  // Populated when the bonus is saved; null on legacy rows from before the rewrite.
+  salaryUsed?: number | { toNumber: () => number } | null;
+  calculationVersion?: string | null;
+  calculationParams?: {
+    version: string;
+    salary: number;
+    salaryRange: { min: number; max: number };
+    averageTasksPerUser: number;
+    config: {
+      k: number;
+      x0: number;
+      piso: number;
+      pscale: number;
+      ceil: number;
+      adjustment: number;
+    };
+  } | null;
 
   // Relations (optional, populated based on query)
   user?: User;

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, createNameSchema, createDescriptionSchema, nullableDate, moneySchema } from "./common";
 import type { Task } from "../types";
-import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, TRUCK_CATEGORY, IMPLEMENT_TYPE, COMMISSION_STATUS } from "../constants";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, TRUCK_CATEGORY, IMPLEMENT_TYPE, BONIFICATION_STATUS } from "../constants";
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
 import { taskQuoteCreateNestedSchema } from "./task-quote";
@@ -138,9 +138,9 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
                 reprimand: z.boolean().optional(),
                 airbrushingReceipts: z.boolean().optional(),
                 airbrushingInvoices: z.boolean().optional(),
-                externalWithdrawalBudget: z.boolean().optional(),
-                externalWithdrawalNfe: z.boolean().optional(),
-                externalWithdrawalReceipt: z.boolean().optional(),
+                externalOperationBudget: z.boolean().optional(),
+                externalOperationNfe: z.boolean().optional(),
+                externalOperationReceipt: z.boolean().optional(),
               })
               .optional(),
           }),
@@ -283,7 +283,7 @@ export const taskOrderBySchema = z
       status: orderByDirectionSchema.optional(),
       statusOrder: orderByDirectionSchema.optional(),
       serialNumber: orderByDirectionSchema.optional(),
-      commissionOrder: orderByDirectionSchema.optional(),
+      bonificationOrder: orderByDirectionSchema.optional(),
       // Note: chassisNumber and plate removed - these are now on Truck entity
       entryDate: orderByDirectionSchema.optional(),
       term: orderByDirectionSchema.optional(),
@@ -300,7 +300,7 @@ export const taskOrderBySchema = z
         status: orderByDirectionSchema.optional(),
         statusOrder: orderByDirectionSchema.optional(),
         serialNumber: orderByDirectionSchema.optional(),
-        commissionOrder: orderByDirectionSchema.optional(),
+        bonificationOrder: orderByDirectionSchema.optional(),
         // Note: chassisNumber and plate removed - these are now on Truck entity
         entryDate: orderByDirectionSchema.optional(),
         term: orderByDirectionSchema.optional(),
@@ -331,7 +331,7 @@ export const taskWhereSchema: z.ZodSchema<any> = z.lazy(() =>
       serialNumber: z.union([z.string(), z.object({ contains: z.string().optional() })]).optional(),
       // Note: chassisNumber and plate removed - these are now on Truck entity
       details: z.union([z.string(), z.object({ contains: z.string().optional() })]).optional(),
-      commission: z.union([z.string(), z.object({ in: z.array(z.string()).optional(), notIn: z.array(z.string()).optional() })]).optional(),
+      bonification: z.union([z.string(), z.object({ in: z.array(z.string()).optional(), notIn: z.array(z.string()).optional() })]).optional(),
       entryDate: z.object({ gte: z.coerce.date().optional(), lte: z.coerce.date().optional() }).optional(),
       term: z.object({ gte: z.coerce.date().optional(), lte: z.coerce.date().optional() }).optional(),
       startedAt: z.object({ gte: z.coerce.date().optional(), lte: z.coerce.date().optional() }).optional(),
@@ -396,7 +396,7 @@ export const taskWhereSchema: z.ZodSchema<any> = z.lazy(() =>
           none: z.any().optional(),
         })
         .optional(),
-      commissions: z
+      bonifications: z
         .object({
           some: z.any().optional(),
           every: z.any().optional(),
@@ -546,10 +546,6 @@ const taskTransform = (data: any): any => {
     delete data.hasPaints;
   }
 
-  // Commission functionality has been removed
-  if (data.hasCommissions !== undefined) {
-    delete data.hasCommissions;
-  }
 
   if (data.hasServiceOrders === true) {
     andConditions.push({ serviceOrders: { some: {} } });
@@ -1249,9 +1245,9 @@ export const taskCreateSchema = z
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    commission: z
-      .enum(Object.values(COMMISSION_STATUS) as [string, ...string[]], {
-        errorMap: () => ({ message: "Status de comissão inválido" }),
+    bonification: z
+      .enum(Object.values(BONIFICATION_STATUS) as [string, ...string[]], {
+        errorMap: () => ({ message: "Status de bonificação inválido" }),
       })
       .nullable()
       .optional(),
@@ -1381,9 +1377,9 @@ export const taskUpdateSchema = z
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    commission: z
-      .enum(Object.values(COMMISSION_STATUS) as [string, ...string[]], {
-        errorMap: () => ({ message: "Status de comissão inválido" }),
+    bonification: z
+      .enum(Object.values(BONIFICATION_STATUS) as [string, ...string[]], {
+        errorMap: () => ({ message: "Status de bonificação inválido" }),
       })
       .nullable()
       .optional(),

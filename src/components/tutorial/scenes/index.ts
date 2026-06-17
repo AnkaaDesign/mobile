@@ -24,6 +24,8 @@ import { JustificarListScene } from "./justificar-list";
 import { JustificarFormScene } from "./justificar-form";
 import { AjustarPontoScene } from "./ajustar-ponto";
 import { IncluirPontoScene } from "./incluir-ponto";
+import { AssinaturasScene } from "./assinaturas";
+import { AssinaturaDetailScene } from "./assinatura-detail";
 import { MeusFeriadosScene } from "./meus-feriados";
 import { MeusEpisScene } from "./meus-epis";
 import { EpisRequestScene } from "./epis-request";
@@ -54,6 +56,8 @@ export const SCENES: Record<SceneId, SceneComponent> = {
   "justificar-form": JustificarFormScene,
   "ajustar-ponto": AjustarPontoScene,
   "incluir-ponto": IncluirPontoScene,
+  "assinaturas": AssinaturasScene,
+  "assinatura-detail": AssinaturaDetailScene,
   "meus-feriados": MeusFeriadosScene,
   "meus-epis": MeusEpisScene,
   "epis-request": EpisRequestScene,
@@ -89,6 +93,8 @@ export const SCENE_TAB: Record<SceneId, "inicio" | "pessoal" | "estoque" | "prod
   "justificar-form": "pessoal",
   "ajustar-ponto": "pessoal",
   "incluir-ponto": "pessoal",
+  "assinaturas": "pessoal",
+  "assinatura-detail": "pessoal",
   "meus-feriados": "pessoal",
   "meus-epis": "pessoal",
   "epis-request": "pessoal",
@@ -124,6 +130,8 @@ export const SCENE_HEADER: Record<SceneId, { title: string; showBack: boolean }>
   "justificar-form": { title: "Justificar Ausência", showBack: true },
   "ajustar-ponto": { title: "Ajustar Ponto", showBack: true },
   "incluir-ponto": { title: "Incluir Ponto", showBack: true },
+  "assinaturas": { title: "Assinatura de Ponto", showBack: true },
+  "assinatura-detail": { title: "Detalhes", showBack: true },
   "meus-feriados": { title: "Meus Feriados", showBack: true },
   "meus-epis": { title: "Meus EPIs", showBack: true },
   "epis-request": { title: "Solicitar EPI", showBack: true },

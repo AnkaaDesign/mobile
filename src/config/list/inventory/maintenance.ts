@@ -249,6 +249,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
           }))
           await mutations?.batchUpdateAsync?.({ maintenances })
         },
+        canPerform: canEditMaintenance,
       },
       {
         key: 'complete',
@@ -266,6 +267,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
           }))
           await mutations?.batchUpdateAsync?.({ maintenances })
         },
+        canPerform: canEditMaintenance,
       },
       {
         key: 'cancel',
@@ -283,6 +285,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
           }))
           await mutations?.batchUpdateAsync?.({ maintenances })
         },
+        canPerform: canEditMaintenance,
       },
       {
         key: 'delete',
@@ -296,6 +299,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ maintenanceIds: Array.from(ids) })
         },
+        canPerform: canDeleteMaintenance,
       },
     ],
   },

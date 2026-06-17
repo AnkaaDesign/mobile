@@ -95,7 +95,7 @@ export function useActiveUsersMinimal(options?: {
   const { where, ...rest } = options || {};
   return useUsersMinimal({
     ...rest,
-    where: { ...where, isActive: true, status: { not: 'DISMISSED' } },
+    where: { ...where, isActive: true, currentContractStatus: { not: 'TERMINATED' } },
   });
 }
 

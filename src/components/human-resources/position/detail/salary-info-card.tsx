@@ -51,6 +51,15 @@ export function SalaryInfoCard({ position }: SalaryInfoCardProps) {
           </ThemedText>
         </View>
 
+        {/* Salary Floor */}
+        {position.salaryFloor != null && (
+          <View style={StyleSheet.flatten([styles.noteContainer, { backgroundColor: colors.muted + "30" }])}>
+            <ThemedText style={StyleSheet.flatten([styles.noteText, { color: colors.mutedForeground }])}>
+              Piso da categoria: {formatCurrency(position.salaryFloor)}
+            </ThemedText>
+          </View>
+        )}
+
         {/* Bonification Note */}
         {position.bonifiable && (
           <View style={StyleSheet.flatten([styles.noteContainer, { backgroundColor: colors.muted + "30" }])}>

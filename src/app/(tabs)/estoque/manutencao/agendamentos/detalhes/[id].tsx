@@ -8,6 +8,7 @@ import { formatDate, formatDateTime } from '@/utils';
 import {
   MAINTENANCE_STATUS_LABELS,
   SCHEDULE_FREQUENCY_LABELS,
+  SECTOR_PRIVILEGES,
   routes,
 } from '@/constants';
 import { IconCalendar, IconAlertCircle, IconClock } from '@tabler/icons-react-native';
@@ -30,6 +31,13 @@ export default function MaintenanceScheduleDetailsScreen() {
       query={query as any}
       icon={IconCalendar}
       title={(s: any) => s.item?.name ?? 'Agendamento de Manutenção'}
+      privilege={{
+        any: [
+          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.MAINTENANCE,
+          SECTOR_PRIVILEGES.ADMIN,
+        ],
+      }}
       editRoute={(s: any) => mobileRoute(routes.inventory.maintenance.schedules.edit(s.id))}
       notFoundFallback={mobileRoute(routes.inventory.maintenance.schedules.root)}
       status={(s: any) => ({

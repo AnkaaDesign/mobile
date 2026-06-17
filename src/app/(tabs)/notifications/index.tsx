@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useNav } from '@/contexts/nav';
@@ -23,6 +24,7 @@ import type { Notification } from '@/types';
 import * as Haptics from 'expo-haptics';
 import { extendedColors } from '@/lib/theme/extended-colors';
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { resolveNotificationNavigation } from '@/lib/deep-linking';
 
 export default function NotificationCenterScreen() {
   const nav = useNav();
@@ -99,9 +101,25 @@ export default function NotificationCenterScreen() {
         });
       }
 
-      // Navigate to action URL if available
-      if (notification.actionUrl) {
-        nav.push(mobileRoute(notification.actionUrl));
+      // Resolve navigation target (shared logic with the notification drawer:
+      // explicit /(tabs) mobileUrl > entityType+entityId mapping > parsed
+      // mobileUrl > actionUrl, which may contain embedded JSON blobs)
+      const metadata = notification.metadata as any;
+      const resolved = resolveNotificationNavigation({
+        mobileUrl: metadata?.mobileUrl,
+        entityType: metadata?.entityType,
+        entityId: metadata?.entityId,
+        taskId: metadata?.taskId,
+        actionUrl: notification.actionUrl,
+      });
+
+      if (resolved?.kind === 'external') {
+        Linking.openURL(resolved.url);
+      } else if (resolved?.kind === 'route') {
+        nav.push(mobileRoute(resolved.route));
+      } else {
+        // Nothing navigable - open the notification detail screen
+        nav.push(mobileRoute(`/(tabs)/pessoal/minhas-notificacoes/detalhes/${notification.id}`));
       }
     },
     [user?.id, markAsReadMutation, nav]

@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
@@ -14,7 +15,7 @@ import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { mobileRoute } from "@/constants/routes.types";
-import { routes } from "@/constants";
+import { routes, INSALUBRITY_DEGREE, INSALUBRITY_DEGREE_LABELS } from "@/constants";
 import { useNav } from "@/contexts/nav";
 
 import { positionCreateSchema, positionUpdateSchema } from "@/schemas/position";
@@ -45,16 +46,28 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
             remuneration: 0,
             bonifiable: false,
             hierarchy: undefined,
+            salaryFloor: undefined,
+            insalubrityDegree: INSALUBRITY_DEGREE.NONE,
+            hazardPay: false,
+            examPeriodicityMonths: undefined,
           }
         : {
             name: position?.name,
             remuneration: undefined,
             bonifiable: position?.bonifiable,
             hierarchy: position?.hierarchy ?? undefined,
+            salaryFloor: position?.salaryFloor ?? undefined,
+            insalubrityDegree: position?.insalubrityDegree ?? INSALUBRITY_DEGREE.NONE,
+            hazardPay: position?.hazardPay ?? false,
+            examPeriodicityMonths: position?.examPeriodicityMonths ?? undefined,
           },
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  const insalubrityOptions: ComboboxOption[] = Object.entries(INSALUBRITY_DEGREE_LABELS).map(
+    ([value, label]) => ({ value, label })
+  );
 
   const handleSubmit = async (data: PositionCreateFormData | PositionUpdateFormData) => {
     try {
@@ -201,6 +214,108 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
                 )}
               />
             </View>
+          </FormFieldGroup>
+          </FormCard>
+
+          <FormCard title="Adicionais Legais e Saúde" icon="IconShieldHalf">
+          {/* Salary Floor */}
+          <FormFieldGroup
+            label="Piso Salarial"
+            helper="Piso da categoria/sindicato. Vazio = usa o salário-mínimo nacional."
+            error={form.formState.errors.salaryFloor?.message}
+          >
+            <Controller
+              control={form.control}
+              name="salaryFloor"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="currency"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="R$ 0,00"
+                  editable={!isLoading}
+                  error={!!form.formState.errors.salaryFloor}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Insalubrity Degree */}
+          <FormFieldGroup
+            label="Insalubridade"
+            helper="Não acumula com periculosidade."
+            error={form.formState.errors.insalubrityDegree?.message}
+          >
+            <Controller
+              control={form.control}
+              name="insalubrityDegree"
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <Combobox
+                  options={insalubrityOptions}
+                  value={value ?? INSALUBRITY_DEGREE.NONE}
+                  onValueChange={(v) => {
+                    onChange(v);
+                    if (v !== INSALUBRITY_DEGREE.NONE) {
+                      form.setValue("hazardPay", false);
+                    }
+                  }}
+                  placeholder="Selecione o grau"
+                  disabled={isLoading}
+                  searchable={false}
+                  clearable={false}
+                  error={error?.message}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Hazard Pay */}
+          <FormFieldGroup
+            label="Periculosidade"
+            helper="Periculosidade NR-16 (+30%). Não acumula com insalubridade."
+          >
+            <View style={styles.switchRow}>
+              <Controller
+                control={form.control}
+                name="hazardPay"
+                render={({ field: { onChange, value } }) => (
+                  <Switch
+                    checked={value || false}
+                    onCheckedChange={(checked) => {
+                      onChange(checked);
+                      if (checked) {
+                        form.setValue("insalubrityDegree", INSALUBRITY_DEGREE.NONE);
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                )}
+              />
+            </View>
+          </FormFieldGroup>
+
+          {/* Exam Periodicity */}
+          <FormFieldGroup
+            label="Periodicidade de Exame"
+            helper="Periodicidade do exame periódico (meses). Vazio = cadência legal por idade/risco."
+            error={form.formState.errors.examPeriodicityMonths?.message}
+          >
+            <Controller
+              control={form.control}
+              name="examPeriodicityMonths"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="integer"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="12"
+                  min={1}
+                  max={60}
+                  editable={!isLoading}
+                  error={!!form.formState.errors.examPeriodicityMonths}
+                />
+              )}
+            />
           </FormFieldGroup>
           </FormCard>
           </KeyboardAwareFormProvider>

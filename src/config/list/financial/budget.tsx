@@ -1,8 +1,9 @@
 import { View, StyleSheet } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { TaskQuote } from '@/types/task-quote'
-import { TASK_QUOTE_STATUS, TASK_QUOTE_STATUS_LABELS } from '@/constants'
+import { TASK_QUOTE_STATUS, TASK_QUOTE_STATUS_LABELS, SECTOR_PRIVILEGES } from '@/constants'
 import { canEditQuote } from '@/utils/permissions/quote-permissions'
+import { hasAnyPrivilege } from '@/utils'
 import { formatCurrency } from '@/utils/formatters'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
@@ -16,8 +17,6 @@ function getQuoteStatusBadge(status: string | undefined | null): { variant: stri
       return { variant: 'secondary' }
     case TASK_QUOTE_STATUS.BUDGET_APPROVED:
       return { variant: 'approved' }
-    case TASK_QUOTE_STATUS.COMMERCIAL_APPROVED:
-      return { variant: 'processing' }
     case TASK_QUOTE_STATUS.BILLING_APPROVED:
       return { variant: 'approved' }
     case TASK_QUOTE_STATUS.UPCOMING:
@@ -237,7 +236,7 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         label: 'Editar Orcamento',
         icon: 'pencil',
         variant: 'default',
-        canPerform: (user) => canEditQuote(user?.sector || ''),
+        canPerform: (user) => canEditQuote(user?.sector?.privileges || user?.sector || ''),
         onPress: (quote, router) => {
           if (quote.task?.id) {
             router.push(`/financeiro/orcamento/detalhes/${quote.task.id}`)
@@ -257,7 +256,6 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         options: [
           { label: 'Pendente', value: TASK_QUOTE_STATUS.PENDING },
           { label: 'Orc. Aprovado', value: TASK_QUOTE_STATUS.BUDGET_APPROVED },
-          { label: 'Aprov. Comercial', value: TASK_QUOTE_STATUS.COMMERCIAL_APPROVED },
           { label: 'Fat. Aprovado', value: TASK_QUOTE_STATUS.BILLING_APPROVED },
           { label: 'A Vencer', value: TASK_QUOTE_STATUS.UPCOMING },
           { label: 'Vencido', value: TASK_QUOTE_STATUS.DUE },
@@ -294,7 +292,8 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
     create: {
       label: 'Criar Orçamento',
       route: '/financeiro/orcamento/cadastrar',
-      canCreate: (user: any) => canEditQuote(user?.sector?.privileges || user?.sector || ''),
+      // API: POST /task-quotes = ADMIN+COMMERCIAL only (no FINANCIAL, task-quote.controller.ts:134)
+      canCreate: (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL]),
     },
   },
 

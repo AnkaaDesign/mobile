@@ -58,6 +58,7 @@ import type {
   OrderScheduleProjectionResponse,
   OrderScheduleTriggerResponse,
   OrderScheduleExpectedTotalsResponse,
+  PayablesResponse,
 } from '../types';
 
 // =====================
@@ -101,6 +102,28 @@ export class OrderService {
 
   async deleteOrder(id: string): Promise<OrderDeleteResponse> {
     const response = await apiClient.delete<OrderDeleteResponse>(`${this.basePath}/${id}`);
+    return response.data;
+  }
+
+  // =====================
+  // Payment / Payables Operations
+  // =====================
+
+  /** Move an open order to the "Solicitado" payment sub-state (Contas a Pagar pipeline). */
+  async requestOrderPayment(id: string): Promise<OrderUpdateResponse> {
+    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/request-payment`);
+    return response.data;
+  }
+
+  /** Unified Contas a Pagar feed: open orders + airbrushing painter payments + scheduled/expected outflows. */
+  async getPayables(): Promise<PayablesResponse> {
+    const response = await apiClient.get<PayablesResponse>(`/financial/payables`);
+    return response.data;
+  }
+
+  /** Settle facade — currently the payroll competence month (folha batch). */
+  async settlePayrollMonth(year: number, month: number, amount: number | null): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post<{ success: boolean; message: string }>(`/financial/payables/settle`, { source: "PAYROLL", year, month, amount });
     return response.data;
   }
 
@@ -297,6 +320,9 @@ export const deleteOrder = (id: string) => orderService.deleteOrder(id);
 export const batchCreateOrders = (data: OrderBatchCreateFormData, query?: OrderQueryFormData) => orderService.batchCreateOrders(data, query);
 export const batchUpdateOrders = (data: OrderBatchUpdateFormData, query?: OrderQueryFormData) => orderService.batchUpdateOrders(data, query);
 export const batchDeleteOrders = (data: OrderBatchDeleteFormData) => orderService.batchDeleteOrders(data);
+export const requestOrderPayment = (id: string) => orderService.requestOrderPayment(id);
+export const getPayables = () => orderService.getPayables();
+export const settlePayrollMonth = (year: number, month: number, amount: number | null) => orderService.settlePayrollMonth(year, month, amount);
 
 // OrderItem exports
 export const getOrderItems = (params: OrderItemGetManyFormData) => orderService.getOrderItems(params);

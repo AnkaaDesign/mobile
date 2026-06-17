@@ -2,12 +2,24 @@ export type INVOICE_STATUS = 'DRAFT' | 'ACTIVE' | 'PARTIALLY_PAID' | 'PAID' | 'C
 export type INSTALLMENT_STATUS = 'PENDING' | 'PROCESSING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 export type BANK_SLIP_STATUS = 'CREATING' | 'REGISTERING' | 'ACTIVE' | 'OVERDUE' | 'PAID' | 'CANCELLED' | 'REJECTED' | 'ERROR';
 export type BANK_SLIP_TYPE = 'NORMAL' | 'HIBRIDO';
-export type NFSE_STATUS = 'PENDING' | 'PROCESSING' | 'AUTHORIZED' | 'CANCELLED' | 'ERROR';
+export type NFSE_STATUS = 'PENDING' | 'PROCESSING' | 'AUTHORIZED' | 'CANCEL_REQUESTED' | 'CANCEL_REJECTED' | 'CANCELLED' | 'ERROR';
+
+// Full NFS-e cancellation lifecycle status (mirrors backend NfseStatus enum).
+// AUTHORIZED → CANCEL_REQUESTED (aguardando fiscal) → CANCEL_REJECTED | CANCELLED.
+export type NfseStatus =
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'AUTHORIZED'
+  | 'CANCEL_REQUESTED'
+  | 'CANCEL_REJECTED'
+  | 'CANCELLED'
+  | 'ERROR';
 
 export interface Invoice {
   id: string;
-  customerConfigId: string;
-  taskId: string;
+  customerConfigId: string | null;
+  taskId: string | null;
+  externalOperationId?: string | null;
   customerId: string;
   totalAmount: number;
   paidAmount: number;
@@ -25,7 +37,8 @@ export interface Invoice {
 
 export interface Installment {
   id: string;
-  customerConfigId: string;
+  customerConfigId: string | null;
+  externalOperationId?: string | null;
   invoiceId: string | null;
   number: number;
   dueDate: Date;
@@ -65,12 +78,23 @@ export interface BankSlip {
 
 export interface NfseDocument {
   id: string;
-  invoiceId: string;
+  invoiceId: string | null;
+  taskId: string | null;
   elotechNfseId: number | null;
+  nfseNumber?: number | null;
   status: NFSE_STATUS;
   errorMessage: string | null;
   errorCount?: number;
   retryAfter?: Date | null;
+  // Cancellation lifecycle (set when a cancellation is requested at the prefeitura)
+  cancelRequestId?: number | null;
+  cancelRequestStatus?: string | null;
+  cancelReason?: string | null;
+  cancelReasonCode?: number | null;
+  cancelRejectionMessage?: string | null;
+  cancelSubstituteNfseNumber?: number | null;
+  cancelRequestedAt?: Date | null;
+  cancelResolvedAt?: Date | null;
 }
 
 export interface ElotechNfseListItem {

@@ -1,7 +1,8 @@
 // packages/interfaces/src/user.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseMergeResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION, USER_STATUS } from '@/constants';
+import type { ORDER_BY_DIRECTION, CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE } from '@/constants';
+import type { EmploymentContract, EmploymentContractIncludes } from "./employment-contract";
 import type { PpeSize, PpeDelivery, PpeDeliverySchedule, PpeSizeIncludes, PpeDeliveryIncludes, PpeDeliveryScheduleIncludes } from "./ppe";
 import type { SeenNotification, Notification, SeenNotificationIncludes, NotificationIncludes } from "./notification";
 import type { Position, PositionIncludes, PositionOrderBy } from "./position";
@@ -23,8 +24,10 @@ export interface User extends BaseEntity {
   email: string | null;
   name: string;
   avatarId: string | null;
-  status: USER_STATUS;
-  statusOrder: number; // 1=Ativo, 2=Inativo, 3=Suspenso
+  currentContractId: string | null;
+  currentContractType: CONTRACT_TYPE | null;
+  currentContractStatus: CONTRACT_STATUS | null;
+  currentEmployeeType: EMPLOYEE_TYPE | null;
   isActive: boolean;
   phone: string | null;
   password?: string | null;
@@ -52,16 +55,16 @@ export interface User extends BaseEntity {
   sessionToken: string | null;
   payrollNumber: number | null;
 
-  // Status timestamp tracking
-  effectedAt: Date | null; // When user became permanently effected/hired
-  exp1StartAt: Date | null;
-  exp1EndAt: Date | null;
-  exp2StartAt: Date | null;
-  exp2EndAt: Date | null;
-  dismissedAt: Date | null;
+  // Payroll-related fields (from Prisma, available when fetched directly)
+  unionMember?: boolean;
+  unionAuthorizationDate?: Date | null;
+  dependentsCount?: number;
+  hasSimplifiedDeduction?: boolean;
 
   // Relations
   avatar?: File;
+  contracts?: EmploymentContract[];
+  currentContract?: EmploymentContract | null;
   ppeSize?: PpeSize;
   preference?: Preferences;
   position?: Position;
@@ -111,6 +114,18 @@ export interface User extends BaseEntity {
 
 export interface UserIncludes {
   avatar?: boolean;
+  contracts?:
+    | boolean
+    | {
+        include?: EmploymentContractIncludes;
+        where?: any;
+        orderBy?: any;
+      };
+  currentContract?:
+    | boolean
+    | {
+        include?: EmploymentContractIncludes;
+      };
   ppeSize?:
     | boolean
     | {
@@ -218,8 +233,9 @@ export interface UserOrderBy {
   name?: ORDER_BY_DIRECTION;
   avatarId?: ORDER_BY_DIRECTION;
   token?: ORDER_BY_DIRECTION;
-  status?: ORDER_BY_DIRECTION;
-  statusOrder?: ORDER_BY_DIRECTION;
+  currentContractType?: ORDER_BY_DIRECTION;
+  currentContractStatus?: ORDER_BY_DIRECTION;
+  currentEmployeeType?: ORDER_BY_DIRECTION;
   isActive?: ORDER_BY_DIRECTION;
   phone?: ORDER_BY_DIRECTION;
   password?: ORDER_BY_DIRECTION;
@@ -228,12 +244,6 @@ export interface UserOrderBy {
   verified?: ORDER_BY_DIRECTION;
   payrollNumber?: ORDER_BY_DIRECTION;
   birth?: ORDER_BY_DIRECTION;
-  effectedAt?: ORDER_BY_DIRECTION;
-  exp1StartAt?: ORDER_BY_DIRECTION;
-  exp1EndAt?: ORDER_BY_DIRECTION;
-  exp2StartAt?: ORDER_BY_DIRECTION;
-  exp2EndAt?: ORDER_BY_DIRECTION;
-  dismissedAt?: ORDER_BY_DIRECTION;
   performanceLevel?: ORDER_BY_DIRECTION;
   address?: ORDER_BY_DIRECTION;
   addressNumber?: ORDER_BY_DIRECTION;

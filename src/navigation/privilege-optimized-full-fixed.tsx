@@ -7,6 +7,7 @@ import { DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform, AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
+import { getStoredToken } from "@/utils/auth-storage";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useNav } from "@/contexts/nav";
@@ -163,11 +164,11 @@ const ALL_ROUTES = [
   { name: "estoque/epi/entregas/listar", title: "Entregas EPI" },
   { name: "estoque/epi/entregas/detalhes/[id]", title: "Detalhes da Entrega EPI" },
   { name: "estoque/epi/entregas/editar/[id]", title: "Editar Entrega EPI" },
-  { name: "estoque/retiradas-externas/index", title: "Retiradas Externas" },
-  { name: "estoque/retiradas-externas/cadastrar", title: "Cadastrar Retirada Externa" },
-  { name: "estoque/retiradas-externas/listar", title: "Retiradas Externas" },
-  { name: "estoque/retiradas-externas/detalhes/[id]", title: "Detalhes da Retirada Externa" },
-  { name: "estoque/retiradas-externas/editar/[id]", title: "Editar Retirada Externa" },
+  { name: "estoque/operacoes-externas/index", title: "Operações Externas" },
+  { name: "estoque/operacoes-externas/cadastrar", title: "Cadastrar Operação Externa" },
+  { name: "estoque/operacoes-externas/listar", title: "Operações Externas" },
+  { name: "estoque/operacoes-externas/detalhes/[id]", title: "Detalhes da Operação Externa" },
+  { name: "estoque/operacoes-externas/editar/[id]", title: "Editar Operação Externa" },
 
   // Production
   { name: "producao/index", title: "Produção" },
@@ -342,6 +343,8 @@ const ALL_ROUTES = [
   { name: "pessoal/meus-pontos/ajustar-ponto/index", title: "Ajustar Ponto" },
   { name: "pessoal/meus-pontos/incluir-ponto/index", title: "Incluir Ponto" },
   { name: "pessoal/meus-pontos/incluir-ponto/capture", title: "Incluir Ponto" },
+  { name: "pessoal/meus-pontos/assinaturas/index", title: "Assinatura de Ponto" },
+  { name: "pessoal/meus-pontos/assinaturas/[id]", title: "Detalhes da Apuração" },
   { name: "pessoal/minhas-notificacoes/index", title: "Notificações" },
   { name: "pessoal/minhas-notificacoes/configuracoes", title: "Configurações de Notificações" },
   { name: "pessoal/minhas-notificacoes/detalhes/[id]", title: "Detalhes da Notificação" },
@@ -557,6 +560,13 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
       return true;
     }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.FINANCIAL) && path.startsWith('financeiro/')) {
+      return true;
+    }
+    // ACCOUNTING users get financial + human-resources routes (pessoal/ is already global)
+    if (userPrivileges.includes(SECTOR_PRIVILEGES.ACCOUNTING) && (
+      path.startsWith('financeiro/') ||
+      path.startsWith('recursos-humanos/')
+    )) {
       return true;
     }
     // COMMERCIAL users can access financial routes and responsible/customer routes
@@ -897,13 +907,29 @@ function InnerLayout() {
     // Wait for auth to be ready
     if (!isAuthReady || isLoading) return;
 
-    // If user is null after auth is ready, redirect to login
-    if (!user) {
-      hasRedirectedToLogin.current = true;
-      console.log("[PrivilegeOptimizedFullLayout] User logged out, redirecting to login");
-      // Use replace to prevent back navigation to protected screens
-      nav.replace(authRoute(routes.authentication.login));
-    }
+    // If user is set, nothing to do.
+    if (user) return;
+
+    // user is null after auth is ready. Before redirecting, confirm there is no
+    // stored token: a transient null user with a valid token (background
+    // re-validation / recovery) must NOT be bounced to login — only a genuinely
+    // tokenless state is a real logout.
+    let cancelled = false;
+    (async () => {
+      const token = await getStoredToken();
+      if (cancelled || hasRedirectedToLogin.current) return;
+      if (!token) {
+        hasRedirectedToLogin.current = true;
+        console.log("[PrivilegeOptimizedFullLayout] No user and no token, redirecting to login");
+        // Use replace to prevent back navigation to protected screens
+        nav.replace(authRoute(routes.authentication.login));
+      } else {
+        console.log("[PrivilegeOptimizedFullLayout] No user but token present — waiting for session restore");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user, isAuthReady, isLoading, nav]);
 
   // Reset redirect flag when user logs in (so we can redirect again on next logout)

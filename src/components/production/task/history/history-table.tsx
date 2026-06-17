@@ -10,7 +10,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { HistoryTableRowSwipe } from "./history-table-row-swipe";
 import { formatDate, formatChassis } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { TASK_STATUS, TASK_STATUS_LABELS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS } from "@/constants";
+import { TASK_STATUS, TASK_STATUS_LABELS, BONIFICATION_STATUS, BONIFICATION_STATUS_LABELS } from "@/constants";
 import { getBadgeVariantFromStatus } from "@/components/ui/badge";
 import type { SortConfig } from '@/lib/sort-utils';
 import { TaskSectorModal, TaskStatusModal } from "../modals";
@@ -282,21 +282,21 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "commission",
-    header: "Comissão",
+    key: "bonification",
+    header: "Bonificação",
     align: "center",
     sortable: true,
     width: 0,
     accessor: (task: Task) => {
-      if (!task.commission) {
+      if (!task.bonification) {
         return (
           <ThemedText style={styles.mutedText} numberOfLines={1}>
             -
           </ThemedText>
         );
       }
-      const variant = getBadgeVariantFromStatus(task.commission, "COMMISSION_STATUS");
-      const label = COMMISSION_STATUS_LABELS[task.commission as COMMISSION_STATUS] || task.commission;
+      const variant = getBadgeVariantFromStatus(task.bonification, "BONIFICATION_STATUS");
+      const label = BONIFICATION_STATUS_LABELS[task.bonification as BONIFICATION_STATUS] || task.bonification;
       return (
         <View style={styles.centerAlign}>
           <Badge variant={variant} size="sm">
@@ -362,7 +362,7 @@ export const HistoryTable = React.memo<HistoryTableProps>(
         services: 0.9,
         details: 2.0,
         observation: 2.0,
-        commission: 1.4,
+        bonification: 1.4,
       };
 
       // Filter to visible columns

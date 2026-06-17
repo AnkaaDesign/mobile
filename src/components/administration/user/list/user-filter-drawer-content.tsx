@@ -13,7 +13,7 @@ import {
   MultiSelectFilter,
 } from '@/components/common/filters';
 import { usePositions, useSectors } from "@/hooks";
-import { USER_STATUS, USER_STATUS_LABELS } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_TYPE_LABELS } from "@/constants";
 import { spacing } from '@/constants/design-system';
 import type { UserGetManyFormData } from '../../../../schemas';
 
@@ -56,7 +56,7 @@ export function UserFilterDrawerContent({
   const [localFilters, setLocalFilters] = useState<FilterState>(() => {
     const where = filters.where || {};
     return {
-      statuses: where.status?.in || [],
+      statuses: where.currentContractType?.in || [],
       positionIds: where.positionId?.in || [],
       sectorIds: where.sectorId?.in || [],
       ledSectorIds: where.ledSectorId?.in || [],
@@ -70,7 +70,7 @@ export function UserFilterDrawerContent({
     const where: any = {};
 
     if (localFilters.statuses && localFilters.statuses.length > 0) {
-      where.status = { in: localFilters.statuses };
+      where.currentContractType = { in: localFilters.statuses };
     }
 
     if (localFilters.positionIds && localFilters.positionIds.length > 0) {
@@ -108,9 +108,9 @@ export function UserFilterDrawerContent({
 
   const statusOptions = useMemo(
     () =>
-      Object.values(USER_STATUS).map((status) => ({
+      Object.values(CONTRACT_TYPE).map((status) => ({
         value: status,
-        label: USER_STATUS_LABELS[status],
+        label: CONTRACT_TYPE_LABELS[status],
       })),
     []
   );
@@ -167,12 +167,12 @@ export function UserFilterDrawerContent({
       >
         {/* Multi-Select: Status */}
         <MultiSelectFilter
-          label="Status do Usuário"
+          label="Tipo de Contrato"
           icon={getFilterIcon('status')}
           value={localFilters.statuses || []}
           onChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: values.length > 0 ? values : undefined }))}
           options={statusOptions}
-          placeholder="Todos os status"
+          placeholder="Todos os tipos de contrato"
         />
 
         <Separator />

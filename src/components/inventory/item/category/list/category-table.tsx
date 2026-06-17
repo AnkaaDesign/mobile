@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useRef} from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView , StyleSheet} from "react-native";
 import { IconChevronUp, IconChevronDown, IconArrowsVertical } from "@tabler/icons-react-native";
 import type { ItemCategory } from '../../../../../types';
-import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CategoryTableRowSwipe } from "./category-table-row-swipe";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -56,12 +55,6 @@ const ALL_COLUMN_DEFINITIONS: Record<string, Omit<TableColumn, "width">> = {
     align: "left",
     sortable: true,
   },
-  type: {
-    key: "type",
-    title: "Tipo",
-    align: "left",
-    sortable: true,
-  },
   itemCount: {
     key: "itemCount",
     title: "Produtos",
@@ -77,13 +70,12 @@ const ALL_COLUMN_DEFINITIONS: Record<string, Omit<TableColumn, "width">> = {
 };
 
 // Default columns for category table (simplified for mobile)
-const DEFAULT_COLUMNS = ["name", "type", "itemCount", "createdAt"];
+const DEFAULT_COLUMNS = ["name", "itemCount", "createdAt"];
 
 function calculateColumnWidths(columnKeys: string[]): TableColumn[] {
   // Define width ratios for each column type (similar to item table approach)
   const columnWidthRatios: Record<string, number> = {
     name: 2.0, // Main column - needs more space (matches brand table)
-    type: 1.3, // Type display - needs reasonable space
     itemCount: 1.2, // Slightly increased - numeric count
     createdAt: 1.1, // Slightly decreased - date display
   };
@@ -237,43 +229,6 @@ export function CategoryTable({
             <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
               {category.name}
             </ThemedText>
-          </View>
-        );
-
-      case "type":
-        const getBadgeStyle = (type: string) => {
-          switch (type) {
-            case ITEM_CATEGORY_TYPE.PPE:
-              return { background: badgeColors.success.background, text: badgeColors.success.text };
-            case ITEM_CATEGORY_TYPE.TOOL:
-              return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-            default:
-              return { background: badgeColors.muted.background, text: badgeColors.muted.text };
-          }
-        };
-
-        const badgeStyle = getBadgeStyle(category.type);
-
-        return (
-          <View style={styles.typeBadgeContainer}>
-            <Badge
-              variant="secondary"
-              size="sm"
-              style={{
-                backgroundColor: badgeStyle.background,
-                borderWidth: 0,
-              }}
-            >
-              <ThemedText
-                style={{
-                  color: badgeStyle.text,
-                  fontSize: fontSize.xs,
-                  fontWeight: fontWeight.medium,
-                }}
-              >
-                {ITEM_CATEGORY_TYPE_LABELS[category.type as keyof typeof ITEM_CATEGORY_TYPE_LABELS]}
-              </ThemedText>
-            </Badge>
           </View>
         );
 
@@ -577,10 +532,6 @@ const styles = StyleSheet.create({
   },
   rightAlign: {
     alignItems: "flex-end",
-  },
-  typeBadgeContainer: {
-    alignItems: "flex-start",
-    justifyContent: "center",
   },
   loadingMore: {
     padding: spacing.md,

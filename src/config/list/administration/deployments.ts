@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Deployment } from '@/types'
-import { DEPLOYMENT_STATUS, DEPLOYMENT_ENVIRONMENT } from '@/constants/enums'
+import { DEPLOYMENT_STATUS, DEPLOYMENT_ENVIRONMENT, SECTOR_PRIVILEGES } from '@/constants/enums'
+import { hasAnyPrivilege } from '@/utils'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -188,6 +189,8 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
+        // API: deployment operations = ADMIN
+        canPerform: (user) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN]),
       },
     ],
   },

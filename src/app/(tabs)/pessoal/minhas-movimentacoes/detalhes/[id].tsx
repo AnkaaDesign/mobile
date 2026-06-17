@@ -33,7 +33,6 @@ export default function MovementDetailScreen() {
   const query = useTaskDetail(id || "", {
     include: {
       sector: { select: { id: true, name: true } },
-      customer: { select: { id: true, fantasyName: true, name: true } },
       createdBy: { select: { id: true, name: true } },
     },
     enabled: !!id && id !== "",
@@ -47,8 +46,12 @@ export default function MovementDetailScreen() {
       subtitle={(t) =>
         t.serialNumber ? `Nº Série: ${t.serialNumber}` : undefined
       }
-      // Read-only mirror — user views their own task movements.
+      // Read-only mirror — user views their own task movements. The production
+      // user can't edit anything, so hide the redundant refresh button
+      // (pull-to-refresh covers it) and the terminal-state banner.
       editGuard={{ editable: [] }}
+      hideRefresh
+      hideTerminalBanner
       notFoundFallback={mobileRoute(routes.personal.myMovements.root)}
     >
       {(task) => (
@@ -79,20 +82,6 @@ export default function MovementDetailScreen() {
               </View>
             </View>
             <View style={styles.content}>
-              {task.customer && (
-                <View style={styles.detailRow}>
-                  <ThemedText
-                    style={[styles.detailLabel, { color: colors.mutedForeground }]}
-                  >
-                    Cliente
-                  </ThemedText>
-                  <ThemedText
-                    style={[styles.detailValue, { color: colors.foreground }]}
-                  >
-                    {task.customer.fantasyName}
-                  </ThemedText>
-                </View>
-              )}
               {task.sector && (
                 <View style={styles.detailRow}>
                   <ThemedText

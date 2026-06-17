@@ -67,6 +67,13 @@ export interface DetailScreenProps<T extends BaseEntity> {
     successRoute?: AppRoute;
   };
   /**
+   * Privilege required to EDIT this entity (controls Edit button visibility).
+   * Defaults to `privilege` (page access) for backwards compatibility. Pass a
+   * stricter requirement when editing must be gated separately from viewing —
+   * e.g. PRODUCTION may VIEW observations but must never edit them.
+   */
+  editPrivilege?: PrivilegeReq;
+  /**
    * Privilege required to DELETE this entity. Defaults to `privilege` (page
    * access) for backwards compatibility. Pass a stricter requirement (e.g.
    * ADMIN-only) when deletion must be gated separately from edit/view — e.g.
@@ -89,6 +96,18 @@ export interface DetailScreenProps<T extends BaseEntity> {
   privilege?: PrivilegeReq;
   /** Status allowlist for edit visibility. */
   editGuard?: StatusGuardConfig<T>;
+  /**
+   * Hide the header refresh button. Pull-to-refresh still works. Use on
+   * read-only mirror screens (e.g. personal self-service) where the explicit
+   * "Atualizar" action is redundant.
+   */
+  hideRefresh?: boolean;
+  /**
+   * Suppress the "Este registro está em um estado finalizado..." terminal
+   * banner. Use on read-only screens where the user can never edit anything,
+   * so the not-editable notice carries no useful meaning.
+   */
+  hideTerminalBanner?: boolean;
   /** Where to dismissTo on a 404 / load failure. */
   notFoundFallback?: AppRoute;
   /**
@@ -136,12 +155,19 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
   });
   const editGuardActive = !!props.editGuard;
 
-  // Edit is gated separately so a sector can view an entity without being able
-  // to edit it. Falls back to the page privilege when not specified.
-  const editPriv = usePrivilegeGate(props.editPrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.BASIC);
+  // Deny-by-default (2026-06-10 permissions audit): when a screen omits
+  // `privilege`/`deletePrivilege`, mutating actions fall back to ADMIN-only
+  // instead of the old BASIC fallback (which exposed edit/delete to every
+  // authenticated user). ADMIN-only was chosen over hiding entirely so admins
+  // are never locked out by a missing prop; screens should still pass
+  // explicit privileges matching their API roles.
+  // Edit is gated separately so a sector can VIEW an entity without being able
+  // to edit it (e.g. PRODUCTION may view observations but not edit them). Falls
+  // back to the page privilege when not specified.
+  const editPriv = usePrivilegeGate(props.editPrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.ADMIN);
   // Delete is gated separately so a sector can manage an entity without being
   // able to delete it. Falls back to the page privilege when not specified.
-  const deletePriv = usePrivilegeGate(props.deletePrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.BASIC);
+  const deletePriv = usePrivilegeGate(props.deletePrivilege ?? props.privilege ?? SECTOR_PRIVILEGES.ADMIN);
 
   const handleEdit = useCallback(() => {
     if (!entity || !props.editRoute) return;
@@ -241,16 +267,10 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
           badges={props.badges?.(entity) ?? []}
           actions={overflowActions}
           showEditButton={showEditButton}
+          showRefreshButton={false}
           isRefreshing={props.query.isRefetching}
         />
       </View>
-      {!showEditButton && editGuardActive && guard.isTerminal ? (
-        <View style={[styles.banner, { backgroundColor: colors.muted }]}>
-          <ThemedText style={styles.bannerText}>
-            {guard.message ?? "Este registro está em um estado finalizado e não pode ser editado."}
-          </ThemedText>
-        </View>
-      ) : null}
       {props.status ? (
         <View style={styles.statusRow}>
           <Badge variant={(props.status(entity).variant as any) ?? "default"}>

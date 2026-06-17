@@ -15,7 +15,7 @@ import { usePpeDeliveryMutations, useUsers, useItems, useKeyboardAwareScroll } f
 import { ppeDeliveryCreateSchema } from '../../../schemas';
 import type { PpeDeliveryCreateFormData } from '../../../schemas';
 import type { User, Item } from '../../../types';
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, USER_STATUS, PPE_TYPE } from "@/constants";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, CONTRACT_STATUS, PPE_TYPE } from "@/constants";
 import { getItemPpeSize } from "@/utils/ppe-size-mapping";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
@@ -36,14 +36,15 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
   const [_selectedItem, _setSelectedItem] = useState<Item | null>(preselectedItem || null);
 
   const { data: users } = useUsers({
-    where: { status: { not: USER_STATUS.DISMISSED } },
+    where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED } },
     orderBy: { name: "asc" },
     include: { ppeSize: true }, // Include user's PPE size configuration
   });
 
   const { data: items } = useItems({
     where: {
-      category: { type: "PPE" },
+      // PPE identity = ppeType != null (capability-fields contract)
+      ppeType: { not: null },
       isActive: true,
     },
     orderBy: { name: "asc" },

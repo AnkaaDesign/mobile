@@ -1,5 +1,5 @@
 // lib/constants.ts - Mobile app specific constants
-import { ACTIVE_USER_STATUSES } from "@/constants";
+import { CONTRACT_STATUS } from "@/constants";
 
 // Re-export design system constants for convenience
 export { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -26,7 +26,7 @@ export const MOBILE_BREAKPOINTS = {
 
 export const ITEM_FILTER_DEFAULTS = {
   searchingFor: "",
-  status: ACTIVE_USER_STATUSES,
+  status: [CONTRACT_STATUS.ACTIVE],
   sortBy: "name",
   sortOrder: "asc",
 };

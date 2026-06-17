@@ -32,7 +32,7 @@ import type { SceneProps } from "./index";
 //   2) Regras do Bônus  (primary CTA button → BonusRulesModal)
 //   3) Valor do Bônus   (Valor Base + extras + descontos + Valor Líquido)
 //   4) Detalhes de Performance (~7 metric rows incl. Nível + Tarefas ponderadas)
-//   5) Status das Comissões    (4 status badges with counts → ponderação)
+//   5) Status das Bonificações    (4 status badges with counts → ponderação)
 //   6) Simulação + Histórico nav buttons row
 //
 // The tutorial walks the colaborador through HOW the bonus is built, so the
@@ -62,8 +62,8 @@ const B = {
   weightedTasks: "21,50",
   eligibleUsers: 12,
   averagePerUser: "1,79",
-  // Commission breakdown (drives the weighted task count → ponderação)
-  commissions: {
+  // Bonification breakdown (drives the weighted task count → ponderação)
+  bonifications: {
     full: 18, // conta 1.0 cada
     partial: 4, // conta 0.5 cada
     none: 2, // conta 0
@@ -256,47 +256,47 @@ export function MeuBonusScene({ state }: SceneProps) {
         </View>
       </View>
 
-      {/* 5) Commission Status Card — drives the ponderação */}
+      {/* 5) Bonification Status Card — drives the ponderação */}
       <View
-        ref={slot.registerRef("pessoalBonusCommission") as any}
-        onLayout={track("pessoalBonusCommission")}
+        ref={slot.registerRef("pessoalBonusBonification") as any}
+        onLayout={track("pessoalBonusBonification")}
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          Status das Comissões
+          Status das Bonificações
         </Text>
         <Text style={[styles.sectionHint, { color: colors.mutedForeground }]}>
           Toque para ver as tarefas
         </Text>
-        <View style={styles.commissionList}>
-          {/* Palette mirrors ENTITY_BADGE_CONFIG.COMMISSION_STATUS:
+        <View style={styles.bonificationList}>
+          {/* Palette mirrors ENTITY_BADGE_CONFIG.BONIFICATION_STATUS:
               FULL → green, PARTIAL → blue, NO → orange, SUSPENDED → red.
               The weight note explains how each status counts in the ponderação. */}
-          <CommissionRow
-            label="Comissão Integral"
+          <BonificationRow
+            label="Bonificação Integral"
             weight="conta 1.0"
-            count={B.commissions.full}
+            count={B.bonifications.full}
             color="#15803d"
             colors={colors}
           />
-          <CommissionRow
-            label="Comissão Parcial"
+          <BonificationRow
+            label="Bonificação Parcial"
             weight="conta 0.5"
-            count={B.commissions.partial}
+            count={B.bonifications.partial}
             color="#2563eb"
             colors={colors}
           />
-          <CommissionRow
-            label="Sem Comissão"
+          <BonificationRow
+            label="Sem Bonificação"
             weight="conta 0"
-            count={B.commissions.none}
+            count={B.bonifications.none}
             color="#f97316"
             colors={colors}
           />
-          <CommissionRow
-            label="Comissão Suspensa"
+          <BonificationRow
+            label="Bonificação Suspensa"
             weight="fora do cálculo"
-            count={B.commissions.suspended}
+            count={B.bonifications.suspended}
             color="#b91c1c"
             colors={colors}
           />
@@ -382,14 +382,11 @@ export function MeuBonusScene({ state }: SceneProps) {
                 colors={colors}
               >
                 <Text style={[styles.rulesBody, { color: colors.mutedForeground }]}>
-                  A cada dia útil com o ponto eletrônico completo (4 batidas: entrada,
-                  saída almoço, retorno, saída), o colaborador acumula +1% de bônus.
+                  A assiduidade é somada (+1% por dia útil) sempre que o colaborador não
+                  solicita nenhuma correção, não deixa de registrar nenhuma batida e não
+                  tem atrasos — ou seja, o dia tem o ponto eletrônico completo (4 batidas:
+                  entrada, saída almoço, retorno, saída).
                 </Text>
-                <View style={[styles.rulesWarningBox, { backgroundColor: `${colors.destructive}10`, borderColor: `${colors.destructive}30` }]}>
-                  <Text style={[styles.rulesBody, { color: colors.destructive }]}>
-                    Atenção: qualquer falta ou atestado acima de 02:00h zera todo o bônus de assiduidade.
-                  </Text>
-                </View>
               </RulesSection>
 
               {/* DESCONTOS */}
@@ -401,14 +398,12 @@ export function MeuBonusScene({ state }: SceneProps) {
                 icon={IconBan}
                 title="Tarefas Suspensas"
                 badge="Excluído do cálculo"
-                badgeBg="#f9731618"
-                badgeColor="#c2410c"
+                badgeBg={`${colors.destructive}18`}
+                badgeColor={colors.destructive}
                 colors={colors}
               >
                 <Text style={[styles.rulesBody, { color: colors.mutedForeground }]}>
-                  Tarefas com comissão suspensa são removidas do cálculo do bônus e não
-                  contam na média ponderada. O valor que seria recebido aparece como
-                  desconto "Tarefas Suspensas".
+                  Tarefas com bonificação suspensa são removidas do cálculo do bônus.
                 </Text>
               </RulesSection>
               <RulesSection
@@ -421,12 +416,13 @@ export function MeuBonusScene({ state }: SceneProps) {
               >
                 <TierTable
                   colors={colors}
-                  extraNote="Qualquer valor acima de 0h também zera a assiduidade."
+                  extraNote="Pequenas ausências fazem perder apenas o dia (−1%); a partir de 02:00h a assiduidade cai 50% ou 100%."
                   rows={[
-                    { hours: "Nenhuma", discount: "0%", isZero: true },
-                    { hours: "até 02:00h", discount: "-25%" },
-                    { hours: "02:00h – 08:00h", discount: "-50%" },
-                    { hours: "Maior que 08:00h", discount: "-100%" },
+                    { hours: "Nenhuma", discount: "0%", isZero: true, assiduidade: "Mantém" },
+                    { hours: "até 02:00h", discount: "0%", isZero: true, assiduidade: "Perde o dia" },
+                    { hours: "02:00h – 04:00h", discount: "-25%", assiduidade: "-50%" },
+                    { hours: "04:00h – 08:00h", discount: "-50%", assiduidade: "-100%" },
+                    { hours: "Maior que 08:00h", discount: "-100%", assiduidade: "-100%" },
                   ]}
                 />
               </RulesSection>
@@ -440,13 +436,13 @@ export function MeuBonusScene({ state }: SceneProps) {
               >
                 <TierTable
                   colors={colors}
-                  extraNote="A partir de 02:00h a assiduidade é perdida mesmo sem desconto no bônus."
+                  extraNote="A partir de 02:00h a assiduidade começa a ser perdida mesmo enquanto o desconto no bônus ainda é 0%."
                   rows={[
-                    { hours: "até 02:00h", discount: "0%", isZero: true },
-                    { hours: "02:00h – 08:00h", discount: "0%", isZero: true },
-                    { hours: "08:00h – 16:00h", discount: "-25%" },
-                    { hours: "16:00h – 25:00h", discount: "-50%" },
-                    { hours: "Maior que 25:00h", discount: "-100%" },
+                    { hours: "até 02:00h", discount: "0%", isZero: true, assiduidade: "Mantém" },
+                    { hours: "02:00h – 04:00h", discount: "0%", isZero: true, assiduidade: "Perde o dia" },
+                    { hours: "04:00h – 08:00h", discount: "-25%", assiduidade: "-50%" },
+                    { hours: "08:00h – 25:00h", discount: "-50%", assiduidade: "-100%" },
+                    { hours: "Maior que 25:00h", discount: "-100%", assiduidade: "-100%" },
                   ]}
                 />
                 <View style={[styles.rulesForgivenessBox, { backgroundColor: "#05966912", borderColor: "#05966945" }]}>
@@ -468,14 +464,16 @@ interface TierRow {
   hours: string;
   discount: string;
   isZero?: boolean;
+  assiduidade: string;
 }
 
 function TierTable({ rows, extraNote, colors }: { rows: TierRow[]; extraNote?: string; colors: any }) {
   return (
     <View style={{ gap: 6, marginTop: 4 }}>
       <View style={[styles.tierRow, { backgroundColor: `${colors.mutedForeground}18`, borderRadius: 6 }]}>
-        <Text style={[styles.tierHoursCell, { color: colors.foreground, fontWeight: "700", fontSize: 12 }]}>Horas</Text>
-        <Text style={[styles.tierDiscountCell, { color: colors.foreground, fontWeight: "700", fontSize: 12 }]}>Desconto do Bônus</Text>
+        <Text style={[styles.tierHoursCell, { color: colors.foreground, fontWeight: "700", fontSize: 11 }]}>Horas</Text>
+        <Text style={[styles.tierDiscountCell, { color: colors.foreground, fontWeight: "700", fontSize: 11 }]}>Bônus</Text>
+        <Text style={[styles.tierAssiduidadeCell, { color: colors.foreground, fontWeight: "700", fontSize: 11 }]}>Assiduidade</Text>
       </View>
       {rows.map((row, i) => (
         <View
@@ -488,9 +486,12 @@ function TierTable({ rows, extraNote, colors }: { rows: TierRow[]; extraNote?: s
             },
           ]}
         >
-          <Text style={[styles.tierHoursCell, { color: colors.foreground, fontSize: 13 }]}>{row.hours}</Text>
-          <Text style={[styles.tierDiscountCell, { color: row.isZero ? "#059669" : colors.destructive, fontWeight: "700", fontSize: 13 }]}>
+          <Text style={[styles.tierHoursCell, { color: colors.foreground, fontSize: 12 }]}>{row.hours}</Text>
+          <Text style={[styles.tierDiscountCell, { color: row.isZero ? "#059669" : colors.destructive, fontWeight: "700", fontSize: 12 }]}>
             {row.discount}
+          </Text>
+          <Text style={[styles.tierAssiduidadeCell, { color: row.assiduidade === "Mantém" ? "#059669" : colors.destructive, fontWeight: "700", fontSize: 12 }]}>
+            {row.assiduidade}
           </Text>
         </View>
       ))}
@@ -576,7 +577,7 @@ function DetailRow({
   );
 }
 
-function CommissionRow({
+function BonificationRow({
   label,
   weight,
   count,
@@ -590,13 +591,13 @@ function CommissionRow({
   colors: any;
 }) {
   return (
-    <View style={styles.commissionRow}>
-      <View style={styles.commissionLeft}>
+    <View style={styles.bonificationRow}>
+      <View style={styles.bonificationLeft}>
         {/* Solid status badge — mirrors <Badge variant size="sm"> (solid bg, white text) */}
-        <View style={[styles.commissionBadge, { backgroundColor: color }]}>
-          <Text style={styles.commissionBadgeText}>{label}</Text>
+        <View style={[styles.bonificationBadge, { backgroundColor: color }]}>
+          <Text style={styles.bonificationBadgeText}>{label}</Text>
         </View>
-        <Text style={[styles.commissionWeight, { color: colors.mutedForeground }]}>
+        <Text style={[styles.bonificationWeight, { color: colors.mutedForeground }]}>
           {weight}
         </Text>
       </View>
@@ -688,32 +689,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  commissionList: {
+  bonificationList: {
     gap: 12,
   },
-  commissionRow: {
+  bonificationRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  commissionLeft: {
+  bonificationLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     flexShrink: 1,
   },
-  commissionBadge: {
+  bonificationBadge: {
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 6,
     alignSelf: "flex-start",
   },
-  commissionBadgeText: {
+  bonificationBadgeText: {
     fontSize: 12,
     fontWeight: "600",
     color: "#ffffff",
   },
-  commissionWeight: {
+  bonificationWeight: {
     fontSize: 11,
     fontWeight: "500",
     fontStyle: "italic",
@@ -804,6 +805,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  tierHoursCell: { flex: 1 },
-  tierDiscountCell: { width: 120, textAlign: "right" },
+  tierHoursCell: { flex: 1.3 },
+  tierDiscountCell: { flex: 1, textAlign: "right" },
+  tierAssiduidadeCell: { flex: 1.1, textAlign: "right" },
 });

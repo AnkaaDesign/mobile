@@ -92,7 +92,7 @@ export default function AirbrushingCreateScreen() {
       title="Criar Airbrushing"
       form={form}
       flow={flow}
-      privilege={{ any: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.ADMIN] }}
+      privilege={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL] }}
       submittingLabel="Criando..."
       submitLabel="Criar"
       loadQuery={tasksQuery as any}
@@ -218,7 +218,15 @@ export default function AirbrushingCreateScreen() {
               render={({ field }) => (
                 <Combobox
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    // Payment status only applies to completed airbrushings —
+                    // reset it when leaving COMPLETED so a stale PAID isn't
+                    // submitted (the API rejects it).
+                    if (value !== AIRBRUSHING_STATUS.COMPLETED) {
+                      form.setValue("paymentStatus", AIRBRUSHING_PAYMENT_STATUS.PENDING, { shouldDirty: true });
+                    }
+                  }}
                   options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
                     value: status,
                     label:

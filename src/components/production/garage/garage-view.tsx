@@ -1765,29 +1765,16 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onTruckSelect, 
         }
       };
 
-      // Helper to show sector mismatch alert
-      const showSectorAlert = (tId: string, targetArea: AreaId) => {
-        const truck = trucksWithPendingChanges.find((t) => t.id === tId);
-        if (truck?.sectorName) {
-          const expectedGarage = getGarageForSectorName(truck.sectorName);
-          if (expectedGarage) {
-            Alert.alert(
-              'Movimentação não permitida',
-              `Este caminhão pertence ao setor ${truck.sectorName} e só pode ir no Barracão ${expectedGarage.slice(1)}`
-            );
-          }
-        }
-      };
-
       // LEFT EDGE DETECTION
       if (absoluteX < leftEdge) {
         if (dragOverEdge !== 'left') {
           const prevIndex = currentAreaIndex > 0 ? currentAreaIndex - 1 : AREAS.length - 1;
           const targetArea = AREAS[prevIndex];
-          // Block navigation and show alert if sector doesn't match target garage
+          // Block navigation if sector doesn't match target garage.
+          // No alert here: it would fire mid-drag. The drop handler
+          // (handleTruckDragEnd) shows the sector-mismatch alert on release.
           if (!canTruckMoveToArea(truckId, targetArea)) {
             setDragOverEdge('left');
-            showSectorAlert(truckId, targetArea);
             return;
           }
           setDragOverEdge('left');
@@ -1802,10 +1789,9 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onTruckSelect, 
         if (dragOverEdge !== 'right') {
           const nextIndex = currentAreaIndex < AREAS.length - 1 ? currentAreaIndex + 1 : 0;
           const targetArea = AREAS[nextIndex];
-          // Block navigation and show alert if sector doesn't match target garage
+          // Block navigation if sector doesn't match target garage (see note above).
           if (!canTruckMoveToArea(truckId, targetArea)) {
             setDragOverEdge('right');
-            showSectorAlert(truckId, targetArea);
             return;
           }
           setDragOverEdge('right');

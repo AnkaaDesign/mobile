@@ -22,7 +22,7 @@ import {
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useItemBrands, useItemCategories, useSuppliers, useCanViewPrices } from "@/hooks";
-import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
+import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency } from "@/utils";
 import { Badge } from "@/components/ui/badge";
@@ -285,8 +285,7 @@ export function ItemFilterTags({ filters, searchText, onFilterChange, onSearchCh
     if (filters.categoryIds && Array.isArray(filters.categoryIds) && filters.categoryIds.length > 0) {
       filters.categoryIds.forEach((categoryId: string) => {
         const category = categories.find((c) => c.id === categoryId);
-        const typeLabel = category?.type ? ITEM_CATEGORY_TYPE_LABELS[category.type as keyof typeof ITEM_CATEGORY_TYPE_LABELS] : "";
-        const categoryLabel = category ? `${category.name} (${typeLabel})` : categoryId;
+        const categoryLabel = category ? category.name : categoryId;
 
         tags.push(
           <Badge key={`category-${categoryId}`} variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.muted }}>

@@ -167,7 +167,7 @@ export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
             const response = await getItems({
               where: {
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
-                category: { type: 'PPE' },
+                ppeType: { not: null }, // PPE identity = ppeType != null
               },
               orderBy: { name: 'asc' },
               limit: pageSize,

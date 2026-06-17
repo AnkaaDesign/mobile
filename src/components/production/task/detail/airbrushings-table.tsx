@@ -107,7 +107,7 @@ export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTable
   }, []);
 
   const handleAirbrushingPress = (airbrushingId: string) => {
-    router.push(mobileRoute(routes.production.airbrushings.details(airbrushingId)));
+    router.push(mobileRoute(routes.production.airbrushings.details(airbrushingId)) as any);
   };
 
   // Don't show if no airbrushings and not loading

@@ -199,6 +199,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ sectorIds: Array.from(ids) })
         },
+        canPerform: canDeleteHrEntities,
       },
     ],
   },

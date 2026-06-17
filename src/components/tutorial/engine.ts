@@ -37,11 +37,20 @@ export class TutorialEngine {
   constructor(private deps: TutorialEngineDeps) {}
 
   async start(opts?: { fromStepIndex?: number }): Promise<void> {
-    if (this.destroyed) return;
+    if (this.destroyed) {
+      // Clear the pending flag so a never-started tutorial can't permanently
+      // suppress the messages modal (which waits on isPendingStart/isActive).
+      useTutorialStore.getState().setPendingStart(false);
+      return;
+    }
     const ctx = computeUserContext(this.deps.getUser());
     const { buildSteps } = await import("./steps");
     const steps = buildSteps(ctx);
-    if (steps.length === 0) return;
+    if (steps.length === 0) {
+      // Nothing to show — release the pending flag so messages can proceed.
+      useTutorialStore.getState().setPendingStart(false);
+      return;
+    }
 
     const store = useTutorialStore.getState();
     store.setSteps(steps);
@@ -56,10 +65,19 @@ export class TutorialEngine {
   }
 
   async stop(): Promise<void> {
+    // Stopping is a terminal dismissal — persist completion so the tutorial is
+    // not re-shown on every launch (per-user, in tutorialStorage).
+    const user = this.deps.getUser();
+    if (user?.id) await tutorialStorage.markCompleted(user.id);
     useTutorialStore.getState().resetAll();
   }
 
   async skip(): Promise<void> {
+    // "Pular" (Skip) is a terminal dismissal. Previously this did NOT persist,
+    // so a user who skipped saw the tutorial again on every subsequent launch
+    // forever. Mark it completed (per-user) so skip means "I've seen it".
+    const user = this.deps.getUser();
+    if (user?.id) await tutorialStorage.markCompleted(user.id);
     useTutorialStore.getState().resetAll();
   }
 

@@ -273,6 +273,7 @@ export function createFormulaComponentsListConfig(
           onPress: async (ids, mutations) => {
             await mutations?.batchDeleteAsync?.({ paintFormulaComponentIds: Array.from(ids) })
           },
+          canPerform: canDeletePaintFormulas,
         },
       ],
     },

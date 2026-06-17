@@ -7,7 +7,8 @@ import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useObservationMutations, useTasks, useScreenReady} from '@/hooks';
 import { observationCreateSchema, type ObservationCreateFormData } from "@/schemas";
 import { ErrorScreen, ThemedText, Card, Button, Input, Combobox, SimpleFormField } from "@/components/ui";
-import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
+import { Alert as AlertBanner, AlertDescription } from "@/components/ui/alert";
+import { IconAlertCircle, IconAlertTriangle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useNav } from "@/contexts/nav";
@@ -201,6 +202,13 @@ function CreateObservationScreenInner() {
           contentContainerStyle={{ padding: spacing.md }}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Privacy warning - observation data is visible to the whole company */}
+          <AlertBanner variant="warning" icon={IconAlertTriangle} style={{ marginBottom: spacing.md }}>
+            <AlertDescription>
+              Ao enviar, os dados desta observação (descrição e arquivos) serão compartilhados com todos os usuários da empresa.
+            </AlertDescription>
+          </AlertBanner>
+
           {/* Section Header */}
           <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>

@@ -136,7 +136,7 @@ export function useCancelNfse() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ invoiceId, nfseDocumentId, data }: { invoiceId: string; nfseDocumentId: string; data: { reason: string; reasonCode?: number } }) =>
+    mutationFn: ({ invoiceId, nfseDocumentId, data }: { invoiceId: string; nfseDocumentId: string; data: { reason: string; reasonCode?: number; substituteNfseNumber?: number } }) =>
       cancelNfse(invoiceId, nfseDocumentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all });

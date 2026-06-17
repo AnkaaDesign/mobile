@@ -20,7 +20,9 @@ import type { PpeEvidencePayload } from './types';
  * Returns the method used and whether it succeeded.
  * Never accesses raw biometric data — only the boolean result.
  */
-export async function authenticateWithBiometric(): Promise<{
+export async function authenticateWithBiometric(
+  promptMessage = 'Confirme sua identidade para assinar a entrega de EPI',
+): Promise<{
   success: boolean;
   method: BiometricMethod;
 }> {
@@ -46,7 +48,7 @@ export async function authenticateWithBiometric(): Promise<{
   }
 
   const result = await LocalAuthentication.authenticateAsync({
-    promptMessage: 'Confirme sua identidade para assinar a entrega de EPI',
+    promptMessage,
     cancelLabel: 'Cancelar',
     fallbackLabel: 'Usar senha',
     disableDeviceFallback: false,

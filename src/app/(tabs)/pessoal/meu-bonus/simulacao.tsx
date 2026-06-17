@@ -11,7 +11,7 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import { usePositions, useUsers, useScreenReady } from "@/hooks";
 import { bonusKeys } from "@/hooks/queryKeys";
 import { formatCurrency, getCurrentPayrollPeriod } from "@/utils";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_STATUS, EMPLOYEE_TYPE } from "@/constants";
 import { bonusService } from "@/api-client";
 import type { SimulateResponse } from "@/api-client/services/bonus";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -137,12 +137,14 @@ export default function BonusSimulationScreen() {
   });
 
   // Fetch eligible users for the B1 denominator. We filter the two relation
-  // predicates (bonifiable + performanceLevel) client-side, but the two
-  // top-level predicates (EFFECTED + secullumEmployeeId) go in the query so the
-  // eligible set matches the API canon exactly (same as the HR simulator).
+  // predicates (bonifiable + performanceLevel) client-side, but the top-level
+  // predicates (BONIFIABLE_USER_WHERE: CLT + ACTIVE, plus secullumEmployeeId)
+  // go in the query so the eligible set matches the API canon exactly (same as
+  // the HR simulator).
   const { data: allUsersData } = useUsers({
     where: {
-      status: USER_STATUS.EFFECTED,
+      currentEmployeeType: EMPLOYEE_TYPE.CLT,
+      currentContractStatus: CONTRACT_STATUS.ACTIVE,
       secullumEmployeeId: { not: null },
     },
     include: {

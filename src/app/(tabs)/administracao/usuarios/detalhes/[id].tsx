@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useUser } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { Card } from "@/components/ui/card";
@@ -27,36 +27,14 @@ export default function UserDetailScreen() {
   const { colors } = useTheme();
 
   const query = useUser(id as string, {
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      cpf: true,
-      pis: true,
-      birth: true,
-      status: true,
-      statusOrder: true,
-      isActive: true,
-      verified: true,
-      avatarId: true,
-      payrollNumber: true,
-      performanceLevel: true,
-      address: true,
-      addressNumber: true,
-      addressComplement: true,
-      neighborhood: true,
-      city: true,
-      state: true,
-      zipCode: true,
-      lastLoginAt: true,
-      requirePasswordChange: true,
-      createdAt: true,
-      updatedAt: true,
-      avatar: { select: { id: true, filename: true, path: true, thumbnailUrl: true } },
-      position: { select: { id: true, name: true, hierarchy: true } },
-      sector: { select: { id: true, name: true, privileges: true } },
-      ledSector: { select: { id: true, name: true } },
+    // GetById honors `include` (not `select`) for relations — request relations
+    // via include or currentContract/avatar/etc. never load.
+    include: {
+      currentContract: true,
+      avatar: true,
+      position: true,
+      sector: true,
+      ledSector: true,
       ppeSize: true,
       _count: { select: { tasks: true, createdTasks: true, activities: true, changeLogs: true } },
     },
@@ -68,6 +46,7 @@ export default function UserDetailScreen() {
       query={query as any}
       icon={IconUser}
       title={(u) => u.name ?? "Usuário"}
+      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
       editRoute={(u) => mobileRoute(routes.administration.collaborators.edit(u.id))}
       notFoundFallback={mobileRoute(routes.administration.users.list)}
     >

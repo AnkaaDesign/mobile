@@ -157,9 +157,9 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
       errors.push(`Estoque insuficiente. Disponível: ${availableStock}`);
     }
 
-    // Validation 2: Check if item category is TOOL
-    if (selectedItem.category?.type !== "TOOL") {
-      errors.push("Apenas ferramentas podem ser emprestadas");
+    // Validation 2: Check if item is borrowable
+    if (!selectedItem.isBorrowable) {
+      errors.push("Apenas itens emprestáveis podem ser emprestados");
     }
 
     // Validation 3: Check if item is active
@@ -172,7 +172,7 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
       errors,
       availableStock,
       itemName: selectedItem.name,
-      categoryType: selectedItem.category?.type,
+      isBorrowable: !!selectedItem.isBorrowable,
       isActive: selectedItem.isActive,
     };
   }, [selectedItem, selectedQuantity, borrow.quantity, isReturned]);
@@ -382,7 +382,7 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
                             Disponível para ajuste: {stockValidation.availableStock || 0}
                           </ThemedText>
                           <ThemedText style={[styles.validationDetailText, { color: colors.foreground }]}>
-                            Categoria: {stockValidation.categoryType || "N/A"}
+                            Emprestável: {stockValidation.isBorrowable ? "Sim" : "Não"}
                           </ThemedText>
                           <ThemedText style={[styles.validationDetailText, { color: colors.foreground }]}>
                             Status: {stockValidation.isActive ? "Ativo" : "Inativo"}

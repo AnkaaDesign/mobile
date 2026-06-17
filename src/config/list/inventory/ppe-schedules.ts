@@ -1,9 +1,14 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PpeDeliverySchedule } from '@/types'
-import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from '@/constants/enums'
+import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE, SECTOR_PRIVILEGES } from '@/constants/enums'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/utils/route-mapper'
+import { hasAnyPrivilege } from '@/utils'
 import { canEditPpeDeliveries, canDeletePpeDeliveries } from '@/utils/permissions/entity-permissions'
+
+// API: PPE schedule batch operations = HR+WAREHOUSE+ADMIN (decision 4)
+const canBulkOperatePpeSchedules = (user: any) =>
+  hasAnyPrivilege(user, [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN])
 
 const FREQUENCY_LABELS: Record<string, string> = {
   ONCE: 'Uma Vez',
@@ -217,7 +222,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
             const response = await getItems({
               where: {
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
-                category: { type: 'PPE' },
+                ppeType: { not: null }, // PPE identity = ppeType != null
               },
               orderBy: { name: 'asc' },
               limit: pageSize,
@@ -359,6 +364,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           }))
           await batchUpdateAsync?.({ ppeDeliverySchedules })
         },
+        canPerform: canBulkOperatePpeSchedules,
       },
       {
         key: 'deactivate',
@@ -376,6 +382,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           }))
           await batchUpdateAsync?.({ ppeDeliverySchedules })
         },
+        canPerform: canBulkOperatePpeSchedules,
       },
       {
         key: 'delete',
@@ -389,6 +396,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ ppeScheduleIds: Array.from(ids) })
         },
+        canPerform: canBulkOperatePpeSchedules,
       },
     ],
   },

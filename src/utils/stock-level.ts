@@ -4,55 +4,55 @@
 // (cards, badges, list previews) where a fresh classification is needed
 // against locally edited quantity values.
 
-import { ITEM_CATEGORY_TYPE, STOCK_LEVEL } from "../constants";
+import { STOCK_LEVEL, STOCK_MODEL } from "../constants";
 
 /** LOW band upper bound = reorderPoint × this multiplier (spec §15.1). */
 const STOCK_LEVEL_LOW_MULTIPLIER = 1.2;
 
-/** Target on-hand quantity for tool-type items (mirror of the API's
- *  TOOL_TARGET_MIN). Tools hold a fixed minimum and reorder only once they run
- *  out (target 1 → reorder at qty 0). */
-const TOOL_TARGET_MIN: Record<string, number> = {
-  [ITEM_CATEGORY_TYPE.TOOL]: 1,
-};
-const isToolType = (t: ITEM_CATEGORY_TYPE | null): boolean =>
-  t === ITEM_CATEGORY_TYPE.TOOL;
+/** Fallback target when a FIXED_TARGET item has no explicit
+ *  fixedTargetQuantity (mirror of the API's inventory-config). */
+const FIXED_TARGET_FALLBACK = 1;
+
+const isFixedTarget = (i: { stockModel?: string | null }): boolean =>
+  i.stockModel === STOCK_MODEL.FIXED_TARGET;
+
+const getFixedTarget = (i: { fixedTargetQuantity?: number | null }): number =>
+  i.fixedTargetQuantity ?? FIXED_TARGET_FALLBACK;
+
+export interface DetermineStockLevelInput {
+  quantity: number;
+  reorderPoint: number | null;
+  maxQuantity: number | null;
+  hasActiveOrder?: boolean;
+  stockModel?: string | null;
+  fixedTargetQuantity?: number | null;
+  /** Units already ordered and projected to arrive within the lead-time
+   *  window. When provided, classification uses `quantity + incomingOrderedQuantity`
+   *  as the effective stock. */
+  incomingOrderedQuantity?: number;
+}
 
 /**
- * Spec §15 band classifier. Active pending orders do NOT shift thresholds —
- * surface a "pedido em aberto" badge separately in the UI instead.
- *
- * The legacy 4th positional `hasActiveOrder` argument is accepted but ignored
- * to keep existing callers compiling. Pass `categoryType` to enable the TOOL
- * short-circuit (spec §15.2).
- *
- * @param quantity Current stock quantity
- * @param reorderPoint Minimum stock level that triggers reorder (null if not configured)
- * @param maxQuantity Maximum stock level (null if not configured)
- * @param _hasActiveOrder IGNORED — kept for backward compatibility. Render
- *   pending-order state as a separate UI overlay.
- * @param categoryType When `ITEM_CATEGORY_TYPE.TOOL`, qty > 0 always returns OPTIMAL
- * @param incomingOrderedQuantity Quantity already on open orders. CRITICAL/LOW
- *   bands classify on "effective stock" (quantity + incoming) so an item with a
- *   pending order is not flagged critical; OVERSTOCKED still uses physical qty.
- * @returns The appropriate stock level
+ * Spec §15 band classifier (mirror of the API's stock-level.ts — the API is
+ * authoritative; prefer the `stockLevel` field on payloads). FIXED_TARGET
+ * items short-circuit to OPTIMAL/CRITICAL/OUT_OF_STOCK. Open orders projected
+ * to arrive within the lead-time window count toward the effective quantity
+ * used for the CRITICAL/LOW/OPTIMAL bands. Hard-floor checks (negative-stock,
+ * out-of-stock) use the physical quantity only.
  */
-export function determineStockLevel(
-  quantity: number,
-  reorderPoint: number | null,
-  maxQuantity: number | null,
-  _hasActiveOrder: boolean = false,
-  categoryType: ITEM_CATEGORY_TYPE | null = null,
-  incomingOrderedQuantity: number = 0,
-): STOCK_LEVEL {
+export function determineStockLevel(input: DetermineStockLevelInput): STOCK_LEVEL {
+  const { quantity, reorderPoint, maxQuantity } = input;
+  const incoming = Math.max(0, input.incomingOrderedQuantity ?? 0);
+
   if (!Number.isFinite(quantity)) return STOCK_LEVEL.OPTIMAL;
 
-  // Tool short-circuit (spec §15.2). Tools maintain a fixed target minimum and
-  // reorder only once they run out: qty>=1 OPTIMAL, qty<=0 OUT_OF_STOCK.
-  if (isToolType(categoryType)) {
+  // Fixed-target short-circuit (spec §15.2). These items don't use the
+  // consumption-driven rp/max model — they hold a fixed target on the shelf
+  // and ignore incoming. They reorder only once they run out:
+  //   qty>=target OPTIMAL, 0<qty<target CRITICAL, qty<=0 OUT_OF_STOCK.
+  if (isFixedTarget(input)) {
     if (quantity <= 0) return STOCK_LEVEL.OUT_OF_STOCK;
-    const target = TOOL_TARGET_MIN[categoryType as string] ?? 0;
-    return quantity < target ? STOCK_LEVEL.CRITICAL : STOCK_LEVEL.OPTIMAL;
+    return quantity < getFixedTarget(input) ? STOCK_LEVEL.CRITICAL : STOCK_LEVEL.OPTIMAL;
   }
 
   if (quantity < 0) return STOCK_LEVEL.NEGATIVE_STOCK;
@@ -64,7 +64,6 @@ export function determineStockLevel(
   if (!hasReorderSignal && !hasMaxSignal) return STOCK_LEVEL.OPTIMAL;
 
   // Effective stock counts open orders toward the reorder bands (spec §15.1).
-  const incoming = Math.max(0, incomingOrderedQuantity || 0);
   const effective = quantity + incoming;
 
   if (hasReorderSignal && effective <= (reorderPoint as number)) return STOCK_LEVEL.CRITICAL;

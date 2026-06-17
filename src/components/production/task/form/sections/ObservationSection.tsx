@@ -5,9 +5,11 @@
 
 import React, { useState } from 'react';
 import { View, LayoutChangeEvent } from 'react-native';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
-import { SimpleFormField } from '@/components/ui';
+import { SimpleFormField, Button, ThemedText } from '@/components/ui';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { IconAlertTriangle, IconTrash } from '@tabler/icons-react-native';
 import { Textarea } from '@/components/ui/textarea';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
 import { useKeyboardAwareForm } from '@/contexts/KeyboardAwareFormContext';
@@ -23,12 +25,31 @@ export default function ObservationSection({
   errors = {},
   initialFiles = []
 }: ObservationSectionProps) {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
   const [observationFiles, setObservationFiles] = useState<FilePickerItem[]>(initialFiles);
   const keyboardContext = useKeyboardAwareForm();
 
+  // Watch the description so the "remove" affordance only shows when there's data
+  const observationDescription = useWatch({ control, name: 'observation.description' });
+  const hasObservationData = !!(observationDescription?.trim()) || observationFiles.length > 0;
+
+  // Clearing the description normalizes the observation to null on submit (the API
+  // deletes it), so removing = wiping description + files.
+  const handleRemoveObservation = () => {
+    setObservationFiles([]);
+    setValue('observation.description', '', { shouldDirty: true, shouldValidate: true });
+    setValue('observation.fileIds', [], { shouldDirty: true, shouldValidate: true });
+  };
+
   return (
     <FormCard title="Observações" icon="note">
+      {/* Privacy warning - observation data is visible to the whole company */}
+      <Alert variant="warning" icon={IconAlertTriangle} style={{ marginBottom: 12 }}>
+        <AlertDescription>
+          Ao enviar, os dados desta observação (descrição e arquivos) serão compartilhados com todos os usuários da empresa.
+        </AlertDescription>
+      </Alert>
+
       {/* Observation Description */}
       <SimpleFormField label="Descrição da Observação" error={errors.observation?.description}>
         <View onLayout={keyboardContext ? (e: LayoutChangeEvent) => keyboardContext.onFieldLayout('observation.description', e) : undefined}>
@@ -75,6 +96,20 @@ export default function ObservationSection({
           )}
         />
       </SimpleFormField>
+
+      {/* Remove the entire observation (the API deletes it when description is cleared) */}
+      {hasObservationData && (
+        <View style={{ alignItems: 'flex-end', marginTop: 12 }}>
+          <Button
+            variant="outline"
+            disabled={isSubmitting}
+            onPress={handleRemoveObservation}
+            icon={<IconTrash size={16} color="#dc2626" />}
+          >
+            <ThemedText style={{ color: '#dc2626' }}>Remover Observação</ThemedText>
+          </Button>
+        </View>
+      )}
     </FormCard>
   );
 }

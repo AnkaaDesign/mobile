@@ -33,7 +33,7 @@ import { extendedColors } from "@/lib/theme/extended-colors";
 import type { Notification } from "@/types";
 import { formatNotificationTime } from "@/utils/notifications/date-utils";
 import { NOTIFICATION_TYPE } from "@/constants";
-import { parseDeepLink } from "@/lib/deep-linking";
+import { resolveNotificationNavigation } from "@/lib/deep-linking";
 import { useDrawerMode } from "@/contexts/drawer-mode-context";
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useDrawerStatus } from "@react-navigation/drawer";
@@ -206,67 +206,6 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
     };
   }, [notifications]);
 
-  // Extract mobile deep link from notification (checks metadata first, then actionUrl)
-  const extractMobileUrl = useCallback((notification: Notification): string | null => {
-    try {
-      const metadata = notification.metadata as any;
-
-      // Priority 1: Check metadata for mobileUrl (set by backend DeepLinkService)
-      if (metadata?.mobileUrl && typeof metadata.mobileUrl === 'string' && metadata.mobileUrl.length > 0) {
-        return metadata.mobileUrl;
-      }
-
-      // Priority 2: Check metadata for entityType and entityId (for navigation)
-      if (metadata?.entityType && metadata?.entityId) {
-        // Build mobile deep link from entity info
-        const entityType = metadata.entityType.toLowerCase();
-        return `ankaadesign://${entityType}/${metadata.entityId}`;
-      }
-
-      // Priority 3: Check actionUrl
-      const actionUrl = notification.actionUrl;
-      if (!actionUrl) return null;
-
-      if (actionUrl.startsWith('ankaadesign://')) {
-        return actionUrl;
-      }
-
-      // Try to parse actionUrl as JSON
-      const jsonStartIndex = actionUrl.indexOf('{');
-      if (jsonStartIndex !== -1) {
-        const jsonString = actionUrl.substring(jsonStartIndex);
-        try {
-          const parsed = JSON.parse(jsonString);
-          if (parsed.mobile && typeof parsed.mobile === 'string') {
-            return parsed.mobile;
-          }
-          if (parsed.universalLink && typeof parsed.universalLink === 'string') {
-            return parsed.universalLink;
-          }
-        } catch {
-          // JSON parse failed
-        }
-      }
-
-      try {
-        const parsed = JSON.parse(actionUrl);
-        if (parsed.mobile && typeof parsed.mobile === 'string') {
-          return parsed.mobile;
-        }
-        if (parsed.universalLink && typeof parsed.universalLink === 'string') {
-          return parsed.universalLink;
-        }
-      } catch {
-        // Not valid JSON
-      }
-
-      // Fallback: return actionUrl (might be a web path)
-      return actionUrl;
-    } catch (error) {
-      return null;
-    }
-  }, []);
-
   // Handle notification press
   const handleNotificationPress = useCallback(async (notification: Notification & { isSeenByUser: boolean }) => {
     // INSTANT haptic feedback
@@ -291,35 +230,38 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
       );
     }
 
-    // Extract mobile URL from notification (checks metadata first)
-    const mobileUrl = extractMobileUrl(notification);
+    // Resolve navigation target (priority: explicit /(tabs) mobileUrl >
+    // entityType+entityId mapping > parsed mobileUrl > actionUrl)
+    const metadata = notification.metadata as any;
+    const resolved = resolveNotificationNavigation({
+      mobileUrl: metadata?.mobileUrl,
+      entityType: metadata?.entityType,
+      entityId: metadata?.entityId,
+      taskId: metadata?.taskId,
+      actionUrl: notification.actionUrl,
+    });
 
-    if (mobileUrl) {
-      // Check if it's an ankaadesign.com.br URL - try to parse it as a deep link first
-      const isAnkaaUrl = mobileUrl.includes('ankaadesign.com.br');
+    if (DEBUG_NOTIFICATIONS) {
+      Alert.alert(
+        'Notification Navigation Resolved',
+        `Kind: ${resolved?.kind || 'none'}\nTarget: ${resolved ? (resolved.kind === 'route' ? resolved.route : resolved.url) : 'N/A'}`,
+        [{ text: 'OK' }]
+      );
+    }
 
-      if ((mobileUrl.startsWith('http://') || mobileUrl.startsWith('https://')) && !isAnkaaUrl) {
-        // Open external URL in browser (only for non-ankaa URLs)
-        Linking.openURL(mobileUrl);
-      } else {
-        // Parse deep link and navigate (works for both custom scheme and ankaadesign.com.br URLs)
-        const parsed = parseDeepLink(mobileUrl);
-        if (DEBUG_NOTIFICATIONS) {
-          Alert.alert(
-            'Deep Link Parsed',
-            `Mobile URL: ${mobileUrl}\nParsed Route: ${parsed.route}\nParams: ${JSON.stringify(parsed.params)}`,
-            [{ text: 'OK' }]
-          );
-        }
-        if (parsed.route && parsed.route !== '/(tabs)') {
-          router.push(parsed.route as any);
-        }
-      }
+    if (resolved?.kind === 'external') {
+      // Open external URL in browser (only for non-ankaa URLs)
+      Linking.openURL(resolved.url);
+    } else if (resolved?.kind === 'route') {
+      router.push(resolved.route as any);
+    } else {
+      // Nothing navigable found - open the notification detail instead of doing nothing
+      router.push(`/(tabs)/pessoal/minhas-notificacoes/detalhes/${notification.id}` as any);
     }
 
     // Reset navigating state
     setTimeout(() => setNavigatingItemId(null), 1500);
-  }, [authUser?.id, markAsRead, navigation, router, extractMobileUrl]);
+  }, [authUser?.id, markAsRead, navigation, router]);
 
   // Handle mark all as read
   const handleMarkAllAsRead = useCallback(async () => {

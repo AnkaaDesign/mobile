@@ -28,7 +28,7 @@ import { useTheme } from "@/lib/theme";
 import {
   TASK_STATUS,
   SECTOR_PRIVILEGES,
-  COMMISSION_STATUS,
+  BONIFICATION_STATUS,
   TASK_QUOTE_STATUS,
   SERVICE_ORDER_TYPE,
   TRUCK_CATEGORY,
@@ -36,7 +36,7 @@ import {
 } from "@/constants/enums";
 import {
   TASK_STATUS_LABELS,
-  COMMISSION_STATUS_LABELS,
+  BONIFICATION_STATUS_LABELS,
   TASK_QUOTE_STATUS_LABELS,
   SERVICE_ORDER_TYPE_LABELS,
   TRUCK_CATEGORY_LABELS,
@@ -115,7 +115,7 @@ export const TASK_COLUMN_KEYS = [
   "term",
   "forecastDate",
   "createdAt",
-  "commission",
+  "bonification",
   "quoteStatus",
   "quoteTotal",
 ] as const;
@@ -131,7 +131,7 @@ const TASK_COLUMN_LABELS: Record<TaskColumnKey, string> = {
   term: "Prazo",
   forecastDate: "Previsão",
   createdAt: "Criado em",
-  commission: "Comissão",
+  bonification: "Bonificação",
   quoteStatus: "Orçamento",
   quoteTotal: "Valor",
 };
@@ -151,7 +151,7 @@ const TASK_SORT_KEY_OPTIONS = [
   { value: "statusOrder", label: "Status" },
   { value: "entryDate", label: "Entrada" },
   { value: "price", label: "Valor" },
-  { value: "commissionOrder", label: "Comissão" },
+  { value: "bonificationOrder", label: "Bonificação" },
   { value: "updatedAt", label: "Atualização" },
 ];
 const TASK_SORT_KEYS = [
@@ -164,7 +164,7 @@ const TASK_SORT_KEYS = [
   "statusOrder",
   "entryDate",
   "price",
-  "commissionOrder",
+  "bonificationOrder",
   "updatedAt",
 ] as const;
 
@@ -172,9 +172,9 @@ const STATUS_OPTIONS = Object.values(TASK_STATUS).map((s) => ({
   value: s,
   label: TASK_STATUS_LABELS[s],
 }));
-const COMMISSION_OPTIONS = Object.values(COMMISSION_STATUS).map((s) => ({
+const BONIFICATION_OPTIONS = Object.values(BONIFICATION_STATUS).map((s) => ({
   value: s,
-  label: COMMISSION_STATUS_LABELS[s],
+  label: BONIFICATION_STATUS_LABELS[s],
 }));
 const QUOTE_STATUS_OPTIONS = Object.values(TASK_QUOTE_STATUS).map((s) => ({
   value: s,
@@ -433,7 +433,7 @@ const configSchema = z.object({
       sectorIds: z.array(z.string()).default([]),
       customerIds: z.array(z.string()).default([]),
       assigneeIds: z.array(z.string()).default([]),
-      commissions: z.array(z.nativeEnum(COMMISSION_STATUS)).default([]),
+      bonifications: z.array(z.nativeEnum(BONIFICATION_STATUS)).default([]),
       // Truck-related filters mirror web's task-table schema so saved configs
       // round-trip cleanly across platforms. The mobile UI surfaces them; the
       // mobile query builder also threads them through `buildWhere`.
@@ -462,10 +462,10 @@ const configSchema = z.object({
       // mobile so cross-platform round-tripping doesn't drop the values.
       hasOpenSO: z.enum(TRI_STATE).default("any"),
       hasArtworks: z.enum(TRI_STATE).default("any"),
-      // Completion / commission tri-states — mirror web's task-table filter
+      // Completion / bonification tri-states — mirror web's task-table filter
       // set so saved configs round-trip cleanly across platforms.
       isCompleted: z.enum(TRI_STATE).default("any"),
-      isCommissioned: z.enum(TRI_STATE).default("any"),
+      isBonified: z.enum(TRI_STATE).default("any"),
       serviceOrderTypes: z.array(z.nativeEnum(SERVICE_ORDER_TYPE)).default([]),
       quoteStatuses: z.array(z.nativeEnum(TASK_QUOTE_STATUS)).default([]),
       defaultSearch: z.string().default(""),
@@ -475,7 +475,7 @@ const configSchema = z.object({
       sectorIds: [],
       customerIds: [],
       assigneeIds: [],
-      commissions: [],
+      bonifications: [],
       truckCategories: [],
       implementTypes: [],
       hasTruck: "any",
@@ -495,7 +495,7 @@ const configSchema = z.object({
       hasOpenSO: "any",
       hasArtworks: "any",
       isCompleted: "any",
-      isCommissioned: "any",
+      isBonified: "any",
       serviceOrderTypes: [],
       quoteStatuses: [],
       defaultSearch: "",
@@ -747,7 +747,7 @@ function buildWhere(
     where.sectorId = { in: f.sectorIds };
   }
   if (f.customerIds.length > 0) where.customerId = { in: f.customerIds };
-  if (f.commissions.length > 0) where.commission = { in: f.commissions };
+  if (f.bonifications.length > 0) where.bonification = { in: f.bonifications };
 
   // Truck-related filters — pushed onto the AND chain so multiple truck
   // predicates compose (e.g. "has truck" + "category in [...]").
@@ -820,12 +820,12 @@ function buildWhere(
     }
   }
 
-  // Commission tri-state — yes = any commission ≠ NO_COMMISSION,
-  // no = NO_COMMISSION. Composes with the multi-select `commissions` filter.
-  if (f.isCommissioned === "yes") {
-    ANDs.push({ commission: { not: COMMISSION_STATUS.NO_COMMISSION } });
-  } else if (f.isCommissioned === "no") {
-    ANDs.push({ commission: COMMISSION_STATUS.NO_COMMISSION });
+  // Bonification tri-state — yes = any bonification ≠ NO_BONIFICATION,
+  // no = NO_BONIFICATION. Composes with the multi-select `bonifications` filter.
+  if (f.isBonified === "yes") {
+    ANDs.push({ bonification: { not: BONIFICATION_STATUS.NO_BONIFICATION } });
+  } else if (f.isBonified === "no") {
+    ANDs.push({ bonification: BONIFICATION_STATUS.NO_BONIFICATION });
   }
 
   if (f.serviceOrderTypes.length > 0) {
@@ -929,9 +929,9 @@ const TASK_COLUMN_DEFS: Record<TaskColumnKey, WidgetTableColumn> = {
     width: 80,
     align: "right",
   },
-  commission: {
-    key: "commission",
-    label: TASK_COLUMN_LABELS.commission,
+  bonification: {
+    key: "bonification",
+    label: TASK_COLUMN_LABELS.bonification,
     width: 90,
   },
   quoteStatus: {
@@ -1616,7 +1616,7 @@ function TaskRow({
                 </Text>
               </View>
             );
-          case "commission":
+          case "bonification":
             return (
               <View key={key} style={cellStyleForColumn(def)}>
                 <Text
@@ -1626,9 +1626,9 @@ function TaskRow({
                     color: colors.mutedForeground,
                   }}
                 >
-                  {task.commission
-                    ? COMMISSION_STATUS_LABELS[task.commission as COMMISSION_STATUS] ??
-                      task.commission
+                  {task.bonification
+                    ? BONIFICATION_STATUS_LABELS[task.bonification as BONIFICATION_STATUS] ??
+                      task.bonification
                     : "—"}
                 </Text>
               </View>
@@ -2042,15 +2042,15 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
         </View>
         <View style={{ gap: 4 }}>
           <Text style={{ fontSize: 12, color: colors.foreground }}>
-            Comissão
+            Bonificação
           </Text>
           <Combobox
             mode="multiple"
-            value={config.filters.commissions}
+            value={config.filters.bonifications}
             onValueChange={(v: any) =>
-              setFilter("commissions", Array.isArray(v) ? v : [v].filter(Boolean))
+              setFilter("bonifications", Array.isArray(v) ? v : [v].filter(Boolean))
             }
-            options={COMMISSION_OPTIONS}
+            options={BONIFICATION_OPTIONS}
             placeholder="Todas"
           />
         </View>
@@ -2369,14 +2369,14 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           </View>
           <View style={{ gap: 4 }}>
             <Text style={{ fontSize: 12, color: colors.foreground }}>
-              Comissionadas
+              Bonificadas
             </Text>
             <Combobox
-              value={config.filters.isCommissioned}
+              value={config.filters.isBonified}
               onValueChange={(v: any) =>
                 setFilter(
-                  "isCommissioned",
-                  (typeof v === "string" ? v : "any") as Config["filters"]["isCommissioned"],
+                  "isBonified",
+                  (typeof v === "string" ? v : "any") as Config["filters"]["isBonified"],
                 )
               }
               options={TRI_STATE_OPTIONS}
@@ -2716,7 +2716,7 @@ export const taskTableWidget: WidgetDefinition<Config> = {
       sectorIds: [],
       customerIds: [],
       assigneeIds: [],
-      commissions: [],
+      bonifications: [],
       truckCategories: [],
       implementTypes: [],
       hasTruck: "any",
@@ -2736,7 +2736,7 @@ export const taskTableWidget: WidgetDefinition<Config> = {
       hasOpenSO: "any",
       hasArtworks: "any",
       isCompleted: "any",
-      isCommissioned: "any",
+      isBonified: "any",
       serviceOrderTypes: [],
       quoteStatuses: [],
       defaultSearch: "",

@@ -345,6 +345,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ activityIds: Array.from(ids) })
         },
+        canPerform: canDeleteItems,
       },
     ],
   },

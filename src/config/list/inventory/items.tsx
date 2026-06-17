@@ -10,8 +10,6 @@ import {
   STOCK_LEVEL_LABELS,
   MEASURE_UNIT_LABELS,
   MEASURE_TYPE_LABELS,
-  ITEM_CATEGORY_TYPE,
-  ITEM_CATEGORY_TYPE_LABELS,
   ABC_CATEGORY,
   XYZ_CATEGORY,
   ABC_CATEGORY_LABELS,
@@ -167,13 +165,13 @@ export const itemsListConfig: ListConfig<Item> = {
         align: 'left',
         render: (item) => {
           const quantity = item.quantity || 0
-          const stockLevel = determineStockLevel(
+          const stockLevel = determineStockLevel({
             quantity,
-            item.reorderPoint || null,
-            item.maxQuantity || null,
-            false,
-            item.category?.type ?? null
-          )
+            reorderPoint: item.reorderPoint || null,
+            maxQuantity: item.maxQuantity || null,
+            stockModel: item.stockModel ?? null,
+            fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+          })
           const color = getStockLevelColor(stockLevel)
           const formattedQuantity = quantity % 1 === 0
             ? quantity.toLocaleString('pt-BR')
@@ -217,6 +215,7 @@ export const itemsListConfig: ListConfig<Item> = {
         align: 'right',
         render: (item) => item.totalPrice || null,
         format: 'currency',
+        canView: canViewPrices,
       },
       {
         key: 'CA',
@@ -625,16 +624,6 @@ export const itemsListConfig: ListConfig<Item> = {
       canCreate: canEditItems,
     },
     bulk: [
-      {
-        key: 'batch-edit',
-        label: 'Editar em Lote',
-        icon: 'pencil',
-        variant: 'default',
-        onPress: (ids, context) => {
-          // Note: Bulk edit navigation not supported - router not available in bulk action context
-          console.warn('Bulk edit navigation not implemented - IDs:', Array.from(ids).join(','))
-        },
-      },
       {
         key: 'delete',
         label: 'Excluir',

@@ -55,7 +55,7 @@ export function useTaskPermissions() {
   // Section visibility
   const canViewQuote = isAdmin || isFinancial || isCommercial;
   const canViewRestrictedFields = isAdmin || isFinancial || isCommercial || isLogistic || isProductionManager || isDesigner;
-  const canViewCommission = isAdmin || isFinancial || isCommercial || isProduction;
+  const canViewBonification = isAdmin || isFinancial || isCommercial || isProduction;
   const canViewDates = !isWarehouse;
   const canViewServices = !isWarehouse && !isPlotting;
   const canViewLayout = isAdmin || isLogistic || isProductionManager || (isProduction && isTeamLeaderUser);
@@ -86,7 +86,7 @@ export function useTaskPermissions() {
   // Field editability
   const canEditIdentity = !isFinancial && !isWarehouse && !isDesigner;
   const canEditSector = !isFinancial && !isWarehouse && !isDesigner && !isCommercial;
-  const canEditCommission = !isFinancial && !isDesigner && !isLogistic && !isProductionManager && !isWarehouse;
+  const canEditBonification = !isFinancial && !isDesigner && !isLogistic && !isProductionManager && !isWarehouse;
   const canEditDates = !isWarehouse && !isFinancial && !isDesigner;
   const canEditResponsibles = !isFinancial && !isDesigner && !isLogistic && !isProductionManager;
   const canEditServices = !isWarehouse;
@@ -98,7 +98,7 @@ export function useTaskPermissions() {
     isDesigner,
     canCreate, canEdit, canDelete, canBatchOperate,
     canManageStatus, canFinish, canCancel,
-    canViewQuote, canViewRestrictedFields, canViewCommission,
+    canViewQuote, canViewRestrictedFields, canViewBonification,
     canViewDates, canViewServices, canViewLayout, canViewTruckSpot,
     canViewPaint, canViewLogoPaint, canViewCuts,
     canViewAirbrushing, canViewBaseFiles, canViewProjectFiles,
@@ -106,7 +106,7 @@ export function useTaskPermissions() {
     canViewArtworkBadges, canViewDocuments,
     canViewArtworks, canApproveArtworks, canViewTruckDetails,
     canViewCustomer, canViewCreatedBy,
-    canEditIdentity, canEditSector, canEditCommission,
+    canEditIdentity, canEditSector, canEditBonification,
     canEditDates, canEditResponsibles, canEditServices,
     canEditLayout, canEditPaint,
   };

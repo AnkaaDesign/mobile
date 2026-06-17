@@ -26,7 +26,7 @@ export const airbrushingIncludeSchema = z
               createdBy: z.boolean().optional(),
               files: z.boolean().optional(),
               logoPaints: z.boolean().optional(),
-              commissions: z.boolean().optional(),
+              bonifications: z.boolean().optional(),
               services: z.boolean().optional(),
               truck: z.boolean().optional(),
               airbrushing: z.boolean().optional(),
@@ -52,9 +52,9 @@ export const airbrushingIncludeSchema = z
               observations: z.boolean().optional(),
               airbrushingReceipts: z.boolean().optional(),
               airbrushingInvoices: z.boolean().optional(),
-              externalWithdrawalBudget: z.boolean().optional(),
-              externalWithdrawalNfe: z.boolean().optional(),
-              externalWithdrawalReceipt: z.boolean().optional(),
+              externalOperationBudget: z.boolean().optional(),
+              externalOperationNfe: z.boolean().optional(),
+              externalOperationReceipt: z.boolean().optional(),
             })
             .optional(),
         }),
@@ -77,9 +77,9 @@ export const airbrushingIncludeSchema = z
               observations: z.boolean().optional(),
               airbrushingReceipts: z.boolean().optional(),
               airbrushingInvoices: z.boolean().optional(),
-              externalWithdrawalBudget: z.boolean().optional(),
-              externalWithdrawalNfe: z.boolean().optional(),
-              externalWithdrawalReceipt: z.boolean().optional(),
+              externalOperationBudget: z.boolean().optional(),
+              externalOperationNfe: z.boolean().optional(),
+              externalOperationReceipt: z.boolean().optional(),
             })
             .optional(),
         }),
@@ -103,9 +103,9 @@ export const airbrushingIncludeSchema = z
               airbrushingReceipts: z.boolean().optional(),
               airbrushingInvoices: z.boolean().optional(),
               airbrushingArtworks: z.boolean().optional(),
-              externalWithdrawalBudget: z.boolean().optional(),
-              externalWithdrawalNfe: z.boolean().optional(),
-              externalWithdrawalReceipt: z.boolean().optional(),
+              externalOperationBudget: z.boolean().optional(),
+              externalOperationNfe: z.boolean().optional(),
+              externalOperationReceipt: z.boolean().optional(),
             })
             .optional(),
         }),
@@ -139,12 +139,22 @@ export const airbrushingOrderBySchema = z
         id: orderByDirectionSchema.optional(),
         startDate: orderByDirectionSchema.optional(),
         finishDate: orderByDirectionSchema.optional(),
+        startedAt: orderByDirectionSchema.optional(),
+        finishedAt: orderByDirectionSchema.optional(),
         price: orderByDirectionSchema.optional(),
         status: orderByDirectionSchema.optional(),
         statusOrder: orderByDirectionSchema.optional(),
+        paymentStatus: orderByDirectionSchema.optional(),
         taskId: orderByDirectionSchema.optional(),
+        painterId: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
+        painter: z
+          .object({
+            name: orderByDirectionSchema.optional(),
+          })
+          .partial()
+          .optional(),
         task: z
           .object({
             id: orderByDirectionSchema.optional(),
@@ -165,12 +175,38 @@ export const airbrushingOrderBySchema = z
           id: orderByDirectionSchema.optional(),
           startDate: orderByDirectionSchema.optional(),
           finishDate: orderByDirectionSchema.optional(),
+          startedAt: orderByDirectionSchema.optional(),
+          finishedAt: orderByDirectionSchema.optional(),
           price: orderByDirectionSchema.optional(),
           status: orderByDirectionSchema.optional(),
           statusOrder: orderByDirectionSchema.optional(),
+          paymentStatus: orderByDirectionSchema.optional(),
           taskId: orderByDirectionSchema.optional(),
+          painterId: orderByDirectionSchema.optional(),
           createdAt: orderByDirectionSchema.optional(),
           updatedAt: orderByDirectionSchema.optional(),
+          painter: z
+            .object({
+              name: orderByDirectionSchema.optional(),
+            })
+            .partial()
+            .optional(),
+          task: z
+            .object({
+              id: orderByDirectionSchema.optional(),
+              name: orderByDirectionSchema.optional(),
+              status: orderByDirectionSchema.optional(),
+              createdAt: orderByDirectionSchema.optional(),
+              updatedAt: orderByDirectionSchema.optional(),
+              customer: z
+                .object({
+                  fantasyName: orderByDirectionSchema.optional(),
+                })
+                .partial()
+                .optional(),
+            })
+            .partial()
+            .optional(),
         })
         .partial(),
     ),
@@ -256,6 +292,36 @@ export const airbrushingWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
+      startedAt: z
+        .union([
+          z.date(),
+          z.null(),
+          z.object({
+            equals: z.date().nullable().optional(),
+            not: z.date().nullable().optional(),
+            gt: z.coerce.date().optional(),
+            gte: z.coerce.date().optional(),
+            lt: z.coerce.date().optional(),
+            lte: z.coerce.date().optional(),
+          }),
+        ])
+        .optional(),
+
+      finishedAt: z
+        .union([
+          z.date(),
+          z.null(),
+          z.object({
+            equals: z.date().nullable().optional(),
+            not: z.date().nullable().optional(),
+            gt: z.coerce.date().optional(),
+            gte: z.coerce.date().optional(),
+            lt: z.coerce.date().optional(),
+            lte: z.coerce.date().optional(),
+          }),
+        ])
+        .optional(),
+
       // Numeric fields
       price: z
         .union([
@@ -302,6 +368,18 @@ export const airbrushingWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
+      paymentStatus: z
+        .union([
+          z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS),
+          z.object({
+            equals: z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS).optional(),
+            not: z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS).optional(),
+            in: z.array(z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS)).optional(),
+            notIn: z.array(z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS)).optional(),
+          }),
+        ])
+        .optional(),
+
       createdAt: z
         .union([
           z.date(),
@@ -332,6 +410,7 @@ export const airbrushingWhereSchema: z.ZodSchema = z.lazy(() =>
 
       // Relations
       task: z.lazy(() => z.any()).optional(),
+      painter: z.lazy(() => z.any()).optional(),
     })
     .partial(),
 );
@@ -343,6 +422,7 @@ export const airbrushingWhereSchema: z.ZodSchema = z.lazy(() =>
 const airbrushingFilters = {
   searchingFor: z.string().optional(),
   status: z.array(z.nativeEnum(AIRBRUSHING_STATUS)).optional(),
+  paymentStatuses: z.array(z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS)).optional(),
   taskIds: z.array(z.string()).optional(),
   painterIds: z.array(z.string()).optional(),
   priceRange: z
@@ -384,6 +464,11 @@ const airbrushingTransform = (data: any): any => {
   if (data.status?.length) {
     andConditions.push({ status: { in: data.status } });
     delete data.status;
+  }
+
+  if (data.paymentStatuses?.length) {
+    andConditions.push({ paymentStatus: { in: data.paymentStatuses } });
+    delete data.paymentStatuses;
   }
 
   if (data.taskIds?.length) {
@@ -639,7 +724,7 @@ export const airbrushingCreateNestedSchema = z
     startedAt: nullableDate.optional(),
     finishedAt: nullableDate.optional(),
     status: z.nativeEnum(AIRBRUSHING_STATUS).default(AIRBRUSHING_STATUS.PENDING),
-    paymentStatus: z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS).default(AIRBRUSHING_PAYMENT_STATUS.PENDING),
+    paymentStatus: z.nativeEnum(AIRBRUSHING_PAYMENT_STATUS).optional(),
     painterId: z.string().uuid("Pintor inválido").nullable().optional(),
     receiptIds: z.array(z.string().uuid()).optional(),
     invoiceIds: z.array(z.string().uuid()).optional(),

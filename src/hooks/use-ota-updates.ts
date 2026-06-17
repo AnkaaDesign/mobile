@@ -16,6 +16,10 @@ import * as Updates from "expo-updates";
  */
 export function useOtaUpdates(): void {
   const isChecking = useRef(false);
+  // Update id the user already declined ("Mais tarde") — don't re-prompt for
+  // the same update on every foreground. Cleared on cold start (new hook
+  // instance), so the downloaded update still applies / re-prompts then.
+  const declinedUpdateId = useRef<string | null>(null);
 
   useEffect(() => {
     // Updates only run in built apps with expo-updates enabled.
@@ -36,6 +40,12 @@ export function useOtaUpdates(): void {
           return;
         }
 
+        const updateId = result.manifest?.id ?? null;
+        if (updateId && updateId === declinedUpdateId.current) {
+          // User already said "Mais tarde" for this update in this session.
+          return;
+        }
+
         await Updates.fetchUpdateAsync();
         if (!isMounted) {
           return;
@@ -45,7 +55,13 @@ export function useOtaUpdates(): void {
           "Atualização disponível",
           "Uma nova versão do aplicativo foi baixada. Deseja reiniciar agora para aplicá-la?",
           [
-            { text: "Mais tarde", style: "cancel" },
+            {
+              text: "Mais tarde",
+              style: "cancel",
+              onPress: () => {
+                declinedUpdateId.current = updateId;
+              },
+            },
             {
               text: "Reiniciar",
               onPress: () => {

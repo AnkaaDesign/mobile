@@ -12,7 +12,7 @@ import { TeamMemberTableRowSwipe } from "./team-member-table-row-swipe";
 import { formatBrazilianPhone, formatDate } from "@/utils";
 import { getFileUrl } from '@/utils/file-utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_STATUS, CONTRACT_STATUS_LABELS } from "@/constants";
 
 export interface TableColumn {
   key: string;
@@ -49,37 +49,26 @@ interface TeamMemberTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Helper function to get status colors
+// Helper function to get status colors (driven by contract STATUS)
 const getStatusColor = (status: string) => {
   switch (status) {
-    case USER_STATUS.EXPERIENCE_PERIOD_1:
+    case CONTRACT_STATUS.EXPERIENCE:
+    case CONTRACT_STATUS.NOTICE_PERIOD:
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case USER_STATUS.EXPERIENCE_PERIOD_2:
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case USER_STATUS.EFFECTED:
+    case CONTRACT_STATUS.ACTIVE:
       return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case USER_STATUS.DISMISSED:
+    case CONTRACT_STATUS.ON_LEAVE:
+      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
+    case CONTRACT_STATUS.TERMINATED:
       return { background: badgeColors.error.background, text: badgeColors.error.text };
     default:
       return { background: badgeColors.muted.background, text: badgeColors.muted.text };
   }
 };
 
-// Helper function to get status label
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case USER_STATUS.EXPERIENCE_PERIOD_1:
-      return "Experiência 1";
-    case USER_STATUS.EXPERIENCE_PERIOD_2:
-      return "Experiência 2";
-    case USER_STATUS.EFFECTED:
-      return "Efetivado";
-    case USER_STATUS.DISMISSED:
-      return "Desligado";
-    default:
-      return status;
-  }
-};
+// Helper function to get status label (canonical CONTRACT_STATUS labels)
+const getStatusLabel = (status: string) =>
+  CONTRACT_STATUS_LABELS[status as CONTRACT_STATUS] ?? status;
 
 // Define all available columns with their renderers
 export const createColumnDefinitions = (): TableColumn[] => [
@@ -177,7 +166,10 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (user: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {user.exp1StartAt ? formatDate(new Date(user.exp1StartAt)) : "-"}
+        {(() => {
+          const admission = user.currentContract?.admissionDate ?? user.currentContract?.exp1StartAt;
+          return admission ? formatDate(new Date(admission)) : "-";
+        })()}
       </ThemedText>
     ),
   },
@@ -188,7 +180,8 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (user: User) => {
-      const statusColor = getStatusColor(user.status);
+      const statusValue = user.currentContractStatus ?? "";
+      const statusColor = getStatusColor(statusValue);
       return (
         <View style={styles.centerAlign}>
           <Badge
@@ -206,7 +199,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
                 fontWeight: fontWeight.medium,
               }}
             >
-              {getStatusLabel(user.status)}
+              {getStatusLabel(statusValue)}
             </ThemedText>
           </Badge>
         </View>

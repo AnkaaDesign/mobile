@@ -19,7 +19,7 @@ import { getSpotLabel } from "@/types/garage";
 import {
   IconBrandWhatsapp,
 } from "@tabler/icons-react-native";
-import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS, COMMISSION_STATUS_LABELS } from "@/constants/enum-labels";
+import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS, BONIFICATION_STATUS_LABELS } from "@/constants/enum-labels";
 
 // Format phone number for display
 const formatPhoneDisplay = (phone: string): string => {
@@ -50,7 +50,7 @@ interface TaskInfoCardProps {
     width: number;
     height: number;
   } | null;
-  /** Whether user can view financial fields (invoiceTo, commission). Defaults to false for safety. */
+  /** Whether user can view financial fields (invoiceTo, bonification). Defaults to false for safety. */
   canViewFinancialFields?: boolean;
   /** Whether user can view restricted fields (negotiatingWith, forecastDate, responsibles). Only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER. Defaults to false for safety. */
   canViewRestrictedFields?: boolean;
@@ -166,12 +166,12 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
         <DetailField label="Setor" icon="factory" value={task.sector.name} />
       )}
 
-      {/* Commission Status */}
-      {canViewFinancialFields && task.commission && (
+      {/* Bonification Status */}
+      {canViewFinancialFields && task.bonification && (
         <DetailField
-          label="Comissão"
+          label="Bonificação"
           icon="coins"
-          value={COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
+          value={BONIFICATION_STATUS_LABELS[task.bonification as keyof typeof BONIFICATION_STATUS_LABELS] || task.bonification}
         />
       )}
 

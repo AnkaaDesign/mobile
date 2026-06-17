@@ -5,7 +5,7 @@ import type { DefaultValues, Path, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { itemCategoryCreateSchema, itemCategoryUpdateSchema, type ItemCategoryCreateFormData, type ItemCategoryUpdateFormData } from '../../../../../schemas';
-import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS, ACCOUNTING_TYPE, ACCOUNTING_TYPE_LABELS } from "@/constants";
+import { ITEM_CATEGORY_TYPE, ACCOUNTING_TYPE, ACCOUNTING_TYPE_LABELS } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { useItems, useItemCategories, useKeyboardAwareScroll } from "@/hooks";
@@ -147,13 +147,6 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
       label: `${item.name}${item.category ? ` (${item.category.name})` : ""}`,
     })) || [];
 
-  const typeOptions = Object.values(ITEM_CATEGORY_TYPE).map((type) => ({
-    label: ITEM_CATEGORY_TYPE_LABELS[type],
-    value: type,
-  }));
-
-  const watchedType = form.watch("type");
-
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
     onFieldLayout: handlers.handleFieldLayout,
     onFieldFocus: handlers.handleFieldFocus,
@@ -202,35 +195,10 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
             />
           </FormFieldGroup>
 
-          <FormFieldGroup
-            label="Tipo da Categoria"
-            helper={
-              watchedType === ITEM_CATEGORY_TYPE.PPE
-                ? "Categoria para Equipamentos de Proteção Individual"
-                : watchedType === ITEM_CATEGORY_TYPE.TOOL
-                  ? "Categoria para ferramentas e equipamentos"
-                  : "Categoria para produtos gerais"
-            }
-            error={(form.formState.errors.type as FieldError | undefined)?.message}
-          >
-            <Controller
-              control={form.control}
-              name="type"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox
-                  placeholder="Selecione o tipo da categoria"
-                  options={typeOptions}
-                  value={value}
-                  onValueChange={onChange}
-                  disabled={isSubmitting}
-                  searchable={false}
-                  clearable={false}
-                  error={error?.message}
-                />
-              )}
-            />
-          </FormFieldGroup>
-
+          {/* The physical ItemCategoryType (REGULAR/TOOL/PPE) is no longer user-facing:
+              item behavior is driven by per-item capability fields (isBorrowable,
+              stockModel, ppeType). The form still carries the field's default so
+              creates send REGULAR. */}
           <FormFieldGroup
             label="Categoria Pai"
             helper={

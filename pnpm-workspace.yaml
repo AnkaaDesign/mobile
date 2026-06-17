@@ -1,0 +1,12 @@
+allowBuilds:
+  '@firebase/util': true
+  protobufjs: true
+
+# NOTE: react-native is intentionally NOT patched here via pnpm. pnpm's
+# patchedDependencies injects a `patch_hash=<hash>` segment into the .pnpm dir
+# name of react-native AND every package that depends on it (worklets,
+# reanimated, gesture-handler, ...). The `=` in those paths breaks Android's
+# prefab CLI (clikt parses `…patch_hash=…` as `--option=value`), failing the
+# native build. The react-native patch is iOS-only (RCTTurboModule.mm) and is
+# applied instead via patch-package (patches/react-native+0.81.5.patch, run in
+# the postinstall script) which edits files in place without renaming dirs.

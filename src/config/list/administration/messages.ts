@@ -1,5 +1,10 @@
 import type { ListConfig } from '@/components/list/types'
-import { canEditUsers } from '@/utils/permissions/entity-permissions'
+import { hasAnyPrivilege } from '@/utils'
+import { SECTOR_PRIVILEGES } from '@/constants'
+
+// API: message writes = ADMIN+PRODUCTION_MANAGER (message.controller)
+const canManageMessages = (user: any) =>
+  hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER])
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Rascunho',
@@ -89,6 +94,7 @@ export const messagesListConfig: ListConfig<any> = {
         icon: 'pencil',
         variant: 'default',
         visible: (message) => message.status !== 'ARCHIVED',
+        canPerform: canManageMessages,
         onPress: (message, router) => {
           router.push(`/administracao/mensagens/editar/${message.id}`)
         },
@@ -99,6 +105,7 @@ export const messagesListConfig: ListConfig<any> = {
         icon: 'archive',
         variant: 'default',
         visible: (message) => message.status === 'ACTIVE',
+        canPerform: canManageMessages,
         onPress: async (message, _, mutations) => {
           await (mutations as any)?.archive?.(message.id)
         },
@@ -109,6 +116,7 @@ export const messagesListConfig: ListConfig<any> = {
         icon: 'playerPlay',
         variant: 'default',
         visible: (message) => message.status === 'DRAFT' || message.status === 'ARCHIVED',
+        canPerform: canManageMessages,
         onPress: async (message, _, mutations) => {
           await (mutations as any)?.activate?.(message.id)
         },
@@ -125,6 +133,7 @@ export const messagesListConfig: ListConfig<any> = {
         onPress: async (message, _, mutations) => {
           await mutations?.delete?.(message.id)
         },
+        canPerform: canManageMessages,
       },
     ],
   },
@@ -163,7 +172,7 @@ export const messagesListConfig: ListConfig<any> = {
     create: {
       label: 'Criar Mensagem',
       route: '/administracao/mensagens/cadastrar',
-      canCreate: canEditUsers,
+      canCreate: canManageMessages,
     },
     bulk: [
       {
@@ -178,6 +187,7 @@ export const messagesListConfig: ListConfig<any> = {
         onPress: async (ids, mutations) => {
           await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
+        canPerform: canManageMessages,
       },
     ],
   },

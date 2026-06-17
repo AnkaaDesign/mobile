@@ -9,14 +9,17 @@
 import { useMemo } from "react";
 
 import { useAuth } from "@/contexts/auth-context";
-import { SECTOR_PRIVILEGES } from "@/constants";
+import { SECTOR_PRIVILEGES, TEAM_LEADER } from "@/constants";
 import { hasPrivilege, hasAnyPrivilege, hasAllPrivileges } from "@/utils";
 import type { User } from "@/types/user";
 
+/** A sector privilege or the virtual TEAM_LEADER (sector leader) privilege. */
+export type PrivilegeValue = SECTOR_PRIVILEGES | typeof TEAM_LEADER;
+
 export type PrivilegeReq =
-  | SECTOR_PRIVILEGES
-  | { any: SECTOR_PRIVILEGES[] }
-  | { all: SECTOR_PRIVILEGES[] }
+  | PrivilegeValue
+  | { any: PrivilegeValue[] }
+  | { all: PrivilegeValue[] }
   | { self: true; otherwise: PrivilegeReq };
 
 export type PrivilegeReason =

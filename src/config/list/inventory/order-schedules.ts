@@ -214,6 +214,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           }))
           await batchUpdateAsync?.({ orderSchedules })
         },
+        canPerform: canEditOrders,
       },
       {
         key: 'deactivate',
@@ -231,6 +232,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           }))
           await batchUpdateAsync?.({ orderSchedules })
         },
+        canPerform: canEditOrders,
       },
       {
         key: 'delete',

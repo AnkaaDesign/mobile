@@ -18,7 +18,11 @@ interface EmployeeCardProps {
 export function EmployeeCard({ employee }: EmployeeCardProps) {
   const { colors } = useTheme();
 
-  const statusVariant = getBadgeVariant(employee.status, "USER");
+  // Badge variant is driven by the lifecycle STATUS (situação); fall back to the
+  // contract MODALITY when the status is unavailable.
+  const statusVariant = employee.currentContractStatus
+    ? getBadgeVariant(employee.currentContractStatus, "CONTRACT_STATUS")
+    : getBadgeVariant(employee.currentContractType ?? "", "USER");
 
   return (
     <Card style={styles.card}>

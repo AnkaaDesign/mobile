@@ -16,13 +16,13 @@ export function StockStatusIndicator({ item, hasActiveOrder = false }: StockStat
   // Determine stock level using the utility function.
   // `hasActiveOrder` is intentionally NOT passed: pending-order state is a UI
   // overlay only (the new util ignores it anyway).
-  const stockLevel = determineStockLevel(
+  const stockLevel = determineStockLevel({
     quantity,
-    item.reorderPoint || null,
-    item.maxQuantity || null,
-    false,
-    item.category?.type ?? null,
-  );
+    reorderPoint: item.reorderPoint || null,
+    maxQuantity: item.maxQuantity || null,
+    stockModel: item.stockModel ?? null,
+    fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+  });
 
   // Get the appropriate color for the stock level (matching web exactly)
   const getColor = () => {

@@ -20,7 +20,11 @@ interface UserCardProps {
 export function UserCard({ user }: UserCardProps) {
   const { colors } = useTheme();
 
-  const statusVariant = getBadgeVariant(user.status, "USER");
+  // Badge variant is driven by the lifecycle STATUS (situação); fall back to the
+  // contract MODALITY when the status is unavailable.
+  const statusVariant = user.currentContractStatus
+    ? getBadgeVariant(user.currentContractStatus, "CONTRACT_STATUS")
+    : getBadgeVariant(user.currentContractType ?? "", "USER");
 
   return (
     <Card style={styles.card}>

@@ -28,9 +28,13 @@ export interface AutoOrderRecommendation {
   supplierName: string | null;
   categoryId: string | null;
   categoryName: string | null;
-  /** Category type so the UI can branch on tool / electronic-tool / regular.
-   *  PPE never appears (excluded from the workflow for now). */
+  /** Category type for display/grouping only — tool badges/grouping key on
+   *  `stockModel === 'FIXED_TARGET'`. PPE never appears here (excluded). */
   categoryType: ITEM_CATEGORY_TYPE | null;
+  /** Stock math model on the item itself (capability-fields contract). */
+  stockModel: "CONSUMPTION" | "FIXED_TARGET" | null;
+  /** Target on hand when FIXED_TARGET (engine falls back to 1 when null). */
+  fixedTargetQuantity: number | null;
   lastOrderDate: Date | null;
   daysSinceLastOrder: number | null;
   hasActivePendingOrder: boolean;

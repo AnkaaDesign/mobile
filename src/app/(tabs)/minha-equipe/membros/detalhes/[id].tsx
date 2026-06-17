@@ -79,8 +79,6 @@ export default function TeamMemberDetailsScreen() {
       query={synthesizedQuery as any}
       icon={IconUser}
       title={(e) => e.name || "Membro"}
-      subtitle={(e) => e.position?.name}
-      // Read-only mirror — team leaders only view their members.
       editGuard={{ editable: [] }}
       notFoundFallback={mobileRoute("/meu-pessoal/usuarios")}
     >

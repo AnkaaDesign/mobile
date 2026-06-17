@@ -6,6 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { useUsers, useSectors, usePositions } from '@/hooks';
+import { EMPLOYEE_TYPE } from '@/constants';
 
 interface PayrollFilterDrawerContentProps {
   filters: PayrollFiltersData;
@@ -40,6 +41,7 @@ export function PayrollFilterDrawerContent({
     include: { position: true, sector: true },
     where: {
       isActive: true,
+      currentEmployeeType: EMPLOYEE_TYPE.CLT, // Folha is CLT-only — exclude terceirizado/PJ/autônomo/estagiário
       payrollNumber: { not: null },
       secullumEmployeeId: { not: null },
     },

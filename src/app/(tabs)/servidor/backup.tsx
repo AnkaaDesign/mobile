@@ -7,5 +7,5 @@ import { mobileRoute } from '@/constants/routes.types';
  * The actual backup list page is at /servidor/backups/listar
  */
 export default function BackupRedirect() {
-  return <Redirect href={mobileRoute(routes.server.backups.list)} />;
+  return <Redirect href={mobileRoute(routes.server.backups.list) as any} />;
 }

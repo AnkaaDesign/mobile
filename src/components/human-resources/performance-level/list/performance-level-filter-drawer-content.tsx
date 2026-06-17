@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { usePositions, useSectors, useUsers } from "@/hooks";
-import { USER_STATUS, USER_STATUS_LABELS } from "@/constants";
+import { CONTRACT_TYPE, CONTRACT_TYPE_LABELS } from "@/constants";
 import type { UserGetManyFormData } from '../../../../schemas';
 
 interface PerformanceLevelFilterDrawerContentProps {
@@ -46,7 +46,7 @@ export function PerformanceLevelFilterDrawerContent({
   const { data: sectorsData } = useSectors({ limit: 100, orderBy: { name: "asc" } });
   const { data: usersData } = useUsers({
     include: { position: true, sector: true },
-    where: { status: 'EFFECTED' },
+    where: { currentEmployeeType: 'CLT', currentContractStatus: 'ACTIVE' },
     orderBy: { name: 'asc' },
     limit: 100,
   });
@@ -56,7 +56,7 @@ export function PerformanceLevelFilterDrawerContent({
   const users = usersData?.data || [];
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
-    statuses: filters.where?.status?.in || [],
+    statuses: filters.where?.currentContractType?.in || [],
     positionIds: filters.positionIds || [],
     sectorIds: filters.sectorIds || [],
     performanceLevelRange: {
@@ -106,7 +106,7 @@ export function PerformanceLevelFilterDrawerContent({
     if (localFilters.statuses && localFilters.statuses.length > 0) {
       newFilters.where = {
         ...(newFilters.where || {}),
-        status: { in: localFilters.statuses },
+        currentContractType: { in: localFilters.statuses },
       };
     }
 
@@ -120,8 +120,8 @@ export function PerformanceLevelFilterDrawerContent({
   }, [onClear]);
 
   const statusOptions = useMemo(
-    () => Object.values(USER_STATUS).map((status) => ({
-      label: USER_STATUS_LABELS[status as keyof typeof USER_STATUS_LABELS] || status,
+    () => Object.values(CONTRACT_TYPE).map((status) => ({
+      label: CONTRACT_TYPE_LABELS[status as keyof typeof CONTRACT_TYPE_LABELS] || status,
       value: status,
     })),
     []
@@ -246,16 +246,16 @@ export function PerformanceLevelFilterDrawerContent({
 
           <View style={styles.inputGroup}>
             <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
-              Status do Funcionário
+              Tipo de Contrato
             </ThemedText>
             <Combobox
               options={statusOptions}
               value={localFilters.statuses || []}
               mode="multiple"
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: Array.isArray(values) ? values : values ? [values] : [] }))}
-              placeholder="Todos os status"
-              searchPlaceholder="Buscar status..."
-              emptyText="Nenhum status encontrado"
+              placeholder="Todos os tipos de contrato"
+              searchPlaceholder="Buscar tipo de contrato..."
+              emptyText="Nenhum tipo de contrato encontrado"
             />
           </View>
         </View>

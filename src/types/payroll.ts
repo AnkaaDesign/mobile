@@ -15,7 +15,14 @@ export interface Discount extends BaseEntity {
   discountType: string;
   isPersistent: boolean;
   isActive: boolean;
-  expirationDate: Date | null;
+  taxYear?: number | null;
+  taxTableId?: string | null;
+  expirationDate?: Date | null;
+  baseValue?: number | null;
+  /** Parcelamento (ex.: empréstimo CLT): total de parcelas contratadas */
+  totalInstallments?: number | null;
+  /** Parcela corrente (1-based); avança a cada folha mensal */
+  currentInstallment?: number | null;
   payrollId: string;
 
   // Relations (optional, populated based on query)
@@ -27,6 +34,7 @@ export interface Payroll extends BaseEntity {
   year: number;
   month: number;
   userId: string;
+  contractId?: string | null;
   positionId?: string | null;
 
   // Calculated fields (from bonus/discounts)
@@ -37,11 +45,35 @@ export interface Payroll extends BaseEntity {
   status?: BONUS_STATUS;
   statusOrder?: number;
 
+  // Persisted holerite columns (snapshot of the complete-payroll calculation;
+  // null on legacy rows generated before the calc rewrite). Mirrors the Prisma
+  // Payroll model so mobile can read the saved values directly.
+  workingDaysInMonth?: number | null;
+  workedDaysInMonth?: number | null;
+  absenceHours?: number | null;
+  overtime50Hours?: number | null;
+  overtime50Amount?: number | null;
+  overtime100Hours?: number | null;
+  overtime100Amount?: number | null;
+  nightHours?: number | null;
+  nightDifferentialAmount?: number | null;
+  dsrAmount?: number | null;
+  dsrDays?: number | null;
+  grossSalary?: number | null;
+  inssBase?: number | null;
+  inssAmount?: number | null;
+  irrfBase?: number | null;
+  irrfAmount?: number | null;
+  fgtsAmount?: number | null;
+  netSalary?: number | null;
+  totalDiscounts?: number | null;
+
   // Relations (optional, populated based on query)
   bonus?: Bonus;
   discounts?: Discount[];
   user?: User;
   position?: Position;
+  contract?: any; // EmploymentContract
   bonusDetails?: any; // BonusDetail type
 
   // Count fields (when included)
@@ -411,4 +443,126 @@ export interface PayrollGenerateMonthParams {
 
 export interface PayrollLiveCalculationParams {
   include?: PayrollIncludes;
+}
+// =====================
+// Complete Payroll Calculation (full holerite result — mirrors
+// api payroll/utils/complete-payroll-calculator.service.ts CompletePayrollCalculation)
+// =====================
+
+export interface CompletePayrollCalculation {
+  // Employee info
+  employeeId: string;
+  year: number;
+  month: number;
+
+  // ========== EARNINGS ==========
+  baseSalary: number;
+  overtimeEarnings: {
+    overtime50Hours: number;
+    overtime50Amount: number;
+    overtime100Hours: number;
+    overtime100Amount: number;
+    nightHours: number;
+    nightDifferentialAmount: number;
+  };
+  dsrEarnings: {
+    dsrOnOvertime: number;
+    dsrOnBonifications: number;
+    totalDSR: number;
+    dsrDays: number;
+  };
+  bonusAmount: number;
+  /**
+   * Proventos legais adicionais (adicionais de insalubridade/periculosidade,
+   * salário-família, gratificação habitual).
+   */
+  additionalEarnings: {
+    /** Salário-família (R$/cota × filhos elegíveis), pró-rata por dias no mês. */
+    familyAllowance: number;
+    familyAllowanceQuota: number;
+    eligibleChildren: number;
+    /** Adicional de insalubridade (% × salário-mínimo), pró-rata. */
+    insalubrity: number;
+    insalubrityPercent: number;
+    /** Adicional de periculosidade (30% × salário-base), pró-rata. */
+    hazardPay: number;
+    /** Gratificação habitual (integra base de INSS/IRRF/FGTS — reflexos). */
+    habitualGratification: number;
+  };
+  otherEarnings: number;
+  grossSalary: number;
+
+  // ========== DEDUCTIONS ==========
+  taxDeductions: {
+    inssBase: number;
+    inssAmount: number;
+    inssEffectiveRate: number;
+    irrfBase: number;
+    irrfAmount: number;
+    irrfEffectiveRate: number;
+  };
+  absenceDeductions: {
+    absenceHours: number;
+    absenceDays: number;
+    /** Apenas as faltas INJUSTIFICADAS (dias) que efetivamente descontam. */
+    unjustifiedAbsenceDays: number;
+    justifiedAbsenceDays: number;
+    absenceAmount: number;
+    /** Parcela do desconto referente à perda proporcional do DSR. */
+    absenceDsrLoss: number;
+    lateArrivalMinutes: number;
+    lateArrivalAmount: number;
+  };
+  benefitDeductions: {
+    mealVoucher: number;
+    transportVoucher: number;
+    healthInsurance: number;
+    dentalInsurance: number;
+    otherBenefits: number;
+  };
+  benefitCopayItems: Array<{
+    userBenefitId: string;
+    benefitKind: string;
+    benefitName: string;
+    discountType: string;
+    amount: number;
+    monthlyValue: number;
+  }>;
+  legalDeductions: {
+    unionContribution: number;
+    alimony: number;
+    garnishment: number;
+  };
+  loanDeductions: {
+    loans: number;
+    advances: number;
+  };
+  customDeductions: number;
+  totalDeductions: number;
+
+  // ========== NET SALARY ==========
+  netSalary: number;
+
+  // ========== EMPLOYER CONTRIBUTIONS ==========
+  employerContributions: {
+    fgtsAmount: number;
+    fgtsRate: number;
+  };
+
+  // ========== SECULLUM DATA ==========
+  secullumData?: any; // SecullumPayrollData (api module-internal)
+
+  // ========== CALCULATION METADATA ==========
+  calculationDate: Date;
+  workingDaysInMonth: number;
+  workedDays: number;
+  /**
+   * Avos / proration factor (0..1) aplicado ao salário-base, salário-família e
+   * adicionais no mês de admissão/desligamento (dias trabalhados ÷ dias do mês).
+   * 1 = mês cheio.
+   */
+  prorationFactor: number;
+  isLive: boolean;
+  /** Avisos não-fatais exibidos no holerite (ex.: descontos limitados ao bruto). */
+  warnings: string[];
 }

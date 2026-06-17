@@ -42,7 +42,7 @@ export function BorrowUserSelector({
         email: initialUser.email,
         position: initialUser.position,
         sector: initialUser.sector,
-        status: initialUser.status,
+        status: initialUser.currentContractType,
       },
     }];
   }, [initialUser?.id]);
@@ -101,7 +101,7 @@ export function BorrowUserSelector({
           email: user.email,
           position: user.position,
           sector: user.sector,
-          status: user.status,
+          status: user.currentContractType,
         },
       })) as ComboboxOption[],
       hasMore,

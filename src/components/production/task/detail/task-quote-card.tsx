@@ -37,12 +37,11 @@ interface TaskQuoteCardProps {
   chassisNumber?: string | null;
 }
 
-type QuoteStatus = "PENDING" | "BUDGET_APPROVED" | "COMMERCIAL_APPROVED" | "BILLING_APPROVED" | "UPCOMING" | "PARTIAL" | "SETTLED" | "DUE";
+type QuoteStatus = "PENDING" | "BUDGET_APPROVED" | "BILLING_APPROVED" | "UPCOMING" | "PARTIAL" | "SETTLED" | "DUE";
 
 const STATUS_CONFIG: Record<QuoteStatus, { label: string; variant: "secondary" | "approved" | "rejected" | "cancelled" }> = {
   PENDING: { label: "Pendente", variant: "secondary" },
   BUDGET_APPROVED: { label: "Orçamento Aprovado", variant: "approved" },
-  COMMERCIAL_APPROVED: { label: "Aprovado pelo Comercial", variant: "approved" },
   BILLING_APPROVED: { label: "Faturamento Aprovado", variant: "approved" },
   UPCOMING: { label: "A Vencer", variant: "secondary" },
   PARTIAL: { label: "Parcial", variant: "secondary" },

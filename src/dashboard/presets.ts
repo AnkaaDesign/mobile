@@ -52,7 +52,7 @@
 //                              valid column keys are TASK_COLUMN_KEYS:
 //                              task, customerName, serialNumber, status, sector,
 //                              responsibles, term, forecastDate, createdAt,
-//                              commission, quoteStatus, quoteTotal.
+//                              bonification, quoteStatus, quoteTotal.
 //
 //   table.items            : { columns, filters: { stockLevels, isActive, ... },
 //                              sort, sorts, ... }
@@ -789,7 +789,7 @@ function commercialLayout(): DashboardLayout {
       }),
       taskWidget(3, 2, {
         title: "Faturamento Aguardando Aprovação",
-        columns: ["task", "customerName", "commission", "quoteTotal"],
+        columns: ["task", "customerName", "bonification", "quoteTotal"],
         showPaintDot: false,
         filters: { status: [TASK_STATUS.COMPLETED] },
         sort: { key: "createdAt", direction: "desc" },
@@ -820,7 +820,7 @@ function financialLayout(): DashboardLayout {
       ...topRow(),
       taskWidget(3, 2, {
         title: "Faturamento Aguardando Aprovação",
-        columns: ["task", "customerName", "commission", "quoteTotal"],
+        columns: ["task", "customerName", "bonification", "quoteTotal"],
         showPaintDot: false,
         filters: { status: [TASK_STATUS.COMPLETED] },
         sort: { key: "createdAt", direction: "desc" },

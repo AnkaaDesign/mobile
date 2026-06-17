@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { USER_STATUS } from "@/constants";
+import { CONTRACT_STATUS } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { useTeamStaffUsers, useTeamStaffCalculations } from "@/hooks";
 import { getBonusPeriod } from "@/utils";
@@ -69,13 +69,10 @@ export default function TeamCalculationsScreen() {
   // Fetch users for selector - automatically filtered by led sector on backend
   const { data: usersData, isLoading: usersLoading } = useTeamStaffUsers({
     where: {
-      status: {
-        in: [
-          USER_STATUS.EXPERIENCE_PERIOD_1,
-          USER_STATUS.EXPERIENCE_PERIOD_2,
-          USER_STATUS.EFFECTED
-        ]
-      }
+      // Working staff = em experiência ou ativos (situação do vínculo).
+      currentContractStatus: {
+        in: [CONTRACT_STATUS.EXPERIENCE, CONTRACT_STATUS.ACTIVE],
+      },
     },
     orderBy: { name: "asc" },
     take: 100,

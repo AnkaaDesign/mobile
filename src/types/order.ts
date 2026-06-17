@@ -1,7 +1,7 @@
 // packages/interfaces/src/order.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
+import type { ORDER_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
 import type { Item, ItemIncludes, ItemOrderBy, ItemWhere } from "./item";
 import type { File, FileIncludes } from "./file";
@@ -121,6 +121,12 @@ export interface Order extends BaseEntity {
   discount: number;
   status: ORDER_STATUS;
   statusOrder: number; // Status numeric order for sorting: 1=Created, 2=PartiallyFulfilled, 3=Fulfilled, 4=Overdue, 5=PartiallyReceived, 6=Received, 7=Cancelled
+  // Contas a Pagar (accounting) payment tracking — optional: present on API responses
+  // since the ACCOUNTING area build; no mobile UI consumes these yet.
+  paymentStatus?: ORDER_PAYMENT_STATUS;
+  paymentStatusOrder?: number;
+  paymentRequestedAt?: Date | null;
+  paidAt?: Date | null;
   budgetIds?: string[];
   invoiceIds?: string[];
   receiptIds?: string[];
@@ -494,6 +500,88 @@ export interface OrderScheduleExpectedTotal {
 export interface OrderScheduleExpectedTotalsResponse {
   success: boolean;
   data: OrderScheduleExpectedTotal[];
+}
+
+// =====================
+// Unified payables (Contas a Pagar)
+// =====================
+
+export type PayableSource =
+  | "ORDER"
+  | "AIRBRUSHING"
+  | "SCHEDULED"
+  | "TAX"
+  | "PAYROLL"
+  | "PAYROLL_SCHEDULED"
+  | "RECURRING";
+
+export type PayableState =
+  | "NOT_REQUESTED"
+  | "REQUESTED"
+  | "AWAITING_PAYMENT"
+  | "PARTIALLY_PAID"
+  | "EXPECTED"
+  // Settled this month — surfaced on Contas a Pagar so finance can review what was paid.
+  | "PAID";
+
+export type PayableSettleVia =
+  | "ORDER_LIFECYCLE"
+  | "AIRBRUSHING"
+  | "THIRTEENTH"
+  | "VACATION"
+  | "PAYROLL_MONTH"
+  | "SCHEDULE_TRIGGER"
+  | "RECONCILIATION"
+  | "NONE";
+
+export interface PayableRow {
+  source: PayableSource;
+  id: string;
+  payeeId: string | null;
+  payeeName: string;
+  description: string;
+  amount: number;
+  paymentState: PayableState;
+  dueDate: Date | string | null;
+  method: string | null;
+  requestedAt: Date | string | null;
+  /** When the row was settled (PAID rows only). */
+  paidAt?: Date | string | null;
+  taskId?: string | null;
+  /** How to settle this row (drives the Contas a Pagar action menu). */
+  settleVia?: PayableSettleVia;
+  /** Estimated value (taxes / recurrents / schedules) — informational. */
+  isEstimate?: boolean;
+  /** Sub-label: installment ("1ª parcela"), Fixo/Variável, etc. */
+  subtype?: string | null;
+  /** Competence the row belongs to (YYYY-MM) — payroll/tax/recurring. */
+  competence?: string | null;
+  /** Deep-link target for RECONCILIATION/SCHEDULE settle actions. */
+  settleHref?: string | null;
+}
+
+export interface PayablesSummaryBucket {
+  count: number;
+  total: number;
+}
+
+export interface PayablesSummary {
+  NOT_REQUESTED: PayablesSummaryBucket;
+  REQUESTED: PayablesSummaryBucket;
+  AWAITING_PAYMENT: PayablesSummaryBucket;
+  PARTIALLY_PAID: PayablesSummaryBucket;
+  EXPECTED: PayablesSummaryBucket;
+  /** Settled this month (orders by paidAt, airbrushing by paidAt). */
+  PAID: PayablesSummaryBucket;
+}
+
+export interface PayablesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    rows: PayableRow[];
+    summary: PayablesSummary;
+  };
 }
 
 export interface OrderScheduleTriggerResult {

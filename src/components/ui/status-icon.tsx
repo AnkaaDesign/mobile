@@ -4,7 +4,7 @@ import { Icon } from "./icon";
 import { useTheme } from "@/lib/theme";
 import { getStatusIconProps } from "@/lib/icon-utils";
 import { type IconSize } from "@/constants/icon-sizes";
-import { TASK_STATUS, ORDER_STATUS, USER_STATUS, PRIORITY_TYPE } from "@/constants";
+import { TASK_STATUS, ORDER_STATUS, CONTRACT_TYPE, CONTRACT_STATUS, PRIORITY_TYPE } from "@/constants";
 
 /**
  * Status icon component with predefined status-to-icon mappings
@@ -104,7 +104,7 @@ export function OrderStatusIcon({ status, ...props }: OrderStatusIconProps) {
  */
 interface UserStatusIconProps extends Omit<StatusIconProps, "status"> {
   /** User status */
-  status: USER_STATUS;
+  status: CONTRACT_TYPE | CONTRACT_STATUS | string;
 }
 
 export function UserStatusIcon({ status, ...props }: UserStatusIconProps) {

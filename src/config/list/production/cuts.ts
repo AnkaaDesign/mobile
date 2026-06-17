@@ -1,7 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Cut } from '@/types'
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN, SECTOR_PRIVILEGES } from '@/constants/enums'
-import { canEditCuts, canDeleteCuts } from '@/utils/permissions/entity-permissions'
+import { hasAnyPrivilege } from '@/utils'
+import { canEditCuts, canDeleteCuts, canManageCutStatus } from '@/utils/permissions/entity-permissions'
 import { isTabletWidth } from '@/lib/table-utils'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -293,6 +294,8 @@ export const cutsListConfig: ListConfig<Cut> = {
             cuts: Array.from(ids).map((id) => ({ id, status: 'CUTTING', startedAt: new Date() })),
           })
         },
+        // API: cut status updates = DESIGNER+PLOTTING+ADMIN
+        canPerform: canManageCutStatus,
       },
       {
         key: 'complete',
@@ -308,6 +311,8 @@ export const cutsListConfig: ListConfig<Cut> = {
             cuts: Array.from(ids).map((id) => ({ id, status: 'COMPLETED', completedAt: new Date() })),
           })
         },
+        // API: cut status updates = DESIGNER+PLOTTING+ADMIN
+        canPerform: canManageCutStatus,
       },
       {
         key: 'delete',
@@ -321,6 +326,8 @@ export const cutsListConfig: ListConfig<Cut> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ cutIds: Array.from(ids) })
         },
+        // API: cut delete = DESIGNER+ADMIN (batch aligned to single, decision 6)
+        canPerform: (user) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.ADMIN]),
       },
     ],
   },

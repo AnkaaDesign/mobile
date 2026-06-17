@@ -9,7 +9,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconShield, IconRefresh, IconEdit } from "@tabler/icons-react-native";
+import { IconShield, IconEdit } from "@tabler/icons-react-native";
 import { mobileRoute } from "@/constants/routes.types";
 // import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -124,39 +124,22 @@ export default function HRPPEDeliveryDetailsScreen() {
         showBackButton={true}
         onBackPress={() => goBack()}
         rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          canEdit ? (
             <TouchableOpacity
-              onPress={handleRefresh}
+              onPress={handleEdit}
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: 8,
-                backgroundColor: colors.muted,
+                backgroundColor: colors.primary,
                 alignItems: "center",
                 justifyContent: "center",
               }}
               activeOpacity={0.7}
-              disabled={refreshing}
             >
-              <IconRefresh size={18} color={colors.foreground} />
+              <IconEdit size={18} color={colors.primaryForeground} />
             </TouchableOpacity>
-            {canEdit && (
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  backgroundColor: colors.primary,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                activeOpacity={0.7}
-              >
-                <IconEdit size={18} color={colors.primaryForeground} />
-              </TouchableOpacity>
-            )}
-          </View>
+          ) : undefined
         }
       />
 

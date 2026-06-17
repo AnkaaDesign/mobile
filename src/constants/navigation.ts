@@ -266,14 +266,15 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       {
-        id: "retiradas-externas",
-        title: "Retiradas Externas",
+        id: "operacoes-externas",
+        title: "Operações Externas",
         icon: "external",
-        path: "/estoque/retiradas-externas",
+        path: "/estoque/operacoes-externas",
+        requiredPrivilege: SECTOR_PRIVILEGES.ADMIN, // ADMIN-only (stricter than inherited estoque WAREHOUSE|ADMIN)
         children: [
-          { id: "retiradas-externas-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/retiradas-externas/cadastrar" },
-          { id: "retiradas-externas-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/retiradas-externas/detalhes/:id", isDynamic: true },
-          { id: "retiradas-externas-editar", title: "Editar", icon: "edit", path: "/estoque/retiradas-externas/editar/:id", isDynamic: true },
+          { id: "operacoes-externas-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/operacoes-externas/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
+          { id: "operacoes-externas-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/operacoes-externas/detalhes/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
+          { id: "operacoes-externas-editar", title: "Editar", icon: "edit", path: "/estoque/operacoes-externas/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
     ],
@@ -320,7 +321,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Pessoal",
     icon: "userCircle",
     path: "/pessoal",
-    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
+    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       // Questionarios - self-fill, visible to ALL users (no requiredPrivilege),
@@ -332,9 +333,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
-        hidden: true, // TEMP: bonus feature hidden from navigation
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT available for DESIGNER
-        requiresBonifiable: true, // Only show if user's position is bonifiable
+        requiresBonifiable: true, // Sole gate: show only if user's position is bonifiable (CLT + ACTIVE + bonifiable)
         children: [
           { id: "meu-bonus-historico", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },
           { id: "meu-bonus-simulacao", title: "Simulação", icon: "calculator", path: "/pessoal/meu-bonus/simulacao", requiresBonifiable: true },
@@ -354,7 +353,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meus EPIs",
         icon: "helmet",
         path: "/pessoal/meus-epis",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ACCOUNTING], // NOT for DESIGNER (matches web)
         children: [
           { id: "meus-epis-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-epis/detalhes/:id", isDynamic: true },
           { id: "meus-epis-solicitar", title: "Solicitar EPI", icon: "plus", path: "/pessoal/meus-epis/request", isDynamic: true },
@@ -369,6 +368,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "meus-pontos-incluir", title: "Incluir Ponto", icon: "map-pin-plus", path: "/pessoal/meus-pontos/incluir-ponto" },
           { id: "meus-pontos-ajustar", title: "Ajustar Ponto", icon: "clock-edit", path: "/pessoal/meus-pontos/ajustar-ponto" },
           { id: "meus-pontos-justificar", title: "Justificar Ausência", icon: "calendar-off", path: "/pessoal/meus-pontos/justificar-ausencia" },
+          { id: "meus-pontos-assinaturas", title: "Assinatura de Ponto", icon: "file-check", path: "/pessoal/meus-pontos/assinaturas" },
         ],
       },
       {
@@ -376,7 +376,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Minhas Advertencias",
         icon: "alertTriangle",
         path: "/pessoal/minhas-advertencias",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ACCOUNTING], // NOT for DESIGNER (matches web)
         children: [{ id: "minhas-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
       },
       {
@@ -519,7 +519,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Recursos Humanos",
     icon: "users",
     path: "/recursos-humanos",
-    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES],
+    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
         id: "warnings",
@@ -601,6 +601,141 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       // { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" }, // Temporarily hidden for testing
       { id: "requisicoes", title: "Requisicoes", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
+
+      // ============================================================
+      // DEPARTAMENTO PESSOAL (Área Andressa) — mirrors web departamento-pessoal,
+      // but mobile keeps all screens under /recursos-humanos/*.
+      // Gated for ACCOUNTING/HR/ADMIN like the equivalent web nav.
+      // ============================================================
+      {
+        id: "rh-admissoes",
+        title: "Admissões",
+        icon: "userCheck",
+        path: "/recursos-humanos/admissoes/listar",
+        // ACCOUNTING-only: new accounting-sector item. HR/ADMIN keep the rest of their
+        // Recursos Humanos menu unchanged. (Page-level route privileges stay open.)
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        children: [
+          { id: "rh-admissoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/admissoes/cadastrar" },
+          { id: "rh-admissoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/admissoes/detalhes/:id", isDynamic: true },
+          { id: "rh-admissoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/admissoes/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "rh-rescisoes",
+        title: "Rescisões",
+        icon: "logOut",
+        path: "/recursos-humanos/rescisoes/listar",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        children: [
+          { id: "rh-rescisoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/rescisoes/cadastrar" },
+          { id: "rh-rescisoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/rescisoes/detalhes/:id", isDynamic: true },
+          { id: "rh-rescisoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/rescisoes/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "rh-ferias",
+        title: "Férias",
+        icon: "beach",
+        path: "/recursos-humanos/ferias/listar",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        children: [
+          { id: "rh-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
+          { id: "rh-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
+          { id: "rh-ferias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/ferias/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "rh-salarios-e-cargos",
+        title: "Salários e Cargos",
+        icon: "salary",
+        path: "/recursos-humanos/faixas-salariais",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        children: [
+          { id: "rh-faixas-salariais", title: "Faixas Salariais", icon: "salary", path: "/recursos-humanos/faixas-salariais" },
+          {
+            id: "rh-reajustes",
+            title: "Reajustes",
+            icon: "trendingUp",
+            path: "/recursos-humanos/reajustes/listar",
+            children: [
+              { id: "rh-reajustes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/reajustes/detalhes/:id", isDynamic: true },
+            ],
+          },
+          {
+            id: "rh-promocoes",
+            title: "Promoções",
+            icon: "movement",
+            path: "/recursos-humanos/promocoes/listar",
+            children: [
+              { id: "rh-promocoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/promocoes/detalhes/:id", isDynamic: true },
+            ],
+          },
+        ],
+      },
+      {
+        id: "rh-beneficios",
+        title: "Benefícios",
+        icon: "coins",
+        path: "/recursos-humanos/beneficios/listar",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        children: [
+          { id: "rh-beneficios-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/beneficios/cadastrar" },
+          { id: "rh-beneficios-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/beneficios/detalhes/:id", isDynamic: true },
+          { id: "rh-beneficios-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/beneficios/editar/:id", isDynamic: true },
+        ],
+      },
+    ],
+  },
+
+  // ============================================================
+  // MEDICINA DO TRABALHO (Área Andressa) — new top-level group.
+  // Mobile screens live under /recursos-humanos/medicina/*.
+  // Gated for ACCOUNTING/HR/ADMIN like the equivalent web nav.
+  // ============================================================
+  {
+    id: "medicina-do-trabalho",
+    title: "Medicina do Trabalho",
+    icon: "safety",
+    path: "/recursos-humanos/medicina/aso/listar",
+    // ACCOUNTING-only: new accounting-sector group. HR/ADMIN keep their original
+    // Recursos Humanos menu unchanged. (Page-level route privileges stay open.)
+    requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+    children: [
+      {
+        id: "mt-aso",
+        title: "ASO / Exames",
+        icon: "clipboardList",
+        path: "/recursos-humanos/medicina/aso/listar",
+        children: [
+          { id: "mt-aso-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/aso/cadastrar" },
+          { id: "mt-aso-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/aso/detalhes/:id", isDynamic: true },
+          { id: "mt-aso-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/aso/editar/:id", isDynamic: true },
+        ],
+      },
+      { id: "mt-exames-periodicos", title: "Exames Periódicos", icon: "calendarStats", path: "/recursos-humanos/medicina/exames-periodicos/listar" },
+      {
+        id: "mt-afastamentos",
+        title: "Afastamentos",
+        icon: "calendar",
+        path: "/recursos-humanos/medicina/afastamentos/listar",
+        children: [
+          { id: "mt-afastamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/afastamentos/cadastrar" },
+          { id: "mt-afastamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/afastamentos/detalhes/:id", isDynamic: true },
+          { id: "mt-afastamentos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/afastamentos/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "mt-cat",
+        title: "CAT",
+        icon: "clipboardList",
+        path: "/recursos-humanos/medicina/cat/listar",
+        children: [
+          { id: "mt-cat-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/cat/cadastrar" },
+          { id: "mt-cat-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/cat/detalhes/:id", isDynamic: true },
+          { id: "mt-cat-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/cat/editar/:id", isDynamic: true },
+        ],
+      },
     ],
   },
 
@@ -669,13 +804,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Financeiro",
     icon: "currency-dollar",
     path: "/financeiro",
-    requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
         id: "faturamento",
         title: "Faturamento",
         icon: "receipt",
         path: "/financeiro/faturamento",
+        requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "faturamento-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/faturamento/detalhes/:id", isDynamic: true },
         ],
@@ -685,6 +821,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Orçamentos",
         icon: "calculator",
         path: "/financeiro/orcamento",
+        requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "orcamento-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/orcamento/detalhes/:taskId", isDynamic: true },
         ],
@@ -694,6 +831,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Notas Fiscais",
         icon: "fileInvoice",
         path: "/financeiro/notas-fiscais",
+        requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.ACCOUNTING],
         children: [
           { id: "notas-fiscais-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/notas-fiscais/detalhes/:id", isDynamic: true },
         ],
@@ -1022,7 +1160,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
-        hidden: true, // TEMP: bonus feature hidden from navigation
         requiresBonifiable: true,
         children: [
           { id: "meu-bonus-historico-production", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },
@@ -1056,6 +1193,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "meus-pontos-incluir-production", title: "Incluir Ponto", icon: "map-pin-plus", path: "/pessoal/meus-pontos/incluir-ponto" },
           { id: "meus-pontos-ajustar-production", title: "Ajustar Ponto", icon: "clock-edit", path: "/pessoal/meus-pontos/ajustar-ponto" },
           { id: "meus-pontos-justificar-production", title: "Justificar Ausência", icon: "calendar-off", path: "/pessoal/meus-pontos/justificar-ausencia" },
+          { id: "meus-pontos-assinaturas-production", title: "Assinatura de Ponto", icon: "file-check", path: "/pessoal/meus-pontos/assinaturas" },
         ],
       },
       {

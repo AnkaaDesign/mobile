@@ -1,5 +1,5 @@
 <resources>
   <!-- OTA runtimeVersion (fingerprint). Managed by scripts/sync-runtime-version.mjs.
        Excluded from the fingerprint via .fingerprintignore to avoid a feedback loop. -->
-  <string name="expo_runtime_version" translatable="false">f9dc8e469d4cddc5fff1d400772cbc1c74410545</string>
+  <string name="expo_runtime_version" translatable="false">d8ed3c7d5d327147b905740f6e7a68386c10fc6e</string>
 </resources>

@@ -429,6 +429,7 @@ export const customersListConfig: ListConfig<Customer> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ customerIds: Array.from(ids) })
         },
+        canPerform: canDeleteCustomers,
       },
     ],
   },

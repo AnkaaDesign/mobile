@@ -2,8 +2,12 @@ import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { Responsible } from '@/types'
 import { ResponsibleRole, RESPONSIBLE_ROLE_LABELS } from '@/types/responsible'
-import { canEditResponsibles, canDeleteResponsibles } from '@/utils/permissions/entity-permissions'
-import { formatBrazilianPhone } from '@/utils'
+import { canEditResponsibles } from '@/utils/permissions/entity-permissions'
+import { formatBrazilianPhone, hasAnyPrivilege } from '@/utils'
+import { SECTOR_PRIVILEGES } from '@/constants'
+
+// API: responsible delete = ADMIN-only (responsible.controller.ts:107/138)
+const canDeleteResponsiblesAdminOnly = (user: any) => hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN])
 import { Badge } from '@/components/ui/badge'
 import type { BadgeVariant } from '@/constants/badge-colors'
 
@@ -156,7 +160,7 @@ export const responsiblesListConfig: ListConfig<Responsible> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
-        canPerform: canDeleteResponsibles,
+        canPerform: canDeleteResponsiblesAdminOnly,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (resp) => `Deseja excluir o responsável "${resp.name}"?`,
@@ -233,6 +237,7 @@ export const responsiblesListConfig: ListConfig<Responsible> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
+        canPerform: canDeleteResponsiblesAdminOnly,
       },
     ],
   },

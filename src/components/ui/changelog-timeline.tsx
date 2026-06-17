@@ -501,7 +501,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
     const sensitiveFields = ["sessionToken", "verificationCode", "verificationExpiresAt", "verificationType", "password", "token", "apiKey", "secret"];
 
     // Define financial/document fields that should only be visible to FINANCIAL and ADMIN
-    const financialFields = ["budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit", "commission"];
+    const financialFields = ["budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit", "bonification"];
 
     // Filter out sensitive field changes and financial fields for non-privileged users
     const filteredLogs = logs.filter((log) => {

@@ -21,12 +21,26 @@ import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, SECTOR_PRIVILEGES, rout
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
 import { ppeDeliveryUpdateSchema, mapPpeDeliveryToFormData, type PpeDeliveryUpdateFormData } from "../../../../../../schemas";
 import { hasPrivilege } from "@/utils";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { mobileRoute } from "@/constants/routes.types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditHRPPEDeliveryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <EditHRPPEDeliveryScreenInner key={id} />;
+  // Decision 4 (2026-06-10 audit): PPE delivery edit = HR + WAREHOUSE + ADMIN.
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.ADMIN,
+        ],
+      }}
+    >
+      <EditHRPPEDeliveryScreenInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
 function EditHRPPEDeliveryScreenInner() {

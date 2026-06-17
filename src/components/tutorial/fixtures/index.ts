@@ -98,9 +98,9 @@ export const TUTORIAL_TASKS = [
 
 export const TUTORIAL_TASK_DETAIL = {
   ...TUTORIAL_TASKS[0],
-  isCommissionable: true,
-  // Real commission is an enum (COMMISSION_STATUS), not a percentage.
-  commission: "FULL_COMMISSION",
+  isBonifiable: true,
+  // Real bonification is an enum (BONIFICATION_STATUS), not a percentage.
+  bonification: "FULL_BONIFICATION",
   // Real service-order descriptions (PRODUCTION_SERVICE_DESCRIPTIONS) + real
   // SERVICE_ORDER_STATUS_LABELS (Title Case).
   services: [
@@ -255,8 +255,8 @@ export const TUTORIAL_BONUS_CURRENT = {
   discountTotal: 75,
   discountPercent: 5,
   performance: 92,
-  commission: 320,
-  rules: ["Assiduidade: até R$ 200", "Performance individual: até R$ 800", "Comissão: 5% sobre tarefas finalizadas"],
+  bonification: 320,
+  rules: ["Assiduidade: até R$ 200", "Performance individual: até R$ 800", "Bonificação: 5% sobre tarefas finalizadas"],
 };
 
 export const TUTORIAL_BONUS_HISTORY = [
@@ -265,6 +265,43 @@ export const TUTORIAL_BONUS_HISTORY = [
   { id: "b-2", period: "Fevereiro 2026", status: "PAID", value: 1290 },
   { id: "b-3", period: "Janeiro 2026", status: "PAID", value: 1510 },
 ];
+
+// ─── Assinatura de Ponto / Fechamento ─────────────────────────────────────
+
+// APURACAO_ESTADO: 0=Pendente, 1=Aprovado, 2=Rejeitado
+export const TUTORIAL_ASSINATURAS = [
+  {
+    id: 1,
+    descricao: "Fechamento de Ponto – Maio 2026",
+    dataInicio: "2026-04-25",
+    dataFim: "2026-05-25",
+    estado: 0,
+  },
+  {
+    id: 2,
+    descricao: "Fechamento de Ponto – Abril 2026",
+    dataInicio: "2026-03-25",
+    dataFim: "2026-04-25",
+    estado: 1,
+  },
+  {
+    id: 3,
+    descricao: "Fechamento de Ponto – Março 2026",
+    dataInicio: "2026-02-25",
+    dataFim: "2026-03-25",
+    estado: 2,
+  },
+];
+
+export const TUTORIAL_ASSINATURA_DETAIL = {
+  id: 1,
+  assinaturaDigitalCartaoPontoId: 42,
+  descricao: "Fechamento de Ponto – Maio 2026",
+  dataInicio: "2026-04-25",
+  dataFim: "2026-05-25",
+  dataInclusao: "2026-06-01T09:00:00",
+  estado: 0, // PENDENTE — shows approve/reject buttons
+};
 
 // ─── Home dashboard ───────────────────────────────────────────────────────
 //

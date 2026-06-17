@@ -6,7 +6,7 @@ import type { Task } from '@/types'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
-  COMMISSION_STATUS_LABELS,
+  BONIFICATION_STATUS_LABELS,
 } from '@/constants'
 import type { Customer, Sector, User } from '@/types'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
@@ -132,15 +132,15 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         format: 'badge',
       },
       {
-        key: 'commission',
-        label: 'COMISSÃO',
+        key: 'bonification',
+        label: 'BONIFICAÇÃO',
         sortable: true,
-        sortField: 'commissionOrder',
+        sortField: 'bonificationOrder',
         width: 1.6,
         align: 'center',
-        render: (task) => task.commission ? COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission : '-',
+        render: (task) => task.bonification ? BONIFICATION_STATUS_LABELS[task.bonification as keyof typeof BONIFICATION_STATUS_LABELS] || task.bonification : '-',
         format: 'badge',
-        badgeEntity: 'COMMISSION_STATUS',
+        badgeEntity: 'BONIFICATION_STATUS',
       },
       {
         key: 'finishedAt',
@@ -431,7 +431,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
       { key: 'generalPainting', label: 'Pintura', path: 'generalPainting.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       { key: 'status', label: 'Status', path: 'status' },
-      { key: 'commission', label: 'Comissão', path: 'commission', format: (value) => value ? COMMISSION_STATUS_LABELS[value as keyof typeof COMMISSION_STATUS_LABELS] || value : '-' },
+      { key: 'bonification', label: 'Bonificação', path: 'bonification', format: (value) => value ? BONIFICATION_STATUS_LABELS[value as keyof typeof BONIFICATION_STATUS_LABELS] || value : '-' },
       { key: 'serialNumber', label: 'Nº Série', path: 'serialNumber' },
       { key: 'plate', label: 'Placa', path: 'truck.plate' },
       { key: 'chassisNumber', label: 'Nº Chassi', path: 'truck.chassisNumber' },
@@ -461,6 +461,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ taskIds: Array.from(ids) })
         },
+        canPerform: canDeleteTasks,
       },
     ],
   },

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, createNameSchema } from "./common";
 import type { Position, PositionRemuneration } from '../types';
+import { INSALUBRITY_DEGREE } from "../constants";
 
 // =====================
 // Include Schemas (Second Level Only)
@@ -31,7 +32,7 @@ export const positionIncludeSchema = z
               borrows: z.boolean().optional(),
               notifications: z.boolean().optional(),
               tasks: z.boolean().optional(),
-              commissions: z.boolean().optional(),
+              bonifications: z.boolean().optional(),
               warningsCollaborator: z.boolean().optional(),
               warningsSupervisor: z.boolean().optional(),
               warningsWitness: z.boolean().optional(),
@@ -511,6 +512,10 @@ export const positionCreateSchema = z
     hierarchy: z.number().int("Hierarquia deve ser um número inteiro").min(0, "Hierarquia deve ser maior ou igual a zero").max(999, "Hierarquia deve ser menor que 1000").optional().nullable(),
     remuneration: z.number().min(0, "Remuneração deve ser maior ou igual a zero").max(999999.99, "Remuneração deve ser menor que R$ 1.000.000,00"),
     bonifiable: z.boolean().optional(),
+    salaryFloor: z.number().min(0, "Piso salarial deve ser maior ou igual a zero").max(999999.99, "Piso salarial deve ser menor que R$ 1.000.000,00").nullable().optional(),
+    insalubrityDegree: z.nativeEnum(INSALUBRITY_DEGREE).optional(),
+    hazardPay: z.boolean().optional(),
+    examPeriodicityMonths: z.number().int("Periodicidade deve ser um número inteiro de meses").min(1, "Periodicidade deve ser de pelo menos 1 mês").max(60, "Periodicidade deve ser menor ou igual a 60 meses").nullable().optional(),
   })
   .transform(toFormData);
 
@@ -520,6 +525,10 @@ export const positionUpdateSchema = z
     hierarchy: z.number().int("Hierarquia deve ser um número inteiro").min(0, "Hierarquia deve ser maior ou igual a zero").max(999, "Hierarquia deve ser menor que 1000").optional().nullable(),
     remuneration: z.number().min(0, "Remuneração deve ser maior ou igual a zero").max(999999.99, "Remuneração deve ser menor que R$ 1.000.000,00").optional(),
     bonifiable: z.boolean().optional(),
+    salaryFloor: z.number().min(0, "Piso salarial deve ser maior ou igual a zero").max(999999.99, "Piso salarial deve ser menor que R$ 1.000.000,00").nullable().optional(),
+    insalubrityDegree: z.nativeEnum(INSALUBRITY_DEGREE).optional(),
+    hazardPay: z.boolean().optional(),
+    examPeriodicityMonths: z.number().int("Periodicidade deve ser um número inteiro de meses").min(1, "Periodicidade deve ser de pelo menos 1 mês").max(60, "Periodicidade deve ser menor ou igual a 60 meses").nullable().optional(),
   })
   .transform(toFormData);
 

@@ -10,7 +10,8 @@ import { useTheme } from "@/lib/theme";
 import { useNav } from "@/contexts/nav";
 import { spacing, fontSize } from "@/constants/design-system";
 import { usePpeDelivery, usePpeDeliveryMutations } from "@/hooks";
-import { formatDate, formatDateTime, formatQuantity } from "@/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { formatDate, formatDateTime, formatQuantity, hasAnyPrivilege } from "@/utils";
 import {
   SECTOR_PRIVILEGES,
   PPE_DELIVERY_STATUS,
@@ -44,7 +45,15 @@ export default function PPEDetailsScreen() {
       query={query as any}
       icon={IconShield}
       title={(d: any) => d.item?.name ?? `Entrega EPI #${String(d.id).slice(0, 8)}`}
-      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+      // Decision 4 (2026-06-10 audit): delivery edit = HR + WAREHOUSE + ADMIN.
+      // Approve/reject and mark-delivered buttons below carry tighter gates.
+      privilege={{
+        any: [
+          SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.ADMIN,
+        ],
+      }}
       editGuard={{ editable: EDITABLE_PPE_DELIVERY_STATUSES }}
       editRoute={(d: any) => mobileRoute(routes.inventory.ppe.deliveries.edit(d.id))}
       deleteAction={{
@@ -89,7 +98,20 @@ function PpeDetailBody({
 }) {
   const { colors } = useTheme();
   const nav = useNav();
+  const { user } = useAuth();
   const { updateMutation } = usePpeDeliveryMutations();
+
+  // Per-action gates (2026-06-10 audit, decision 4):
+  // approve/reject (and re-activating a reproved delivery) = HR + ADMIN;
+  // mark-delivered = WAREHOUSE + ADMIN.
+  const canApproveReject = hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+  const canMarkDelivered = hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 
   const handleStatusChange = useCallback(
     (newStatus: PPE_DELIVERY_STATUS) => {
@@ -232,7 +254,7 @@ function PpeDetailBody({
 
       {isEditable && (
         <View style={styles.actions}>
-          {ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING && (
+          {canApproveReject && ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING && (
             <>
               <Button
                 variant="outline"
@@ -250,7 +272,7 @@ function PpeDetailBody({
               </Button>
             </>
           )}
-          {ppeDelivery.status === PPE_DELIVERY_STATUS.APPROVED && (
+          {canMarkDelivered && ppeDelivery.status === PPE_DELIVERY_STATUS.APPROVED && (
             <Button
               variant="outline"
               onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.DELIVERED)}
@@ -259,7 +281,7 @@ function PpeDetailBody({
               <ThemedText>Marcar como Entregue</ThemedText>
             </Button>
           )}
-          {ppeDelivery.status === PPE_DELIVERY_STATUS.REPROVED && (
+          {canApproveReject && ppeDelivery.status === PPE_DELIVERY_STATUS.REPROVED && (
             <Button
               variant="outline"
               onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.PENDING)}

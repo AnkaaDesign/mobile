@@ -1,8 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import {
-  USER_STATUS,
-  USER_STATUS_LABELS,
+  CONTRACT_TYPE,
+  CONTRACT_TYPE_LABELS,
 } from '@/constants'
 import { getUserStatusBadgeText } from '@/utils/user'
 import { formatCPF, formatBrazilianPhone} from '@/utils'
@@ -33,8 +33,9 @@ export const employeesListConfig: ListConfig<User> = {
       verified: true,
       performanceLevel: true,
       birth: true,
-      exp1StartAt: true,
-      dismissedAt: true,
+      currentContractType: true,
+      currentContractStatus: true,
+      currentContract: true,
       lastLoginAt: true,
       requirePasswordChange: true,
       // Address fields for list display
@@ -157,8 +158,8 @@ export const employeesListConfig: ListConfig<User> = {
         render: (employee) => employee.sector?.name || '-',
       },
       {
-        key: 'status',
-        label: 'STATUS',
+        key: 'currentContractType',
+        label: 'TIPO DE CONTRATO',
         sortable: true,
         width: 1.5,
         align: 'left',
@@ -175,21 +176,21 @@ export const employeesListConfig: ListConfig<User> = {
         format: 'date',
       },
       {
-        key: 'exp1StartAt',
+        key: 'admissionDate',
         label: 'DATA DE ADMISSÃO',
-        sortable: true,
+        sortable: false,
         width: 1.4,
         align: 'left',
-        render: (employee) => employee.exp1StartAt,
+        render: (employee) => employee.currentContract?.admissionDate ?? employee.currentContract?.exp1StartAt,
         format: 'date',
       },
       {
-        key: 'dismissedAt',
+        key: 'terminationDate',
         label: 'DATA DE DEMISSÃO',
-        sortable: true,
+        sortable: false,
         width: 1.4,
         align: 'left',
-        render: (employee) => employee.dismissedAt,
+        render: (employee) => employee.currentContract?.terminationDate,
         format: 'date',
       },
       {
@@ -319,7 +320,7 @@ export const employeesListConfig: ListConfig<User> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['name', 'sector.name', 'status'],
+    defaultVisible: ['name', 'sector.name', 'currentContractType'],
     rowHeight: 72,
     actions: [
       {
@@ -361,15 +362,16 @@ export const employeesListConfig: ListConfig<User> = {
   filters: {
     fields: [
       {
-        key: 'status',
-        label: 'Status',
+        // contractKinds is the API convenience filter that maps to currentContractType.
+        key: 'contractKinds',
+        label: 'Tipo de Contrato',
         type: 'select',
         multiple: true,
-        options: Object.values(USER_STATUS).map((status) => ({
-          label: USER_STATUS_LABELS[status],
+        options: Object.values(CONTRACT_TYPE).map((status) => ({
+          label: CONTRACT_TYPE_LABELS[status],
           value: status,
         })),
-        placeholder: 'Selecione os status',
+        placeholder: 'Selecione os tipos de contrato',
       },
       {
         key: 'verified',
@@ -447,12 +449,10 @@ export const employeesListConfig: ListConfig<User> = {
         type: 'date-range',
         placeholder: 'Data de Nascimento',
       },
-      {
-        key: 'dismissedAt',
-        label: 'Data de Demissão',
-        type: 'date-range',
-        placeholder: 'Data de Demissão',
-      },
+      // NOTE: "Data de Demissão" (dismissedAt) date-range filter removed — that
+      // date moved onto the EmploymentContract (terminationDate) and the API has
+      // no convenience filter for it; this list framework only sends verbatim
+      // top-level params so it cannot express the nested currentContract where.
       {
         key: 'createdAt',
         label: 'Data de Cadastro',
@@ -481,14 +481,14 @@ export const employeesListConfig: ListConfig<User> = {
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       {
-        key: 'status',
-        label: 'Status',
-        path: 'status',
-        format: (value) => USER_STATUS_LABELS[value as USER_STATUS] || value
+        key: 'currentContractType',
+        label: 'Tipo de Contrato',
+        path: 'currentContractType',
+        format: (value) => CONTRACT_TYPE_LABELS[value as CONTRACT_TYPE] || value
       },
       { key: 'birth', label: 'Data de Nascimento', path: 'birth', format: 'date' },
-      { key: 'exp1StartAt', label: 'Data de Admissão', path: 'exp1StartAt', format: 'date' },
-      { key: 'dismissedAt', label: 'Data de Demissão', path: 'dismissedAt', format: 'date' },
+      { key: 'admissionDate', label: 'Data de Admissão', path: 'currentContract.admissionDate', format: 'date' },
+      { key: 'terminationDate', label: 'Data de Demissão', path: 'currentContract.terminationDate', format: 'date' },
       { key: 'performanceLevel', label: 'Nível de Performance', path: 'performanceLevel', format: 'number' },
       { key: 'verified', label: 'Verificado', path: 'verified', format: 'boolean' },
       { key: 'lastLoginAt', label: 'Último Login', path: 'lastLoginAt', format: 'datetime' },
@@ -510,6 +510,7 @@ export const employeesListConfig: ListConfig<User> = {
     create: {
       label: 'Cadastrar Funcionário',
       route: '/recursos-humanos/funcionarios/cadastrar',
+      canCreate: canEditUsers,
     },
     bulk: [
       {
@@ -524,6 +525,7 @@ export const employeesListConfig: ListConfig<User> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ userIds: Array.from(ids) })
         },
+        canPerform: canDeleteUsers,
       },
     ],
   },

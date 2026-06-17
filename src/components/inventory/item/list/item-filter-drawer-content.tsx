@@ -12,8 +12,6 @@ import {
   STOCK_LEVEL_LABELS,
   MEASURE_UNIT_LABELS,
   MEASURE_TYPE_LABELS,
-  ITEM_CATEGORY_TYPE,
-  ITEM_CATEGORY_TYPE_LABELS,
 } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
@@ -194,9 +192,7 @@ export function ItemFilterDrawerContent({
     () => [
       { label: "Sem categoria", value: "null" },
       ...categories.map((category) => ({
-        label: category.type === ITEM_CATEGORY_TYPE.PPE
-          ? `${category.name} (${ITEM_CATEGORY_TYPE_LABELS[ITEM_CATEGORY_TYPE.PPE]})`
-          : `${category.name} (${ITEM_CATEGORY_TYPE_LABELS[category.type]})`,
+        label: category.name,
         value: category.id,
       }))
     ],

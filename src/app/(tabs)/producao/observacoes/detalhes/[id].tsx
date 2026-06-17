@@ -32,7 +32,7 @@ export default function ObservationDetailsScreen() {
         },
       },
       files: true,
-      commissions: {
+      bonifications: {
         select: {
           id: true,
           user: { select: { id: true, name: true } },

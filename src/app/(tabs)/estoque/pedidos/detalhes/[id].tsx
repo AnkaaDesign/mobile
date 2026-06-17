@@ -1,4 +1,4 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { IconHistory, IconPackage } from "@tabler/icons-react-native";
 
@@ -6,13 +6,17 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { DetailScreen } from "@/components/screens/detail-screen";
+import type { PageAction } from "@/components/ui/page-header";
 import { useTheme } from "@/lib/theme";
 import { useOrder, useOrderMutations } from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { usePrivilegeGate } from "@/hooks/use-privilege-gate";
 import { mobileRoute } from "@/constants/routes.types";
 import {
   routes,
   SECTOR_PRIVILEGES,
   CHANGE_LOG_ENTITY_TYPE,
+  ORDER_PAYMENT_STATUS,
 } from "@/constants";
 import { EDITABLE_ORDER_STATUSES } from "@/constants/editable-statuses";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -25,7 +29,12 @@ import type { Order } from "@/types";
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { deleteMutation } = useOrderMutations();
+  const nav = useNav();
+  const { deleteMutation, requestPaymentMutation } = useOrderMutations();
+  // Solicitar Pagamento is restricted to finance/admin (mirrors web).
+  const { allowed: canRequestPayment } = usePrivilegeGate({
+    any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL],
+  });
 
   const query = useOrder(id as string, {
     include: {
@@ -57,10 +66,50 @@ export default function OrderDetailScreen() {
     enabled: !!id && id !== "",
   });
 
+  const order = (query.data as any)?.data ?? (query.data as any);
+
+  const handleRequestPayment = () => {
+    if (!order?.id) return;
+    Alert.alert(
+      "Solicitar Pagamento",
+      "Confirmar a solicitação de pagamento deste pedido? Ele entrará na fila de Contas a Pagar.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Solicitar",
+          onPress: async () => {
+            try {
+              await nav.withLoading(async () => requestPaymentMutation.mutateAsync(order.id));
+            } catch {
+              /* interceptor toasts */
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // "Solicitar Pagamento" shows only for an open order awaiting a request,
+  // and only for ADMIN/FINANCIAL. The trigger lives on the order detail
+  // (moved off the Contas-a-Pagar context menu per the wiring contract).
+  const actions: PageAction[] =
+    canRequestPayment && order?.paymentStatus === ORDER_PAYMENT_STATUS.NOT_REQUESTED
+      ? [
+          {
+            key: "request-payment",
+            label: "Solicitar Pagamento",
+            icon: "receipt",
+            loading: requestPaymentMutation.isPending,
+            onPress: handleRequestPayment,
+          },
+        ]
+      : [];
+
   return (
     <DetailScreen<Order>
       query={query as any}
       icon={IconPackage}
+      actions={actions}
       title={(o) =>
         o.description || `Pedido #${o.id.slice(-8).toUpperCase()}`
       }

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BackHandler, Modal as RNModal, Platform,
+import { BackHandler, Dimensions, KeyboardAvoidingView, Modal as RNModal, Platform,
   Pressable, View, ViewStyle } from "react-native";
 import Animated, {  FadeIn, FadeOut, SlideInUp, SlideOutDown  } from "react-native-reanimated";
 import { useTheme } from "@/lib/theme";
@@ -104,7 +104,10 @@ const Modal: React.FC<ModalProps> = ({
       statusBarTranslucent={statusBarTranslucent}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         {/* Backdrop */}
         <Animated.View
           style={backdropStyle}
@@ -117,13 +120,13 @@ const Modal: React.FC<ModalProps> = ({
           style={containerStyle}
           onPress={closeOnBackdropPress ? onClose : undefined}
         >
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <Animated.View {...animation}>
+          <Pressable onPress={(e) => e.stopPropagation()} style={{ width: "100%" }}>
+            <Animated.View {...animation} style={{ width: "100%" }}>
               {children}
             </Animated.View>
           </Pressable>
         </Pressable>
-      </View>
+      </KeyboardAvoidingView>
     </RNModal>
   );
 };
@@ -137,7 +140,7 @@ const ModalContent: React.FC<ModalContentProps> = ({ children, style }) => {
     padding: spacing.lg,
     width: "100%",
     maxWidth: 500,
-    maxHeight: "90%",
+    maxHeight: Dimensions.get("window").height * 0.9,
     borderWidth: 1,
     borderColor: colors.border,
     ...shadow.lg,

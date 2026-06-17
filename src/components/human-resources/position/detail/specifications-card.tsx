@@ -1,6 +1,7 @@
 
 import type { Position } from '../../../../types';
 import { formatDateTime, formatCurrency } from "@/utils";
+import { INSALUBRITY_DEGREE_LABELS } from "@/constants";
 import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
 
 interface SpecificationsCardProps {
@@ -33,6 +34,29 @@ export function SpecificationsCard({ position }: SpecificationsCardProps) {
           label="Histórico de Remunerações"
           icon="history"
           value={`${position._count?.remunerations || 0} registro${(position._count?.remunerations || 0) !== 1 ? 's' : ''}`}
+        />
+      </DetailSection>
+
+      <DetailSection title="Adicionais Legais e Saúde">
+        <DetailField
+          label="Piso Salarial"
+          icon="currency-dollar"
+          value={position.salaryFloor != null ? formatCurrency(position.salaryFloor) : "Salário-mínimo nacional"}
+        />
+        <DetailField
+          label="Insalubridade"
+          icon="shield-half"
+          value={INSALUBRITY_DEGREE_LABELS[position.insalubrityDegree]}
+        />
+        <DetailField
+          label="Periculosidade"
+          icon="alert-triangle"
+          value={position.hazardPay ? "Sim (+30%)" : "Não"}
+        />
+        <DetailField
+          label="Periodicidade de Exame"
+          icon="heartbeat"
+          value={position.examPeriodicityMonths ? `${position.examPeriodicityMonths} meses` : "Cadência legal"}
         />
       </DetailSection>
 

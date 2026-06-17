@@ -43,7 +43,7 @@ import {
 } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
-import { SECTOR_PRIVILEGES, USER_STATUS } from "@/constants/enums";
+import { SECTOR_PRIVILEGES, CONTRACT_STATUS } from "@/constants/enums";
 import { routes } from "@/constants/routes";
 import {
   useSecullumHolidays,
@@ -279,13 +279,7 @@ function HrCalendarRender({ config }: WidgetRenderProps<HrCalendarConfig>) {
 
   const { data: usersData, isLoading: usersLoading } = useUsers({
     where: {
-      status: {
-        in: [
-          USER_STATUS.EXPERIENCE_PERIOD_1,
-          USER_STATUS.EXPERIENCE_PERIOD_2,
-          USER_STATUS.EFFECTED,
-        ],
-      },
+      currentContractStatus: CONTRACT_STATUS.ACTIVE,
       secullumEmployeeId: { not: null },
     },
     orderBy: { name: "asc" },
@@ -904,13 +898,7 @@ function HrCalendarConfigComponent({
 
   const { data: usersData } = useUsers({
     where: {
-      status: {
-        in: [
-          USER_STATUS.EXPERIENCE_PERIOD_1,
-          USER_STATUS.EXPERIENCE_PERIOD_2,
-          USER_STATUS.EFFECTED,
-        ],
-      },
+      currentContractStatus: CONTRACT_STATUS.ACTIVE,
       secullumEmployeeId: { not: null },
     },
     orderBy: { name: "asc" },

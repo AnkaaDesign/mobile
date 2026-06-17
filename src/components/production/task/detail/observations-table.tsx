@@ -92,7 +92,7 @@ export function ObservationsTable({ taskId, maxHeight = 400 }: ObservationsTable
   }, []);
 
   const handleObservationPress = (observationId: string) => {
-    router.push(mobileRoute(routes.production.observations.details(observationId)));
+    router.push(mobileRoute(routes.production.observations.details(observationId)) as any);
   };
 
   // Don't show if no observations and not loading

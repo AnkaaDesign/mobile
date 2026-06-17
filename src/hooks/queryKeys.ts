@@ -8,8 +8,8 @@ import type {
   PpeSizeGetManyFormData,
   PpeDeliveryGetManyFormData,
   PpeDeliveryScheduleGetManyFormData,
-  ExternalWithdrawalGetManyFormData,
-  ExternalWithdrawalItemGetManyFormData,
+  ExternalOperationGetManyFormData,
+  ExternalOperationItemGetManyFormData,
   FileGetManyFormData,
   ItemGetManyFormData,
   ItemBrandGetManyFormData,
@@ -301,29 +301,29 @@ export const ppeDeliveryScheduleKeys = {
 // External Withdrawal Query Keys
 // =====================================================
 
-export const externalWithdrawalKeys = {
-  all: ["externalWithdrawals"] as const,
-  lists: () => ["externalWithdrawals", "list"] as const,
-  list: (filters?: Partial<ExternalWithdrawalGetManyFormData>) => (filters ? (["externalWithdrawals", "list", filters] as const) : (["externalWithdrawals", "list"] as const)),
-  details: () => ["externalWithdrawals", "detail"] as const,
-  detail: (id: string, include?: any) => (include ? (["externalWithdrawals", "detail", id, include] as const) : (["externalWithdrawals", "detail", id] as const)),
-  byIds: (ids: string[]) => ["externalWithdrawals", "byIds", ids] as const,
+export const externalOperationKeys = {
+  all: ["externalOperations"] as const,
+  lists: () => ["externalOperations", "list"] as const,
+  list: (filters?: Partial<ExternalOperationGetManyFormData>) => (filters ? (["externalOperations", "list", filters] as const) : (["externalOperations", "list"] as const)),
+  details: () => ["externalOperations", "detail"] as const,
+  detail: (id: string, include?: any) => (include ? (["externalOperations", "detail", id, include] as const) : (["externalOperations", "detail", id] as const)),
+  byIds: (ids: string[]) => ["externalOperations", "byIds", ids] as const,
 };
 
-export const externalWithdrawalItemKeys = {
-  all: ["externalWithdrawalItems"] as const,
-  lists: () => ["externalWithdrawalItems", "list"] as const,
-  list: (filters?: Partial<ExternalWithdrawalItemGetManyFormData>) =>
-    filters ? (["externalWithdrawalItems", "list", filters] as const) : (["externalWithdrawalItems", "list"] as const),
-  details: () => ["externalWithdrawalItems", "detail"] as const,
-  detail: (id: string, include?: any) => (include ? (["externalWithdrawalItems", "detail", id, include] as const) : (["externalWithdrawalItems", "detail", id] as const)),
-  byIds: (ids: string[]) => ["externalWithdrawalItems", "byIds", ids] as const,
+export const externalOperationItemKeys = {
+  all: ["externalOperationItems"] as const,
+  lists: () => ["externalOperationItems", "list"] as const,
+  list: (filters?: Partial<ExternalOperationItemGetManyFormData>) =>
+    filters ? (["externalOperationItems", "list", filters] as const) : (["externalOperationItems", "list"] as const),
+  details: () => ["externalOperationItems", "detail"] as const,
+  detail: (id: string, include?: any) => (include ? (["externalOperationItems", "detail", id, include] as const) : (["externalOperationItems", "detail", id] as const)),
+  byIds: (ids: string[]) => ["externalOperationItems", "byIds", ids] as const,
 
   // Specialized queries
-  byWithdrawal: (withdrawalId: string, filters?: Partial<ExternalWithdrawalItemGetManyFormData>) =>
-    filters ? (["externalWithdrawalItems", "byWithdrawal", withdrawalId, filters] as const) : (["externalWithdrawalItems", "byWithdrawal", withdrawalId] as const),
-  byItem: (itemId: string, filters?: Partial<ExternalWithdrawalItemGetManyFormData>) =>
-    filters ? (["externalWithdrawalItems", "byItem", itemId, filters] as const) : (["externalWithdrawalItems", "byItem", itemId] as const),
+  byWithdrawal: (withdrawalId: string, filters?: Partial<ExternalOperationItemGetManyFormData>) =>
+    filters ? (["externalOperationItems", "byWithdrawal", withdrawalId, filters] as const) : (["externalOperationItems", "byWithdrawal", withdrawalId] as const),
+  byItem: (itemId: string, filters?: Partial<ExternalOperationItemGetManyFormData>) =>
+    filters ? (["externalOperationItems", "byItem", itemId, filters] as const) : (["externalOperationItems", "byItem", itemId] as const),
 };
 
 // =====================================================
@@ -516,6 +516,9 @@ export const orderKeys = {
 
   // Analytics
   statistics: () => ["orders", "statistics"] as const,
+
+  // Unified payables feed (Contas a Pagar)
+  payables: () => ["orders", "payables"] as const,
 };
 
 export const orderItemKeys = {
@@ -838,6 +841,40 @@ export const serverKeys = {
   fileManagerFolders: () => ["server", "file-manager"] as const,
   fileManagerFolderContents: (folderName?: string, subPath?: string) =>
     subPath ? (["server", "file-manager", folderName, "contents", subPath] as const) : (["server", "file-manager", folderName, "contents"] as const),
+};
+
+// =====================================================
+// HR / Departamento Pessoal + Medicina do Trabalho Query Keys
+// =====================================================
+
+export const vacationKeys = createQueryKeyStore<Record<string, any>>("vacations");
+export const thirteenthKeys = createQueryKeyStore<Record<string, any>>("thirteenths");
+export const leaveKeys = createQueryKeyStore<Record<string, any>>("leaves");
+export const workAccidentKeys = createQueryKeyStore<Record<string, any>>("workAccidents");
+export const dependentKeys = createQueryKeyStore<Record<string, any>>("dependents");
+export const terminationKeys = createQueryKeyStore<Record<string, any>>("terminations");
+export const benefitKeys = createQueryKeyStore<Record<string, any>>("benefits");
+export const admissionKeys = createQueryKeyStore<Record<string, any>>("admissions");
+export const salaryAdjustmentKeys = createQueryKeyStore<Record<string, any>>("salaryAdjustments");
+
+export const medicalExamKeys = {
+  ...createQueryKeyStore<Record<string, any>>("medicalExams"),
+  // Specialized queries
+  expiring: (days?: number) => (days !== undefined ? (["medicalExams", "expiring", days] as const) : (["medicalExams", "expiring"] as const)),
+};
+
+export const userBenefitKeys = {
+  ...createQueryKeyStore<Record<string, any>>("userBenefits"),
+  // Specialized queries
+  byUser: (userId: string, filters?: Record<string, any>) =>
+    filters ? (["userBenefits", "byUser", userId, filters] as const) : (["userBenefits", "byUser", userId] as const),
+};
+
+export const userPositionHistoryKeys = {
+  ...createQueryKeyStore<Record<string, any>>("userPositionHistories"),
+  // Specialized queries
+  byUser: (userId: string, filters?: Record<string, any>) =>
+    filters ? (["userPositionHistories", "byUser", userId, filters] as const) : (["userPositionHistories", "byUser", userId] as const),
 };
 
 // =====================================================

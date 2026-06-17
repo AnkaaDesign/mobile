@@ -8,7 +8,6 @@ import type { Borrow } from "@/types";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { formatQuantity } from "@/utils";
 import { Icon } from "@/components/ui/icon";
 
 interface BorrowItemCardProps {
@@ -71,10 +70,6 @@ export function BorrowItemCard({ borrow }: BorrowItemCardProps) {
 
       {borrow.item.brands && borrow.item.brands.length > 0 && (
         <DetailField label="Marca" icon="tag" value={borrow.item.brands.map((b) => b.name).join(", ")} />
-      )}
-
-      {borrow.item.quantity !== undefined && (
-        <DetailField label="Estoque Atual" icon="package" value={formatQuantity(borrow.item.quantity)} />
       )}
     </DetailCard>
   );

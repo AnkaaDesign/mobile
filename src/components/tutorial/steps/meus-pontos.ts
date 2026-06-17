@@ -57,25 +57,16 @@ export const meusPontosIntroSteps: TutorialStep[] = [
     scene: "meus-pontos",
     highlight: "pessoalPontosColBatidas",
     title: "Batidas: entradas e saídas",
-    description: "As colunas Entrada 1 / Saída 1 / Entrada 2 / Saída 2 mostram os horários que você registrou no relógio de ponto. É a partir delas que o sistema calcula tudo o que vem a seguir: quanto você trabalhou, faltou ou fez de hora extra. Se uma batida estiver faltando, ela aparece em branco ('-') e pode gerar pendência.",
+    description: "As colunas Entrada 1-3 e Saída 1-3 mostram os horários registrados no relógio de ponto (até três pares por dia, para quem tem mais de um intervalo). É a partir delas que o sistema calcula tudo: quanto você trabalhou, faltou ou fez de hora extra. Batida faltando aparece como '-' e pode gerar pendência.",
     placement: "top",
   },
   {
-    id: "pessoal-pontos-col-normais",
+    id: "pessoal-pontos-col-atraso-faltas",
     kind: "showcase",
     scene: "meus-pontos",
-    highlight: "pessoalPontosColNormais",
-    title: "Horas normais",
-    description: "A coluna Normais é o total de horas da sua jornada contratual cumpridas no dia (por exemplo, 8:00 num dia comum). São as horas pagas no salário-base, sem nenhum adicional. É o ponto de partida do cálculo.",
-    placement: "top",
-  },
-  {
-    id: "pessoal-pontos-col-faltas",
-    kind: "showcase",
-    scene: "meus-pontos",
-    highlight: "pessoalPontosColFaltas",
-    title: "Faltas (e a diferença para Atraso)",
-    description: "Faltas conta as horas que você deveria ter trabalhado e não trabalhou sem justificativa — um dia inteiro ausente aparece como 8:00 aqui. Isso desconta do salário e pode derrubar o DSR da semana. Não confunda com Atraso: atraso é um pequeno atrasinho no início/fim de um dia que você trabalhou; falta é a ausência da jornada. Para apagar uma falta, use 'Justificar Ausência'.",
+    highlight: "pessoalPontosColAtrasoFaltas",
+    title: "Atraso, Faltas e Ajuste",
+    description: "Estas três colunas ficam logo após as batidas por serem as mais críticas para o seu salário. Atraso registra os minutos perdidos no começo ou fim de um dia trabalhado. Faltas conta as horas de jornada não cumpridas sem justificativa — um dia ausente completo aparece como 8:00, desconta do salário e pode derrubar o DSR. Ajuste é uma correção manual do RH para acertar o saldo do dia.",
     placement: "top",
   },
   {
@@ -84,7 +75,7 @@ export const meusPontosIntroSteps: TutorialStep[] = [
     scene: "meus-pontos",
     highlight: "pessoalPontosColExtras",
     title: "Horas extras: 50%, 100% e 150%",
-    description: "Tudo que você trabalha além da jornada vira hora extra, paga com adicional sobre a hora normal. As faixas indicam quando cada uma se aplica: Ex 50% é a extra comum em dia útil; Ex 100% é em domingos e feriados (ou conforme a convenção); Ex 150% é a faixa mais alta usada em casos especiais previstos no acordo coletivo. Quanto maior o percentual, mais cada hora vale na folha.",
+    description: "Tudo que você trabalha além da jornada vira hora extra, paga com adicional sobre a hora normal. Ex 50% é a extra comum em dia útil; Ex 100% é em domingos e feriados; Ex 150% é a faixa mais alta, usada em casos especiais do acordo coletivo. Quanto maior o percentual, mais cada hora vale na folha.",
     placement: "top",
   },
   {
@@ -93,16 +84,16 @@ export const meusPontosIntroSteps: TutorialStep[] = [
     scene: "meus-pontos",
     highlight: "pessoalPontosColDsrNoturno",
     title: "DSR e adicional noturno",
-    description: "DSR é o Descanso Semanal Remunerado: o dia de folga (geralmente domingo) que é pago desde que a semana esteja em dia — por isso faltas podem fazer você 'perder o DSR', e a coluna DSR Déb mostra esse débito. Noturno é o adicional pago por horas trabalhadas no período noturno (em regra das 22h às 5h), e Ex Not. é a hora extra feita nesse período, que acumula os dois adicionais.",
+    description: "DSR é o Descanso Semanal Remunerado: o dia de folga (geralmente domingo) que é pago desde que a semana esteja em dia — faltas podem fazer você perder o DSR, e a coluna DSR Déb mostra esse débito. Noturno é o adicional por horas trabalhadas entre 22h e 5h, e Ex Not. é a hora extra feita nesse período, que acumula os dois adicionais.",
     placement: "top",
   },
   {
-    id: "pessoal-pontos-col-abonos-atraso",
+    id: "pessoal-pontos-col-abonos",
     kind: "showcase",
     scene: "meus-pontos",
-    highlight: "pessoalPontosColAbonosAtraso",
-    title: "Abonos, Atraso e Ajuste",
-    description: "Abono é uma ausência que foi justificada e por isso é paga normalmente (atestado médico, licença etc.) — em vez de virar falta, ela entra como abono. Atraso são os minutos perdidos no começo ou fim de um dia trabalhado. Ajuste é uma correção manual lançada pelo RH para acertar o saldo do dia. Juntas, essas colunas explicam por que o total do dia pode diferir da sua jornada padrão.",
+    highlight: "pessoalPontosColAbonos",
+    title: "Normais e Abonos",
+    description: "Normais é o total de horas da jornada contratual cumpridas no dia (8:00 num dia comum) — as horas pagas no salário-base. Abonos são ausências justificadas e por isso pagas normalmente: em vez de virar falta, a hora entra como abono (atestado médico, licença etc.).",
     placement: "top",
   },
 
@@ -149,15 +140,17 @@ export const meusPontosJustifyEntrySteps: TutorialStep[] = [
   },
 ];
 
-// Final hub step, after all sub-flows return: column visibility.
-export const meusPontosOutroSteps: TutorialStep[] = [
+// Hub step after Justificar sub-flow: entry to Assinatura de Ponto.
+export const meusPontosAssinaturaEntrySteps: TutorialStep[] = [
   {
-    id: "pessoal-pontos-column-toggle",
-    kind: "showcase",
+    id: "pessoal-pontos-assinatura-entry",
+    kind: "interactive",
     scene: "meus-pontos",
-    highlight: "pessoalPontosColumnToggle",
-    title: "Visibilidade de colunas",
-    description: "Escolha quais colunas exibir na tabela. O número indica quantas estão visíveis.",
+    highlight: "pessoalPontosAssinaturaButton",
+    title: "Assinatura de Ponto",
+    description: "Toque em \"Assinatura de Ponto\" para ver os fechamentos de ponto aguardando sua aprovação ou reprovação.",
+    expectedAction: "tap",
     placement: "bottom",
+    pulseTarget: true,
   },
 ];

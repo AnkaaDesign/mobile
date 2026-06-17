@@ -3,8 +3,20 @@ import { Stack } from "expo-router";
 import { BonusForm } from "@/components/human-resources/bonus/form";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function BonusCreateScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <BonusCreateScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function BonusCreateScreenInner() {
   useScreenReady();
   const formKey = useFormScreenKey();
   return (

@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconStar, IconBriefcase, IconBuilding, IconShield } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { usePositions, useSectors } from "@/hooks";
-import { USER_STATUS_LABELS } from "@/constants";
+import { CONTRACT_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -100,9 +100,9 @@ export function PerformanceLevelFilterTags({ filters, searchText, onFilterChange
     }
 
     // User status filters (from where.status.in array)
-    if (filters.where?.status?.in && Array.isArray(filters.where.status.in) && filters.where.status.in.length > 0) {
-      filters.where.status.in.forEach((status: string) => {
-        const statusLabel = USER_STATUS_LABELS[status as keyof typeof USER_STATUS_LABELS] || status;
+    if (filters.where?.currentContractType?.in && Array.isArray(filters.where.currentContractType.in) && filters.where.currentContractType.in.length > 0) {
+      filters.where.currentContractType.in.forEach((status: string) => {
+        const statusLabel = CONTRACT_TYPE_LABELS[status as keyof typeof CONTRACT_TYPE_LABELS] || status;
         tags.push(
           <Badge key={`status-${status}`} variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.muted }}>
             <View style={styles.tagContent}>
@@ -111,11 +111,11 @@ export function PerformanceLevelFilterTags({ filters, searchText, onFilterChange
               <TouchableOpacity
                 onPress={() => {
                   const newFilters = { ...filters };
-                  const newStatuses = newFilters.where.status.in.filter((s: string) => s !== status);
+                  const newStatuses = newFilters.where.currentContractType.in.filter((s: string) => s !== status);
                   if (newStatuses.length > 0) {
-                    newFilters.where.status.in = newStatuses;
+                    newFilters.where.currentContractType.in = newStatuses;
                   } else {
-                    delete newFilters.where.status;
+                    delete newFilters.where.currentContractType;
                     if (Object.keys(newFilters.where).length === 0) {
                       delete newFilters.where;
                     }

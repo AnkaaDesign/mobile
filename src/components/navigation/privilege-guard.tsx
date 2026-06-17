@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
+import { getStoredToken } from "@/utils/auth-storage";
 import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS, type PrivilegeValue } from "@/constants";
 import { hasAnyPrivilege, hasPrivilege, hasAllPrivileges } from "@/utils";
 import { getSectorPrivilegesLabel } from "@/utils";
@@ -41,13 +42,27 @@ export function PrivilegeGuard({
   useEffect(() => {
     if (hasRedirected.current) return;
     if (isLoading || !isAuthReady) return;
+    if (user) return;
 
-    // Only redirect to login if user is null and auth is ready
-    if (!user) {
-      hasRedirected.current = true;
-      console.log("[PrivilegeGuard] No user after auth ready, redirecting to login");
-      router.replace('/(autenticacao)/entrar' as any);
-    }
+    // user is null but auth is "ready". Before ejecting to login, confirm there
+    // is genuinely no session: a transient null user (ErrorBoundary recovery,
+    // background re-validation) with a valid stored token must NOT be logged
+    // out — the loading branch below keeps showing while the session restores.
+    let cancelled = false;
+    (async () => {
+      const token = await getStoredToken();
+      if (cancelled || hasRedirected.current) return;
+      if (!token) {
+        hasRedirected.current = true;
+        console.log("[PrivilegeGuard] No user and no token, redirecting to login");
+        router.replace('/(autenticacao)/entrar' as any);
+      } else {
+        console.log("[PrivilegeGuard] No user but token present — waiting for session restore");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user, isLoading, isAuthReady]);
 
   // Reset redirect flag when user logs in (allows redirect on subsequent logout)

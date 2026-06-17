@@ -19,8 +19,6 @@ function getQuoteStatusBadge(status: string | undefined | null): { variant: stri
       return { variant: 'secondary' }
     case TASK_QUOTE_STATUS.BUDGET_APPROVED:
       return { variant: 'approved' }
-    case TASK_QUOTE_STATUS.COMMERCIAL_APPROVED:
-      return { variant: 'processing' }
     case TASK_QUOTE_STATUS.BILLING_APPROVED:
       return { variant: 'approved' }
     case TASK_QUOTE_STATUS.UPCOMING:
@@ -284,7 +282,6 @@ export const billingListConfig: ListConfig<BillingTask> = {
         multiple: false,
         options: [
           { label: 'Orc. Aprovado', value: TASK_QUOTE_STATUS.BUDGET_APPROVED },
-          { label: 'Aprov. Comercial', value: TASK_QUOTE_STATUS.COMMERCIAL_APPROVED },
           { label: 'Fat. Aprovado', value: TASK_QUOTE_STATUS.BILLING_APPROVED },
           { label: 'A Vencer', value: TASK_QUOTE_STATUS.UPCOMING },
           { label: 'Vencido', value: TASK_QUOTE_STATUS.DUE },

@@ -23,7 +23,7 @@
  * store build (old binaries correctly ignore the update).
  */
 import { execSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { computeRuntimeVersions, mobileRoot } from "./ota-version.mjs";
 
@@ -56,16 +56,21 @@ try {
 const createdAt = new Date().toISOString();
 
 // Publish the same export under each platform's fingerprint folder.
+// Stage into a sibling temp dir first, then swap it in with a near-atomic
+// rename so the live folder never exists in a half-copied state.
 for (const [platform, runtimeVersion] of [["ios", ios], ["android", android]]) {
   const targetDir = join(dest, runtimeVersion);
+  const stagingDir = `${targetDir}.tmp`;
   console.log(`[ota] publishing ${platform} -> ${targetDir}`);
-  rmSync(targetDir, { recursive: true, force: true });
-  mkdirSync(targetDir, { recursive: true });
-  cpSync(exportDir, targetDir, { recursive: true });
+  rmSync(stagingDir, { recursive: true, force: true });
+  mkdirSync(stagingDir, { recursive: true });
+  cpSync(exportDir, stagingDir, { recursive: true });
   writeFileSync(
-    join(targetDir, "expo-publish.json"),
+    join(stagingDir, "expo-publish.json"),
     JSON.stringify({ platform, runtimeVersion, createdAt, commit }, null, 2),
   );
+  rmSync(targetDir, { recursive: true, force: true });
+  renameSync(stagingDir, targetDir);
 }
 
 rmSync(exportDir, { recursive: true, force: true });

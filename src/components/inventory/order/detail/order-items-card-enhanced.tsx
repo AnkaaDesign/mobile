@@ -12,7 +12,7 @@ import { formatCurrencyPrecise } from "@/utils/format-standard";
 import type { OrderItem } from '../../../../types';
 import { IconCheck, IconX, IconClock, IconDeviceFloppy, IconReload, IconShoppingCart, IconTruck, IconAlertCircle } from "@tabler/icons-react-native";
 import { ORDER_STATUS } from "@/constants";
-import { useOrderItemBatchMutations, useOrderItemSpecializedBatchMutations, useCanViewPrices } from "@/hooks";
+import { useOrderItemBatchMutations, useOrderItemSpecializedBatchMutations, useCanViewPrices, usePrivileges } from "@/hooks";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
@@ -43,6 +43,7 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
 }) => {
   const { colors } = useTheme();
   const canViewPrices = useCanViewPrices();
+  const { isWarehouse } = usePrivileges();
   const [itemChanges, setItemChanges] = useState<ItemChanges>({});
   const [selectedItems, setSelectedItems] = useState<SelectedItems>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -76,6 +77,8 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
     ORDER_STATUS.FULFILLED,
     ORDER_STATUS.PARTIALLY_RECEIVED
   ].includes(orderStatus as ORDER_STATUS);
+  // WAREHOUSE can mark items as fulfilled but cannot mark them as received (close the order).
+  const canReceiveItems = canEditItems && !isWarehouse;
 
   // Check if there are unsaved changes
   const hasChanges = useMemo(() => {
@@ -436,16 +439,18 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
               <IconShoppingCart size={16} color={colors.foreground} />
               <ThemedText style={styles.actionButtonText}>Feito ({selectedCount})</ThemedText>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handleBatchMarkReceived}
-              disabled={isSaving}
-              style={styles.actionButton}
-            >
-              <IconTruck size={16} color={colors.foreground} />
-              <ThemedText style={styles.actionButtonText}>Recebido ({selectedCount})</ThemedText>
-            </Button>
+            {canReceiveItems && (
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={handleBatchMarkReceived}
+                disabled={isSaving}
+                style={styles.actionButton}
+              >
+                <IconTruck size={16} color={colors.foreground} />
+                <ThemedText style={styles.actionButtonText}>Recebido ({selectedCount})</ThemedText>
+              </Button>
+            )}
           </>
         )}
 

@@ -49,8 +49,8 @@ export const bonusDiscountIncludeSchema = z
                       .object({
                         customer: z.boolean().optional(),
                         sector: z.boolean().optional(),
-                        services: z.boolean().optional(),
-                        commissions: z.boolean().optional(),
+                        serviceOrders: z.boolean().optional(),
+                        bonifications: z.boolean().optional(),
                       })
                       .optional(),
                     where: z.any().optional(),
@@ -408,8 +408,16 @@ export type BonusDiscountWhere = z.infer<typeof bonusDiscountWhereSchema>;
 // =====================
 
 export const mapToBonusDiscountFormData = createMapToFormDataHelper<BonusDiscount, BonusDiscountUpdateFormData>((bonusDiscount) => ({
-  percentage: bonusDiscount.percentage ?? undefined,
-  value: bonusDiscount.value ?? undefined,
+  percentage: bonusDiscount.percentage
+    ? typeof bonusDiscount.percentage === "number"
+      ? bonusDiscount.percentage
+      : bonusDiscount.percentage.toNumber()
+    : undefined,
+  value: bonusDiscount.value
+    ? typeof bonusDiscount.value === "number"
+      ? bonusDiscount.value
+      : bonusDiscount.value.toNumber()
+    : undefined,
   reference: bonusDiscount.reference,
   calculationOrder: bonusDiscount.calculationOrder,
 }));

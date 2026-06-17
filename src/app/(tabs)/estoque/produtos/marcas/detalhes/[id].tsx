@@ -19,7 +19,6 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import {
   IconTags,
   IconEdit,
-  IconRefresh,
   IconPackage,
   IconCalendar,
   IconHistory,
@@ -108,8 +107,8 @@ export default function BrandDetailScreen() {
     return [...items].sort((a, b) => {
       // Pending-order state is a UI overlay only and does not shift thresholds.
       // First sort by stock level priority (critical items first)
-      const aLevel = determineStockLevel(a.quantity || 0, a.reorderPoint || null, a.maxQuantity || null, false, a.category?.type ?? null);
-      const bLevel = determineStockLevel(b.quantity || 0, b.reorderPoint || null, b.maxQuantity || null, false, b.category?.type ?? null);
+      const aLevel = determineStockLevel({ quantity: a.quantity || 0, reorderPoint: a.reorderPoint || null, maxQuantity: a.maxQuantity || null, stockModel: a.stockModel ?? null, fixedTargetQuantity: a.fixedTargetQuantity ?? null });
+      const bLevel = determineStockLevel({ quantity: b.quantity || 0, reorderPoint: b.reorderPoint || null, maxQuantity: b.maxQuantity || null, stockModel: b.stockModel ?? null, fixedTargetQuantity: b.fixedTargetQuantity ?? null });
 
       const levelPriority = { NEGATIVE_STOCK: 0, OUT_OF_STOCK: 1, CRITICAL: 2, LOW: 3, OPTIMAL: 4, OVERSTOCKED: 5 };
       const aPriority = levelPriority[aLevel] ?? 6;
@@ -132,7 +131,7 @@ export default function BrandDetailScreen() {
 
     const stockLevels = items.reduce(
       (acc, item) => {
-        const level = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, false, item.category?.type ?? null);
+        const level = determineStockLevel({ quantity: item.quantity || 0, reorderPoint: item.reorderPoint || null, maxQuantity: item.maxQuantity || null, stockModel: item.stockModel ?? null, fixedTargetQuantity: item.fixedTargetQuantity ?? null });
         acc[level] = (acc[level] || 0) + 1;
         return acc;
       },
@@ -212,37 +211,20 @@ export default function BrandDetailScreen() {
         showBackButton={true}
         onBackPress={() => nav.goBack()}
         rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={handleEdit}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              backgroundColor: colors.primary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            activeOpacity={0.7}
+          >
+            <IconEdit size={18} color={colors.primaryForeground} />
+          </TouchableOpacity>
         }
       />
       <ScrollView
@@ -389,7 +371,7 @@ export default function BrandDetailScreen() {
                   {/* Items Horizontal Scroll */}
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsScrollContainer} contentContainerStyle={styles.itemsScrollContent}>
                     {sortedItems.map((item) => {
-                      const stockLevel = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, false, item.category?.type ?? null);
+                      const stockLevel = determineStockLevel({ quantity: item.quantity || 0, reorderPoint: item.reorderPoint || null, maxQuantity: item.maxQuantity || null, stockModel: item.stockModel ?? null, fixedTargetQuantity: item.fixedTargetQuantity ?? null });
                       const quantity = item.quantity || 0;
 
                       // Get proper stock color

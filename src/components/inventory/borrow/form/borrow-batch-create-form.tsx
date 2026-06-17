@@ -15,7 +15,6 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
 import { useItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
 import { useActiveUsersMinimal } from "@/hooks/use-form-data";
-import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { ItemSelectorTable } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
@@ -293,7 +292,7 @@ export function BorrowBatchCreateForm({
                 />
               </KeyboardAwareFormProvider>
 
-              {/* Item Selector - Filter only TOOL category */}
+              {/* Item Selector - Filter only borrowable items */}
               <ItemSelectorTable
                 style={styles.itemSelector}
                 selectedItems={multiStepForm.selectedItems}
@@ -302,7 +301,7 @@ export function BorrowBatchCreateForm({
                 onQuantityChange={multiStepForm.setItemQuantity}
                 showQuantityInput
                 minQuantity={1}
-                categoryType={ITEM_CATEGORY_TYPE.TOOL}
+                borrowableOnly
                 showSelectedOnly={multiStepForm.showSelectedOnly}
                 searchTerm={multiStepForm.searchTerm}
                 showInactive={multiStepForm.showInactive}

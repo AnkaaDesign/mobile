@@ -37,7 +37,7 @@ export function TaskInfoCard({ serviceOrder }: TaskInfoCardProps) {
 
   const handleTaskPress = () => {
     if (task.id) {
-      router.push(mobileRoute(routes.production.history.details(task.id)));
+      router.push(mobileRoute(routes.production.history.details(task.id)) as any);
     }
   };
 

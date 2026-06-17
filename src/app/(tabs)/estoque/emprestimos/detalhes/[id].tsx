@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useBorrow, useBorrowMutations } from "@/hooks";
 import { useNav } from "@/contexts/nav";
+import { usePrivilegeGate } from "@/hooks/use-privilege-gate";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { BORROW_STATUS, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
@@ -22,6 +23,7 @@ export default function BorrowDetailsScreen() {
   const { colors } = useTheme();
   const nav = useNav();
   const { update, deleteMutation } = useBorrowMutations();
+  const canManage = usePrivilegeGate({ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }).allowed;
 
   // Fetch borrow details with include for full relations.
   const query = useBorrow(id as string, {
@@ -67,7 +69,9 @@ export default function BorrowDetailsScreen() {
       query={query as any}
       icon={IconPackage}
       title={(b) => `Empréstimo de ${b.user?.name ?? `#${String(b.id).slice(0, 8)}`}`}
-      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION] }}
+      editPrivilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      deletePrivilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
       editGuard={{ editable: EDITABLE_BORROW_STATUSES }}
       editRoute={(b) => mobileRoute(routes.inventory.borrows.edit(b.id))}
       deleteAction={{
@@ -80,7 +84,7 @@ export default function BorrowDetailsScreen() {
     >
       {(borrow, ctx) => (
         <View style={styles.body}>
-          {ctx.isEditable && borrow.status === BORROW_STATUS.ACTIVE && (
+          {ctx.isEditable && canManage && borrow.status === BORROW_STATUS.ACTIVE && (
             <TouchableOpacity
               onPress={() => handleReturn(borrow.id)}
               style={[styles.returnButton, { backgroundColor: colors.primary }]}

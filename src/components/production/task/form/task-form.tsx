@@ -121,12 +121,15 @@ export function TaskForm({
   const isProductionManagerUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
   const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
   const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+  const isProductionUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION;
 
   const canViewTruckLayout = isAdminUser || isLogisticUser || isProductionManagerUser || (user?.ledSector && user?.sector?.privileges === 'PRODUCTION');
   const canViewTruckSpot = isAdminUser || isLogisticUser || isProductionManagerUser;
   const canViewFiles = !isWarehouseUser;
   // Observation: only in edit mode for completed tasks (same restriction as checkout)
-  const canViewObservation = mode === 'edit' && task?.status === TASK_STATUS.COMPLETED && !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isProductionManagerUser && !isCommercialUser;
+  // PRODUCTION is read-only on observations (defense-in-depth; PRODUCTION can't
+  // reach task-edit today, but exclude explicitly so this never leaks).
+  const canViewObservation = mode === 'edit' && task?.status === TASK_STATUS.COMPLETED && !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isProductionManagerUser && !isCommercialUser && !isProductionUser;
 
   // Watch truck data for spot selector
   const truckData = useWatch({ control: form.control, name: 'truck' });

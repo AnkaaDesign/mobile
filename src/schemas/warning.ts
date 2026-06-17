@@ -37,7 +37,7 @@ export const warningIncludeSchema = z
               borrows: z.boolean().optional(),
               notifications: z.boolean().optional(),
               tasks: z.boolean().optional(),
-              commissions: z.boolean().optional(),
+              bonifications: z.boolean().optional(),
               warningsCollaborator: z.boolean().optional(),
               warningsSupervisor: z.boolean().optional(),
               warningsWitness: z.boolean().optional(),
@@ -66,7 +66,7 @@ export const warningIncludeSchema = z
               borrows: z.boolean().optional(),
               notifications: z.boolean().optional(),
               tasks: z.boolean().optional(),
-              commissions: z.boolean().optional(),
+              bonifications: z.boolean().optional(),
               warningsCollaborator: z.boolean().optional(),
               warningsSupervisor: z.boolean().optional(),
               warningsWitness: z.boolean().optional(),
@@ -96,7 +96,7 @@ export const warningIncludeSchema = z
               borrows: z.boolean().optional(),
               notifications: z.boolean().optional(),
               tasks: z.boolean().optional(),
-              commissions: z.boolean().optional(),
+              bonifications: z.boolean().optional(),
               warningsCollaborator: z.boolean().optional(),
               warningsSupervisor: z.boolean().optional(),
               warningsWitness: z.boolean().optional(),
@@ -476,6 +476,16 @@ export const warningCreateSchema = z
     followUpDate: z.coerce.date(),
     hrNotes: createDescriptionSchema(0, 1000).nullable().optional(),
     resolvedAt: z.coerce.date().nullable().optional(),
+    // Dias de suspensão (severity = SUSPENSION). CLT art. 474 limita a 30 dias.
+    suspensionDays: z
+      .number()
+      .int("Dias de suspensão deve ser um número inteiro")
+      .min(1, "Dias de suspensão deve ser ao menos 1")
+      .max(30, "CLT art. 474: suspensão não pode exceder 30 dias")
+      .nullable()
+      .optional(),
+    // Vínculo opcional a uma rescisão por justa causa que esta advertência fundamenta.
+    terminationId: z.string().uuid({ message: "Rescisão inválida" }).nullable().optional(),
   })
   .transform(toFormData);
 
@@ -502,6 +512,16 @@ export const warningUpdateSchema = z
     followUpDate: z.coerce.date().optional(),
     hrNotes: createDescriptionSchema(0, 1000).nullable().optional(),
     resolvedAt: z.coerce.date().nullable().optional(),
+    // Dias de suspensão (severity = SUSPENSION). CLT art. 474 limita a 30 dias.
+    suspensionDays: z
+      .number()
+      .int("Dias de suspensão deve ser um número inteiro")
+      .min(1, "Dias de suspensão deve ser ao menos 1")
+      .max(30, "CLT art. 474: suspensão não pode exceder 30 dias")
+      .nullable()
+      .optional(),
+    // Vínculo opcional a uma rescisão por justa causa que esta advertência fundamenta.
+    terminationId: z.string().uuid({ message: "Rescisão inválida" }).nullable().optional(),
   })
   .transform(toFormData);
 

@@ -58,7 +58,7 @@ export function PrivilegeGate({
   }
 
   if (fallback === "redirect") {
-    return <RedirectFallback to={redirectTo ?? mobileRoute(routes.home)} />;
+    return <RedirectFallback to={redirectTo} />;
   }
 
   if (fallback === "unauthorized" || fallback === undefined) {
@@ -77,10 +77,18 @@ function CenteredSpinner() {
   );
 }
 
-function RedirectFallback({ to }: { to: AppRoute }) {
+// NOTE: `to` defaults to home inside the effect (with separate statements)
+// instead of `to ?? mobileRoute(routes.home)` at the call site — unioning two
+// `AppRoute` values makes TS normalize the huge generated `Href` union twice
+// and fail with TS2590 ("union type too complex to represent").
+function RedirectFallback({ to }: { to?: AppRoute }) {
   const nav = useNav();
   useEffect(() => {
-    nav.replace(to);
+    if (to) {
+      nav.replace(to);
+    } else {
+      nav.replace(mobileRoute(routes.home));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [to]);
   return <CenteredSpinner />;

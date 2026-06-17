@@ -476,13 +476,13 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
     const term = search.trim().toLowerCase();
     return rows
       .map((item) => {
-        const level = determineStockLevel(
-          Number(item.quantity ?? 0),
-          item.reorderPoint ?? null,
-          item.maxQuantity ?? null,
-          false,
-          item.category?.type ?? null,
-        );
+        const level = determineStockLevel({
+          quantity: Number(item.quantity ?? 0),
+          reorderPoint: item.reorderPoint ?? null,
+          maxQuantity: item.maxQuantity ?? null,
+          stockModel: (item as any).stockModel ?? null,
+          fixedTargetQuantity: (item as any).fixedTargetQuantity ?? null,
+        });
         return { ...item, _stockLevel: level as STOCK_LEVEL };
       })
       .filter((item) => {

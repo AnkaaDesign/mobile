@@ -245,7 +245,7 @@ export const NetworkProvider = ({
           }
           setIsConnected(false);
           // Keep current URL (might have cached data)
-          return;
+          return false;
         }
 
         if (hasInternet) {
@@ -258,7 +258,7 @@ export const NetworkProvider = ({
 
           // Discover server addresses in the background (for future offline use)
           tryDiscoverServer();
-          return;
+          return true;
         }
 
         // Has network (WiFi/LAN) but no internet
@@ -275,7 +275,7 @@ export const NetworkProvider = ({
           }
           setIsConnected(true);
           setActiveUrl(ONLINE_API_URL);
-          return;
+          return true;
         }
 
         // Try to find a reachable local server
@@ -286,7 +286,7 @@ export const NetworkProvider = ({
           }
           setIsConnected(true);
           setActiveUrl(localUrl);
-          return;
+          return true;
         }
 
         // No API reachable - mark as disconnected but keep last URL
@@ -294,6 +294,7 @@ export const NetworkProvider = ({
           console.log("[NetworkContext] No API server reachable - offline");
         }
         setIsConnected(false);
+        return false;
       } finally {
         isResolvingRef.current = false;
       }
@@ -328,12 +329,16 @@ export const NetworkProvider = ({
         return;
       }
 
-      // If we have network but not internet, do async resolution
-      if (hasNetwork && state.isInternetReachable === false) {
-        // Run async URL resolution
-        resolveApiUrl(state).then(() => {
-          const nowConnected = isConnected;
-          if (wasConnected !== nowConnected) {
+      // We have network but internet is either unavailable (false) or still
+      // UNDETERMINED (null — common in the first moments after joining Wi-Fi).
+      // The old `=== false` check skipped the null case and left routing stale;
+      // since the has-internet quick path already returned above, any remaining
+      // has-network state should run the async resolver (it probes the online
+      // URL first, then the LAN server). Use the resolver's returned connectivity
+      // rather than the stale closure value of `isConnected`.
+      if (hasNetwork) {
+        resolveApiUrl(state).then((nowConnected) => {
+          if (typeof nowConnected === "boolean" && wasConnected !== nowConnected) {
             prevConnectedRef.current = nowConnected;
             onConnectivityChange?.(nowConnected);
           }

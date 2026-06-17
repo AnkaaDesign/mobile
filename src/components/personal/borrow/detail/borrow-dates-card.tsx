@@ -55,14 +55,6 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
             </ThemedText>
           </DetailSection>
         )}
-
-        {borrow.updatedAt && (
-          <View style={StyleSheet.flatten([styles.metaInfo, { borderTopColor: colors.border + "50" }])}>
-            <ThemedText style={StyleSheet.flatten([styles.metaLabel, { color: colors.mutedForeground }])}>
-              Última atualização: {formatDate(borrow.updatedAt)}
-            </ThemedText>
-          </View>
-        )}
       </View>
     </DetailCard>
   );
@@ -74,14 +66,6 @@ const styles = StyleSheet.create({
   },
   durationText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
-  },
-  metaInfo: {
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-  },
-  metaLabel: {
-    fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
   },
 });

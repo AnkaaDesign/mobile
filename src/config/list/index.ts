@@ -29,7 +29,7 @@ export {
   ordersListConfig,
   borrowsListConfig,
   activitiesListConfig,
-  externalWithdrawalsListConfig,
+  externalOperationsListConfig,
   suppliersListConfig,
   categoriesListConfig,
   brandsListConfig,
@@ -64,7 +64,6 @@ export {
   myTeamBorrowsListConfig,
   myTeamPpeDeliveriesListConfig,
   teamCuttingListConfig,
-  teamCommissionsListConfig,
 } from './my-team'
 
 // Personal Module (2 configs)

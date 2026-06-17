@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useUser } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { Card } from "@/components/ui/card";
@@ -27,42 +27,15 @@ export default function EmployeeDetailsScreen() {
   const { colors } = useTheme();
 
   const query = useUser(id as string, {
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      cpf: true,
-      pis: true,
-      birth: true,
-      status: true,
-      statusOrder: true,
-      isActive: true,
-      verified: true,
-      avatarId: true,
-      payrollNumber: true,
-      performanceLevel: true,
-      address: true,
-      addressNumber: true,
-      addressComplement: true,
-      neighborhood: true,
-      city: true,
-      state: true,
-      zipCode: true,
-      effectedAt: true,
-      exp1StartAt: true,
-      exp1EndAt: true,
-      exp2StartAt: true,
-      exp2EndAt: true,
-      dismissedAt: true,
-      lastLoginAt: true,
-      requirePasswordChange: true,
-      createdAt: true,
-      updatedAt: true,
-      avatar: { select: { id: true, filename: true, path: true, thumbnailUrl: true } },
-      position: { select: { id: true, name: true, hierarchy: true } },
-      sector: { select: { id: true, name: true } },
-      ledSector: { select: { id: true, name: true } },
+    // GetById honors `include` (not `select`) for relations — request relations
+    // here or they fall back to the default include and never load.
+    include: {
+      currentContract: true,
+      contracts: { orderBy: { sequence: "asc" } },
+      avatar: true,
+      position: true,
+      sector: true,
+      ledSector: true,
       ppeSize: true,
       _count: { select: { tasks: true, activities: true, borrows: true, changeLogs: true } },
     },
@@ -74,6 +47,7 @@ export default function EmployeeDetailsScreen() {
       query={query as any}
       icon={IconUser}
       title={(e) => e.name ?? "Colaborador"}
+      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
       editRoute={(e) => mobileRoute(routes.administration.collaborators.edit(e.id))}
       notFoundFallback={mobileRoute(routes.administration.collaborators.list)}
     >

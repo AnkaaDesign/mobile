@@ -56,6 +56,8 @@ export interface DetailPageHeaderProps<T extends BaseEntity> {
   actions?: PageAction[];
   /** Hide the built-in edit button. Useful when edit is gated by status. */
   showEditButton?: boolean;
+  /** Hide the built-in refresh button (e.g. read-only mirror screens that rely on pull-to-refresh). */
+  showRefreshButton?: boolean;
 
   // Loading states
   isRefreshing?: boolean;
@@ -88,6 +90,7 @@ export function DetailPageHeader<T extends BaseEntity>({
   badges = [],
   actions = [],
   showEditButton = true,
+  showRefreshButton = false,
   isRefreshing = false,
   style,
   iconBackgroundColor,
@@ -112,10 +115,9 @@ export function DetailPageHeader<T extends BaseEntity>({
     [actions],
   );
 
-  // Get icon background color
   const getIconBackgroundColor = () => {
     if (iconBackgroundColor) return iconBackgroundColor;
-    return colors.muted + "20";
+    return colors.muted;
   };
 
   return (
@@ -136,17 +138,19 @@ export function DetailPageHeader<T extends BaseEntity>({
 
               {/* Action Buttons */}
               <View style={styles.headerActions}>
-                <TouchableOpacity
-                  onPress={onRefresh}
-                  style={StyleSheet.flatten([styles.iconButton, { backgroundColor: colors.muted }])}
-                  activeOpacity={0.7}
-                  disabled={isRefreshing}
-                  accessible
-                  accessibilityLabel={refreshLabel}
-                  accessibilityRole="button"
-                >
-                  <IconRefresh size={18} color={colors.foreground} />
-                </TouchableOpacity>
+                {showRefreshButton && (
+                  <TouchableOpacity
+                    onPress={onRefresh}
+                    style={StyleSheet.flatten([styles.iconButton, { backgroundColor: colors.muted }])}
+                    activeOpacity={0.7}
+                    disabled={isRefreshing}
+                    accessible
+                    accessibilityLabel={refreshLabel}
+                    accessibilityRole="button"
+                  >
+                    <IconRefresh size={18} color={colors.foreground} />
+                  </TouchableOpacity>
+                )}
 
                 {showEditButton && (
                   <TouchableOpacity
@@ -280,8 +284,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
     flex: 1,
     marginRight: spacing.sm,
   },

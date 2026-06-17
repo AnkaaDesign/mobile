@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useCustomer } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { Card } from "@/components/ui/card";
@@ -66,6 +66,15 @@ export default function CustomerDetailScreen() {
       query={query as any}
       icon={IconBuilding}
       title={(c) => c.fantasyName ?? "Cliente"}
+      privilege={{
+        any: [
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.LOGISTIC,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+          SECTOR_PRIVILEGES.ADMIN,
+        ],
+      }}
       editRoute={(c) => mobileRoute(routes.administration.customers.edit(c.id))}
       notFoundFallback={mobileRoute(routes.administration.customers.list)}
     >

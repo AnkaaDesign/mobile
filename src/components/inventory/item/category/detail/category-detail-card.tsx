@@ -1,7 +1,7 @@
 
 import { View, Pressable , StyleSheet} from "react-native";
 import type { ItemCategory } from '../../../../../types';
-import { ITEM_CATEGORY_TYPE_LABELS, ACCOUNTING_TYPE_LABELS, ITEM_CATEGORY_LEVEL_LABELS } from "@/constants";
+import { ACCOUNTING_TYPE_LABELS, ITEM_CATEGORY_LEVEL_LABELS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -50,11 +50,6 @@ export function CategoryDetailCard({ category, onPress, showActions: _showAction
                 <ThemedText style={styles.value}>{ITEM_CATEGORY_LEVEL_LABELS[category.categoryLevel as keyof typeof ITEM_CATEGORY_LEVEL_LABELS]}</ThemedText>
               </View>
             )}
-
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.label}>Tipo físico:</ThemedText>
-              <ThemedText style={styles.value}>{ITEM_CATEGORY_TYPE_LABELS[category.type as keyof typeof ITEM_CATEGORY_TYPE_LABELS]}</ThemedText>
-            </View>
 
             {itemCount > 0 && (
               <View style={styles.detailRow}>

@@ -4,7 +4,7 @@ import { getDefaultVisibleColumnsWithTablet } from '@/lib/table-utils';
 const MOBILE_COLUMNS = [
   "name",                    // NOME/LOGOMARCA
   "sector.name",             // SETOR
-  "commission",              // COMISSÃO
+  "bonification",              // BONIFICAÇÃO
   "finishedAt",              // FINALIZADO EM
 ];
 
@@ -13,7 +13,7 @@ const TABLET_COLUMNS = [
   "name",                    // NOME/LOGOMARCA
   "serialNumber",            // Nº SÉRIE
   "sector.name",             // SETOR
-  "commission",              // COMISSÃO
+  "bonification",              // BONIFICAÇÃO
   "finishedAt",              // FINALIZADO EM
 ];
 

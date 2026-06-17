@@ -58,10 +58,9 @@ export const ppeItemsListConfig: ListConfig<Item> = {
       supplier: true,
       measures: true,
     },
+    // PPE identity: ppeType != null (category.type is UI grouping only)
     where: {
-      category: {
-        type: ITEM_CATEGORY_TYPE.PPE,
-      },
+      ppeType: { not: null },
     },
   },
 
@@ -113,13 +112,13 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         align: 'left',
         render: (item) => {
           const quantity = item.quantity || 0
-          const stockLevel = determineStockLevel(
+          const stockLevel = determineStockLevel({
             quantity,
-            item.reorderPoint || null,
-            item.maxQuantity || null,
-            false,
-            item.category?.type ?? null
-          )
+            reorderPoint: item.reorderPoint || null,
+            maxQuantity: item.maxQuantity || null,
+            stockModel: item.stockModel ?? null,
+            fixedTargetQuantity: item.fixedTargetQuantity ?? null,
+          })
           const color = getStockLevelColor(stockLevel)
           const formattedQuantity = quantity % 1 === 0
             ? quantity.toLocaleString('pt-BR')
@@ -387,6 +386,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
             items: Array.from(ids).map((id) => ({ id, data: { isActive: true } })),
           })
         },
+        canPerform: canEditItems,
       },
       {
         key: 'deactivate',
@@ -402,6 +402,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
             items: Array.from(ids).map((id) => ({ id, data: { isActive: false } })),
           })
         },
+        canPerform: canEditItems,
       },
       {
         key: 'delete',
@@ -415,6 +416,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         onPress: async (ids, { batchDeleteAsync } = {}) => {
           await batchDeleteAsync?.({ itemIds: Array.from(ids) })
         },
+        canPerform: canDeleteItems,
       },
     ],
   },

@@ -2,7 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useMessage, useMessageStats } from "@/hooks/use-admin-messages-infinite-mobile";
-import { routes } from "@/constants";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { Card } from "@/components/ui/card";
@@ -48,6 +48,7 @@ export default function MessageDetailScreen() {
       query={query as any}
       icon={IconMessage}
       title={(m) => m.title ?? "Mensagem"}
+      privilege={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER] }}
       editRoute={canEdit ? (m) => mobileRoute(routes.administration.messages.edit(m.id)) : undefined}
       notFoundFallback={mobileRoute(routes.administration.messages.list)}
     >

@@ -32,8 +32,8 @@ export const bonusIncludeSchema = z
             .object({
               customer: z.boolean().optional(),
               sector: z.boolean().optional(),
-              services: z.boolean().optional(),
-              commissions: z.boolean().optional(),
+              serviceOrders: z.boolean().optional(),
+              bonifications: z.boolean().optional(),
             })
             .optional(),
           where: z.any().optional(),

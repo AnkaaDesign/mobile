@@ -8,8 +8,20 @@ import { paintFormulaComponentService, notify } from "@/api-client";
 import { useNav } from "@/contexts/nav";
 import type { PaintCreateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function CreatePaintScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <CreatePaintScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function CreatePaintScreenInner() {
   const nav = useNav();
   const { createAsync, isLoading: isPaintLoading } = usePaintMutations();
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();

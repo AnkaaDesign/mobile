@@ -16,7 +16,7 @@ import { DetailField } from "@/components/ui/detail-page-layout";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { useTheme } from "@/lib/theme";
-import { useActivity, useActivityMutations } from "@/hooks";
+import { useActivity, useActivityMutations, useCanViewPrices } from "@/hooks";
 import { mobileRoute } from "@/constants/routes.types";
 import {
   ACTIVITY_OPERATION,
@@ -34,6 +34,8 @@ export default function ActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { deleteMutation } = useActivityMutations();
+  // Money is hidden from WAREHOUSE users by app-wide convention.
+  const canViewPrices = useCanViewPrices();
 
   const query = useActivity(id as string, {
     select: {
@@ -95,7 +97,8 @@ export default function ActivityDetailScreen() {
       query={query as any}
       icon={IconBox}
       title={(a) => `Movimentação #${String(a.id).slice(0, 8)}`}
-      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION] }}
+      deletePrivilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
       deleteAction={{
         mutation: deleteMutation,
         confirmText:
@@ -204,7 +207,7 @@ export default function ActivityDetailScreen() {
                     value={activity.item.supplier.fantasyName || activity.item.supplier.corporateName}
                   />
                 )}
-                {currentPrice > 0 && (
+                {canViewPrices && currentPrice > 0 && (
                   <>
                     <DetailField
                       label="Preço Unitário"

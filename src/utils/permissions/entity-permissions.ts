@@ -177,15 +177,21 @@ export function hasDetailedServiceOrderView(user: User | null): boolean {
 }
 
 /**
- * Check if user can cancel any service order
- * FINANCIAL, COMMERCIAL, and ADMIN can cancel service orders
+ * Check if user can edit (update) service orders.
+ * Mirrors API PUT /service-orders/:id roles
+ * (service-order.controller.ts): ADMIN, FINANCIAL, COMMERCIAL, PRODUCTION,
+ * DESIGNER, LOGISTIC, PRODUCTION_MANAGER.
  */
-export function canCancelServiceOrder(user: User | null): boolean {
+export function canEditServiceOrders(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.COMMERCIAL,
-    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.PRODUCTION,
+    SECTOR_PRIVILEGES.DESIGNER,
+    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
@@ -492,98 +498,81 @@ export function canEditLayoutForTask(user: User | null, _taskSectorId: string | 
   return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 }
 
-/**
- * Can user delete layouts?
- * ADMIN, LOGISTIC, PRODUCTION_MANAGER can delete layouts
- */
-export function canDeleteLayouts(user: User | null): boolean {
-  if (!user) return false;
-  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
-}
-
 // =====================
 // CUT PERMISSIONS
 // =====================
 
 /**
  * Can user create cuts?
- * Only ADMIN can create cuts directly
+ * Mirrors API POST /cuts roles: DESIGNER, ADMIN.
  */
 export function canCreateCuts(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.DESIGNER,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 /**
  * Can user edit cuts?
- * Only ADMIN can edit cut details
+ * Mirrors API PUT /cuts/:id roles: DESIGNER, PLOTTING, ADMIN.
  */
 export function canEditCuts(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.DESIGNER,
+    SECTOR_PRIVILEGES.PLOTTING,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 /**
  * Can user delete cuts?
- * Only ADMIN can delete cuts
+ * Mirrors API DELETE /cuts/:id roles: DESIGNER, ADMIN.
  */
 export function canDeleteCuts(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.DESIGNER,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 /**
  * Can user start/finish cuts (change status)?
- * WAREHOUSE can start/finish cuts
- * ADMIN can also manage cut status
+ * Mirrors API PUT /cuts/:id roles: DESIGNER, PLOTTING, ADMIN.
  */
 export function canManageCutStatus(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.DESIGNER,
+    SECTOR_PRIVILEGES.PLOTTING,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 /**
  * Can user request a new cut?
- * Team leaders can request cuts for their sector
- * ADMIN can also request cuts
+ * Mirrors API POST /cuts roles: DESIGNER, ADMIN.
+ * (Team-leader cut requests were removed — the API never allowed them.)
  */
 export function canRequestCut(user: User | null): boolean {
   if (!user) return false;
-  // ADMIN can always request cuts
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN])) return true;
-  // Team leaders can also request cuts
-  return isTeamLeader(user);
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.DESIGNER,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 }
 
 /**
  * Can user request a cut for a specific task?
- * Team leaders can only request cuts for tasks in their LED sector
- * Tasks with null sector are NOT allowed for cut requests
- * ADMIN can request cuts for any task
+ * Mirrors API POST /cuts roles: DESIGNER, ADMIN.
+ * (Signature kept for existing call sites; taskSectorId no longer
+ * influences the decision — the API has no sector-scoped cut create.)
  */
-export function canRequestCutForTask(user: User | null, taskSectorId: string | null | undefined): boolean {
-  if (!user) return false;
-
-  // ADMIN can request cuts for any task
-  if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
-
-  // Team leaders can only request cuts for tasks in their LED sector
-  // NOT for tasks with null sector
-  if (isTeamLeader(user)) {
-    if (!taskSectorId) return false; // Cannot request cuts for tasks without sector
-    return user.ledSector?.id === taskSectorId;
-  }
-
-  return false;
+export function canRequestCutForTask(user: User | null, _taskSectorId: string | null | undefined): boolean {
+  return canRequestCut(user);
 }
 
 // =====================
@@ -613,9 +602,12 @@ export function canEditAirbrushings(user: User | null): boolean {
 }
 
 export function canDeleteAirbrushings(user: User | null): boolean {
+  // Mirrors API DELETE /airbrushings/:id roles: ADMIN, COMMERCIAL, FINANCIAL.
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.FINANCIAL,
   ]);
 }
 
@@ -748,12 +740,11 @@ export function canDeletePaintFormulas(user: User | null): boolean {
 
 /**
  * Can user edit/delete paint productions?
- * PRODUCTION and WAREHOUSE can manage paint productions
+ * Mirrors API paint-production update/delete roles: WAREHOUSE, ADMIN.
  */
 export function canEditPaintProductions(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.PRODUCTION,
     SECTOR_PRIVILEGES.WAREHOUSE,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
@@ -815,7 +806,9 @@ export function canEditResponsibles(user: User | null): boolean {
 }
 
 export function canDeleteResponsibles(user: User | null): boolean {
-  return canEditResponsibles(user);
+  // API DELETE /responsibles is ADMIN-only (responsible.controller.ts).
+  if (!user) return false;
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN]);
 }
 
 // =====================
@@ -924,27 +917,24 @@ export function canBatchOperateMaintenance(user: User | null): boolean {
 }
 
 // =====================
-// EXTERNAL WITHDRAWAL PERMISSIONS
+// EXTERNAL OPERATION PERMISSIONS
 // =====================
 
 /**
- * Can user edit/delete external withdrawals?
- * WAREHOUSE manages external withdrawals
+ * Can user edit/delete external operations?
+ * ADMIN-only while the billing feature stabilizes
  */
-export function canEditExternalWithdrawals(user: User | null): boolean {
+export function canEditExternalOperations(user: User | null): boolean {
   if (!user) return false;
-  return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.WAREHOUSE,
-    SECTOR_PRIVILEGES.ADMIN,
-  ]);
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN]);
 }
 
-export function canDeleteExternalWithdrawals(user: User | null): boolean {
-  return canEditExternalWithdrawals(user);
+export function canDeleteExternalOperations(user: User | null): boolean {
+  return canEditExternalOperations(user);
 }
 
-export function canBatchOperateExternalWithdrawals(user: User | null): boolean {
-  return canEditExternalWithdrawals(user);
+export function canBatchOperateExternalOperations(user: User | null): boolean {
+  return canEditExternalOperations(user);
 }
 
 // =====================
@@ -1008,6 +998,29 @@ export function canDeleteHrEntities(user: User | null): boolean {
   return canEditHrEntities(user);
 }
 
+/**
+ * Can user manage Medicina do Trabalho entities (medical exams / ASO, leaves,
+ * work-accident reports / CAT)? Mirrors the web occupational-health pages, which
+ * gate to ACCOUNTING + HUMAN_RESOURCES + ADMIN (the api controllers are gated the
+ * same way — these records carry restricted clinical fields such as CID).
+ */
+export function canManageOccupationalHealth(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ACCOUNTING,
+    SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
+export function canEditOccupationalHealth(user: User | null): boolean {
+  return canManageOccupationalHealth(user);
+}
+
+export function canDeleteOccupationalHealth(user: User | null): boolean {
+  return canManageOccupationalHealth(user);
+}
+
 // =====================
 // USER PERMISSIONS
 // =====================
@@ -1029,27 +1042,6 @@ export function canDeleteUsers(user: User | null): boolean {
 }
 
 // =====================
-// GARAGE PERMISSIONS (Mobile-specific)
-// =====================
-
-/**
- * Can user edit/delete garages?
- * PRODUCTION and WAREHOUSE manage garage layouts
- */
-export function canEditGarages(user: User | null): boolean {
-  if (!user) return false;
-  return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.PRODUCTION,
-    SECTOR_PRIVILEGES.WAREHOUSE,
-    SECTOR_PRIVILEGES.ADMIN,
-  ]);
-}
-
-export function canDeleteGarages(user: User | null): boolean {
-  return canEditGarages(user);
-}
-
-// =====================
 // GENERAL UTILITY
 // =====================
 
@@ -1060,9 +1052,9 @@ export function canDeleteGarages(user: User | null): boolean {
 export function shouldShowInteractiveElements(
   user: User | null,
   entityType: 'task' | 'cut' | 'item' | 'paint' | 'customer' | 'order' |
-               'borrow' | 'ppe' | 'maintenance' | 'externalWithdrawal' |
-               'supplier' | 'hr' | 'user' | 'paintBrand' | 'paintType' | 
-               'paintFormula' | 'garage' | 'airbrushing' | 'observation'
+               'borrow' | 'ppe' | 'maintenance' | 'externalOperation' |
+               'supplier' | 'hr' | 'user' | 'paintBrand' | 'paintType' |
+               'paintFormula' | 'airbrushing' | 'observation'
 ): boolean {
   switch (entityType) {
     case 'task':
@@ -1087,16 +1079,14 @@ export function shouldShowInteractiveElements(
       return canEditPpeDeliveries(user);
     case 'maintenance':
       return canEditMaintenance(user);
-    case 'externalWithdrawal':
-      return canEditExternalWithdrawals(user);
+    case 'externalOperation':
+      return canEditExternalOperations(user);
     case 'supplier':
       return canEditSuppliers(user);
     case 'hr':
       return canEditHrEntities(user);
     case 'user':
       return canEditUsers(user);
-    case 'garage':
-      return canEditGarages(user);
     case 'airbrushing':
       return canEditAirbrushings(user);
     case 'observation':

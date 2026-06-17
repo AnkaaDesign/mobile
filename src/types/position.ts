@@ -1,7 +1,7 @@
 // packages/interfaces/src/position.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '@/constants';
+import type { ORDER_BY_DIRECTION, INSALUBRITY_DEGREE } from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
 
 // =====================
@@ -23,11 +23,23 @@ export interface Position extends BaseEntity {
   name: string;
   hierarchy: number | null;
   bonifiable: boolean;
+  /** Insalubridade (NR-15): grau que define o adicional (% sobre salário-mínimo). Default NONE. */
+  insalubrityDegree: INSALUBRITY_DEGREE;
+  /** Periculosidade (NR-16): adicional de 30% sobre o salário-base. Mutuamente exclusivo com insalubridade. */
+  hazardPay: boolean;
+  /** Piso salarial da categoria/sindicato. NULL = usa o salário-mínimo nacional. */
+  salaryFloor: number | null;
+  /** Periodicidade padrão do exame médico periódico (meses). NULL = cadência legal por idade/risco. */
+  examPeriodicityMonths: number | null;
+  /** ID da função correspondente no Secullum (integração de ponto). */
+  secullumFuncaoId: number | null;
 
   // Relations (optional, populated based on query)
   users?: User[];
+  /** Canonical relation as returned by the server (Position.remunerations). */
+  remunerations?: MonetaryValue[];
+  /** DEPRECATED alias — older callers; the server populates `remunerations`. */
   monetaryValues?: MonetaryValue[];
-  remunerations?: PositionRemuneration[]; // DEPRECATED: use monetaryValues
 
   // Virtual field (computed from latest/current monetary value)
   remuneration?: number;
@@ -64,15 +76,17 @@ export interface PositionIncludes {
     | {
         include?: UserIncludes;
       };
-  monetaryValues?:
+  /** Canonical relation as returned by the server (Position.remunerations). */
+  remunerations?:
     | boolean
     | {
         include?: MonetaryValueIncludes;
       };
-  remunerations?:  // DEPRECATED: use monetaryValues
+  /** DEPRECATED alias — older callers. */
+  monetaryValues?:
     | boolean
     | {
-        include?: PositionRemunerationIncludes;
+        include?: MonetaryValueIncludes;
       };
 }
 

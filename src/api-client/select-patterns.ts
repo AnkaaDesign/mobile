@@ -26,15 +26,15 @@ export const USER_SELECT_MINIMAL = {
 };
 
 /**
- * User data for comboboxes (id, name, email, status)
+ * User data for comboboxes (id, name, email, currentContractType)
  * 90% reduction compared to full entity
  */
 export const USER_SELECT_COMBOBOX = {
   id: true,
   name: true,
   email: true,
-  status: true,
-  statusOrder: true,
+  currentContractType: true,
+  currentContractStatus: true,
   isActive: true,
 };
 
@@ -47,8 +47,8 @@ export const USER_SELECT_TABLE = {
   name: true,
   email: true,
   phone: true,
-  status: true,
-  statusOrder: true,
+  currentContractType: true,
+  currentContractStatus: true,
   isActive: true,
   position: {
     select: {
@@ -221,7 +221,7 @@ export const BORROW_SELECT_DETAIL = {
       name: true,
       email: true,
       phone: true,
-      status: true,
+      currentContractType: true,
       position: {
         select: {
           id: true,

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, FormProvider, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { itemCreateSchema, itemUpdateSchema, type ItemCreateFormData, type ItemUpdateFormData } from '../../../../schemas';
 import { useItemCategories, useKeyboardAwareScroll, useCanViewPrices } from "@/hooks";
-import { ITEM_CATEGORY_TYPE } from "@/constants";
+import { ITEM_CATEGORY_TYPE, STOCK_MODEL, PPE_TYPE } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { useTheme } from "@/lib/theme";
@@ -31,6 +31,9 @@ import { PriceInput } from "./price-input";
 import { MeasuresManager } from "./measures-manager";
 import { BarcodeManager } from "./barcode-manager";
 import { AssignToUserToggle } from "./assign-to-user-toggle";
+import { BorrowableToggle } from "./borrowable-toggle";
+import { StockModelSelector } from "./stock-model-selector";
+import { FixedTargetQuantityInput } from "./fixed-target-quantity-input";
 import { PpeConfigSection } from "./ppe-config-section";
 
 interface BaseItemFormProps {
@@ -62,7 +65,6 @@ export function ItemForm(props: ItemFormProps) {
   const canViewPrices = useCanViewPrices();
   const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory, initialBrands, initialSupplier } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
-  const [isPPE, setIsPPE] = useState(false);
 
   // Keyboard-aware scrolling (same pattern as task form)
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -89,6 +91,10 @@ export function ItemForm(props: ItemFormProps) {
     measures: [], // Initialize with empty measures array
     barcodes: [],
     shouldAssignToUser: true,
+    // Capability fields (capability-fields contract)
+    isBorrowable: defaultValues?.isBorrowable ?? false,
+    stockModel: defaultValues?.stockModel ?? STOCK_MODEL.CONSUMPTION,
+    fixedTargetQuantity: defaultValues?.fixedTargetQuantity ?? null,
     abcCategory: null,
     xyzCategory: null,
     brandIds: [],
@@ -175,16 +181,40 @@ export function ItemForm(props: ItemFormProps) {
     }
   }, [isValid, isDirty, onFormStateChange]);
 
-  // Check if selected category is PPE
+  // PPE section visibility keys on the FORM's ppeType (capability-fields
+  // contract) — the category select only PREFILLS, it never gates behavior.
+  const watchedPpeType = form.watch("ppeType");
+  const isPPE = watchedPpeType != null;
+  const watchedStockModel = form.watch("stockModel");
+
+  // Category lookup for the prefill below.
   const { data: categories } = useItemCategories({
     where: { id: selectedCategoryId },
   });
 
+  // Category prefill (create only): TOOL-type categories default the item to
+  // borrowable + alvo fixo (target 1); PPE-type categories suggest the PPE
+  // section by prefilling ppeType. The user can override every field, and a
+  // category change on UPDATE never silently flips item flags (server rule).
+  const initialCategoryIdRef = useRef(defaultValues?.categoryId ?? undefined);
+  const hasExplicitCapabilityDefaults =
+    defaultValues?.isBorrowable !== undefined || defaultValues?.stockModel !== undefined || defaultValues?.fixedTargetQuantity !== undefined;
   useEffect(() => {
-    if (categories?.data?.[0]) {
-      setIsPPE(categories.data[0].type === ITEM_CATEGORY_TYPE.PPE);
+    if (mode !== "create") return;
+    const category = categories?.data?.[0];
+    if (!category || category.id !== selectedCategoryId) return;
+    // Don't clobber explicitly provided capability defaults on first load.
+    if (category.id === initialCategoryIdRef.current && hasExplicitCapabilityDefaults) return;
+
+    if (category.type === ITEM_CATEGORY_TYPE.TOOL) {
+      form.setValue("isBorrowable", true, { shouldDirty: true });
+      form.setValue("stockModel", STOCK_MODEL.FIXED_TARGET, { shouldDirty: true });
+      form.setValue("fixedTargetQuantity", 1, { shouldDirty: true });
+    } else if (category.type === ITEM_CATEGORY_TYPE.PPE && form.getValues("ppeType") == null) {
+      form.setValue("ppeType", PPE_TYPE.OTHERS, { shouldDirty: true });
     }
-  }, [categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories, selectedCategoryId, mode]);
 
   const isRequired = mode === "create";
 
@@ -243,6 +273,8 @@ export function ItemForm(props: ItemFormProps) {
                 <QuantityInput disabled={isSubmitting} required={isRequired} />
                 <BoxQuantityInput disabled={isSubmitting} />
                 <LeadTimeInput disabled={isSubmitting} />
+                <StockModelSelector disabled={isSubmitting} />
+                {watchedStockModel === STOCK_MODEL.FIXED_TARGET && <FixedTargetQuantityInput disabled={isSubmitting} />}
               </View>
             </FormCard>
 
@@ -283,6 +315,7 @@ export function ItemForm(props: ItemFormProps) {
             <FormCard title="Configurações Extras" icon="IconSettings">
               <View style={styles.fieldGroup}>
                 <AssignToUserToggle disabled={isSubmitting} />
+                <BorrowableToggle disabled={isSubmitting} />
                 <StatusToggle disabled={isSubmitting} />
               </View>
             </FormCard>

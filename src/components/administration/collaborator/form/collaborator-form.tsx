@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect } from "react";
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,8 +24,8 @@ import type { User } from "@/types";
 import { useUserMutations } from "@/hooks/useUser";
 import { useSectors } from "@/hooks/useSector";
 import { usePositions } from "@/hooks/usePosition";
-import { USER_STATUS, SHIRT_SIZE, BOOT_SIZE, PANTS_SIZE, SLEEVES_SIZE, MASK_SIZE, GLOVES_SIZE, RAIN_BOOTS_SIZE, SECTOR_PRIVILEGES } from "@/constants";
-import { USER_STATUS_LABELS, SHIRT_SIZE_LABELS, BOOT_SIZE_LABELS, PANTS_SIZE_LABELS, SLEEVES_SIZE_LABELS, MASK_SIZE_LABELS, GLOVES_SIZE_LABELS, RAIN_BOOTS_SIZE_LABELS } from "@/constants/enum-labels";
+import { CONTRACT_TYPE, SHIRT_SIZE, BOOT_SIZE, PANTS_SIZE, SLEEVES_SIZE, MASK_SIZE, GLOVES_SIZE, RAIN_BOOTS_SIZE, SECTOR_PRIVILEGES } from "@/constants";
+import { CONTRACT_TYPE_LABELS, SHIRT_SIZE_LABELS, BOOT_SIZE_LABELS, PANTS_SIZE_LABELS, SLEEVES_SIZE_LABELS, MASK_SIZE_LABELS, GLOVES_SIZE_LABELS, RAIN_BOOTS_SIZE_LABELS } from "@/constants/enum-labels";
 
 interface CollaboratorFormProps {
   mode: "create" | "update";
@@ -114,7 +114,12 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             cpf: "",
             pis: "",
             birth: getDefaultBirthDate(),
-            status: USER_STATUS.EXPERIENCE_PERIOD_1,
+            contract: {
+              // New hires start as a FIXED_TERM modality; the bond enters EXPERIENCE
+              // status server-side and converts to INDETERMINATE on efetivação.
+              contractType: CONTRACT_TYPE.FIXED_TERM,
+              admissionDate: new Date(),
+            },
             sectorId: null,
             positionId: null,
             isSectorLeader: false,
@@ -139,12 +144,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               gloves: null,
               rainBoots: null,
             },
-            exp1StartAt: new Date(),
-            exp1EndAt: null,
-            exp2StartAt: null,
-            exp2EndAt: null,
-            effectedAt: null,
-            dismissedAt: null,
           }
         : {
             name: user?.name || "",
@@ -153,7 +152,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             cpf: user?.cpf || "",
             pis: user?.pis || "",
             birth: toDate(user?.birth) ?? undefined,
-            status: user?.status || USER_STATUS.EXPERIENCE_PERIOD_1,
             sectorId: user?.sectorId || null,
             positionId: user?.positionId || null,
             isSectorLeader: Boolean(user?.ledSector?.id),
@@ -187,20 +185,11 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               gloves: null,
               rainBoots: null,
             },
-            exp1StartAt: toDate(user?.exp1StartAt) ?? null,
-            exp1EndAt: toDate(user?.exp1EndAt) ?? null,
-            exp2StartAt: toDate(user?.exp2StartAt) ?? null,
-            exp2EndAt: toDate(user?.exp2EndAt) ?? null,
-            effectedAt: toDate(user?.effectedAt) ?? null,
-            dismissedAt: toDate(user?.dismissedAt) ?? null,
-            currentStatus: user?.status as USER_STATUS,
+            currentContractType: user?.currentContractType ?? null,
           },
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
-  const watchedStatus = form.watch("status");
-  const exp1StartAt = form.watch("exp1StartAt");
-  const effectedAt = form.watch("effectedAt");
   const watchedSectorId = form.watch("sectorId");
 
   // Determine if the selected sector is PRODUCTION (only PRODUCTION sectors can have leaders)
@@ -216,143 +205,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
       form.setValue("isSectorLeader", false);
     }
   }, [watchedSectorId, isProductionSector, form]);
-
-  // Track previous values to detect actual changes (not just initial mount)
-  const prevExp1StartAtRef = useRef<Date | null | undefined>(undefined);
-  const prevStatusRef = useRef<USER_STATUS | undefined>(undefined);
-  const isFirstRenderRef = useRef(true);
-
-  // Helper function to adjust date to Friday if it falls on weekend
-  const adjustToFridayIfWeekend = (date: Date): Date => {
-    const dayOfWeek = date.getDay();
-    // Sunday = 0, Saturday = 6
-    if (dayOfWeek === 0) {
-      // Sunday -> move back to Friday (2 days)
-      const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() - 2);
-      return newDate;
-    } else if (dayOfWeek === 6) {
-      // Saturday -> move back to Friday (1 day)
-      const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() - 1);
-      return newDate;
-    }
-    return date;
-  };
-
-  // Helper function to calculate status dates
-  const calculateStatusDates = (startDate: Date | null) => {
-    if (!startDate) {
-      return {
-        exp1EndAt: null,
-        exp2StartAt: null,
-        exp2EndAt: null,
-        effectedAt: null,
-      };
-    }
-
-    // Normalize to start of day
-    const normalizedStart = new Date(startDate);
-    normalizedStart.setHours(0, 0, 0, 0);
-
-    // Calculate exp1 end date (30 days from start)
-    const rawExp1EndAt = new Date(normalizedStart);
-    rawExp1EndAt.setDate(rawExp1EndAt.getDate() + 30);
-    const exp1EndAt = adjustToFridayIfWeekend(rawExp1EndAt);
-
-    // exp2 starts the day after exp1 ends
-    const exp2StartAt = new Date(exp1EndAt);
-    exp2StartAt.setDate(exp2StartAt.getDate() + 1);
-
-    // Calculate exp2 end date (50 days)
-    const rawExp2EndAt = new Date(exp2StartAt);
-    rawExp2EndAt.setDate(rawExp2EndAt.getDate() + 50);
-    const exp2EndAt = adjustToFridayIfWeekend(rawExp2EndAt);
-
-    // Effective hire date is 1 day after exp2 ends
-    const effectedAt = new Date(exp2EndAt);
-    effectedAt.setDate(effectedAt.getDate() + 1);
-
-    return {
-      exp1EndAt,
-      exp2StartAt,
-      exp2EndAt,
-      effectedAt,
-    };
-  };
-
-  // Auto-calculate dates when exp1StartAt changes
-  useEffect(() => {
-    // Skip on first render to avoid overwriting values loaded from API
-    if (isFirstRenderRef.current) {
-      isFirstRenderRef.current = false;
-      prevExp1StartAtRef.current = exp1StartAt;
-      return;
-    }
-
-    // Only recalculate if exp1StartAt actually changed
-    const hasChanged = prevExp1StartAtRef.current?.getTime() !== exp1StartAt?.getTime();
-    if (!hasChanged) return;
-
-    prevExp1StartAtRef.current = exp1StartAt;
-
-    if (exp1StartAt) {
-      const dates = calculateStatusDates(exp1StartAt);
-
-      // Recalculate these fields when user changes exp1StartAt
-      form.setValue("exp1EndAt", dates.exp1EndAt, { shouldValidate: false, shouldDirty: true });
-      form.setValue("exp2StartAt", dates.exp2StartAt, { shouldValidate: false, shouldDirty: true });
-      form.setValue("exp2EndAt", dates.exp2EndAt, { shouldValidate: false, shouldDirty: true });
-      form.setValue("effectedAt", dates.effectedAt, { shouldValidate: false, shouldDirty: true });
-    } else {
-      // Clear dates if exp1StartAt is cleared
-      form.setValue("exp1EndAt", null, { shouldValidate: false, shouldDirty: true });
-      form.setValue("exp2StartAt", null, { shouldValidate: false, shouldDirty: true });
-      form.setValue("exp2EndAt", null, { shouldValidate: false, shouldDirty: true });
-      form.setValue("effectedAt", null, { shouldValidate: false, shouldDirty: true });
-    }
-  }, [exp1StartAt, form]);
-
-  // Update dates when status changes
-  useEffect(() => {
-    // Skip if this is the first render or status hasn't changed
-    if (prevStatusRef.current === undefined) {
-      prevStatusRef.current = watchedStatus as USER_STATUS | undefined;
-      return;
-    }
-
-    const hasChanged = prevStatusRef.current !== watchedStatus;
-    if (!hasChanged) return;
-
-    const previousStatus = prevStatusRef.current;
-    prevStatusRef.current = watchedStatus as USER_STATUS | undefined;
-
-    if (watchedStatus === USER_STATUS.EFFECTED && !effectedAt) {
-      // Set effectedAt to today if transitioning to EFFECTED
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      form.setValue("effectedAt", today, { shouldValidate: false });
-    }
-
-    if (watchedStatus === USER_STATUS.DISMISSED && !form.getValues("dismissedAt")) {
-      // Set dismissedAt to today if transitioning to DISMISSED
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      form.setValue("dismissedAt", today, { shouldValidate: false });
-    }
-
-    // Inverse: when un-dismissing, clear `dismissedAt` so we don't leave a
-    // stale dismissal timestamp on a now-active user. Mirrors the API
-    // service's auto-clear logic (commit 8e1148f).
-    if (
-      previousStatus === USER_STATUS.DISMISSED &&
-      watchedStatus &&
-      watchedStatus !== USER_STATUS.DISMISSED &&
-      form.getValues("dismissedAt")
-    ) {
-      form.setValue("dismissedAt", null, { shouldValidate: false, shouldDirty: true });
-    }
-  }, [watchedStatus, effectedAt, form]);
 
   const handleSubmit = async (data: UserCreateFormData | UserUpdateFormData) => {
     try {
@@ -404,7 +256,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
       label: position.name,
     })) || [];
 
-  const statusOptions: ComboboxOption[] = Object.entries(USER_STATUS_LABELS).map(
+  const statusOptions: ComboboxOption[] = Object.entries(CONTRACT_TYPE_LABELS).map(
     ([value, label]) => ({
       value,
       label,
@@ -708,173 +560,52 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             />
           </FormFieldGroup>
 
-          {/* Status */}
-          <FormFieldGroup
-            label="Status"
-            required
-            error={form.formState.errors.status?.message}
-          >
-            <Controller
-              control={form.control}
-              name="status"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox
-                  options={statusOptions}
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Selecione o status"
-                  disabled={isLoading}
-                  searchable={false}
-                  clearable={false}
-                  error={error?.message}
-                />
-              )}
-            />
-          </FormFieldGroup>
-
-          {/* Status Tracking Dates */}
-          {watchedStatus && ([
-            USER_STATUS.EXPERIENCE_PERIOD_1,
-            USER_STATUS.EXPERIENCE_PERIOD_2,
-            USER_STATUS.EFFECTED,
-            USER_STATUS.DISMISSED,
-          ] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
+          {/* Contract Type & Admission (initial vínculo) — create only.
+              Employment edits (status transitions, experience-period dates,
+              effectivation, termination) live in the vínculo/HR flow, not here. */}
+          {mode === "create" && (
             <>
-              {/* Experience Period 1 Dates */}
-              {([
-                USER_STATUS.EXPERIENCE_PERIOD_1,
-                USER_STATUS.EXPERIENCE_PERIOD_2,
-                USER_STATUS.EFFECTED,
-                USER_STATUS.DISMISSED,
-              ] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
-                <FormRow>
-                  <FormFieldGroup
-                    label="Data de Admissão"
-                    required
-                    error={form.formState.errors.exp1StartAt?.message}
-                  >
-                    <Controller
-                      control={form.control}
-                      name="exp1StartAt"
-                      render={({ field: { onChange, value } }) => (
-                        <DatePicker
-                          value={value ?? undefined}
-                          onChange={onChange}
-                          placeholder="Selecione a data"
-                          disabled={isLoading}
-                        />
-                      )}
+              <FormFieldGroup
+                label="Modalidade do Vínculo"
+                required
+                error={(form.formState.errors as any).contract?.contractType?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="contract.contractType"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <Combobox
+                      options={statusOptions}
+                      value={value ?? undefined}
+                      onValueChange={onChange}
+                      placeholder="Selecione a modalidade"
+                      disabled={isLoading}
+                      searchable={false}
+                      clearable={false}
+                      error={error?.message}
                     />
-                  </FormFieldGroup>
+                  )}
+                />
+              </FormFieldGroup>
 
-                  <FormFieldGroup
-                    label="Fim da Experiência 1"
-                    error={form.formState.errors.exp1EndAt?.message}
-                  >
-                    <Controller
-                      control={form.control}
-                      name="exp1EndAt"
-                      render={({ field: { onChange, value } }) => (
-                        <DatePicker
-                          value={value ?? undefined}
-                          onChange={onChange}
-                          placeholder="Calculado"
-                          disabled={true}
-                        />
-                      )}
+              <FormFieldGroup
+                label="Data de Admissão"
+                required
+                error={(form.formState.errors as any).contract?.admissionDate?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="contract.admissionDate"
+                  render={({ field: { onChange, value } }) => (
+                    <DatePicker
+                      value={value ?? undefined}
+                      onChange={onChange}
+                      placeholder="Selecione a data"
+                      disabled={isLoading}
                     />
-                  </FormFieldGroup>
-                </FormRow>
-              )}
-
-              {/* Experience Period 2 Dates */}
-              {([
-                USER_STATUS.EXPERIENCE_PERIOD_2,
-                USER_STATUS.EFFECTED,
-                USER_STATUS.DISMISSED,
-              ] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
-                <FormRow>
-                  <FormFieldGroup
-                    label="Início da Experiência 2"
-                    error={form.formState.errors.exp2StartAt?.message}
-                  >
-                    <Controller
-                      control={form.control}
-                      name="exp2StartAt"
-                      render={({ field: { onChange, value } }) => (
-                        <DatePicker
-                          value={value ?? undefined}
-                          onChange={onChange}
-                          placeholder="Calculado"
-                          disabled={true}
-                        />
-                      )}
-                    />
-                  </FormFieldGroup>
-
-                  <FormFieldGroup
-                    label="Fim da Experiência 2"
-                    error={form.formState.errors.exp2EndAt?.message}
-                  >
-                    <Controller
-                      control={form.control}
-                      name="exp2EndAt"
-                      render={({ field: { onChange, value } }) => (
-                        <DatePicker
-                          value={value ?? undefined}
-                          onChange={onChange}
-                          placeholder="Calculado"
-                          disabled={true}
-                        />
-                      )}
-                    />
-                  </FormFieldGroup>
-                </FormRow>
-              )}
-
-              {/* Effective Date */}
-              {([USER_STATUS.EFFECTED, USER_STATUS.DISMISSED] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
-                <FormFieldGroup
-                  label="Data de Contratação Efetiva"
-                  required
-                  error={form.formState.errors.effectedAt?.message}
-                >
-                  <Controller
-                    control={form.control}
-                    name="effectedAt"
-                    render={({ field: { onChange, value } }) => (
-                      <DatePicker
-                        value={value ?? undefined}
-                        onChange={onChange}
-                        placeholder="Calculado"
-                        disabled={true}
-                      />
-                    )}
-                  />
-                </FormFieldGroup>
-              )}
-
-              {/* Dismissed Date */}
-              {watchedStatus === USER_STATUS.DISMISSED && (
-                <FormFieldGroup
-                  label="Data de Demissão"
-                  required
-                  error={form.formState.errors.dismissedAt?.message}
-                >
-                  <Controller
-                    control={form.control}
-                    name="dismissedAt"
-                    render={({ field: { onChange, value } }) => (
-                      <DatePicker
-                        value={value ?? undefined}
-                        onChange={onChange}
-                        placeholder="Selecione a data"
-                        disabled={isLoading}
-                      />
-                    )}
-                  />
-                </FormFieldGroup>
-              )}
+                  )}
+                />
+              </FormFieldGroup>
             </>
           )}
 

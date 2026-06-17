@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { bonusService } from "@/api-client";
 import { bonusKeys, useCurrentUser, useScreenReady} from '@/hooks';
 import { formatCurrency, formatPercentage } from "@/utils";
-import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
+import { BONIFICATION_STATUS, BONIFICATION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
 import { BonusRulesModal } from "@/components/bonus/BonusRulesModal";
 import { Icon } from "@/components/ui/icon";
@@ -94,7 +94,7 @@ export default function BonusDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [tasksModalVisible, setTasksModalVisible] = useState(false);
-  const [selectedCommissionStatus, setSelectedCommissionStatus] = useState<string | null>(null);
+  const [selectedBonificationStatus, setSelectedBonificationStatus] = useState<string | null>(null);
   const [rulesModalVisible, setRulesModalVisible] = useState(false);
   const [rulesHighlightRef, setRulesHighlightRef] = useState<string | undefined>();
 
@@ -161,14 +161,14 @@ export default function BonusDetailScreen() {
     bonus = data as Bonus;
   }
 
-  // Calculate commission statistics from tasks attached to the bonus
+  // Calculate bonification statistics from tasks attached to the bonus
   // The API returns tasks with the bonus response
-  const commissionStats = useMemo(() => {
+  const bonificationStats = useMemo(() => {
     const statusCounts = {
-      [COMMISSION_STATUS.FULL_COMMISSION]: 0,
-      [COMMISSION_STATUS.PARTIAL_COMMISSION]: 0,
-      [COMMISSION_STATUS.NO_COMMISSION]: 0,
-      [COMMISSION_STATUS.SUSPENDED_COMMISSION]: 0,
+      [BONIFICATION_STATUS.FULL_BONIFICATION]: 0,
+      [BONIFICATION_STATUS.PARTIAL_BONIFICATION]: 0,
+      [BONIFICATION_STATUS.NO_BONIFICATION]: 0,
+      [BONIFICATION_STATUS.SUSPENDED_BONIFICATION]: 0,
     };
 
     // Use tasks from the bonus response (not a separate query)
@@ -176,9 +176,9 @@ export default function BonusDetailScreen() {
 
     if (tasks.length > 0) {
       tasks.forEach((task: Task) => {
-        const commissionStatus = task.commission || COMMISSION_STATUS.NO_COMMISSION;
-        if (statusCounts.hasOwnProperty(commissionStatus)) {
-          statusCounts[commissionStatus as keyof typeof statusCounts]++;
+        const bonificationStatus = task.bonification || BONIFICATION_STATUS.NO_BONIFICATION;
+        if (statusCounts.hasOwnProperty(bonificationStatus)) {
+          statusCounts[bonificationStatus as keyof typeof statusCounts]++;
         }
       });
 
@@ -198,14 +198,14 @@ export default function BonusDetailScreen() {
     };
   }, [bonus?.tasks]);
 
-  // Get tasks filtered by commission status for modal
+  // Get tasks filtered by bonification status for modal
   const filteredTasksForModal = useMemo(() => {
-    if (!commissionStats.tasks || !selectedCommissionStatus) return [];
-    return commissionStats.tasks.filter((task: Task) => task.commission === selectedCommissionStatus);
-  }, [commissionStats.tasks, selectedCommissionStatus]);
+    if (!bonificationStats.tasks || !selectedBonificationStatus) return [];
+    return bonificationStats.tasks.filter((task: Task) => task.bonification === selectedBonificationStatus);
+  }, [bonificationStats.tasks, selectedBonificationStatus]);
 
-  const handleCommissionStatusPress = useCallback((status: string) => {
-    if (!commissionStats.hasDetails) {
+  const handleBonificationStatusPress = useCallback((status: string) => {
+    if (!bonificationStats.hasDetails) {
       Alert.alert(
         "Detalhamento Indisponível",
         "O detalhamento das tarefas não está disponível para este período."
@@ -213,18 +213,18 @@ export default function BonusDetailScreen() {
       return;
     }
 
-    const count = commissionStats.byStatus[status as keyof typeof commissionStats.byStatus] || 0;
+    const count = bonificationStats.byStatus[status as keyof typeof bonificationStats.byStatus] || 0;
     if (count === 0) {
       Alert.alert(
         "Sem Tarefas",
-        `Não há tarefas com status "${COMMISSION_STATUS_LABELS[status as keyof typeof COMMISSION_STATUS_LABELS]}" neste período.`
+        `Não há tarefas com status "${BONIFICATION_STATUS_LABELS[status as keyof typeof BONIFICATION_STATUS_LABELS]}" neste período.`
       );
       return;
     }
 
-    setSelectedCommissionStatus(status);
+    setSelectedBonificationStatus(status);
     setTasksModalVisible(true);
-  }, [commissionStats]);
+  }, [bonificationStats]);
 
   const handleRefresh = async () => {
     await refetchBonus();
@@ -331,7 +331,7 @@ export default function BonusDetailScreen() {
             </View>
           </View>
 
-          {/* Commission Status Card skeleton */}
+          {/* Bonification Status Card skeleton */}
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, gap: 12 }]}>
             <Skeleton style={{ height: 18, width: '45%', borderRadius: 4 }} />
             <View style={{ gap: 12 }}>
@@ -552,16 +552,16 @@ export default function BonusDetailScreen() {
           </View>
         </Card>
 
-        {/* Commission Status Section - Clickable badges */}
+        {/* Bonification Status Section - Clickable badges */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={styles.headerLeft}>
               <Icon name="IconCheckbox" size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Status das Comissões</ThemedText>
+              <ThemedText style={styles.title}>Status das Bonificações</ThemedText>
             </View>
           </View>
           <View style={styles.content}>
-          {commissionStats.hasDetails ? (
+          {bonificationStats.hasDetails ? (
             <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
               Toque para ver as tarefas
             </ThemedText>
@@ -570,56 +570,56 @@ export default function BonusDetailScreen() {
               Detalhamento não disponível para este período
             </ThemedText>
           )}
-          <View style={styles.commissionList}>
+          <View style={styles.bonificationList}>
             <TouchableOpacity
-              style={styles.commissionRow}
-              onPress={() => handleCommissionStatusPress(COMMISSION_STATUS.FULL_COMMISSION)}
-              disabled={!commissionStats.hasDetails}
+              style={styles.bonificationRow}
+              onPress={() => handleBonificationStatusPress(BONIFICATION_STATUS.FULL_BONIFICATION)}
+              disabled={!bonificationStats.hasDetails}
             >
-              <Badge variant={getBadgeVariant(COMMISSION_STATUS.FULL_COMMISSION, 'COMMISSION_STATUS')} size="sm">
-                {COMMISSION_STATUS_LABELS[COMMISSION_STATUS.FULL_COMMISSION]}
+              <Badge variant={getBadgeVariant(BONIFICATION_STATUS.FULL_BONIFICATION, 'BONIFICATION_STATUS')} size="sm">
+                {BONIFICATION_STATUS_LABELS[BONIFICATION_STATUS.FULL_BONIFICATION]}
               </Badge>
               <Badge variant="default" size="sm">
-                {commissionStats.byStatus[COMMISSION_STATUS.FULL_COMMISSION]}
+                {bonificationStats.byStatus[BONIFICATION_STATUS.FULL_BONIFICATION]}
               </Badge>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.commissionRow}
-              onPress={() => handleCommissionStatusPress(COMMISSION_STATUS.PARTIAL_COMMISSION)}
-              disabled={!commissionStats.hasDetails}
+              style={styles.bonificationRow}
+              onPress={() => handleBonificationStatusPress(BONIFICATION_STATUS.PARTIAL_BONIFICATION)}
+              disabled={!bonificationStats.hasDetails}
             >
-              <Badge variant={getBadgeVariant(COMMISSION_STATUS.PARTIAL_COMMISSION, 'COMMISSION_STATUS')} size="sm">
-                {COMMISSION_STATUS_LABELS[COMMISSION_STATUS.PARTIAL_COMMISSION]}
+              <Badge variant={getBadgeVariant(BONIFICATION_STATUS.PARTIAL_BONIFICATION, 'BONIFICATION_STATUS')} size="sm">
+                {BONIFICATION_STATUS_LABELS[BONIFICATION_STATUS.PARTIAL_BONIFICATION]}
               </Badge>
               <Badge variant="default" size="sm">
-                {commissionStats.byStatus[COMMISSION_STATUS.PARTIAL_COMMISSION]}
+                {bonificationStats.byStatus[BONIFICATION_STATUS.PARTIAL_BONIFICATION]}
               </Badge>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.commissionRow}
-              onPress={() => handleCommissionStatusPress(COMMISSION_STATUS.NO_COMMISSION)}
-              disabled={!commissionStats.hasDetails}
+              style={styles.bonificationRow}
+              onPress={() => handleBonificationStatusPress(BONIFICATION_STATUS.NO_BONIFICATION)}
+              disabled={!bonificationStats.hasDetails}
             >
-              <Badge variant={getBadgeVariant(COMMISSION_STATUS.NO_COMMISSION, 'COMMISSION_STATUS')} size="sm">
-                {COMMISSION_STATUS_LABELS[COMMISSION_STATUS.NO_COMMISSION]}
+              <Badge variant={getBadgeVariant(BONIFICATION_STATUS.NO_BONIFICATION, 'BONIFICATION_STATUS')} size="sm">
+                {BONIFICATION_STATUS_LABELS[BONIFICATION_STATUS.NO_BONIFICATION]}
               </Badge>
               <Badge variant="default" size="sm">
-                {commissionStats.byStatus[COMMISSION_STATUS.NO_COMMISSION]}
+                {bonificationStats.byStatus[BONIFICATION_STATUS.NO_BONIFICATION]}
               </Badge>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.commissionRow}
-              onPress={() => handleCommissionStatusPress(COMMISSION_STATUS.SUSPENDED_COMMISSION)}
-              disabled={!commissionStats.hasDetails}
+              style={styles.bonificationRow}
+              onPress={() => handleBonificationStatusPress(BONIFICATION_STATUS.SUSPENDED_BONIFICATION)}
+              disabled={!bonificationStats.hasDetails}
             >
-              <Badge variant={getBadgeVariant(COMMISSION_STATUS.SUSPENDED_COMMISSION, 'COMMISSION_STATUS')} size="sm">
-                {COMMISSION_STATUS_LABELS[COMMISSION_STATUS.SUSPENDED_COMMISSION]}
+              <Badge variant={getBadgeVariant(BONIFICATION_STATUS.SUSPENDED_BONIFICATION, 'BONIFICATION_STATUS')} size="sm">
+                {BONIFICATION_STATUS_LABELS[BONIFICATION_STATUS.SUSPENDED_BONIFICATION]}
               </Badge>
               <Badge variant="default" size="sm">
-                {commissionStats.byStatus[COMMISSION_STATUS.SUSPENDED_COMMISSION]}
+                {bonificationStats.byStatus[BONIFICATION_STATUS.SUSPENDED_BONIFICATION]}
               </Badge>
             </TouchableOpacity>
           </View>
@@ -633,10 +633,10 @@ export default function BonusDetailScreen() {
         visible={tasksModalVisible}
         onClose={() => {
           setTasksModalVisible(false);
-          setSelectedCommissionStatus(null);
+          setSelectedBonificationStatus(null);
         }}
         tasks={filteredTasksForModal}
-        title={selectedCommissionStatus ? COMMISSION_STATUS_LABELS[selectedCommissionStatus as keyof typeof COMMISSION_STATUS_LABELS] || 'Tarefas' : 'Tarefas'}
+        title={selectedBonificationStatus ? BONIFICATION_STATUS_LABELS[selectedBonificationStatus as keyof typeof BONIFICATION_STATUS_LABELS] || 'Tarefas' : 'Tarefas'}
       />
 
       {/* Bonus Rules Modal */}
@@ -745,10 +745,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  commissionList: {
+  bonificationList: {
     gap: 12,
   },
-  commissionRow: {
+  bonificationRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

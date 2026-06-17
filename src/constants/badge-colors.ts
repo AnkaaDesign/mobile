@@ -15,11 +15,14 @@
 
 import {
   ORDER_STATUS,
+  ORDER_PAYMENT_STATUS,
   TASK_STATUS,
   MAINTENANCE_STATUS,
-  USER_STATUS,
-  EXTERNAL_WITHDRAWAL_STATUS,
-  EXTERNAL_WITHDRAWAL_TYPE,
+  CONTRACT_TYPE,
+  CONTRACT_STATUS,
+  EMPLOYEE_TYPE,
+  EXTERNAL_OPERATION_STATUS,
+  EXTERNAL_OPERATION_TYPE,
   SERVICE_ORDER_STATUS,
   AIRBRUSHING_STATUS,
   AIRBRUSHING_PAYMENT_STATUS,
@@ -53,8 +56,14 @@ import {
   VALIDATION_SEVERITY,
   VERIFICATION_ERROR_SEVERITY,
   SECTOR_PRIVILEGES,
-  COMMISSION_STATUS,
-  TASK_QUOTE_STATUS,} from "./enums";
+  BONIFICATION_STATUS,
+  TASK_QUOTE_STATUS,
+  ADMISSION_STATUS,
+  TERMINATION_STATUS,
+  MEDICAL_EXAM_STATUS,
+  MEDICAL_EXAM_RESULT,
+  LEAVE_STATUS,
+  BENEFIT_ENROLLMENT_STATUS,} from "./enums";
 
 /**
  * Badge Variant Types
@@ -375,6 +384,14 @@ export const ENTITY_BADGE_CONFIG = {
     [ORDER_STATUS.CANCELLED]: "cancelled" as BadgeVariant,         // Red - cancelled
   },
 
+  // Order Payment Status (Contas a Pagar)
+  ORDER_PAYMENT: {
+    [ORDER_PAYMENT_STATUS.NOT_REQUESTED]: "gray" as BadgeVariant,      // Gray - not requested yet
+    [ORDER_PAYMENT_STATUS.REQUESTED]: "pending" as BadgeVariant,       // Amber - payment requested
+    [ORDER_PAYMENT_STATUS.AWAITING_PAYMENT]: "orange" as BadgeVariant, // Orange - awaiting payment
+    [ORDER_PAYMENT_STATUS.PAID]: "green" as BadgeVariant,              // Green - paid
+  },
+
   // Task Status
   TASK: {
     [TASK_STATUS.PREPARATION]: "orange" as BadgeVariant,            // Orange - in preparation
@@ -388,7 +405,6 @@ export const ENTITY_BADGE_CONFIG = {
   TASK_QUOTE: {
     [TASK_QUOTE_STATUS.PENDING]: "secondary" as BadgeVariant,              // Neutral - awaiting action
     [TASK_QUOTE_STATUS.BUDGET_APPROVED]: "approved" as BadgeVariant,       // Green - budget approved
-    [TASK_QUOTE_STATUS.COMMERCIAL_APPROVED]: "processing" as BadgeVariant, // Blue - commercial approved
     [TASK_QUOTE_STATUS.BILLING_APPROVED]: "approved" as BadgeVariant,      // Green - billing approved
     [TASK_QUOTE_STATUS.UPCOMING]: "pending" as BadgeVariant,               // Amber - payment upcoming
     [TASK_QUOTE_STATUS.DUE]: "destructive" as BadgeVariant,                // Red - payment overdue
@@ -405,27 +421,46 @@ export const ENTITY_BADGE_CONFIG = {
     [MAINTENANCE_STATUS.OVERDUE]: "purple" as BadgeVariant,
   },
 
-  // User Status
+  // User Contract Type (the legal MODALITY of the current vínculo)
   USER: {
-    [USER_STATUS.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Amber - first trial period
-    [USER_STATUS.EXPERIENCE_PERIOD_2]: "created" as BadgeVariant,  // Blue - second trial period
-    [USER_STATUS.EFFECTED]: "green" as BadgeVariant,               // Entity-specific: use green
-    [USER_STATUS.DISMISSED]: "red" as BadgeVariant,                // Entity-specific: use red
+    [CONTRACT_TYPE.INDETERMINATE]: "green" as BadgeVariant,          // Entity-specific: use green (efetivo)
+    [CONTRACT_TYPE.FIXED_TERM]: "created" as BadgeVariant,           // Blue - fixed term
+    [CONTRACT_TYPE.INTERMITTENT]: "purple" as BadgeVariant,          // Purple - intermittent contract
+    [CONTRACT_TYPE.APPRENTICE]: "blue" as BadgeVariant,              // Blue - apprentice contract
+    [CONTRACT_TYPE.TEMPORARY]: "orange" as BadgeVariant,             // Orange - temporary
+  },
+
+  // Employment contract lifecycle status
+  CONTRACT_STATUS: {
+    [CONTRACT_STATUS.EXPERIENCE]: "pending" as BadgeVariant,         // Amber - em experiência
+    [CONTRACT_STATUS.ACTIVE]: "green" as BadgeVariant,
+    [CONTRACT_STATUS.NOTICE_PERIOD]: "orange" as BadgeVariant,       // Aviso prévio
+    [CONTRACT_STATUS.ON_LEAVE]: "purple" as BadgeVariant,            // Afastado
+    [CONTRACT_STATUS.TERMINATED]: "red" as BadgeVariant,
+  },
+
+  // Worker category (on-folha vs off-folha)
+  EMPLOYEE_TYPE: {
+    [EMPLOYEE_TYPE.CLT]: "green" as BadgeVariant,
+    [EMPLOYEE_TYPE.INTERN]: "blue" as BadgeVariant,
+    [EMPLOYEE_TYPE.TERCEIRIZADO]: "purple" as BadgeVariant,
+    [EMPLOYEE_TYPE.PJ]: "orange" as BadgeVariant,
+    [EMPLOYEE_TYPE.AUTONOMOUS]: "created" as BadgeVariant,
   },
 
   // External Withdrawal Status
-  EXTERNAL_WITHDRAWAL: {
-    [EXTERNAL_WITHDRAWAL_STATUS.PENDING]: "pending" as BadgeVariant,
-    [EXTERNAL_WITHDRAWAL_STATUS.PARTIALLY_RETURNED]: "orange" as BadgeVariant,  // Entity-specific: use orange
-    [EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED]: "green" as BadgeVariant,       // Entity-specific: use green
-    [EXTERNAL_WITHDRAWAL_STATUS.CHARGED]: "blue" as BadgeVariant,               // Entity-specific: use blue
-    [EXTERNAL_WITHDRAWAL_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
+  EXTERNAL_OPERATION: {
+    [EXTERNAL_OPERATION_STATUS.PENDING]: "pending" as BadgeVariant,
+    [EXTERNAL_OPERATION_STATUS.PARTIALLY_RETURNED]: "orange" as BadgeVariant,  // Entity-specific: use orange
+    [EXTERNAL_OPERATION_STATUS.FULLY_RETURNED]: "green" as BadgeVariant,       // Entity-specific: use green
+    [EXTERNAL_OPERATION_STATUS.CHARGED]: "blue" as BadgeVariant,               // Entity-specific: use blue
+    [EXTERNAL_OPERATION_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
   },
 
   // External Withdrawal Type
-  EXTERNAL_WITHDRAWAL_TYPE: {
-    [EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE]: "default" as BadgeVariant, // Neutral - returnable
-    [EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE]: "red" as BadgeVariant,     // Entity-specific: use red
+  EXTERNAL_OPERATION_TYPE: {
+    [EXTERNAL_OPERATION_TYPE.RETURNABLE]: "default" as BadgeVariant, // Neutral - returnable
+    [EXTERNAL_OPERATION_TYPE.CHARGEABLE]: "red" as BadgeVariant,     // Entity-specific: use red
   },
 
   // Service Order Status
@@ -696,14 +731,70 @@ export const ENTITY_BADGE_CONFIG = {
     [SECTOR_PRIVILEGES.WAREHOUSE]: "green" as BadgeVariant,        // Green - warehouse role
     [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "purple" as BadgeVariant, // Purple - production manager (same as logistic)
     [SECTOR_PRIVILEGES.AIRBRUSHING]: "orange" as BadgeVariant,        // Orange - airbrushing (third-party painters)
+    [SECTOR_PRIVILEGES.ACCOUNTING]: "purple" as BadgeVariant,         // Purple - accounting role (same family as FINANCIAL)
   },
 
-  // Commission Status
-  COMMISSION_STATUS: {
-    [COMMISSION_STATUS.FULL_COMMISSION]: "green" as BadgeVariant,     // Green - full commission earned
-    [COMMISSION_STATUS.PARTIAL_COMMISSION]: "blue" as BadgeVariant,   // Blue - partial commission
-    [COMMISSION_STATUS.NO_COMMISSION]: "orange" as BadgeVariant,      // Orange - no commission (warning)
-    [COMMISSION_STATUS.SUSPENDED_COMMISSION]: "red" as BadgeVariant,  // Red - commission suspended (critical)
+  // Bonification Status
+  BONIFICATION_STATUS: {
+    [BONIFICATION_STATUS.FULL_BONIFICATION]: "green" as BadgeVariant,     // Green - full bonification earned
+    [BONIFICATION_STATUS.PARTIAL_BONIFICATION]: "blue" as BadgeVariant,   // Blue - partial bonification
+    [BONIFICATION_STATUS.NO_BONIFICATION]: "orange" as BadgeVariant,      // Orange - no bonification (warning)
+    [BONIFICATION_STATUS.SUSPENDED_BONIFICATION]: "red" as BadgeVariant,  // Red - bonification suspended (critical)
+  },
+
+  // Admission Status (Departamento Pessoal)
+  ADMISSION: {
+    [ADMISSION_STATUS.DOCS_PENDING]: "pending" as BadgeVariant,    // Amber - documents pending
+    [ADMISSION_STATUS.MEDICAL_EXAM]: "blue" as BadgeVariant,       // Blue - admission exam phase
+    [ADMISSION_STATUS.CONTRACT]: "purple" as BadgeVariant,         // Purple - contract phase
+    [ADMISSION_STATUS.REGISTRATION]: "cyan" as BadgeVariant,       // Cyan - registration phase
+    [ADMISSION_STATUS.COMPLETED]: "completed" as BadgeVariant,     // Green - completed
+    [ADMISSION_STATUS.CANCELLED]: "cancelled" as BadgeVariant,     // Red - cancelled
+  },
+
+  // Termination Status (Departamento Pessoal)
+  TERMINATION: {
+    [TERMINATION_STATUS.INITIATED]: "gray" as BadgeVariant,        // Gray - just initiated
+    [TERMINATION_STATUS.NOTICE_PERIOD]: "pending" as BadgeVariant, // Amber - notice period running
+    [TERMINATION_STATUS.DOCUMENTS]: "blue" as BadgeVariant,        // Blue - documents phase
+    [TERMINATION_STATUS.MEDICAL_EXAM]: "purple" as BadgeVariant,   // Purple - dismissal exam phase
+    [TERMINATION_STATUS.CALCULATION]: "cyan" as BadgeVariant,      // Cyan - calculation phase
+    [TERMINATION_STATUS.PAYMENT]: "orange" as BadgeVariant,        // Orange - awaiting payment
+    [TERMINATION_STATUS.HOMOLOGATION]: "blue" as BadgeVariant,     // Blue - homologation phase
+    [TERMINATION_STATUS.COMPLETED]: "completed" as BadgeVariant,   // Green - completed
+    [TERMINATION_STATUS.CANCELLED]: "cancelled" as BadgeVariant,   // Red - cancelled
+  },
+
+  // Medical Exam Status (Medicina do Trabalho)
+  MEDICAL_EXAM: {
+    [MEDICAL_EXAM_STATUS.SCHEDULED]: "blue" as BadgeVariant,       // Blue - scheduled
+    [MEDICAL_EXAM_STATUS.COMPLETED]: "completed" as BadgeVariant,  // Green - completed
+    [MEDICAL_EXAM_STATUS.EXPIRED]: "expired" as BadgeVariant,      // Expired styling
+    [MEDICAL_EXAM_STATUS.CANCELLED]: "cancelled" as BadgeVariant,  // Red - cancelled
+  },
+
+  // Medical Exam Result (Medicina do Trabalho)
+  MEDICAL_EXAM_RESULT: {
+    [MEDICAL_EXAM_RESULT.PENDING]: "pending" as BadgeVariant,                  // Amber - awaiting result
+    [MEDICAL_EXAM_RESULT.FIT]: "green" as BadgeVariant,                        // Green - fit (apto)
+    [MEDICAL_EXAM_RESULT.FIT_WITH_RESTRICTIONS]: "orange" as BadgeVariant,     // Orange - apto com restrições
+    [MEDICAL_EXAM_RESULT.UNFIT]: "red" as BadgeVariant,                        // Red - unfit (inapto)
+  },
+
+  // Leave Status (Medicina do Trabalho)
+  LEAVE: {
+    [LEAVE_STATUS.SCHEDULED]: "gray" as BadgeVariant,              // Gray - scheduled
+    [LEAVE_STATUS.ACTIVE]: "blue" as BadgeVariant,                 // Blue - ongoing leave
+    [LEAVE_STATUS.COMPLETED]: "completed" as BadgeVariant,         // Green - completed
+    [LEAVE_STATUS.CANCELLED]: "cancelled" as BadgeVariant,         // Red - cancelled
+  },
+
+  // Benefit Enrollment Status (Departamento Pessoal)
+  BENEFIT_ENROLLMENT: {
+    [BENEFIT_ENROLLMENT_STATUS.ACTIVE]: "green" as BadgeVariant,       // Green - active enrollment
+    [BENEFIT_ENROLLMENT_STATUS.SUSPENDED]: "suspended" as BadgeVariant, // Suspended styling
+    [BENEFIT_ENROLLMENT_STATUS.OPTED_OUT]: "gray" as BadgeVariant,     // Gray - opted out
+    [BENEFIT_ENROLLMENT_STATUS.TERMINATED]: "red" as BadgeVariant,     // Red - terminated
   },
 
   // Backup Status / Type / Priority (lowercase values from API)
@@ -772,8 +863,11 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   CHARGED: "charged",
   RATE_LIMITED: "onHold",
   BOUNCED: "bounced",
-  DISMISSED: "dismissed",
-  EFFECTED: "effected",
+  // Contract statuses (EmploymentContract redesign — replaced legacy DISMISSED/EFFECTED)
+  EXPERIENCE: "pending",
+  NOTICE_PERIOD: "orange",
+  ON_LEAVE: "purple",
+  TERMINATED: "red",
   REPROVED: "reproved",
 
   // Operations
@@ -828,11 +922,11 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   PARTIALLY_RETURNED: "orange",
   FULLY_RETURNED: "green",
 
-  // Commission Status fallback
-  FULL_COMMISSION: "green",
-  PARTIAL_COMMISSION: "blue",
-  NO_COMMISSION: "orange",
-  SUSPENDED_COMMISSION: "red",
+  // Bonification Status fallback
+  FULL_BONIFICATION: "green",
+  PARTIAL_BONIFICATION: "blue",
+  NO_BONIFICATION: "orange",
+  SUSPENDED_BONIFICATION: "red",
 };
 
 /**

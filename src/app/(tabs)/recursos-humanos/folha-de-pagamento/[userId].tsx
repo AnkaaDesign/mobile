@@ -20,6 +20,8 @@ import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { spacing } from "@/constants/design-system";
+import { HoleriteBreakdownCard } from "@/components/human-resources/payroll/detail/holerite-breakdown-card";
+import type { CompletePayrollCalculation } from "@/types/payroll";
 
 function getMonthName(month?: number): string {
   if (!month) return "";
@@ -60,6 +62,10 @@ export default function PayrollDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // Live CompletePayrollCalculation used to render the full holerite breakdown
+  // (new EARNING lines, calculator warnings, justified/unjustified absence split,
+  // proration avos). Best-effort: any failure simply hides the card.
+  const [liveCalculation, setLiveCalculation] = useState<CompletePayrollCalculation | null>(null);
 
   useScreenReady(!loading);
 
@@ -117,6 +123,31 @@ export default function PayrollDetailScreen() {
 
     fetchPayroll();
   }, [payrollId]);
+
+  // Fetch the live CompletePayrollCalculation for the full holerite breakdown.
+  // Mirrors the web payroll detail: best-effort, hides the card on any failure.
+  useEffect(() => {
+    const userId = payroll?.user?.id ?? payroll?.userId;
+    const calcYear = payroll?.year;
+    const calcMonth = payroll?.month;
+    if (!userId || !calcYear || !calcMonth) {
+      setLiveCalculation(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await payrollService.getLiveCalculation(userId, calcYear, calcMonth);
+        const calc = ((response?.data as any)?.data?.calculations ?? null) as CompletePayrollCalculation | null;
+        if (!cancelled) setLiveCalculation(calc ?? null);
+      } catch {
+        if (!cancelled) setLiveCalculation(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [payroll?.user?.id, payroll?.userId, payroll?.year, payroll?.month]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -387,6 +418,17 @@ export default function PayrollDetailScreen() {
               </View>
             </CardContent>
           </Card>
+
+          {/* Full holerite breakdown (live CompletePayrollCalculation) — shows the
+              new legal earnings (salário-família, insalubridade, periculosidade),
+              calculator warnings (margem consignável 35% clamp, líquido pisado em
+              zero), the justified-vs-unjustified absence split and prorationFactor
+              (avos). Rendered above the legacy Valores card when available. */}
+          {liveCalculation && (
+            <View style={styles.card}>
+              <HoleriteBreakdownCard calculation={liveCalculation} />
+            </View>
+          )}
 
           {/* Detailed Financial Card */}
           <Card style={styles.card}>

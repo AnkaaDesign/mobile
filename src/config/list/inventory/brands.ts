@@ -146,6 +146,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
           const idsArray = Array.from(ids)
           router?.push(`/estoque/produtos/marcas/editar-em-lote?ids=${idsArray.join(',')}`)
         },
+        canPerform: canEditItems,
       },
       {
         key: 'delete',

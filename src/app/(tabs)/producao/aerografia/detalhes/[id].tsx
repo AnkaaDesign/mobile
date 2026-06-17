@@ -48,7 +48,11 @@ export default function AirbrushingDetailScreen() {
       query={query as any}
       icon={IconBrush}
       title={(a) => a.task?.name ?? "Airbrushing"}
-      privilege={{ any: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.ADMIN] }}
+      privilege={{ any: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL] }}
+      // PRODUCTION may VIEW airbrushings but must NOT edit them (mirrors API
+      // PUT /airbrushings/:id roles minus the read-only PRODUCTION sector).
+      editPrivilege={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL] }}
+      deletePrivilege={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL] }}
       editGuard={{ editable: EDITABLE_AIRBRUSHING_STATUSES }}
       editRoute={(a) => mobileRoute(routes.production.airbrushings.edit(a.id))}
       deleteAction={{

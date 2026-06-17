@@ -248,6 +248,82 @@ export const routes = {
       edit: (id: string) => `/recursos-humanos/advertencias/editar/${id}`,
       root: "/recursos-humanos/advertencias",
     },
+    // Departamento Pessoal (Área Andressa). Mobile keeps these under /recursos-humanos/*.
+    admissions: {
+      create: "/recursos-humanos/admissoes/cadastrar",
+      details: (id: string) => `/recursos-humanos/admissoes/detalhes/${id}`,
+      edit: (id: string) => `/recursos-humanos/admissoes/editar/${id}`,
+      list: "/recursos-humanos/admissoes/listar",
+      root: "/recursos-humanos/admissoes",
+    },
+    terminations: {
+      create: "/recursos-humanos/rescisoes/cadastrar",
+      details: (id: string) => `/recursos-humanos/rescisoes/detalhes/${id}`,
+      edit: (id: string) => `/recursos-humanos/rescisoes/editar/${id}`,
+      list: "/recursos-humanos/rescisoes/listar",
+      root: "/recursos-humanos/rescisoes",
+    },
+    benefits: {
+      create: "/recursos-humanos/beneficios/cadastrar",
+      details: (id: string) => `/recursos-humanos/beneficios/detalhes/${id}`,
+      edit: (id: string) => `/recursos-humanos/beneficios/editar/${id}`,
+      list: "/recursos-humanos/beneficios/listar",
+      root: "/recursos-humanos/beneficios",
+    },
+    vacations: {
+      create: "/recursos-humanos/ferias/cadastrar",
+      details: (id: string) => `/recursos-humanos/ferias/detalhes/${id}`,
+      edit: (id: string) => `/recursos-humanos/ferias/editar/${id}`,
+      list: "/recursos-humanos/ferias/listar",
+      root: "/recursos-humanos/ferias",
+    },
+    salaryRanges: {
+      list: "/recursos-humanos/faixas-salariais",
+      root: "/recursos-humanos/faixas-salariais",
+    },
+    salaryAdjustments: {
+      details: (id: string) => `/recursos-humanos/reajustes/detalhes/${id}`,
+      list: "/recursos-humanos/reajustes/listar",
+      root: "/recursos-humanos/reajustes",
+    },
+    promotions: {
+      details: (id: string) => `/recursos-humanos/promocoes/detalhes/${id}`,
+      list: "/recursos-humanos/promocoes/listar",
+      root: "/recursos-humanos/promocoes",
+    },
+    // Medicina do Trabalho (Área Andressa, Part E). Mirrors web occupational-health.
+    occupationalHealth: {
+      root: "/recursos-humanos/medicina",
+      // ASO / Exames ocupacionais
+      medicalExams: {
+        create: "/recursos-humanos/medicina/aso/cadastrar",
+        details: (id: string) => `/recursos-humanos/medicina/aso/detalhes/${id}`,
+        edit: (id: string) => `/recursos-humanos/medicina/aso/editar/${id}`,
+        list: "/recursos-humanos/medicina/aso/listar",
+        root: "/recursos-humanos/medicina/aso",
+      },
+      // Exames periódicos / a vencer
+      periodicExams: {
+        list: "/recursos-humanos/medicina/exames-periodicos/listar",
+        root: "/recursos-humanos/medicina/exames-periodicos",
+      },
+      // Afastamentos
+      leaves: {
+        create: "/recursos-humanos/medicina/afastamentos/cadastrar",
+        details: (id: string) => `/recursos-humanos/medicina/afastamentos/detalhes/${id}`,
+        edit: (id: string) => `/recursos-humanos/medicina/afastamentos/editar/${id}`,
+        list: "/recursos-humanos/medicina/afastamentos/listar",
+        root: "/recursos-humanos/medicina/afastamentos",
+      },
+      // CAT — Comunicação de Acidente de Trabalho
+      workAccidents: {
+        create: "/recursos-humanos/medicina/cat/cadastrar",
+        details: (id: string) => `/recursos-humanos/medicina/cat/detalhes/${id}`,
+        edit: (id: string) => `/recursos-humanos/medicina/cat/editar/${id}`,
+        list: "/recursos-humanos/medicina/cat/listar",
+        root: "/recursos-humanos/medicina/cat",
+      },
+    },
     payroll: {
       root: "/recursos-humanos/folha-de-pagamento",
       list: "/recursos-humanos/folha-de-pagamento",
@@ -287,12 +363,12 @@ export const routes = {
 
   // Inventory - Estoque - Inventory Management
   inventory: {
-    externalWithdrawals: {
-      create: "/estoque/retiradas-externas/cadastrar",
-      details: (id: string) => `/estoque/retiradas-externas/detalhes/${id}`,
-      edit: (id: string) => `/estoque/retiradas-externas/editar/${id}`,
-      list: "/estoque/retiradas-externas",
-      root: "/estoque/retiradas-externas",
+    externalOperations: {
+      create: "/estoque/operacoes-externas/cadastrar",
+      details: (id: string) => `/estoque/operacoes-externas/detalhes/${id}`,
+      edit: (id: string) => `/estoque/operacoes-externas/editar/${id}`,
+      list: "/estoque/operacoes-externas",
+      root: "/estoque/operacoes-externas",
     },
     borrows: {
       create: "/estoque/emprestimos/cadastrar",
