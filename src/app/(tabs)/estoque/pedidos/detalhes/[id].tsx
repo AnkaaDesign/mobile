@@ -31,9 +31,9 @@ export default function OrderDetailScreen() {
   const { colors } = useTheme();
   const nav = useNav();
   const { deleteMutation, markPaidMutation, markAwaitingPaymentMutation } = useOrderMutations();
-  // Payment actions are restricted to finance/admin (mirrors web).
+  // Payment actions are financial-only (FINANCIAL / ACCOUNTING / ADMIN), mirrors web+API.
   const { allowed: canManagePayment } = usePrivilegeGate({
-    any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL],
+    any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ACCOUNTING],
   });
 
   const query = useOrder(id as string, {

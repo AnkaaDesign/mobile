@@ -2,6 +2,7 @@ import { useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
@@ -18,12 +19,36 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useNav } from "@/contexts/nav";
 
-import { vacationCreateSchema, vacationUpdateSchema } from "@/schemas/vacation";
-import type { VacationCreateFormData, VacationUpdateFormData } from "@/schemas/vacation";
+import { vacationUpdateSchema } from "@/schemas/vacation";
+import type { VacationUpdateFormData } from "@/schemas/vacation";
 import type { Vacation } from "@/types";
-import { useVacationMutations } from "@/hooks/useVacation";
+import { useVacationMutations, useVacationBatchMutations } from "@/hooks/useVacation";
 import { getUsers } from "@/api-client";
 import { entitledDaysForAbsences } from "@/components/human-resources/vacation/vacation-utils";
+import { PAYROLL_EMPLOYEE_TYPES } from "@/constants/enums";
+
+// Sentinel value for the "Coletiva / Todos" picker option (selects every
+// eligible active CLT collaborator at submit time).
+const ALL_COLLABORATORS = "__ALL__";
+
+// Create-form schema: one multiselect picker (userIds) + the shared taking
+// fields. Submits as a batch (one Vacation per selected user) via /vacations/batch.
+const vacationFormCreateSchema = z.object({
+  userIds: z.array(z.string()).min(1, { message: "Selecione ao menos um colaborador" }),
+  startDate: z.coerce.date({
+    required_error: "A data de início do gozo é obrigatória",
+    invalid_type_error: "data de início inválida",
+  }),
+  days: z.coerce.number().int().min(1, { message: "O gozo deve ter ao menos 1 dia" }).max(30, { message: "O gozo não pode exceder 30 dias" }),
+  unjustifiedAbsencesInPeriod: z.coerce.number().int().min(0).optional(),
+  abonoPecuniarioDays: z.coerce.number().int().min(0).max(10).optional(),
+  soldThird: z.boolean().optional(),
+  acquisitiveStart: z.coerce.date().optional(),
+  acquisitiveEnd: z.coerce.date().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
+
+type VacationFormCreateData = z.infer<typeof vacationFormCreateSchema>;
 
 interface VacationFormProps {
   mode: "create" | "update";
@@ -37,13 +62,14 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
   const goBack = () => nav.goBack();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
-  const { createAsync, updateAsync, createMutation, updateMutation } = useVacationMutations();
+  const { updateAsync, updateMutation } = useVacationMutations();
+  const { batchCreateAsync, isBatchCreating } = useVacationBatchMutations();
 
-  const createDefaults: VacationCreateFormData = {
-    userId: "",
-    // contractId/acquisitive* omitted → service derives from the current
-    // contract's admissionDate.
-    startDate: null,
+  const createDefaults: VacationFormCreateData = {
+    userIds: [],
+    // acquisitive* omitted → service derives from the current contract's
+    // admissionDate. startDate is now required (create-and-schedule).
+    startDate: undefined as unknown as Date,
     days: 30,
     unjustifiedAbsencesInPeriod: 0,
     abonoPecuniarioDays: 0,
@@ -66,24 +92,28 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
         }
       : ({} as VacationUpdateFormData);
 
-  const form = useForm<VacationCreateFormData | VacationUpdateFormData>({
-    resolver: zodResolver(mode === "create" ? vacationCreateSchema : vacationUpdateSchema),
-    defaultValues: mode === "create" ? createDefaults : updateDefaults,
+  const form = useForm<VacationFormCreateData | VacationUpdateFormData>({
+    resolver: zodResolver(mode === "create" ? vacationFormCreateSchema : vacationUpdateSchema),
+    defaultValues: mode === "create" ? (createDefaults as any) : updateDefaults,
     mode: "onTouched",
     reValidateMode: "onChange",
     criteriaMode: "all",
   });
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoading = isBatchCreating || updateMutation.isPending;
 
   // ---- entitledDays preview (art. 130 scale by faltas) ----
   const watchedAbsences = Number(form.watch("unjustifiedAbsencesInPeriod" as any)) || 0;
   const scaledEntitledDays = entitledDaysForAbsences(watchedAbsences);
 
   // ---- Collaborator async loader (create only) ----
+  // Only eligible = active + CLT/payroll employeeType (the create gate is CLT-only).
   const buildUserQuery = useCallback((searchTerm: string, page: number) => {
     const pageSize = 50;
-    const where: any = { isActive: true };
+    const where: any = {
+      status: { not: "DISMISSED" },
+      currentEmployeeType: { in: [...PAYROLL_EMPLOYEE_TYPES] },
+    };
     if (searchTerm && searchTerm.trim()) {
       where.OR = [
         { name: { contains: searchTerm.trim(), mode: "insensitive" } },
@@ -102,13 +132,19 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
   const loadCollaboratorOptions = useCallback(
     async (searchTerm: string, page: number = 1) => {
       const response = await getUsers(buildUserQuery(searchTerm, page) as any);
+      const options: ComboboxOption[] = (response.data || []).map(
+        (u: any): ComboboxOption => ({
+          value: u.id,
+          label: u.name + (u.position ? ` - ${u.position.name}` : ""),
+        })
+      );
+      // "Coletiva / Todos" is the FIRST option (only on the first page) and
+      // selects every eligible active CLT collaborator at submit time.
+      if (page === 1) {
+        options.unshift({ value: ALL_COLLABORATORS, label: "Coletiva / Todos os elegíveis" });
+      }
       return {
-        data: (response.data || []).map(
-          (u: any): ComboboxOption => ({
-            value: u.id,
-            label: u.name + (u.position ? ` - ${u.position.name}` : ""),
-          })
-        ),
+        data: options,
         hasMore: response.meta?.hasNextPage || false,
       };
     },
@@ -119,19 +155,58 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
     if (mode === "update" && vacation?.user) {
       return [{ value: vacation.user.id, label: vacation.user.name }];
     }
-    return [];
+    return [{ value: ALL_COLLABORATORS, label: "Coletiva / Todos os elegíveis" }];
   }, [mode, vacation?.user]);
 
-  const handleSubmit = async (data: VacationCreateFormData | VacationUpdateFormData) => {
+  // Resolves the picker selection to a concrete list of userIds. When the
+  // "Coletiva / Todos" sentinel is chosen, fetch every eligible active CLT user.
+  const resolveUserIds = useCallback(
+    async (selected: string[]): Promise<string[]> => {
+      if (!selected.includes(ALL_COLLABORATORS)) return selected;
+      const ids = new Set(selected.filter((s) => s !== ALL_COLLABORATORS));
+      let page = 1;
+      // Paginate through all eligible collaborators.
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const response = await getUsers(buildUserQuery("", page) as any);
+        (response.data || []).forEach((u: any) => ids.add(u.id));
+        if (!response.meta?.hasNextPage) break;
+        page += 1;
+      }
+      return Array.from(ids);
+    },
+    [buildUserQuery]
+  );
+
+  const handleSubmit = async (data: VacationFormCreateData | VacationUpdateFormData) => {
     try {
       if (mode === "create") {
-        const result = await createAsync(data as VacationCreateFormData);
-        const newId = (result as any)?.data?.id || (result as any)?.id;
+        const create = data as VacationFormCreateData;
+        const userIds = await resolveUserIds(create.userIds);
+        if (userIds.length === 0) {
+          form.setError("userIds" as any, { message: "Nenhum colaborador elegível selecionado" });
+          return;
+        }
+        const shared = {
+          startDate: create.startDate,
+          days: create.days,
+          unjustifiedAbsencesInPeriod: create.unjustifiedAbsencesInPeriod,
+          abonoPecuniarioDays: create.abonoPecuniarioDays,
+          soldThird: create.soldThird,
+          acquisitiveStart: create.acquisitiveStart,
+          acquisitiveEnd: create.acquisitiveEnd,
+          notes: create.notes,
+        };
+        const result = await batchCreateAsync({
+          vacations: userIds.map((userId) => ({ userId, ...shared })) as any,
+        });
         onSuccess?.();
-        if (newId) {
-          nav.replace(`/recursos-humanos/ferias/detalhes/${newId}` as any);
+        // Single-create → jump straight to the new detail; batch → return to list.
+        const created = (result as any)?.data?.success ?? [];
+        if (userIds.length === 1 && created[0]?.id) {
+          nav.replace(`/recursos-humanos/ferias/detalhes/${created[0].id}` as any);
         } else {
-          goBack();
+          nav.replace(`/recursos-humanos/ferias/listar` as any);
         }
       } else if (vacation) {
         await updateAsync({ id: vacation.id, data: data as VacationUpdateFormData });
@@ -184,22 +259,24 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
             >
               {mode === "create" ? (
                 <FormFieldGroup
-                  label="Colaborador"
+                  label="Colaboradores"
                   required
-                  error={(form.formState.errors as any).userId?.message}
+                  error={(form.formState.errors as any).userIds?.message}
+                  helper='Selecione um ou mais colaboradores, ou "Coletiva / Todos" para todos os elegíveis.'
                 >
                   <Controller
                     control={form.control}
-                    name={"userId" as any}
+                    name={"userIds" as any}
                     render={({ field: { onChange, value }, fieldState: { error } }) => (
                       <Combobox
                         async
+                        mode="multiple"
                         queryFn={loadCollaboratorOptions as any}
                         initialOptions={initialCollaboratorOptions}
                         minSearchLength={0}
-                        value={value || ""}
+                        value={value || []}
                         onValueChange={onChange}
-                        placeholder="Selecione o colaborador"
+                        placeholder="Selecione os colaboradores"
                         searchPlaceholder="Buscar colaborador..."
                         disabled={isLoading}
                         searchable
@@ -327,7 +404,8 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
               <FormRow>
                 <FormFieldGroup
                   label="Início do Gozo"
-                  helper="Opcional — defina ao agendar"
+                  required
+                  helper="Data de início das férias"
                   error={(form.formState.errors as any).startDate?.message}
                 >
                   <Controller

@@ -19,6 +19,7 @@ import {
   concessiveExpiryLevel,
   daysUntilConcessiveEnd,
   vacationStatusVariant,
+  isVacationInProgress,
 } from "./vacation-utils";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -61,6 +62,7 @@ export function VacationStatusCard({ vacation }: { vacation: Vacation }) {
         <Badge variant={vacationStatusVariant(vacation.status) as any}>
           {VACATION_STATUS_LABELS[vacation.status] ?? vacation.status}
         </Badge>
+        {isVacationInProgress(vacation) && <Badge variant="active">Em gozo</Badge>}
         {vacation.groupId && <Badge variant="secondary">Coletiva</Badge>}
         <VacationExpiryBadge vacation={vacation} />
       </View>

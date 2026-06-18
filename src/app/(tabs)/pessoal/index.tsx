@@ -18,6 +18,7 @@ import {
   IconClock,
   IconClipboardList,
   IconMessageCircle,
+  IconBeach,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrentUser } from "@/hooks/useAuth";
@@ -77,6 +78,14 @@ export default function PessoalScreen() {
       description: "Feriados do ano",
       icon: <IconCalendarEvent size={28} color={colors.primary} />,
       route: "/(tabs)/pessoal/meus-feriados",
+      available: true,
+    },
+    {
+      id: "vacations",
+      title: "Minhas Férias",
+      description: "Períodos de férias",
+      icon: <IconBeach size={28} color={colors.primary} />,
+      route: "/(tabs)/pessoal/minhas-ferias",
       available: true,
     },
     {

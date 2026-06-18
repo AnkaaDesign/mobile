@@ -2299,12 +2299,11 @@ export const INSS_BENEFIT_SPECIES_LABELS: Record<INSS_BENEFIT_SPECIES, string> =
   [INSS_BENEFIT_SPECIES.OTHER]: "Outra espécie",
 };
 
+// Férias → labels femininos (Agendada / Paga / Vencida).
 export const VACATION_STATUS_LABELS: Record<VACATION_STATUS, string> = {
-  [VACATION_STATUS.OPEN]: "Aberto",
-  [VACATION_STATUS.SCHEDULED]: "Agendado",
-  [VACATION_STATUS.IN_PROGRESS]: "Em gozo",
-  [VACATION_STATUS.PAID]: "Pago",
-  [VACATION_STATUS.EXPIRED]: "Vencido",
+  [VACATION_STATUS.SCHEDULED]: "Agendada",
+  [VACATION_STATUS.PAID]: "Paga",
+  [VACATION_STATUS.EXPIRED]: "Vencida",
 };
 
 export const THIRTEENTH_STATUS_LABELS: Record<THIRTEENTH_STATUS, string> = {

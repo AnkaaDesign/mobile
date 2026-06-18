@@ -10,12 +10,13 @@ import type { Termination } from "@/types";
 import {
   routes,
   TERMINATION_STATUS,
+  TERMINATION_TYPE,
+  NOTICE_TYPE,
   MEDICAL_EXAM_TYPE,
   MEDICAL_EXAM_STATUS,
 } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { TERMINATION_STATUS_LABELS } from "@/constants/enum-labels";
-import { TERMINATION_STATUS_ORDER } from "@/constants/sortOrders";
 import { useTerminationAdvance, useTerminationRegress } from "@/hooks/useTermination";
 import { useMedicalExamMutations } from "@/hooks";
 import { useNav } from "@/contexts/nav";
@@ -28,8 +29,10 @@ interface Props {
   canManage?: boolean;
 }
 
-// Ordered pipeline (CANCELLED is a side-state, not a step).
-const STEPS: TERMINATION_STATUS[] = [
+// Full ordered pipeline (CANCELLED is a side-state, not a step). The effective
+// chain for a given termination is derived from this by skipping steps that do
+// not apply (see buildSteps).
+const ALL_STEPS: TERMINATION_STATUS[] = [
   TERMINATION_STATUS.INITIATED,
   TERMINATION_STATUS.NOTICE_PERIOD,
   TERMINATION_STATUS.DOCUMENTS,
@@ -40,6 +43,19 @@ const STEPS: TERMINATION_STATUS[] = [
   TERMINATION_STATUS.COMPLETED,
 ];
 
+/**
+ * Effective step chain for this termination (mirrors web/api):
+ *  - NOTICE_PERIOD only applies to aviso prévio TRABALHADO (noticeType WORKED).
+ *  - MEDICAL_EXAM (exame demissional) does not apply when type === DEATH.
+ */
+function buildSteps(t: Termination): TERMINATION_STATUS[] {
+  return ALL_STEPS.filter((s) => {
+    if (s === TERMINATION_STATUS.NOTICE_PERIOD && t.noticeType !== NOTICE_TYPE.WORKED) return false;
+    if (s === TERMINATION_STATUS.MEDICAL_EXAM && t.type === TERMINATION_TYPE.DEATH) return false;
+    return true;
+  });
+}
+
 export function TerminationStatusStepperCard({ termination: t, canManage }: Props) {
   const { colors } = useTheme();
   const nav = useNav();
@@ -48,20 +64,25 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
   const { createAsync } = useMedicalExamMutations();
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const currentOrder = TERMINATION_STATUS_ORDER[t.status] ?? 0;
+  const STEPS = buildSteps(t);
+  const currentIndex = STEPS.indexOf(t.status);
   const isCancelled = t.status === TERMINATION_STATUS.CANCELLED;
   const isCompleted = t.status === TERMINATION_STATUS.COMPLETED;
   const isTerminal = isCancelled || isCompleted;
 
-  const nextStep = STEPS.find((s) => (TERMINATION_STATUS_ORDER[s] ?? 0) > currentOrder);
-  // Last step strictly before the current one (retrocede uma etapa).
-  const prevStep = [...STEPS].reverse().find((s) => (TERMINATION_STATUS_ORDER[s] ?? 0) < currentOrder);
+  // Next/prev are derived from the effective chain so skipped steps are never
+  // offered (e.g. NOTICE_PERIOD on aviso indenizado, MEDICAL_EXAM on óbito).
+  const nextStep = currentIndex >= 0 ? STEPS[currentIndex + 1] ?? undefined : undefined;
+  const prevStep = currentIndex > 0 ? STEPS[currentIndex - 1] : undefined;
 
   // DISMISSAL exam linked to this termination (auto-created by the server on the
   // medical step; restricted to exams from the current process via createdAt).
-  const medicalOrder = TERMINATION_STATUS_ORDER[TERMINATION_STATUS.MEDICAL_EXAM] ?? 0;
+  const medicalStepIndex = STEPS.indexOf(TERMINATION_STATUS.MEDICAL_EXAM);
   const { exam: dismissalExam } = useLinkedMedicalExam(t.userId, MEDICAL_EXAM_TYPE.DISMISSAL, t.createdAt);
-  const showExamSection = !isCancelled && (currentOrder >= medicalOrder || !!dismissalExam);
+  // Show the exam section once we've reached (or passed) the medical step, or if
+  // an exam already exists — never for DEATH (no medical step in the chain).
+  const showExamSection =
+    !isCancelled && medicalStepIndex >= 0 && (currentIndex >= medicalStepIndex || !!dismissalExam);
 
   const handleScheduleExam = () => {
     if (!t.userId) return;
@@ -156,13 +177,23 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
         {isCancelled ? (
           <View style={[styles.cancelledBanner, { backgroundColor: colors.destructive + "14", borderColor: colors.destructive }]}>
             <Icon name="x-circle" size={18} color={colors.destructive} />
-            <ThemedText style={{ color: colors.foreground }}>Rescisão cancelada.</ThemedText>
+            <View style={styles.cancelledTextBlock}>
+              <ThemedText style={{ color: colors.foreground, fontWeight: "600" }}>
+                {t.cancelledFromStatus
+                  ? `Rescisão cancelada na etapa "${TERMINATION_STATUS_LABELS[t.cancelledFromStatus]}".`
+                  : "Rescisão cancelada."}
+              </ThemedText>
+              {t.cancellationReason ? (
+                <ThemedText style={{ color: colors.mutedForeground }}>
+                  {`Motivo: ${t.cancellationReason}`}
+                </ThemedText>
+              ) : null}
+            </View>
           </View>
         ) : (
           <View style={styles.stepper}>
-            {STEPS.map((step) => {
-              const order = TERMINATION_STATUS_ORDER[step] ?? 0;
-              const done = order < currentOrder;
+            {STEPS.map((step, idx) => {
+              const done = currentIndex >= 0 && idx < currentIndex;
               const active = step === t.status;
               const color = active ? colors.primary : done ? "#22c55e" : colors.mutedForeground;
               return (
@@ -274,10 +305,11 @@ const styles = StyleSheet.create({
   examTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   cancelledBanner: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 8,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
   },
+  cancelledTextBlock: { flex: 1, gap: 4 },
 });

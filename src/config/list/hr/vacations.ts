@@ -3,14 +3,13 @@ import type { Vacation } from '@/types'
 import { VACATION_STATUS } from '@/constants/enums'
 import { VACATION_STATUS_LABELS } from '@/constants/enum-labels'
 import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
+import { isVacationInProgress } from '@/components/human-resources/vacation/vacation-utils'
 
 // Status → Badge variant (no VACATION entry in getBadgeVariant; map inline like warnings).
 const STATUS_VARIANT: Record<VACATION_STATUS, string> = {
-  [VACATION_STATUS.OPEN]: 'pending',
-  [VACATION_STATUS.SCHEDULED]: 'inProgress',
-  [VACATION_STATUS.IN_PROGRESS]: 'active',
-  [VACATION_STATUS.PAID]: 'completed',
-  [VACATION_STATUS.EXPIRED]: 'expired',
+  [VACATION_STATUS.SCHEDULED]: 'warning',
+  [VACATION_STATUS.PAID]: 'success',
+  [VACATION_STATUS.EXPIRED]: 'error',
 }
 
 /**
@@ -66,9 +65,9 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (v) => VACATION_STATUS_LABELS[v.status] || v.status,
+        render: (v) => (isVacationInProgress(v) ? 'Em gozo' : VACATION_STATUS_LABELS[v.status] || v.status),
         format: 'badge',
-        badge: (v) => ({ variant: STATUS_VARIANT[v.status] ?? 'default' }),
+        badge: (v) => ({ variant: isVacationInProgress(v) ? 'active' : STATUS_VARIANT[v.status] ?? 'default' }),
       },
       {
         key: 'days',

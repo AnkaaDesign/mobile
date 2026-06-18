@@ -4,7 +4,6 @@ import { IconBeach } from "@tabler/icons-react-native";
 
 import { useVacation, useVacationMutations, useVacationAdvance } from "@/hooks/useVacation";
 import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, VACATION_STATUS } from "@/constants";
-import { VACATION_STATUS_LABELS } from "@/constants/enum-labels";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { spacing } from "@/constants/design-system";
@@ -18,20 +17,6 @@ import {
   VacationReciboCard,
 } from "@/components/human-resources/vacation";
 import type { Vacation } from "@/types";
-
-// Forward chain of the status machine (EXPIRED handled separately) — mirrors web.
-const STATUS_CHAIN: VACATION_STATUS[] = [
-  VACATION_STATUS.OPEN,
-  VACATION_STATUS.SCHEDULED,
-  VACATION_STATUS.IN_PROGRESS,
-  VACATION_STATUS.PAID,
-];
-
-function getNextStatus(status: VACATION_STATUS): VACATION_STATUS | null {
-  const i = STATUS_CHAIN.indexOf(status);
-  if (i === -1) return null;
-  return STATUS_CHAIN[i + 1] ?? null;
-}
 
 export default function VacationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,32 +34,30 @@ export default function VacationDetailScreen() {
 
   const vacation = (query.data as any)?.data as Vacation | undefined;
 
-  const isFinal =
-    vacation?.status === VACATION_STATUS.PAID || vacation?.status === VACATION_STATUS.EXPIRED;
-  const nextStatus = vacation ? getNextStatus(vacation.status) : null;
-  const nextIsPaid = nextStatus === VACATION_STATUS.PAID;
+  // markPaid: transition SCHEDULED | EXPIRED → PAID. PAID is the only terminal
+  // state. Recibo is always present (auto-calculated on create), so the only
+  // guard is "not already paid".
+  const isPaid = vacation?.status === VACATION_STATUS.PAID;
 
   let advanceDisabledReason: string | null = null;
-  if (vacation) {
-    if (isFinal || !nextStatus) {
-      advanceDisabledReason = `Não é possível alterar o status de umas férias ${VACATION_STATUS_LABELS[vacation.status].toLowerCase()}.`;
-    } else if (nextIsPaid && !vacation.paymentDate) {
-      advanceDisabledReason = "Não é possível concluir como Pago: a data de pagamento não foi informada (edite as férias).";
-    }
+  if (vacation && isPaid) {
+    advanceDisabledReason = "Estas férias já estão pagas.";
   }
 
-  const handleAdvance = () => {
+  const handleMarkPaid = () => {
     if (!vacation || advanceDisabledReason) return;
     Alert.alert(
-      "Avançar status das férias",
-      `Avançar de ${VACATION_STATUS_LABELS[vacation.status]} para ${nextStatus ? VACATION_STATUS_LABELS[nextStatus] : "-"}?`,
+      "Marcar férias como pagas",
+      `Confirmar o pagamento do recibo de férias de ${vacation.user?.name ?? "este colaborador"}?`,
       [
         { text: "Voltar", style: "cancel" },
         {
-          text: "Avançar",
+          text: "Marcar como Paga",
           onPress: async () => {
             try {
-              await nav.withLoading(async () => advance.mutateAsync({ id: vacation.id }));
+              await nav.withLoading(async () =>
+                advance.mutateAsync({ id: vacation.id, data: { status: VACATION_STATUS.PAID } }),
+              );
             } catch {
               // api-client surfaces the error.
             }
@@ -95,10 +78,10 @@ export default function VacationDetailScreen() {
       editRoute={(v: Vacation) => `/recursos-humanos/ferias/editar/${v.id}` as any}
       actions={[
         {
-          key: "advance",
-          label: "Avançar Status",
-          icon: "player-track-next",
-          onPress: handleAdvance,
+          key: "markPaid",
+          label: "Marcar como Paga",
+          icon: "cash",
+          onPress: handleMarkPaid,
           disabled: !!advanceDisabledReason || advance.isPending,
         },
       ]}

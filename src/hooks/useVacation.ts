@@ -28,6 +28,7 @@ import type {
   VacationPeriodBalanceQuery,
 } from "@/schemas";
 import type {
+  Vacation,
   VacationGetManyResponse,
   VacationGetUniqueResponse,
   VacationCreateResponse,
@@ -39,6 +40,7 @@ import type {
 } from "@/types";
 import { vacationKeys, userKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
+import { useCurrentUser } from "./useAuth";
 
 // =====================================================
 // Vacation Service Adapter
@@ -69,9 +71,9 @@ const baseHooks = createEntityHooks<
   VacationUpdateResponse,
   VacationDeleteResponse,
   VacationBatchCreateFormData,
-  VacationBatchCreateResponse<VacationCreateFormData>,
+  VacationBatchCreateResponse<Vacation>,
   VacationBatchUpdateFormData,
-  VacationBatchUpdateResponse<VacationUpdateFormData & { id: string }>,
+  VacationBatchUpdateResponse<Vacation>,
   VacationBatchDeleteFormData,
   VacationBatchDeleteResponse
 >({
@@ -86,6 +88,20 @@ export const useVacations = baseHooks.useList;
 export const useVacation = baseHooks.useDetail;
 export const useVacationMutations = baseHooks.useMutations;
 export const useVacationBatchMutations = baseHooks.useBatchMutations;
+
+/**
+ * Infinite list of the SIGNED-IN user's OWN vacations (read-only self-service).
+ * Injects `where.userId = me` so the employee only sees their own records.
+ */
+export function useMyVacationsInfinite(params?: any) {
+  const { data: currentUser } = useCurrentUser();
+  const userId = currentUser?.id;
+  const mergedParams = {
+    ...params,
+    where: { ...(params?.where ?? {}), userId },
+  };
+  return useVacationsInfinite(mergedParams, { enabled: !!userId });
+}
 
 // =====================================================
 // Specialized Queries / Mutations (balance, calculate, status machine)

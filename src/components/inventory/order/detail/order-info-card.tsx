@@ -209,8 +209,8 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
         )}
       </DetailSection>
 
-      {/* Payment Information Section */}
-      {(order.paymentMethod || order.paymentResponsible || order.paymentResponsibleId) && (
+      {/* Payment Information Section — financial-only, hidden from WAREHOUSE. */}
+      {canViewPrices && (order.paymentMethod || order.paymentResponsible || order.paymentResponsibleId) && (
         <>
           {/* Separator */}
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
@@ -249,10 +249,28 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
               />
             )}
 
-            {/* Due Days (only when payment method is BANK_SLIP) */}
-            {order.paymentMethod === "BANK_SLIP" && order.paymentDueDays && (
+            {/* Parcelas (only when payment method is BANK_SLIP with 2x+) */}
+            {order.paymentMethod === "BANK_SLIP" && (order.installmentCount || 1) > 1 && (
               <DetailField
-                label="Prazo de Vencimento"
+                label="Parcelas"
+                value={`${order.installmentCount}x`}
+                icon="receipt"
+              />
+            )}
+
+            {/* First due date (only when payment method is BANK_SLIP) */}
+            {order.paymentMethod === "BANK_SLIP" && order.paymentFirstDueDate && (
+              <DetailField
+                label={(order.installmentCount || 1) > 1 ? "1º Vencimento" : "Vencimento"}
+                value={formatDate(order.paymentFirstDueDate)}
+                icon="calendar"
+              />
+            )}
+
+            {/* Interval between parcelas (only when BANK_SLIP with 2x+) */}
+            {order.paymentMethod === "BANK_SLIP" && (order.installmentCount || 1) > 1 && order.paymentDueDays && (
+              <DetailField
+                label="Intervalo entre Parcelas"
                 value={`${order.paymentDueDays} dias`}
                 icon="calendar"
               />

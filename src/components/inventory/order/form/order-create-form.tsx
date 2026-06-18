@@ -21,7 +21,8 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations, useCanViewPrices } from "@/hooks";
 import { getUsers } from "@/api-client";
 import { useMultiStepForm } from "@/hooks";
-import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS, SECTOR_PRIVILEGES } from "@/constants";
+import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, SECTOR_PRIVILEGES } from "@/constants";
+import { BoletoPaymentFields } from "./boleto-payment-fields";
 import { formatCurrency, formatQuantity, formatPixKey } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
 import type { FormStep } from "@/components/ui/form-steps";
@@ -54,6 +55,8 @@ const orderCreateFormSchema = z.object({
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
   paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
+  paymentFirstDueDate: z.date().optional().nullable(),
+  installmentCount: z.number().int().min(1).max(48).optional().nullable(),
   paymentResponsibleId: z.string().uuid("Selecione um responsável válido").optional().nullable(),
 });
 
@@ -121,6 +124,8 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       paymentMethod: null,
       paymentPix: null,
       paymentDueDays: null,
+      paymentFirstDueDate: null,
+      installmentCount: 1,
       paymentResponsibleId: null,
     },
     defaultQuantity: 1,
@@ -359,6 +364,8 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         paymentMethod: multiStepForm.formData.paymentMethod || undefined,
         paymentPix: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX ? multiStepForm.formData.paymentPix || undefined : undefined,
         paymentDueDays: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.paymentDueDays || undefined : undefined,
+        paymentFirstDueDate: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.paymentFirstDueDate || undefined : undefined,
+        installmentCount: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.installmentCount || 1 : 1,
         paymentResponsibleId: multiStepForm.formData.paymentResponsibleId || undefined,
       };
 
@@ -977,6 +984,8 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                           }
                           if (val !== PAYMENT_METHOD.BANK_SLIP) {
                             handleFormChange("paymentDueDays", null);
+                            handleFormChange("paymentFirstDueDate", null);
+                            handleFormChange("installmentCount", 1);
                           }
                         }}
                         options={[
@@ -1026,30 +1035,15 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                   />
                 )}
 
-                {/* Due Days (shown when BANK_SLIP is selected) */}
+                {/* Boleto scheduling — parcelas, primeiro vencimento (presets ou data),
+                    and the interval between parcelas. */}
                 {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP && (
-                  <Controller
-                    control={form.control}
-                    name="paymentDueDays"
-                    render={({ field: { value } }) => (
-                      <View style={styles.fieldGroup}>
-                        <Label>Prazo de Vencimento</Label>
-                        <Combobox
-                          value={value?.toString() || ""}
-                          onValueChange={(val) => handleFormChange("paymentDueDays", val ? Number(val) : null)}
-                          options={BANK_SLIP_DUE_DAYS_OPTIONS.map((days) => ({
-                            label: `${days} dias`,
-                            value: days.toString(),
-                          }))}
-                          placeholder="Selecione o prazo"
-                          disabled={isSubmitting}
-                          clearable
-                        />
-                        <ThemedText style={styles.helpText}>
-                          Prazo para vencimento do boleto
-                        </ThemedText>
-                      </View>
-                    )}
+                  <BoletoPaymentFields
+                    installmentCount={multiStepForm.formData.installmentCount}
+                    paymentFirstDueDate={multiStepForm.formData.paymentFirstDueDate}
+                    paymentDueDays={multiStepForm.formData.paymentDueDays}
+                    onChange={handleFormChange}
+                    disabled={isSubmitting}
                   />
                 )}
 

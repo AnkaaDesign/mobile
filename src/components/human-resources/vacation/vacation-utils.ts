@@ -41,20 +41,43 @@ export function concessiveExpiryLevel(args: {
   return "ok";
 }
 
+/**
+ * Centralized vacation status → Badge variant color map.
+ * SCHEDULED = warning/amber, PAID = success/green, EXPIRED = error/red.
+ */
+export const VACATION_STATUS_VARIANTS: Record<VACATION_STATUS, string> = {
+  [VACATION_STATUS.SCHEDULED]: "warning",
+  [VACATION_STATUS.PAID]: "success",
+  [VACATION_STATUS.EXPIRED]: "error",
+};
+
 /** Maps a vacation status to a Badge variant (no VACATION entry in getBadgeVariant). */
 export function vacationStatusVariant(status: VACATION_STATUS): string {
-  switch (status) {
-    case VACATION_STATUS.OPEN:
-      return "pending";
-    case VACATION_STATUS.SCHEDULED:
-      return "inProgress";
-    case VACATION_STATUS.IN_PROGRESS:
-      return "active";
-    case VACATION_STATUS.PAID:
-      return "completed";
-    case VACATION_STATUS.EXPIRED:
-      return "expired";
-    default:
-      return "default";
-  }
+  return VACATION_STATUS_VARIANTS[status] ?? "default";
+}
+
+const startOfDay = (d: Date): Date => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+
+/**
+ * "Em gozo" — computed display state (never stored). True when the vacation is
+ * SCHEDULED and today falls within [startDate, startDate + days - 1].
+ */
+export function isVacationInProgress(v: {
+  status: VACATION_STATUS;
+  startDate?: Date | string | null;
+  days?: number | null;
+}): boolean {
+  if (v.status !== VACATION_STATUS.SCHEDULED || !v.startDate) return false;
+  const start = new Date(v.startDate);
+  if (isNaN(start.getTime())) return false;
+  const days = v.days ?? 0;
+  if (days <= 0) return false;
+  const today = startOfDay(new Date());
+  const gozoStart = startOfDay(start);
+  const gozoEnd = startOfDay(new Date(gozoStart.getTime() + (days - 1) * 24 * 60 * 60 * 1000));
+  return today >= gozoStart && today <= gozoEnd;
 }

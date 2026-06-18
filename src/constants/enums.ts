@@ -456,10 +456,10 @@ export enum INSS_BENEFIT_SPECIES {
 }
 
 // Status de um período de férias.
+// Modelo colapsado: SCHEDULED → PAID (+ EXPIRED). "Em gozo" é computado das datas,
+// nunca armazenado (ver isVacationInProgress).
 export enum VACATION_STATUS {
-  OPEN = "OPEN",
   SCHEDULED = "SCHEDULED",
-  IN_PROGRESS = "IN_PROGRESS",
   PAID = "PAID",
   EXPIRED = "EXPIRED",
 }

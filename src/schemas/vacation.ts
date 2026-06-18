@@ -22,6 +22,7 @@ export const vacationIncludeSchema = z
   .object({
     user: relationIncludeSchema.optional(),
     contract: relationIncludeSchema.optional(),
+    group: relationIncludeSchema.optional(),
   })
   .partial();
 
@@ -34,7 +35,6 @@ const orderByDirection = z.enum(["asc", "desc"]);
 const vacationOrderByFields = z.object({
   id: orderByDirection.optional(),
   status: orderByDirection.optional(),
-  statusOrder: orderByDirection.optional(),
   acquisitiveStart: orderByDirection.optional(),
   acquisitiveEnd: orderByDirection.optional(),
   concessiveEnd: orderByDirection.optional(),
@@ -101,8 +101,8 @@ export const vacationWhereSchema: z.ZodSchema = z.lazy(() =>
       id: stringWhere.optional(),
       userId: stringWhere.optional(),
       contractId: z.union([stringWhere, z.null()]).optional(),
+      groupId: z.union([stringWhere, z.null()]).optional(),
       status: stringWhere.optional(),
-      statusOrder: numberWhere.optional(),
       entitledDays: numberWhere.optional(),
       days: numberWhere.optional(),
       unjustifiedAbsencesInPeriod: numberWhere.optional(),
@@ -215,8 +215,12 @@ export const vacationCreateSchema = z.object({
   contractId: z.string().uuid({ message: "Vínculo inválido" }).nullable().optional(),
   acquisitiveStart: z.coerce.date().optional(),
   acquisitiveEnd: z.coerce.date().optional(),
-  // Gozo start of this taking; null/omitted while not yet scheduled.
-  startDate: z.coerce.date({ invalid_type_error: "data de início inválida" }).nullable().optional(),
+  // Gozo start of this taking. Now REQUIRED (create-and-schedule in one step;
+  // past dates are allowed for back-registration).
+  startDate: z.coerce.date({
+    required_error: "A data de início do gozo é obrigatória",
+    invalid_type_error: "data de início inválida",
+  }),
   // Gozo days of THIS taking.
   days: gozoDaysSchema,
   unjustifiedAbsencesInPeriod: z.coerce

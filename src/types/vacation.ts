@@ -22,7 +22,8 @@ export interface Vacation extends BaseEntity {
   // base type); the Prisma column is nullable only for soft-deleted/orphan rows.
   userId: string;
   contractId: string | null;
-  groupId?: string | null;
+  // Férias coletivas: vínculo opcional ao grupo que originou este registro individual.
+  groupId: string | null;
   deletedAt?: Date | null;
   acquisitiveStart: Date;
   acquisitiveEnd: Date;
@@ -35,7 +36,6 @@ export interface Vacation extends BaseEntity {
   startDate?: Date | null;
   days: number;
   status: VACATION_STATUS;
-  statusOrder: number;
   abonoPecuniarioDays: number;
   soldThird: boolean;
   baseRemuneration: number | null;
@@ -50,6 +50,9 @@ export interface Vacation extends BaseEntity {
 
   // Relations
   user?: User;
+  contract?: any;
+  // Férias coletivas: grupo que originou este registro individual (quando expandido).
+  group?: any;
 }
 
 // =====================

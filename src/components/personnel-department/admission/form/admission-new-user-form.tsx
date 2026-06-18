@@ -349,7 +349,7 @@ export function AdmissionNewUserForm({ onSuccess, onCancel }: AdmissionNewUserFo
                         onBlur={onBlur}
                         placeholder="000.00000.00-0"
                         keyboardType="numeric"
-                        editable={lockedIdentity}
+                        editable={!lockedIdentity}
                         error={!!form.formState.errors.pis}
                       />
                     )}
