@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Holiday } from '@/types'
-import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
+import { canEditHrEntities, canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
 
 export const holidaysListConfig: ListConfig<Holiday> = {
   key: 'hr-holidays',
@@ -74,7 +74,7 @@ export const holidaysListConfig: ListConfig<Holiday> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (holiday) => `Deseja excluir o feriado "${holiday.name}"?`,
@@ -160,7 +160,7 @@ export const holidaysListConfig: ListConfig<Holiday> = {
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ holidayIds: Array.from(ids) })
         },
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
       },
     ],
   },

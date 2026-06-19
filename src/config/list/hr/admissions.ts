@@ -2,7 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Admission } from '@/types'
 import { ADMISSION_STATUS } from '@/constants/enums'
 import { ADMISSION_STATUS_LABELS } from '@/constants/enum-labels'
-import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
+import { canEditHrEntities, canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
 
 export const admissionsListConfig: ListConfig<Admission> = {
   key: 'hr-admissions',
@@ -87,7 +87,7 @@ export const admissionsListConfig: ListConfig<Admission> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
         confirm: {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir esta admissão?`,
@@ -189,7 +189,7 @@ export const admissionsListConfig: ListConfig<Admission> = {
         onPress: async (ids, actions) => {
           await actions?.batchDeleteAsync?.({ admissionIds: Array.from(ids) })
         },
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
       },
     ],
   },

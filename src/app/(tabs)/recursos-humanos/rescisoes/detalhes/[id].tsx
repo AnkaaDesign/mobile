@@ -39,7 +39,12 @@ export default function TerminationDetailScreen() {
   // Mutating verbas/documents/status is gated on HR/ADMIN (view is broader,
   // but the cards only render management actions when canManage is true).
   const { allowed: canManagePrivilege } = usePrivilegeGate({
-    any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+    any: [
+      SECTOR_PRIVILEGES.ACCOUNTING,
+      SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+      SECTOR_PRIVILEGES.ADMIN,
+      SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+    ],
   });
 
   const query = useTermination(terminationId, {
@@ -62,11 +67,10 @@ export default function TerminationDetailScreen() {
           SECTOR_PRIVILEGES.ACCOUNTING,
           SECTOR_PRIVILEGES.HUMAN_RESOURCES,
           SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
         ],
       }}
-      deletePrivilege={{
-        any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
-      }}
+      deletePrivilege={SECTOR_PRIVILEGES.ADMIN}
       editGuard={{ field: "status", editable: EDITABLE_TERMINATION_STATUSES }}
       editRoute={(t) => mobileRoute(`/recursos-humanos/rescisoes/editar/${t.id}`)}
       deleteAction={{

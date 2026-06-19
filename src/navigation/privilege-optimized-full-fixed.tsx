@@ -543,6 +543,10 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
         'recursos-humanos/calculos',
         'recursos-humanos/feriados/',
         'recursos-humanos/horarios/',
+        // PM gains DP admissões/rescisões/férias (mirrors web PM route access).
+        'recursos-humanos/admissoes/',
+        'recursos-humanos/rescisoes/',
+        'recursos-humanos/ferias/',
       ];
       if (pmAllowedHRPaths.some(allowed => path.startsWith(allowed) || path === allowed.replace(/\/$/, ''))) {
         return true;

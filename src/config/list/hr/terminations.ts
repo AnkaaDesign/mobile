@@ -5,7 +5,7 @@ import {
   TERMINATION_TYPE_LABELS,
   TERMINATION_STATUS_LABELS,
 } from '@/constants/enum-labels'
-import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
+import { canEditHrEntities, canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
 import { formatCurrency } from '@/utils/number'
 
 // Status → badge variant mapping for the Rescisões list.
@@ -123,7 +123,7 @@ export const terminationsListConfig: ListConfig<Termination> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
         confirm: {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir esta rescisão?`,
@@ -244,7 +244,7 @@ export const terminationsListConfig: ListConfig<Termination> = {
         onPress: async (ids, actions) => {
           await actions?.batchDeleteAsync?.({ terminationIds: Array.from(ids) })
         },
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
       },
     ],
   },

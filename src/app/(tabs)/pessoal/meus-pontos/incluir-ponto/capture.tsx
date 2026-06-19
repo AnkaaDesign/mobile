@@ -108,6 +108,15 @@ export default function IncluirPontoCaptureScreen() {
 
   const configQuery = useInclusaoPontoConfig({ enabled: true });
   const config = configQuery.data?.data;
+  // The config endpoint can return HTTP 200 + { success: false, message } when
+  // Secullum refuses the load (e.g. employee not registered). The hook returns
+  // the full body, so detect that here and surface the real Secullum message —
+  // without it the screen would silently render with no config and a dead
+  // "Incluir Ponto" button.
+  const configLoadFailed = configQuery.data?.success === false;
+  const configErrorMessage =
+    configQuery.data?.message ||
+    "Não foi possível carregar a configuração de inclusão de ponto.";
 
   const createMutation = useCreateMyInclusaoPonto();
 
@@ -301,7 +310,8 @@ export default function IncluirPontoCaptureScreen() {
     !coords ||
     refreshingLocation ||
     createMutation.isPending ||
-    config?.funcionarioAfastado === true;
+    config?.funcionarioAfastado === true ||
+    configLoadFailed;
 
   // Reasons to block "Tirar Foto" — same as above plus camera permission UI
   // is handled inside the modal itself.
@@ -413,6 +423,15 @@ export default function IncluirPontoCaptureScreen() {
                 <IconAlertTriangle size={16} color="#b91c1c" />
                 <ThemedText style={[styles.warningText, { color: "#b91c1c" }]}>
                   Você está em afastamento. Não é possível incluir ponto.
+                </ThemedText>
+              </View>
+            )}
+
+            {configLoadFailed && (
+              <View style={styles.warningRow}>
+                <IconAlertTriangle size={16} color="#b91c1c" />
+                <ThemedText style={[styles.warningText, { color: "#b91c1c" }]}>
+                  {configErrorMessage}
                 </ThemedText>
               </View>
             )}

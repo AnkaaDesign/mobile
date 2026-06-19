@@ -20,6 +20,7 @@ import { notificationCategoriesService } from '@/services/notifications/notifica
 import { parseDeepLink, resolveNotificationNavigation } from '@/lib/deep-linking';
 import { pushNotificationService, markAsRead, notify } from '@/api-client';
 import { notificationKeys } from '@/hooks/queryKeys';
+import { useUnreadNotificationsCount } from '@/hooks/use-unread-notifications-count';
 import { useAuth } from './auth-context';
 
 interface PushNotificationsContextType {
@@ -47,13 +48,23 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
   const hasHandledInitialNotification = useRef(false);
   const hasAttemptedRegistration = useRef(false);
 
+  // Single source of truth for the unread count (same one the in-app header
+  // bell uses). We mirror it onto the OS app-icon badge below.
+  const { count: unreadCount } = useUnreadNotificationsCount();
+
   // Get project ID from app.json dynamically
   const projectId = Constants.expoConfig?.extra?.eas?.projectId || 'f8f06f52-853f-4ab6-a783-181208687fa7';
 
   // Handle notification received while app is in foreground
   const handleNotificationReceived = useCallback((notification: Notifications.Notification) => {
     setNotification(notification);
-  }, []);
+    // Refresh the unread count so the OS badge (and header bell) update promptly
+    // for notifications that arrive while the app is open.
+    queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unread(user.id) });
+    }
+  }, [queryClient, user?.id]);
 
   // Handle notification tap - navigate to deep link
   const handleNotificationResponse = useCallback(async (response: Notifications.NotificationResponse) => {
@@ -323,15 +334,30 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
     }
   }, [isAuthenticated, isRegistered, unregisterToken]);
 
-  // Clear badge when app comes to foreground
+  // Keep the OS app-icon badge in sync with the real unread count.
+  //
+  // Previously this provider only ever cleared the badge to 0 when the app
+  // foregrounded and nothing ever set it, so the icon badge never showed a
+  // number. Now we mirror the in-app unread count onto the OS badge whenever
+  // it changes (notification arrives, marked read, periodic refetch, etc.).
+  useEffect(() => {
+    setBadgeCount(unreadCount);
+  }, [unreadCount]);
+
+  // When the app returns to the foreground, refetch notifications so the count
+  // (and therefore the badge) reflects anything that arrived while backgrounded.
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
       ) {
-        // Clear badge when app comes to foreground
-        setBadgeCount(0);
+        // Refetch the notification lists; the badge-sync effect above then
+        // updates the OS badge once the fresh count resolves.
+        queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
+        if (user?.id) {
+          queryClient.invalidateQueries({ queryKey: notificationKeys.unread(user.id) });
+        }
       }
       appState.current = nextAppState;
     };
@@ -341,7 +367,7 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [queryClient, user?.id]);
 
   // Memoizing prevents every consumer of usePushNotifications from re-rendering
   // every time this provider re-renders for unrelated reasons.

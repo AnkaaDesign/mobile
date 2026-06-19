@@ -53,6 +53,32 @@ declare global {
       node?: string;
     };
   } | undefined;
+
+  /**
+   * Base64 encode/decode. Available natively in the Hermes JS engine used by
+   * React Native, but absent from the `ES2021` lib (it lives in `lib.dom`).
+   * Declared here so file decoding utilities type-check without pulling in DOM.
+   */
+  function atob(data: string): string;
+  function btoa(data: string): string;
+
+  /**
+   * WHATWG URL members. React Native ships a `URL` runtime (Hermes / url polyfill)
+   * that implements the full parsing API, but the `ES2021` lib's `URL` type is
+   * minimal and omits the component accessors. Augment it with the members the
+   * app relies on (file-viewer-utils.ts uses `hostname` / `pathname`).
+   */
+  interface URL {
+    href: string;
+    protocol: string;
+    host: string;
+    hostname: string;
+    port: string;
+    pathname: string;
+    search: string;
+    hash: string;
+    readonly origin: string;
+  }
 }
 
 /**
@@ -106,32 +132,6 @@ interface MessageEvent extends Event {
   data: any;
   origin: string;
   lastEventId: string;
-}
-
-/**
- * Base64 encode/decode. Available natively in the Hermes JS engine used by
- * React Native, but absent from the `ES2021` lib (it lives in `lib.dom`).
- * Declared here so file decoding utilities type-check without pulling in DOM.
- */
-declare function atob(data: string): string;
-declare function btoa(data: string): string;
-
-/**
- * WHATWG URL members. React Native ships a `URL` runtime (Hermes / url polyfill)
- * that implements the full parsing API, but the `ES2021` lib's `URL` type is
- * minimal and omits the component accessors. Augment it with the members the
- * app relies on (file-viewer-utils.ts uses `hostname` / `pathname`).
- */
-interface URL {
-  href: string;
-  protocol: string;
-  host: string;
-  hostname: string;
-  port: string;
-  pathname: string;
-  search: string;
-  hash: string;
-  readonly origin: string;
 }
 
 // Export empty object to make this file a module (required for declare global to work)

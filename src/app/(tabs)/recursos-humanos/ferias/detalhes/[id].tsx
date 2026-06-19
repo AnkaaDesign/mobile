@@ -73,7 +73,7 @@ export default function VacationDetailScreen() {
       icon={IconBeach}
       title={(v: Vacation) => (v.user?.name ? `Férias — ${v.user.name}` : "Férias")}
       privilege={{
-        any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
       }}
       editRoute={(v: Vacation) => `/recursos-humanos/ferias/editar/${v.id}` as any}
       actions={[

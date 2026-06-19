@@ -1,7 +1,7 @@
 // packages/interfaces/src/order.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
+import type { ORDER_STATUS, ORDER_PAYMENT_STATUS, ORDER_INSTALLMENT_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
 import type { Item, ItemIncludes, ItemOrderBy, ItemWhere } from "./item";
 import type { File, FileIncludes } from "./file";
@@ -149,6 +149,7 @@ export interface Order extends BaseEntity {
   // Relations (optional, populated based on query)
   paymentResponsible?: User;
   paymentAssignedBy?: User;
+  installments?: OrderInstallment[];
   budgets?: File[];
   invoices?: File[];
   receipts?: File[];
@@ -165,6 +166,24 @@ export interface Order extends BaseEntity {
     items?: number;
     activities?: number;
   };
+}
+
+// Payment installment (boleto 2x/3x). Single-payment PIX/cartão orders carry none.
+export interface OrderInstallment {
+  id: string;
+  orderId: string;
+  number: number;
+  dueDate: Date | null;
+  amount: number;
+  paidAmount: number;
+  status: ORDER_INSTALLMENT_STATUS;
+  paidAt: Date | null;
+  paidById: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  order?: Order;
+  paidBy?: User;
 }
 
 // =====================

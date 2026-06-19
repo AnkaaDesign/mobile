@@ -17,6 +17,7 @@ export const orderIncludeSchema = z
     invoiceReimbursements: z.boolean().optional(),
     receipts: z.boolean().optional(),
     reimbursements: z.boolean().optional(),
+    installments: z.boolean().optional(),
     supplier: z
       .union([
         z.boolean(),

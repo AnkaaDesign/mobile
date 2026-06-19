@@ -9,7 +9,7 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 export default function TerminationCreateScreen() {
   return (
     <PrivilegeGate
-      required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+      required={{ any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER] }}
     >
       <TerminationCreateScreenInner />
     </PrivilegeGate>

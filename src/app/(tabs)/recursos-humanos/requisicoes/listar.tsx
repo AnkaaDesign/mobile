@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ScrollView, Modal, Pressable, useWindowDimensions } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ScrollView, Modal, Pressable, useWindowDimensions, Alert } from "react-native";
 import { router } from "expo-router";
 import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import { useSecullumRequests, useSecullumApproveRequest, useSecullumRejectRequest } from "@/hooks/secullum";
@@ -261,7 +261,7 @@ export default function RequisitionsListScreen() {
     if (!selectedRequest) return;
 
     try {
-      await approveMutation.mutateAsync({
+      const result = await approveMutation.mutateAsync({
         requestId: selectedRequest.Id.toString(),
         data: {
           Versao: selectedRequest.Versao,
@@ -269,6 +269,17 @@ export default function RequisitionsListScreen() {
           TipoSolicitacao: selectedRequest.TipoSolicitacao || 0
         }
       });
+
+      // Secullum returns HTTP 200 + { success: false, message } for business
+      // rejections (the interceptor stays silent on it, and this catch never
+      // fires for a 200). Surface the real message instead of a false success.
+      if (result?.data?.success === false) {
+        Alert.alert(
+          "Erro",
+          result.data.message || "Não foi possível aprovar a requisição."
+        );
+        return;
+      }
 
       setSelectedRequest(null);
       setShowDetailView(false);
@@ -283,7 +294,7 @@ export default function RequisitionsListScreen() {
     if (!selectedRequest || !rejectReason.trim()) return;
 
     try {
-      await rejectMutation.mutateAsync({
+      const result = await rejectMutation.mutateAsync({
         requestId: selectedRequest.Id.toString(),
         data: {
           Versao: selectedRequest.Versao,
@@ -291,6 +302,16 @@ export default function RequisitionsListScreen() {
           TipoSolicitacao: selectedRequest.TipoSolicitacao || 0
         }
       });
+
+      // HTTP 200 + { success: false, message } carries the real Secullum error
+      // (the interceptor stays silent on it). Show it instead of a false success.
+      if (result?.data?.success === false) {
+        Alert.alert(
+          "Erro",
+          result.data.message || "Não foi possível rejeitar a requisição."
+        );
+        return;
+      }
 
       setSelectedRequest(null);
       setShowDetailView(false);

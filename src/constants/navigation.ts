@@ -516,10 +516,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // RECURSOS HUMANOS
+  // DEPARTAMENTO PESSOAL (mirrors web's consolidated "Departamento Pessoal" section).
+  // Mobile keeps all screens under /recursos-humanos/* (paths intentionally unchanged).
   {
     id: "recursos-humanos",
-    title: "Recursos Humanos",
+    title: "Departamento Pessoal",
     icon: "users",
     path: "/recursos-humanos",
     requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ACCOUNTING],
@@ -615,9 +616,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Admissões",
         icon: "userCheck",
         path: "/recursos-humanos/admissoes/listar",
-        // ACCOUNTING-only: new accounting-sector item. HR/ADMIN keep the rest of their
-        // Recursos Humanos menu unchanged. (Page-level route privileges stay open.)
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        // Mirrors web DP: HR/ACCOUNTING/ADMIN. (PM reaches it via the dedicated
+        // PRODUCTION_MANAGER "Departamento Pessoal" group below.)
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "rh-admissoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/admissoes/cadastrar" },
           { id: "rh-admissoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/admissoes/detalhes/:id", isDynamic: true },
@@ -629,7 +630,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Rescisões",
         icon: "logOut",
         path: "/recursos-humanos/rescisoes/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "rh-rescisoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/rescisoes/cadastrar" },
           { id: "rh-rescisoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/rescisoes/detalhes/:id", isDynamic: true },
@@ -688,6 +689,56 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "rh-beneficios-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/beneficios/cadastrar" },
           { id: "rh-beneficios-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/beneficios/detalhes/:id", isDynamic: true },
           { id: "rh-beneficios-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/beneficios/editar/:id", isDynamic: true },
+        ],
+      },
+    ],
+  },
+
+  // ============================================================
+  // DEPARTAMENTO PESSOAL — PRODUCTION_MANAGER group.
+  // Mirrors the web PM "Departamento Pessoal" menu group: PM gains
+  // Admissões / Rescisões / Férias (create/read/update — delete stays ADMIN-only).
+  // Separate section because the main DP section above excludes PM, and the
+  // mobile menu filter has no ADMIN/PM bypass on a privilege-gated parent.
+  // ============================================================
+  {
+    id: "dp-production-manager",
+    title: "Departamento Pessoal",
+    icon: "users",
+    path: "/recursos-humanos/admissoes/listar",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
+    children: [
+      {
+        id: "pm-admissoes",
+        title: "Admissões",
+        icon: "userCheck",
+        path: "/recursos-humanos/admissoes/listar",
+        children: [
+          { id: "pm-admissoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/admissoes/cadastrar" },
+          { id: "pm-admissoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/admissoes/detalhes/:id", isDynamic: true },
+          { id: "pm-admissoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/admissoes/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "pm-rescisoes",
+        title: "Rescisões",
+        icon: "logOut",
+        path: "/recursos-humanos/rescisoes/listar",
+        children: [
+          { id: "pm-rescisoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/rescisoes/cadastrar" },
+          { id: "pm-rescisoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/rescisoes/detalhes/:id", isDynamic: true },
+          { id: "pm-rescisoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/rescisoes/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "pm-ferias",
+        title: "Férias",
+        icon: "beach",
+        path: "/recursos-humanos/ferias/listar",
+        children: [
+          { id: "pm-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
+          { id: "pm-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
+          { id: "pm-ferias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/ferias/editar/:id", isDynamic: true },
         ],
       },
     ],

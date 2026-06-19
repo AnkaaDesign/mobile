@@ -169,7 +169,7 @@ export default function TimeAdjustmentRequestsListScreen() {
           style: "default",
           onPress: async () => {
             try {
-              await approveMutation.mutateAsync({
+              const result = await approveMutation.mutateAsync({
                 requestId: request.id,
                 data: {
                   Versao: request.raw.Versao,
@@ -177,6 +177,17 @@ export default function TimeAdjustmentRequestsListScreen() {
                   TipoSolicitacao: request.raw.Tipo ?? 0,
                 },
               });
+              // Secullum can return HTTP 200 with { success: false, message }
+              // (e.g. "Já há uma solicitação pendente nesta data."). The axios
+              // interceptor suppresses the success toast but shows no error — so
+              // surface the real Secullum message here and stop.
+              if (result?.data?.success === false) {
+                Alert.alert(
+                  "Erro",
+                  result.data.message || "Não foi possível aprovar a requisição.",
+                );
+                return;
+              }
               setSelectedRequest(null);
             } catch (_error) {
               // Error toast is shown by axios interceptor — nothing to do here.
@@ -205,7 +216,7 @@ export default function TimeAdjustmentRequestsListScreen() {
       return;
     }
     try {
-      await rejectMutation.mutateAsync({
+      const result = await rejectMutation.mutateAsync({
         requestId: rejectTarget.id,
         data: {
           Versao: rejectTarget.raw.Versao,
@@ -213,6 +224,15 @@ export default function TimeAdjustmentRequestsListScreen() {
           TipoSolicitacao: rejectTarget.raw.Tipo ?? 0,
         },
       });
+      // HTTP 200 + { success: false, message } carries the real Secullum error
+      // (the interceptor stays silent on it). Show it instead of a false success.
+      if (result?.data?.success === false) {
+        Alert.alert(
+          "Erro",
+          result.data.message || "Não foi possível rejeitar a requisição.",
+        );
+        return;
+      }
       setRejectTarget(null);
       setRejectReason("");
       setSelectedRequest(null);

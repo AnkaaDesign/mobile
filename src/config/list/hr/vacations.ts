@@ -2,7 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Vacation } from '@/types'
 import { VACATION_STATUS } from '@/constants/enums'
 import { VACATION_STATUS_LABELS } from '@/constants/enum-labels'
-import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
+import { canEditHrEntities, canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
 import { isVacationInProgress } from '@/components/human-resources/vacation/vacation-utils'
 
 // Status → Badge variant (no VACATION entry in getBadgeVariant; map inline like warnings).
@@ -176,7 +176,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
         confirm: {
           title: 'Confirmar Exclusão',
           message: () => 'Deseja excluir este registro de férias?',
@@ -290,7 +290,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         onPress: async (ids, actions) => {
           await actions?.batchDeleteAsync?.({ vacationIds: Array.from(ids) })
         },
-        canPerform: canDeleteHrEntities,
+        canPerform: canDeleteDpRecords,
       },
     ],
   },

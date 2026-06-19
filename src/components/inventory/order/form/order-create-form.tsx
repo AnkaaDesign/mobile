@@ -888,7 +888,9 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               </CardContent>
             </Card>
 
-            {/* Payment Section */}
+            {/* Payment Section — hidden entirely from roles that can't view prices
+                (e.g. WAREHOUSE), matching web. */}
+            {canViewPrices && (
             <Card style={styles.card}>
               <CardHeader>
                 <CardTitle>Pagamento (Opcional)</CardTitle>
@@ -1098,6 +1100,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Items Table */}
             <Card style={[styles.card, styles.itemsCard]}>

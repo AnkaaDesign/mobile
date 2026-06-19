@@ -13,7 +13,7 @@ import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 
 export default function AdmissionDetailScreen() {
   return (
-    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}>
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER] }}>
       <AdmissionDetailScreenInner />
     </PrivilegeGate>
   );
@@ -28,7 +28,7 @@ function AdmissionDetailScreenInner() {
     },
   });
 
-  const { allowed: canManage } = usePrivilegeGate({ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] });
+  const { allowed: canManage } = usePrivilegeGate({ any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER] });
 
   useScreenReady(!isLoading);
   const admission = admissionResponse?.data;
