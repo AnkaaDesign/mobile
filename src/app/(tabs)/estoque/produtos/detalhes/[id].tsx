@@ -34,6 +34,7 @@ export default function ItemDetailScreen() {
       brands: true,
       category: true,
       supplier: true,
+      warehouseLocation: true,
       measures: true,
       prices: {
         orderBy: { createdAt: "desc" },

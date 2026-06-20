@@ -363,7 +363,13 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         items: itemsData,
         paymentMethod: multiStepForm.formData.paymentMethod || undefined,
         paymentPix: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX ? multiStepForm.formData.paymentPix || undefined : undefined,
-        paymentDueDays: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.paymentDueDays || undefined : undefined,
+        // Persist the default interval (30 days) shown for 2x+ boletos when none was explicitly chosen.
+        paymentDueDays:
+          multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP
+            ? (multiStepForm.formData.installmentCount || 1) > 1
+              ? multiStepForm.formData.paymentDueDays || 30
+              : multiStepForm.formData.paymentDueDays || undefined
+            : undefined,
         paymentFirstDueDate: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.paymentFirstDueDate || undefined : undefined,
         installmentCount: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.installmentCount || 1 : 1,
         paymentResponsibleId: multiStepForm.formData.paymentResponsibleId || undefined,

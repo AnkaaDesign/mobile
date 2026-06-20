@@ -8,8 +8,10 @@ import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function VacationEditScreen() {
+  // Edit is a write op — ACCOUNTING/HR/ADMIN only (PM is read-only, mirrors the
+  // API @Roles and the web edit page).
   return (
-    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER] }}>
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}>
       <VacationEditScreenInner />
     </PrivilegeGate>
   );

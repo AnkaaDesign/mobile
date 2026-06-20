@@ -23,8 +23,23 @@ interface Props {
 }
 
 function itemLabel(item: TerminationItem): string {
-  if (item.description) return item.description;
   return TERMINATION_ITEM_TYPE_LABELS[item.type] ?? item.type;
+}
+
+/**
+ * True when the description merely echoes the type label (case/accent/whitespace
+ * -insensitive) — e.g. "Saldo de salário" under "Saldo de Salário". Such echoes
+ * carry no extra info and are hidden (mirror of the web items-card behavior).
+ */
+function descriptionEchoesLabel(description: string, label: string): boolean {
+  const normalize = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  return normalize(description) === normalize(label);
 }
 
 export function TerminationVerbasCard({ termination: t, canManage }: Props) {
@@ -88,12 +103,15 @@ export function TerminationVerbasCard({ termination: t, canManage }: Props) {
     ]);
   };
 
-  const renderItem = (item: TerminationItem, isDiscount: boolean) => (
+  const renderItem = (item: TerminationItem, isDiscount: boolean) => {
+    const label = itemLabel(item);
+    const showDescription = !!item.description && !descriptionEchoesLabel(item.description, label);
+    return (
     <View key={item.id} style={[styles.itemRow, { borderBottomColor: colors.border }]}>
       <View style={styles.itemInfo}>
         <View style={styles.itemTitleRow}>
           <ThemedText style={{ color: colors.foreground, flexShrink: 1 }}>
-            {itemLabel(item)}
+            {label}
           </ThemedText>
           {item.isCustom ? (
             <Badge variant="outline">
@@ -101,6 +119,11 @@ export function TerminationVerbasCard({ termination: t, canManage }: Props) {
             </Badge>
           ) : null}
         </View>
+        {showDescription ? (
+          <ThemedText style={{ color: colors.mutedForeground, fontSize: 12 }}>
+            {item.description}
+          </ThemedText>
+        ) : null}
         {item.referenceQuantity != null || item.baseValue != null ? (
           <ThemedText style={{ color: colors.mutedForeground, fontSize: 12 }}>
             {item.referenceQuantity != null ? `${item.referenceQuantity} × ` : ""}
@@ -125,7 +148,8 @@ export function TerminationVerbasCard({ termination: t, canManage }: Props) {
         </TouchableOpacity>
       ) : null}
     </View>
-  );
+    );
+  };
 
   return (
     <DetailCard title="Verbas Rescisórias" icon="calculator">

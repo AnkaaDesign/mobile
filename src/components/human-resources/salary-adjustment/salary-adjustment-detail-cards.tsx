@@ -10,6 +10,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatCurrency, formatDate, formatDateTime } from "@/utils/formatters";
 import { formatPercentage } from "@/utils";
 import { SALARY_ADJUSTMENT_TYPE_LABELS } from "@/constants/enum-labels";
+import { SALARY_ADJUSTMENT_TYPE } from "@/constants/enums";
 import type { SalaryAdjustment, SalaryAdjustmentItem } from "@/types";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -39,6 +40,9 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 
 export function SalaryAdjustmentSummaryCard({ adjustment }: { adjustment: SalaryAdjustment }) {
   const { colors } = useTheme();
+  // Bonus reajustes (type BONUS) target the bonus PERIOD, not specific cargos —
+  // delta percentage, no items. Surface that instead of "0 cargos" (parity w/ web).
+  const isBonus = adjustment.type === SALARY_ADJUSTMENT_TYPE.BONUS;
   const itemsCount = adjustment.items?.length ?? 0;
 
   return (
@@ -59,7 +63,16 @@ export function SalaryAdjustmentSummaryCard({ adjustment }: { adjustment: Salary
         }
       />
       <Row label="Data de Vigência" value={formatDate(adjustment.effectiveDate)} />
-      <Row label="Cargos Afetados" value={<Badge variant="default">{String(itemsCount)}</Badge>} />
+      <Row
+        label="Cargos Afetados"
+        value={
+          isBonus ? (
+            <Badge variant="outline">Bônus (todos)</Badge>
+          ) : (
+            <Badge variant="default">{String(itemsCount)}</Badge>
+          )
+        }
+      />
       <Row label="Aplicado Por" value={adjustment.appliedBy?.name || "—"} />
       <Row label="Criado Em" value={adjustment.createdAt ? formatDateTime(adjustment.createdAt) : "—"} />
       {adjustment.note ? (
@@ -72,8 +85,21 @@ export function SalaryAdjustmentSummaryCard({ adjustment }: { adjustment: Salary
   );
 }
 
-export function SalaryAdjustmentItemsCard({ items }: { items: SalaryAdjustmentItem[] }) {
+export function SalaryAdjustmentItemsCard({ items, isBonus = false }: { items: SalaryAdjustmentItem[]; isBonus?: boolean }) {
   const { colors } = useTheme();
+
+  // A bonus reajuste carries no per-cargo items — it shifts the whole bonus
+  // period. Explain that instead of an "empty" cargos list (parity w/ web).
+  if (isBonus) {
+    return (
+      <Card style={styles.card}>
+        <SectionHeader icon={<IconBriefcase size={20} color={colors.primary} />} title="Cargos Reajustados" />
+        <ThemedText style={[styles.empty, { color: colors.mutedForeground }]}>
+          Reajuste do período de bonificação — aplica-se a todos os colaboradores elegíveis, sem vínculo a cargos específicos.
+        </ThemedText>
+      </Card>
+    );
+  }
 
   return (
     <Card style={styles.card}>

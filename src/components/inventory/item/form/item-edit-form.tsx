@@ -22,6 +22,7 @@ import { StatusToggle } from "./status-toggle";
 import { BrandSelector } from "./brand-selector";
 import { CategorySelector } from "./category-selector";
 import { SupplierSelector } from "./supplier-selector";
+import { WarehouseLocationSelector } from "./warehouse-location-selector";
 import { QuantityInput } from "./quantity-input";
 import { BoxQuantityInput } from "./box-quantity-input";
 import { CalculationBreakdown } from "./calculation-breakdown";
@@ -88,6 +89,9 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       brandIds: apiData.brands?.map((b) => b.id) ?? [],
       categoryId: apiData.categoryId,
       supplierId: apiData.supplierId,
+      warehouseLocationId: apiData.warehouseLocationId,
+      locationLevel: apiData.locationLevel ?? null,
+      locationColumn: apiData.locationColumn ?? null,
       estimatedLeadTime: apiData.estimatedLeadTime,
       isActive: apiData.isActive,
       categoryReviewNeeded: apiData.categoryReviewNeeded,
@@ -181,6 +185,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
               <BrandSelector disabled={isSubmitting} required={false} initialBrands={item.brands} />
               <CategorySelector disabled={isSubmitting} required={false} initialCategory={item.category} onCategoryChange={setSelectedCategoryId} />
               <SupplierSelector disabled={isSubmitting} initialSupplier={item.supplier} />
+              <WarehouseLocationSelector disabled={isSubmitting} initialWarehouseLocation={item.warehouseLocation} />
             </View>
           </FormCard>
 

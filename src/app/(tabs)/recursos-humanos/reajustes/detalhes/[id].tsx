@@ -3,7 +3,7 @@ import { useLocalSearchParams } from "expo-router";
 import { IconPercentage } from "@tabler/icons-react-native";
 
 import { useSalaryAdjustment, useSalaryAdjustmentMutations } from "@/hooks/useSalaryAdjustment";
-import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
+import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, SALARY_ADJUSTMENT_TYPE } from "@/constants";
 import { SALARY_ADJUSTMENT_TYPE_LABELS } from "@/constants/enum-labels";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -50,7 +50,10 @@ export default function SalaryAdjustmentDetailScreen() {
       {(adjustment: SalaryAdjustment) => (
         <View style={styles.body}>
           <SalaryAdjustmentSummaryCard adjustment={adjustment} />
-          <SalaryAdjustmentItemsCard items={adjustment.items ?? []} />
+          <SalaryAdjustmentItemsCard
+            items={adjustment.items ?? []}
+            isBonus={adjustment.type === SALARY_ADJUSTMENT_TYPE.BONUS}
+          />
           <ChangelogTimeline
             entityType={CHANGE_LOG_ENTITY_TYPE.SALARY_ADJUSTMENT}
             entityId={adjustment.id}

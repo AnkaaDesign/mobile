@@ -182,7 +182,6 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     paymentAssignedById: "Atribuído por",
     paymentStatus: "Status de Pagamento",
     paymentStatusOrder: "Ordem do Status de Pagamento",
-    paymentRequestedAt: "Pagamento Solicitado em",
     paidAt: "Pago em",
     items: "Itens do Pedido",
   },

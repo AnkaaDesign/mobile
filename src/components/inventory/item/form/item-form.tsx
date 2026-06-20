@@ -12,7 +12,7 @@ import { useTheme } from "@/lib/theme";
 import { FormCard } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import type { Supplier, ItemBrand, ItemCategory } from '../../../../types';
+import type { Supplier, ItemBrand, ItemCategory, WarehouseLocation } from '../../../../types';
 
 // Import all form components
 import { NameInput } from "./name-input";
@@ -21,6 +21,7 @@ import { StatusToggle } from "./status-toggle";
 import { BrandSelector } from "./brand-selector";
 import { CategorySelector } from "./category-selector";
 import { SupplierSelector } from "./supplier-selector";
+import { WarehouseLocationSelector } from "./warehouse-location-selector";
 import { QuantityInput } from "./quantity-input";
 import { BoxQuantityInput } from "./box-quantity-input";
 import { CalculationBreakdown } from "./calculation-breakdown";
@@ -42,6 +43,7 @@ interface BaseItemFormProps {
   onFormStateChange?: (formState: { isValid: boolean; isDirty: boolean }) => void;
   onCancel?: () => void;
   initialSupplier?: Supplier;
+  initialWarehouseLocation?: WarehouseLocation;
   initialBrands?: ItemBrand[];
   initialCategory?: ItemCategory;
 }
@@ -63,7 +65,7 @@ type ItemFormProps = CreateItemFormProps | UpdateItemFormProps;
 export function ItemForm(props: ItemFormProps) {
   const { colors } = useTheme();
   const canViewPrices = useCanViewPrices();
-  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory, initialBrands, initialSupplier } = props;
+  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory, initialBrands, initialSupplier, initialWarehouseLocation } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
 
   // Keyboard-aware scrolling (same pattern as task form)
@@ -100,6 +102,9 @@ export function ItemForm(props: ItemFormProps) {
     brandIds: [],
     categoryId: undefined,
     supplierId: null,
+    warehouseLocationId: null,
+    locationLevel: null,
+    locationColumn: null,
     estimatedLeadTime: 30,
     isActive: true,
     price: undefined,
@@ -263,6 +268,10 @@ export function ItemForm(props: ItemFormProps) {
                 <SupplierSelector
                   disabled={isSubmitting}
                   initialSupplier={initialSupplier}
+                />
+                <WarehouseLocationSelector
+                  disabled={isSubmitting}
+                  initialWarehouseLocation={initialWarehouseLocation}
                 />
               </View>
             </FormCard>

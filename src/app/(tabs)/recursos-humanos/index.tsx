@@ -41,11 +41,6 @@ export default function RecursosHumanosScreen() {
     () => nav.push(mobileRoute(routes.humanResources.holidays.list)),
     [nav],
   );
-  const goToPPE = useCallback(
-    () => nav.push(mobileRoute(routes.humanResources.ppe.root)),
-    [nav],
-  );
-
   // Pre-format metric values once per data change instead of re-running
   // toLocaleString on every render for each of the 6 metric cards.
   const formattedMetrics = useMemo(() => {
@@ -233,30 +228,6 @@ export default function RecursosHumanosScreen() {
                 <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Feriados</Text>
                 <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
                   {data?.holidayMetrics?.totalHolidays || 0}
-                </Text>
-              </View>
-            </Pressable>
-
-            <Pressable
-              onPress={goToPPE}
-              style={{
-                flex: 1,
-                minWidth: "45%",
-                backgroundColor: colors.card,
-                padding: 10,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: colors.border,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <Icon name="helmet" size={24} color="#f97316" />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>EPIs</Text>
-                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
-                  {data?.ppeMetrics?.totalPPE || 0}
                 </Text>
               </View>
             </Pressable>

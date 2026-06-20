@@ -83,7 +83,6 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
     { name: "recursos-humanos/cargos/index", title: "Cargos", module: "hr" },
     { name: "recursos-humanos/avisos/index", title: "Advertências", module: "hr" },
     // { name: "recursos-humanos/folha-de-pagamento/listar", title: "Folha de Pagamento", module: "hr" }, // Temporarily hidden for testing
-    { name: "recursos-humanos/epi/index", title: "EPIs", module: "hr" },
   ],
 
   // PRODUCTION routes

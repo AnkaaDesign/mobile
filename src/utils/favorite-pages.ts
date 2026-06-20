@@ -101,7 +101,6 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
   "/recursos-humanos/cargos/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_CADASTRAR,
   "/recursos-humanos/feriados/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_CADASTRAR,
   "/recursos-humanos/avisos/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_CADASTRAR,
-  "/recursos-humanos/epi/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_CADASTRAR,
   "/recursos-humanos/epi/entregas/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_ENTREGAS_CADASTRAR,
   "/recursos-humanos/epi/agendamentos/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_AGENDAMENTOS_CADASTRAR,
   "/recursos-humanos/setores/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_CADASTRAR,

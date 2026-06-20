@@ -90,7 +90,7 @@ export const admissionsListConfig: ListConfig<Admission> = {
         canPerform: canDeleteDpRecords,
         confirm: {
           title: 'Confirmar Exclusão',
-          message: () => `Deseja excluir esta admissão?`,
+          message: () => `Deseja excluir esta admissão? Apenas admissões canceladas ou concluídas podem ser excluídas — cancele a admissão em andamento antes de excluí-la.`,
         },
         onPress: async (admission, _, context) => {
           await context?.delete?.(admission.id)

@@ -72,6 +72,7 @@ export * from "./sector";
 export * from "./goal";
 export * from "./serviceOrder";
 export * from "./supplier";
+export * from "./warehouse-location";
 export * from "./task";
 export * from "./team-staff";
 export * from "./throttler";

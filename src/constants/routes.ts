@@ -216,22 +216,12 @@ export const routes = {
       root: "/recursos-humanos/setores",
     },
     ppe: {
-      create: "/recursos-humanos/epi/cadastrar",
       deliveries: {
         create: "/recursos-humanos/epi/entregas/cadastrar",
         details: (id: string) => `/recursos-humanos/epi/entregas/detalhes/${id}`,
         edit: (id: string) => `/recursos-humanos/epi/entregas/editar/${id}`,
         root: "/recursos-humanos/epi/entregas",
       },
-      details: (id: string) => `/recursos-humanos/epi/detalhes/${id}`,
-      edit: (id: string) => `/recursos-humanos/epi/editar/${id}`,
-      reports: {
-        masks: "/recursos-humanos/epi/relatorios/mascaras",
-        root: "/recursos-humanos/epi/relatorios",
-        stock: "/recursos-humanos/epi/relatorios/estoque",
-        usage: "/recursos-humanos/epi/relatorios/uso",
-      },
-      root: "/recursos-humanos/epi",
       schedules: {
         create: "/recursos-humanos/epi/agendamentos/cadastrar",
         details: (id: string) => `/recursos-humanos/epi/agendamentos/detalhes/${id}`,
@@ -475,6 +465,12 @@ export const routes = {
       details: (id: string) => `/estoque/fornecedores/detalhes/${id}`,
       edit: (id: string) => `/estoque/fornecedores/editar/${id}`,
       root: "/estoque/fornecedores",
+    },
+    warehouseLocations: {
+      create: "/estoque/localizacoes/cadastrar",
+      details: (id: string) => `/estoque/localizacoes/detalhes/${id}`,
+      edit: (id: string) => `/estoque/localizacoes/editar/${id}`,
+      root: "/estoque/localizacoes",
     },
   },
 

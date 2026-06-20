@@ -34,7 +34,7 @@ const getMeasureIconName = (measureType: MEASURE_TYPE): string => {
 export function SpecificationsCard({ item }: SpecificationsCardProps) {
   const { colors } = useTheme();
 
-  const hasProductInfo = item.brands?.length || item.category || item.supplier;
+  const hasProductInfo = item.brands?.length || item.category || item.supplier || item.warehouseLocation;
   const hasIdentification = item.uniCode || item.ppeCA || (item.barcodes && item.barcodes.length > 0);
   const hasMeasures = item.measures && item.measures.length > 0;
   const hasPackaging = item.boxQuantity !== null;
@@ -92,6 +92,23 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
           label="Fornecedor"
           value={item.supplier.fantasyName}
           icon="building"
+        />
+      )}
+
+      {item.warehouseLocation && (
+        <DetailField
+          label="Localização"
+          value={(() => {
+            const base = item.warehouseLocation.section
+              ? `${item.warehouseLocation.name} (${item.warehouseLocation.section})`
+              : item.warehouseLocation.name;
+            const cell =
+              item.locationLevel != null && item.locationColumn != null
+                ? ` — Nível ${item.locationLevel} · Coluna ${item.locationColumn}`
+                : "";
+            return `${base}${cell}`;
+          })()}
+          icon="location"
         />
       )}
 

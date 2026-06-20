@@ -121,12 +121,12 @@ export interface Order extends BaseEntity {
   discount: number;
   status: ORDER_STATUS;
   statusOrder: number; // Status numeric order for sorting: 1=Created, 2=PartiallyFulfilled, 3=Fulfilled, 4=Overdue, 5=PartiallyReceived, 6=Received, 7=Cancelled
-  // Contas a Pagar (accounting) payment tracking — optional: present on API responses
-  // since the ACCOUNTING area build; no mobile UI consumes these yet.
-  paymentStatus?: ORDER_PAYMENT_STATUS;
-  paymentStatusOrder?: number;
-  paymentRequestedAt?: Date | null;
-  paidAt?: Date | null;
+  // Contas a Pagar (accounting) payment tracking. Backed by Prisma @default columns,
+  // so always present on API responses; consumed by the mobile payment UI
+  // (boleto-payment-fields, payment form sections, order-info-card).
+  paymentStatus: ORDER_PAYMENT_STATUS;
+  paymentStatusOrder: number; // 1=AwaitingPayment, 2=PartiallyPaid, 3=Paid
+  paidAt: Date | null;
   paidById: string | null;
   installmentCount: number;
   budgetIds?: string[];
@@ -231,6 +231,7 @@ export interface OrderIncludes {
     | {
         include?: PpeDeliveryScheduleIncludes;
       };
+  installments?: boolean;
   items?:
     | boolean
     | {
@@ -249,6 +250,8 @@ export interface OrderIncludes {
         take?: number;
         skip?: number;
       };
+  paymentResponsible?: boolean;
+  paymentAssignedBy?: boolean;
 }
 
 export interface OrderItemIncludes {
@@ -535,10 +538,14 @@ export type PayableSource =
   | "TAX"
   | "PAYROLL"
   | "PAYROLL_SCHEDULED"
-  | "RECURRING";
+  | "RECURRING"
+  // A materialized monthly occurrence of a first-class RecurrentPayable
+  // (rent/internet/energy/water). Supersedes RECURRING for promoted categories.
+  | "RECURRENT_PAYABLE";
 
 export type PayableState =
   | "AWAITING_PAYMENT"
+  | "OVERDUE"
   | "PARTIALLY_PAID"
   | "EXPECTED"
   // Settled this month — surfaced on Contas a Pagar so finance can review what was paid.
@@ -552,6 +559,9 @@ export type PayableSettleVia =
   | "PAYROLL_MONTH"
   | "SCHEDULE_TRIGGER"
   | "RECONCILIATION"
+  // Mark-paid on a RecurrentPayableOccurrence; VARIABLE bills prompt for the
+  // real paid amount, FIXED settle with the known amount.
+  | "RECURRENT_PAYABLE"
   | "NONE";
 
 export interface PayableRow {
@@ -564,7 +574,6 @@ export interface PayableRow {
   paymentState: PayableState;
   dueDate: Date | string | null;
   method: string | null;
-  requestedAt: Date | string | null;
   /** When the row was settled (PAID rows only). */
   paidAt?: Date | string | null;
   taskId?: string | null;
@@ -589,6 +598,7 @@ export interface PayablesSummaryBucket {
 
 export interface PayablesSummary {
   AWAITING_PAYMENT: PayablesSummaryBucket;
+  OVERDUE: PayablesSummaryBucket;
   PARTIALLY_PAID: PayablesSummaryBucket;
   EXPECTED: PayablesSummaryBucket;
   /** Settled this month (orders by paidAt, airbrushing by paidAt). */

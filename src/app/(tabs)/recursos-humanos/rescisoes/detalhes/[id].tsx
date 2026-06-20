@@ -57,6 +57,10 @@ export default function TerminationDetailScreen() {
     enabled: !!terminationId,
   });
 
+  // Só é possível excluir rescisões CANCELADAS (mirror do guard no servidor e
+  // do web): em andamento devem ser canceladas antes; concluídas nunca.
+  const canDelete = query.data?.data?.status === TERMINATION_STATUS.CANCELLED;
+
   return (
     <DetailScreen<Termination>
       query={query as any}
@@ -73,12 +77,16 @@ export default function TerminationDetailScreen() {
       deletePrivilege={SECTOR_PRIVILEGES.ADMIN}
       editGuard={{ field: "status", editable: EDITABLE_TERMINATION_STATUSES }}
       editRoute={(t) => mobileRoute(`/recursos-humanos/rescisoes/editar/${t.id}`)}
-      deleteAction={{
-        mutation: deleteMutation,
-        confirmText:
-          "Tem certeza que deseja excluir esta rescisão? Esta ação não pode ser desfeita.",
-        successRoute: ROOT,
-      }}
+      deleteAction={
+        canDelete
+          ? {
+              mutation: deleteMutation,
+              confirmText:
+                "Tem certeza que deseja excluir esta rescisão cancelada? Esta ação não pode ser desfeita.",
+              successRoute: ROOT,
+            }
+          : undefined
+      }
       notFoundFallback={ROOT}
     >
       {(termination, ctx) => {

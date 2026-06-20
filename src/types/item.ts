@@ -3,6 +3,7 @@
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse, BaseMergeResponse } from "./common";
 import type { MEASURE_UNIT, ORDER_BY_DIRECTION, ABC_CATEGORY, XYZ_CATEGORY, PPE_TYPE, PPE_SIZE, PPE_DELIVERY_MODE, ITEM_CATEGORY_TYPE, ACCOUNTING_TYPE, STOCK_LEVEL } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
+import type { WarehouseLocation, WarehouseLocationIncludes, WarehouseLocationOrderBy } from "./warehouse-location";
 import type { Activity, ActivityIncludes } from "./activity";
 import type { Borrow, BorrowIncludes } from "./borrow";
 import type { OrderItem, OrderItemIncludes } from "./order";
@@ -72,6 +73,10 @@ export interface Item extends BaseEntity {
   fixedTargetQuantity: number | null;
   categoryId?: string;
   supplierId: string | null;
+  warehouseLocationId: string | null;
+  // Exact cell within the warehouse location (1-based)
+  locationLevel: number | null;
+  locationColumn: number | null;
   estimatedLeadTime: number | null;
   isActive: boolean;
   abcCategory: ABC_CATEGORY | null;
@@ -102,6 +107,7 @@ export interface Item extends BaseEntity {
   brands?: ItemBrand[];
   category?: ItemCategory;
   supplier?: Supplier;
+  warehouseLocation?: WarehouseLocation;
   monetaryValues?: MonetaryValue[];
   prices?: Price[]; // DEPRECATED: use monetaryValues
   measures?: Measure[];
@@ -160,6 +166,11 @@ export interface ItemIncludes {
     | boolean
     | {
         include?: SupplierIncludes;
+      };
+  warehouseLocation?:
+    | boolean
+    | {
+        include?: WarehouseLocationIncludes;
       };
   prices?:
     | boolean
@@ -277,6 +288,7 @@ export interface ItemWhere {
   // Relation IDs
   categoryId?: string | { equals?: string; not?: string; in?: string[]; notIn?: string[] } | null;
   supplierId?: string | { equals?: string; not?: string; in?: string[]; notIn?: string[] } | null;
+  warehouseLocationId?: string | { equals?: string; not?: string; in?: string[]; notIn?: string[] } | null;
 
   // Date fields
   createdAt?: Date | { equals?: Date; not?: Date; lt?: Date; lte?: Date; gt?: Date; gte?: Date; in?: Date[]; notIn?: Date[] };
@@ -286,6 +298,7 @@ export interface ItemWhere {
   brands?: { some?: ItemBrandWhere; every?: ItemBrandWhere; none?: ItemBrandWhere };
   category?: ItemCategoryIncludes;
   supplier?: SupplierIncludes | null;
+  warehouseLocation?: WarehouseLocationIncludes | null;
 }
 
 export interface ItemBrandWhere {
@@ -392,6 +405,7 @@ export interface ItemOrderBy {
   updatedAt?: ORDER_BY_DIRECTION;
   category?: ItemCategoryOrderBy;
   supplier?: SupplierOrderBy;
+  warehouseLocation?: WarehouseLocationOrderBy;
 }
 
 // =====================

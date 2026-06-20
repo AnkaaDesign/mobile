@@ -170,6 +170,17 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       {
+        id: "localizacoes",
+        title: "Localizações",
+        icon: "location",
+        path: "/estoque/localizacoes",
+        children: [
+          { id: "localizacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/localizacoes/cadastrar" },
+          { id: "localizacoes-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/localizacoes/detalhes/:id", isDynamic: true },
+          { id: "localizacoes-editar", title: "Editar", icon: "edit", path: "/estoque/localizacoes/editar/:id", isDynamic: true },
+        ],
+      },
+      {
         id: "manutencao",
         title: "Manutencao",
         icon: "maintenance",
@@ -561,39 +572,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       { id: "controle-ponto", title: "Controle de Ponto", icon: "fingerprint", path: "/recursos-humanos/controle-ponto" },
       {
-        id: "epi-rh",
-        title: "EPI",
-        icon: "helmet",
-        path: "/recursos-humanos/epi",
-        children: [
-          {
-            id: "epi-rh-agendamentos",
-            title: "Agendamentos",
-            icon: "schedule",
-            path: "/recursos-humanos/epi/agendamentos",
-            children: [
-              { id: "epi-rh-agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/agendamentos/cadastrar" },
-              { id: "epi-rh-agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/agendamentos/detalhes/:id", isDynamic: true },
-              { id: "epi-rh-agendamentos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/agendamentos/editar/:id", isDynamic: true },
-            ],
-          },
-          { id: "epi-rh-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/cadastrar" },
-          { id: "epi-rh-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/detalhes/:id", isDynamic: true },
-          { id: "epi-rh-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/editar/:id", isDynamic: true },
-          {
-            id: "epi-rh-entregas",
-            title: "Entregas",
-            icon: "truck",
-            path: "/recursos-humanos/epi/entregas",
-            children: [
-              { id: "epi-rh-entregas-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/entregas/cadastrar" },
-              { id: "epi-rh-entregas-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/entregas/detalhes/:id", isDynamic: true },
-              { id: "epi-rh-entregas-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/entregas/editar/:id", isDynamic: true },
-            ],
-          },
-        ],
-      },
-      {
         id: "feriados",
         title: "Feriados",
         icon: "holiday",
@@ -758,6 +736,28 @@ export const NAVIGATION_MENU: MenuItem[] = [
     // Recursos Humanos menu unchanged. (Page-level route privileges stay open.)
     requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
+      {
+        id: "mt-epi-entregas",
+        title: "Entrega de EPIs",
+        icon: "truck",
+        path: "/recursos-humanos/epi/entregas",
+        children: [
+          {
+            id: "mt-epi-agendamentos",
+            title: "Agendamentos",
+            icon: "schedule",
+            path: "/recursos-humanos/epi/agendamentos",
+            children: [
+              { id: "mt-epi-agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/agendamentos/cadastrar" },
+              { id: "mt-epi-agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/agendamentos/detalhes/:id", isDynamic: true },
+              { id: "mt-epi-agendamentos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/agendamentos/editar/:id", isDynamic: true },
+            ],
+          },
+          { id: "mt-epi-entregas-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/entregas/cadastrar" },
+          { id: "mt-epi-entregas-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/entregas/detalhes/:id", isDynamic: true },
+          { id: "mt-epi-entregas-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/entregas/editar/:id", isDynamic: true },
+        ],
+      },
       {
         id: "mt-aso",
         title: "ASO / Exames",

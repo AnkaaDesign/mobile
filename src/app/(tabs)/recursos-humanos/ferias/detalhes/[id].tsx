@@ -8,6 +8,7 @@ import { DetailScreen } from "@/components/screens/detail-screen";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { spacing } from "@/constants/design-system";
 import { useNav } from "@/contexts/nav";
+import { usePrivilegeGate } from "@/hooks/use-privilege-gate";
 import {
   VacationStatusCard,
   VacationPeriodsCard,
@@ -24,6 +25,14 @@ export default function VacationDetailScreen() {
   const nav = useNav();
   const { deleteMutation } = useVacationMutations();
   const advance = useVacationAdvance();
+
+  // Manage (edit / mark-as-paid) is ACCOUNTING/HR/ADMIN — PRODUCTION_MANAGER has
+  // read-only access (mirrors the API @Roles and the web detail page). The page
+  // privilege below grants PM view-only; these write actions exclude PM.
+  const MANAGE_PRIVILEGE = {
+    any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+  };
+  const canManage = usePrivilegeGate(MANAGE_PRIVILEGE).allowed;
 
   const query = useVacation(vacationId, {
     include: {
@@ -76,6 +85,7 @@ export default function VacationDetailScreen() {
         any: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
       }}
       editRoute={(v: Vacation) => `/recursos-humanos/ferias/editar/${v.id}` as any}
+      editPrivilege={MANAGE_PRIVILEGE}
       actions={[
         {
           key: "markPaid",
@@ -83,6 +93,7 @@ export default function VacationDetailScreen() {
           icon: "cash",
           onPress: handleMarkPaid,
           disabled: !!advanceDisabledReason || advance.isPending,
+          hidden: !canManage,
         },
       ]}
       deleteAction={{

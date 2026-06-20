@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, unitPriceSchema } from "./common";
 import type { Order, OrderItem, OrderSchedule } from '../types';
-import { ORDER_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, MONTH_OCCURRENCE } from '../constants';
+import { ORDER_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, MONTH_OCCURRENCE } from '../constants';
 
 // =====================
 // Order Include Schema Based on Prisma Schema (Second Level Only)
@@ -241,6 +241,9 @@ export const orderOrderBySchema = z.union([
       forecast: orderByDirectionSchema.optional(),
       status: orderByDirectionSchema.optional(),
       statusOrder: orderByDirectionSchema.optional(),
+      paymentStatus: orderByDirectionSchema.optional(),
+      paymentStatusOrder: orderByDirectionSchema.optional(),
+      paidAt: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
     })
@@ -256,6 +259,9 @@ export const orderOrderBySchema = z.union([
         forecast: orderByDirectionSchema.optional(),
         status: orderByDirectionSchema.optional(),
         statusOrder: orderByDirectionSchema.optional(),
+        paymentStatus: orderByDirectionSchema.optional(),
+        paymentStatusOrder: orderByDirectionSchema.optional(),
+        paidAt: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
       })
@@ -417,6 +423,18 @@ export const orderWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
+      paymentStatus: z
+        .union([
+          z.string(),
+          z.object({
+            equals: z.string().optional(),
+            not: z.string().optional(),
+            in: z.array(z.string()).optional(),
+            notIn: z.array(z.string()).optional(),
+          }),
+        ])
+        .optional(),
+
       // Number fields
       statusOrder: z
         .union([
@@ -428,6 +446,35 @@ export const orderWhereSchema: z.ZodSchema = z.lazy(() =>
             lte: z.number().optional(),
             gt: z.number().optional(),
             gte: z.number().optional(),
+          }),
+        ])
+        .optional(),
+
+      paymentStatusOrder: z
+        .union([
+          z.number(),
+          z.object({
+            equals: z.number().optional(),
+            not: z.number().optional(),
+            lt: z.number().optional(),
+            lte: z.number().optional(),
+            gt: z.number().optional(),
+            gte: z.number().optional(),
+          }),
+        ])
+        .optional(),
+
+      paidAt: z
+        .union([
+          z.coerce.date(),
+          z.null(),
+          z.object({
+            equals: z.union([z.coerce.date(), z.null()]).optional(),
+            not: z.union([z.coerce.date(), z.null()]).optional(),
+            lt: z.coerce.date().optional(),
+            lte: z.coerce.date().optional(),
+            gt: z.coerce.date().optional(),
+            gte: z.coerce.date().optional(),
           }),
         ])
         .optional(),
@@ -740,6 +787,13 @@ const orderFilters = {
       }),
     )
     .optional(),
+  paymentStatuses: z
+    .array(
+      z.enum(Object.values(ORDER_PAYMENT_STATUS) as [string, ...string[]], {
+        errorMap: () => ({ message: "status de pagamento inválido" }),
+      }),
+    )
+    .optional(),
   supplierIds: z.array(z.string()).optional(),
   itemIds: z.array(z.string()).optional(),
   forecastRange: z
@@ -900,6 +954,12 @@ const orderTransform = (data: any) => {
   if (data.status && Array.isArray(data.status) && data.status.length > 0) {
     andConditions.push({ status: { in: data.status } });
     delete data.status;
+  }
+
+  // Handle paymentStatuses filter (contas a pagar)
+  if (data.paymentStatuses && Array.isArray(data.paymentStatuses) && data.paymentStatuses.length > 0) {
+    andConditions.push({ paymentStatus: { in: data.paymentStatuses } });
+    delete data.paymentStatuses;
   }
 
   // Handle supplierIds filter

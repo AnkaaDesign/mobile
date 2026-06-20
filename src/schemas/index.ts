@@ -83,6 +83,7 @@ export * from "./warning";
 export * from "./sector";
 export * from "./serviceOrder";
 export * from "./supplier";
+export * from "./warehouse-location";
 export * from "./task";
 export * from "./truck";
 export * from "./layout";

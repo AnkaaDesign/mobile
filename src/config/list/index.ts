@@ -11,16 +11,14 @@ export {
   deploymentsListConfig,
 } from './administration'
 
-// HR Module (8 configs)
+// HR Module (6 configs)
 export {
   employeesListConfig,
   warningsListConfig,
   positionsListConfig,
   ppeDeliveriesListConfig,
   ppeSchedulesListConfig,
-  ppeSizesListConfig,
   holidaysListConfig,
-  ppeItemsListConfig,
 } from './hr'
 
 // Inventory Module (10 configs)
@@ -31,6 +29,7 @@ export {
   activitiesListConfig,
   externalOperationsListConfig,
   suppliersListConfig,
+  warehouseLocationsListConfig,
   categoriesListConfig,
   brandsListConfig,
   maintenanceListConfig,

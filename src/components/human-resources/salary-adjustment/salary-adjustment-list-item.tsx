@@ -10,6 +10,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate } from "@/utils/formatters";
 import { formatPercentage } from "@/utils";
 import { SALARY_ADJUSTMENT_TYPE_LABELS } from "@/constants/enum-labels";
+import { SALARY_ADJUSTMENT_TYPE } from "@/constants/enums";
 import type { SalaryAdjustment } from "@/types";
 
 interface Props {
@@ -19,6 +20,10 @@ interface Props {
 
 export function SalaryAdjustmentListItem({ adjustment, onPress }: Props) {
   const { colors } = useTheme();
+  // Bonus reajustes (type BONUS) target the bonus PERIOD, not specific cargos —
+  // they carry a delta percentage and no items. Render them as period-wide so an
+  // itemless BONUS row doesn't read as an empty/broken reajuste (parity w/ web).
+  const isBonus = adjustment.type === SALARY_ADJUSTMENT_TYPE.BONUS;
   const itemsCount = adjustment.items?.length ?? (adjustment as any)._count?.items ?? 0;
 
   return (
@@ -38,7 +43,7 @@ export function SalaryAdjustmentListItem({ adjustment, onPress }: Props) {
               Vigência: {formatDate(adjustment.effectiveDate)}
             </ThemedText>
             <ThemedText style={[styles.meta, { color: colors.mutedForeground }]}>
-              {itemsCount} {itemsCount === 1 ? "cargo afetado" : "cargos afetados"}
+              {isBonus ? "Bônus (todos)" : `${itemsCount} ${itemsCount === 1 ? "cargo afetado" : "cargos afetados"}`}
             </ThemedText>
           </View>
           <IconChevronRight size={20} color={colors.mutedForeground} />

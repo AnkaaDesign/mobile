@@ -35,6 +35,7 @@ import type {
   WarningGetManyFormData,
   ServiceOrderGetManyFormData,
   SupplierGetManyFormData,
+  WarehouseLocationGetManyFormData,
   TaskGetManyFormData,
   UserGetManyFormData,
   NotificationGetManyFormData,
@@ -363,6 +364,8 @@ export const itemKeys = {
   // Specialized queries
   bySupplier: (supplierId: string, filters?: Partial<ItemGetManyFormData>) =>
     filters ? (["items", "bySupplier", supplierId, filters] as const) : (["items", "bySupplier", supplierId] as const),
+  byWarehouseLocation: (warehouseLocationId: string, filters?: Partial<ItemGetManyFormData>) =>
+    filters ? (["items", "byWarehouseLocation", warehouseLocationId, filters] as const) : (["items", "byWarehouseLocation", warehouseLocationId] as const),
   byCategory: (categoryId: string, filters?: Partial<ItemGetManyFormData>) =>
     filters ? (["items", "byCategory", categoryId, filters] as const) : (["items", "byCategory", categoryId] as const),
   byBrand: (brandId: string, filters?: Partial<ItemGetManyFormData>) => (filters ? (["items", "byBrand", brandId, filters] as const) : (["items", "byBrand", brandId] as const)),
@@ -680,6 +683,24 @@ export const supplierKeys = {
 
   // Analytics
   statistics: () => ["suppliers", "statistics"] as const,
+};
+
+// =====================================================
+// WarehouseLocation Query Keys
+// =====================================================
+
+export const warehouseLocationKeys = {
+  all: ["warehouseLocations"] as const,
+  lists: () => ["warehouseLocations", "list"] as const,
+  list: (filters?: Partial<WarehouseLocationGetManyFormData>) =>
+    filters ? (["warehouseLocations", "list", filters] as const) : (["warehouseLocations", "list"] as const),
+  details: () => ["warehouseLocations", "detail"] as const,
+  detail: (id: string, include?: any) =>
+    include ? (["warehouseLocations", "detail", id, include] as const) : (["warehouseLocations", "detail", id] as const),
+  byIds: (ids: string[]) => ["warehouseLocations", "byIds", ids] as const,
+
+  // Analytics
+  statistics: () => ["warehouseLocations", "statistics"] as const,
 };
 
 // =====================================================

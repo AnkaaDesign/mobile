@@ -310,7 +310,7 @@ export function StatusCard({ admission, canManage }: StatusCardProps) {
       <CancelReasonModal
         visible={showCancelModal}
         title="Cancelar Admissão"
-        description={`A admissão${admission.user?.name ? ` de "${admission.user.name}"` : ""} será marcada como cancelada e não poderá mais ser avançada. Informe o motivo de não ter sido concluída.`}
+        description={`A admissão${admission.user?.name ? ` de "${admission.user.name}"` : ""} será marcada como cancelada e não poderá mais ser avançada. O vínculo criado por este processo será encerrado e o exame admissional (ASO) pendente, cancelado. Informe o motivo de não ter sido concluída.`}
         confirmLabel="Cancelar Admissão"
         loading={advance.isPending}
         onClose={() => setShowCancelModal(false)}

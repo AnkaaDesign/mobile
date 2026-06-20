@@ -6,6 +6,7 @@ export { StatusToggle } from "./status-toggle";
 export { BrandSelector } from "./brand-selector";
 export { CategorySelector } from "./category-selector";
 export { SupplierSelector } from "./supplier-selector";
+export { WarehouseLocationSelector } from "./warehouse-location-selector";
 export { QuantityInput } from "./quantity-input";
 export { BoxQuantityInput } from "./box-quantity-input";
 export { LeadTimeInput } from "./lead-time-input";

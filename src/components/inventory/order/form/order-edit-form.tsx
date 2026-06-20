@@ -503,8 +503,11 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           : undefined;
       }
       if (multiStepForm.formData.paymentDueDays !== order?.paymentDueDays) {
+        // Persist the default interval (30 days) shown for 2x+ boletos when none was explicitly chosen.
         changedData.paymentDueDays = multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP
-          ? multiStepForm.formData.paymentDueDays || undefined
+          ? (multiStepForm.formData.installmentCount || 1) > 1
+            ? multiStepForm.formData.paymentDueDays || 30
+            : multiStepForm.formData.paymentDueDays || undefined
           : undefined;
       }
       {

@@ -216,6 +216,8 @@ export enum SALARY_ADJUSTMENT_TYPE {
   EQUALIZATION = "EQUALIZATION",
   REFRAME = "REFRAME",
   OTHER = "OTHER",
+  // System-applied bonus period reajuste (not a user-selectable salary type).
+  BONUS = "BONUS",
 }
 
 // CLT: rebaixamento unilateral é ilegal (CF art.7º VI + CLT art.468), por isso
@@ -2130,6 +2132,14 @@ export enum ITEM_CATEGORY_TYPE {
 export enum STOCK_MODEL {
   CONSUMPTION = "CONSUMPTION",
   FIXED_TARGET = "FIXED_TARGET",
+}
+
+// Physical structure type of a warehouse location
+export enum WAREHOUSE_LOCATION_TYPE {
+  ESTANTE = "ESTANTE",
+  ESTANTE_KANBAN = "ESTANTE_KANBAN",
+  PAINEL = "PAINEL",
+  PALETE = "PALETE",
 }
 
 // Accounting rollup classification for item categories (read-only rollup on items)

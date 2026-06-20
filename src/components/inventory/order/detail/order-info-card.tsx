@@ -9,7 +9,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey } from "@/utils";
 import { formatOrderNumber } from "@/utils/order-code";
 import type { Order } from "../../../../types";
-import { PAYMENT_METHOD_LABELS } from "@/constants";
+import { PAYMENT_METHOD_LABELS, ORDER_INSTALLMENT_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { useCanViewPrices } from "@/hooks";
 
 interface OrderInfoCardProps {
@@ -23,16 +23,29 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
   // Check if order has temporary items
   const hasTemporaryItems = order.items?.some((item) => item.temporaryItemDescription);
 
-  // Calculate order total with taxes
+  // Boleto parcela schedule, ordered by number (single-payment orders carry none).
+  const sortedInstallments = useMemo(
+    () => (order.installments || []).slice().sort((a, b) => (a.number || 0) - (b.number || 0)),
+    [order.installments],
+  );
+
+  // Calculate order total with taxes. Mirrors the API's computeOrderPayableTotal:
+  // items grossed up by ICMS/IPI, minus discount% on the pre-tax goods subtotal,
+  // plus freight, rounded to centavos.
   const orderTotal = useMemo(() => {
     if (!order?.items) return 0;
-    return order.items.reduce((total, item) => {
+    let goodsSubtotal = 0;
+    let itemsTotal = 0;
+    for (const item of order.items) {
       const subtotal = item.orderedQuantity * item.price;
-      const icmsAmount = subtotal * (item.icms / 100);
-      const ipiAmount = subtotal * (item.ipi / 100);
-      return total + subtotal + icmsAmount + ipiAmount;
-    }, 0);
-  }, [order?.items]);
+      goodsSubtotal += subtotal;
+      itemsTotal += subtotal * (1 + (item.icms || 0) / 100 + (item.ipi || 0) / 100);
+    }
+    const discount = order.discount || 0;
+    const discountAmount = discount > 0 ? goodsSubtotal * (discount / 100) : 0;
+    const total = itemsTotal - discountAmount + (order.freight || 0);
+    return Math.max(0, Math.round(total * 100) / 100);
+  }, [order?.items, order?.discount, order?.freight]);
 
   const handleEmailPress = () => {
     if (order.supplier?.email) {
@@ -276,6 +289,15 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
               />
             )}
 
+            {/* Paid at */}
+            {order.paidAt && (
+              <DetailField
+                label="Pago em"
+                value={formatDateTime(order.paidAt)}
+                icon="calendar"
+              />
+            )}
+
             {/* Payment Assigned By */}
             {order.paymentAssignedBy && (
               <DetailField
@@ -285,6 +307,39 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
               />
             )}
           </DetailSection>
+
+          {/* Installment schedule (boleto 2x/3x) — one row per parcela, mirrors web. */}
+          {sortedInstallments.length > 0 && (
+            <>
+              <View style={[styles.separator, { backgroundColor: colors.border }]} />
+              <DetailSection title="Parcelas do Boleto">
+                {sortedInstallments.map((inst) => (
+                  <View key={inst.id} style={styles.installmentRow}>
+                    <View style={styles.installmentInfo}>
+                      <ThemedText style={[styles.installmentLabel, { color: colors.foreground }]}>
+                        {inst.number}ª parcela de {sortedInstallments.length}
+                      </ThemedText>
+                      {inst.dueDate && (
+                        <ThemedText style={[styles.installmentDue, { color: colors.mutedForeground }]}>
+                          Vence em {formatDate(inst.dueDate)}
+                        </ThemedText>
+                      )}
+                    </View>
+                    <View style={styles.installmentRight}>
+                      <ThemedText style={[styles.installmentAmount, { color: colors.foreground }]}>
+                        {formatCurrency(inst.amount)}
+                      </ThemedText>
+                      <Badge variant={getBadgeVariant(inst.status, "ORDER_INSTALLMENT")} size="sm">
+                        <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
+                          {ORDER_INSTALLMENT_STATUS_LABELS[inst.status] ?? inst.status}
+                        </ThemedText>
+                      </Badge>
+                    </View>
+                  </View>
+                ))}
+              </DetailSection>
+            </>
+          )}
         </>
       )}
     </DetailCard>
@@ -319,5 +374,33 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
+  },
+  installmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  installmentInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  installmentLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  installmentDue: {
+    fontSize: fontSize.xs,
+  },
+  installmentRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  installmentAmount: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
   },
 });

@@ -964,6 +964,30 @@ export function canDeleteSuppliers(user: User | null): boolean {
   ]);
 }
 
+/**
+ * Can user create/edit warehouse locations (and set an item's location)?
+ * WAREHOUSE manages locations.
+ */
+export function canEditWarehouseLocations(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
+/**
+ * Can user DELETE warehouse locations?
+ * WAREHOUSE + ADMIN may delete.
+ */
+export function canDeleteWarehouseLocations(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
 // =====================
 // PRICE VISIBILITY
 // =====================

@@ -34,6 +34,7 @@ export * from "./sector";
 export * from "./serviceOrder";
 export * from "./summary";
 export * from "./supplier";
+export * from "./warehouse-location";
 export * from "./task";
 export * from "./timeClockEntry";
 export * from "./truck";

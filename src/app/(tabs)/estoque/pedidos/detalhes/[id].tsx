@@ -55,6 +55,7 @@ export default function OrderDetailScreen() {
         },
       },
       orderSchedule: true,
+      installments: true,
       budgets: true,
       invoices: true,
       receipts: true,
