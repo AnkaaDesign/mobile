@@ -85,7 +85,7 @@ function ContasAPagarContent() {
   const [refreshing, setRefreshing] = useState(false);
 
   const { data, isLoading, error, refetch } = usePayables();
-  const { markPaidMutation, settlePayrollMutation } = usePayableMutations();
+  const { markPaidMutation, markInstallmentPaidMutation, settlePayrollMutation } = usePayableMutations();
   useScreenReady(!isLoading);
 
   const onRefresh = useCallback(async () => {
@@ -123,6 +123,9 @@ function ContasAPagarContent() {
                 if (row.settleVia === "PAYROLL_MONTH" && row.competence) {
                   const [year, month] = row.competence.split("-").map((n) => parseInt(n, 10));
                   await settlePayrollMutation.mutateAsync({ year, month, amount: null });
+                } else if (row.installmentId) {
+                  // One row per open installment all share id = order.id; settle only this parcela.
+                  await markInstallmentPaidMutation.mutateAsync(row.installmentId);
                 } else {
                   await markPaidMutation.mutateAsync(row.id);
                 }

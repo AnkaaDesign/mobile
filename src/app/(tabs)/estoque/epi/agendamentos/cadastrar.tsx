@@ -63,7 +63,6 @@ function CreatePPEScheduleScreenInner() {
         excludedUserIds: [],
         includedUserIds: [],
         customMonths: [],
-        rescheduleCount: 0,
         items: (data.ppeTypes || [])
           .filter((t) => t !== PPE_TYPE.OTHERS)
           .map((ppeType) => ({ ppeType: ppeType as PPE_TYPE, quantity: 1 })),

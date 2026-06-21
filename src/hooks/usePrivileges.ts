@@ -1,4 +1,4 @@
-import { useCurrentUser } from "./useAuth";
+import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { canAccessAnyPrivilege, canAccessAllPrivileges, canAccessSector, getSectorPrivilegeSortOrder, hasPrivilege, hasAnyPrivilege, hasAllPrivileges } from "@/utils";
 
@@ -7,7 +7,16 @@ import { canAccessAnyPrivilege, canAccessAllPrivileges, canAccessSector, getSect
  * Provides comprehensive privilege checking capabilities
  */
 export function usePrivileges() {
-  const { data: user } = useCurrentUser();
+  // SINGLE SOURCE OF TRUTH: read the authoritative, actively-revalidated user
+  // from the auth context — the same identity the bearer token represents.
+  // Previously this read the standalone `useCurrentUser` react-query
+  // (["auth","currentUser"]), which the auth context never kept in sync. On an
+  // account switch / persisted-cache rehydration that query could still serve a
+  // previous (more-privileged) session, so privilege gates opened sections the
+  // real user couldn't access — while the API still enforced the real token
+  // (e.g. PRODUCTION leaking Razão Social / Responsável / changelog / forecast,
+  // and a 403 on /tasks/:id/forecast-history).
+  const { user } = useAuth();
 
   /**
    * Check if user has specific privilege (hierarchical)

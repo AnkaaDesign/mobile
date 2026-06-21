@@ -1052,6 +1052,10 @@ export const ACCOUNTING_TYPE_COLORS: Record<
     bg: "#ccfbf1", // teal-100
     text: "#0f766e", // teal-700
   },
+  [ACCOUNTING_TYPE.RECEITA_SERVICOS]: {
+    bg: "#dcfce7", // green-100
+    text: "#15803d", // green-700
+  },
 };
 
 /**

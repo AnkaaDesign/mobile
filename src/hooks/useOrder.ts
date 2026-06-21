@@ -11,6 +11,7 @@ import {
   batchUpdateOrders,
   batchDeleteOrders,
   markOrderPaid,
+  markInstallmentPaid,
   markOrderAwaitingPayment,
   getPayables,
   settlePayrollMonth,
@@ -291,13 +292,19 @@ export const usePayableMutations = () => {
     onSuccess: invalidate,
   });
 
+  // Settles a single boleto installment (one parcela) — not the whole order.
+  const markInstallmentPaidMutation = useMutation({
+    mutationFn: (installmentId: string) => markInstallmentPaid(installmentId),
+    onSuccess: invalidate,
+  });
+
   const settlePayrollMutation = useMutation({
     mutationFn: (vars: { year: number; month: number; amount: number | null }) =>
       settlePayrollMonth(vars.year, vars.month, vars.amount),
     onSuccess: invalidate,
   });
 
-  return { markPaidMutation, settlePayrollMutation };
+  return { markPaidMutation, markInstallmentPaidMutation, settlePayrollMutation };
 };
 
 export const useOrderBatchMutations = (options?: {

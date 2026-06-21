@@ -1217,6 +1217,17 @@ export enum ENTITY_TYPE {
   TERMINATION = "TERMINATION",
   MEDICAL_EXAM = "MEDICAL_EXAM",
   LEAVE = "LEAVE",
+  DEPENDENT = "DEPENDENT",
+  AGENDA_EVENT = "AGENDA_EVENT",
+  POSTIT = "POSTIT",
+  FISPQ = "FISPQ",
+  RESPONSIBLE = "RESPONSIBLE",
+  WAREHOUSE_LOCATION = "WAREHOUSE_LOCATION",
+  TASK_QUOTE = "TASK_QUOTE",
+  TASK_QUOTE_ITEM = "TASK_QUOTE_ITEM",
+  TASK_QUOTE_SERVICE = "TASK_QUOTE_SERVICE",
+  TASK_QUOTE_CUSTOMER_CONFIG = "TASK_QUOTE_CUSTOMER_CONFIG",
+  VACATION_GROUP = "VACATION_GROUP",
 }
 
 export enum CHANGE_ACTION {
@@ -1851,6 +1862,14 @@ export enum CHANGE_LOG_ENTITY_TYPE {
   LEAVE = "LEAVE",
   DEPENDENT = "DEPENDENT",
   POSTIT = "POSTIT",
+  AGENDA_EVENT = "AGENDA_EVENT",
+  FISPQ = "FISPQ",
+  PREFERENCES = "PREFERENCES",
+  RESPONSIBLE = "RESPONSIBLE",
+  WAREHOUSE_LOCATION = "WAREHOUSE_LOCATION",
+  TASK_QUOTE_SERVICE = "TASK_QUOTE_SERVICE",
+  TASK_QUOTE_CUSTOMER_CONFIG = "TASK_QUOTE_CUSTOMER_CONFIG",
+  VACATION_GROUP = "VACATION_GROUP",
 }
 
 // Alias for Prisma compatibility
@@ -2137,6 +2156,7 @@ export enum STOCK_MODEL {
 // Physical structure type of a warehouse location
 export enum WAREHOUSE_LOCATION_TYPE {
   ESTANTE = "ESTANTE",
+  ESTANTE_DUPLA = "ESTANTE_DUPLA",
   ESTANTE_KANBAN = "ESTANTE_KANBAN",
   PAINEL = "PAINEL",
   PALETE = "PALETE",
@@ -2550,7 +2570,8 @@ export enum TRUCK_CATEGORY {
   TRUCK = 'TRUCK', // Standard truck
   SEMI_TRAILER = 'SEMI_TRAILER', // Carreta - Semi-trailer truck
   SEMI_TRAILER_2_AXLES = 'SEMI_TRAILER_2_AXLES', // Semirreboque 2 Eixos
-  B_DOUBLE = 'B_DOUBLE', // Bitrem - B-Double (truck with double trailer)
+  B_DOUBLE_FRONT = 'B_DOUBLE_FRONT', // Bitrem Compartimento Frontal - front compartment of B-Double trailer
+  B_DOUBLE_REAR = 'B_DOUBLE_REAR', // Bitrem Compartimento Traseiro - rear compartment of B-Double trailer
   BITRUCK = 'BITRUCK', // Bitruck - Rigid truck with dual steering axle
 }
 

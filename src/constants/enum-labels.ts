@@ -407,7 +407,8 @@ export const TRUCK_CATEGORY_LABELS: Record<TRUCK_CATEGORY, string> = {
   [TRUCK_CATEGORY.TRUCK]: 'Truck',
   [TRUCK_CATEGORY.SEMI_TRAILER]: 'Semirreboque',
   [TRUCK_CATEGORY.SEMI_TRAILER_2_AXLES]: 'Semirreboque 2 Eixos',
-  [TRUCK_CATEGORY.B_DOUBLE]: 'Bitrem',
+  [TRUCK_CATEGORY.B_DOUBLE_FRONT]: 'Bitrem Compartimento Frontal',
+  [TRUCK_CATEGORY.B_DOUBLE_REAR]: 'Bitrem Compartimento Traseiro',
   [TRUCK_CATEGORY.BITRUCK]: 'Bitruck',
 };
 
@@ -1085,6 +1086,17 @@ export const ENTITY_TYPE_LABELS: Record<ENTITY_TYPE, string> = {
   [ENTITY_TYPE.TERMINATION]: "Rescisão",
   [ENTITY_TYPE.MEDICAL_EXAM]: "Exame Médico",
   [ENTITY_TYPE.LEAVE]: "Afastamento",
+  [ENTITY_TYPE.DEPENDENT]: "Dependente",
+  [ENTITY_TYPE.AGENDA_EVENT]: "Evento de Agenda",
+  [ENTITY_TYPE.POSTIT]: "Post-it",
+  [ENTITY_TYPE.FISPQ]: "FISPQ",
+  [ENTITY_TYPE.RESPONSIBLE]: "Responsável",
+  [ENTITY_TYPE.WAREHOUSE_LOCATION]: "Localização do Almoxarifado",
+  [ENTITY_TYPE.TASK_QUOTE]: "Faturamento da Tarefa",
+  [ENTITY_TYPE.TASK_QUOTE_ITEM]: "Item do Faturamento",
+  [ENTITY_TYPE.TASK_QUOTE_SERVICE]: "Serviço do Faturamento",
+  [ENTITY_TYPE.TASK_QUOTE_CUSTOMER_CONFIG]: "Configuração de Cliente do Faturamento",
+  [ENTITY_TYPE.VACATION_GROUP]: "Grupo de Férias",
 };
 
 export const FILE_ENTITY_TYPE_LABELS: Record<FILE_ENTITY_TYPE, string> = {
@@ -1387,6 +1399,7 @@ export const STOCK_MODEL_LABELS: Record<STOCK_MODEL, string> = {
 
 export const WAREHOUSE_LOCATION_TYPE_LABELS: Record<WAREHOUSE_LOCATION_TYPE, string> = {
   [WAREHOUSE_LOCATION_TYPE.ESTANTE]: "Estante",
+  [WAREHOUSE_LOCATION_TYPE.ESTANTE_DUPLA]: "Estante Dupla",
   [WAREHOUSE_LOCATION_TYPE.ESTANTE_KANBAN]: "Estante com Kanban",
   [WAREHOUSE_LOCATION_TYPE.PAINEL]: "Painel",
   [WAREHOUSE_LOCATION_TYPE.PALETE]: "Palete",
@@ -1517,6 +1530,14 @@ export const CHANGE_LOG_ENTITY_TYPE_LABELS: Record<CHANGE_LOG_ENTITY_TYPE, strin
   [CHANGE_LOG_ENTITY_TYPE.LEAVE]: "Afastamento",
   [CHANGE_LOG_ENTITY_TYPE.DEPENDENT]: "Dependente",
   [CHANGE_LOG_ENTITY_TYPE.POSTIT]: "Post-it",
+  [CHANGE_LOG_ENTITY_TYPE.AGENDA_EVENT]: "Evento de Agenda",
+  [CHANGE_LOG_ENTITY_TYPE.FISPQ]: "FISPQ",
+  [CHANGE_LOG_ENTITY_TYPE.PREFERENCES]: "Preferências",
+  [CHANGE_LOG_ENTITY_TYPE.RESPONSIBLE]: "Responsável",
+  [CHANGE_LOG_ENTITY_TYPE.WAREHOUSE_LOCATION]: "Localização do Almoxarifado",
+  [CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE_SERVICE]: "Serviço do Faturamento",
+  [CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE_CUSTOMER_CONFIG]: "Configuração de Cliente do Faturamento",
+  [CHANGE_LOG_ENTITY_TYPE.VACATION_GROUP]: "Grupo de Férias",
 };
 
 export const CHANGE_LOG_ACTION_LABELS: Record<CHANGE_LOG_ACTION, string> = {

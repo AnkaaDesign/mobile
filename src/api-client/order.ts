@@ -115,6 +115,12 @@ export class OrderService {
     return response.data;
   }
 
+  /** Mark a single boleto installment as paid (closes only that parcela, not the whole order). */
+  async markInstallmentPaid(installmentId: string): Promise<OrderUpdateResponse> {
+    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/installments/${installmentId}/mark-paid`);
+    return response.data;
+  }
+
   /** Revert a paid order back to the "Aguardando Pagamento" sub-state. */
   async markOrderAwaitingPayment(id: string): Promise<OrderUpdateResponse> {
     const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/mark-awaiting-payment`);
@@ -327,6 +333,7 @@ export const batchCreateOrders = (data: OrderBatchCreateFormData, query?: OrderQ
 export const batchUpdateOrders = (data: OrderBatchUpdateFormData, query?: OrderQueryFormData) => orderService.batchUpdateOrders(data, query);
 export const batchDeleteOrders = (data: OrderBatchDeleteFormData) => orderService.batchDeleteOrders(data);
 export const markOrderPaid = (id: string) => orderService.markOrderPaid(id);
+export const markInstallmentPaid = (installmentId: string) => orderService.markInstallmentPaid(installmentId);
 export const markOrderAwaitingPayment = (id: string) => orderService.markOrderAwaitingPayment(id);
 export const getPayables = () => orderService.getPayables();
 export const settlePayrollMonth = (year: number, month: number, amount: number | null) => orderService.settlePayrollMonth(year, month, amount);

@@ -240,6 +240,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         if (queryClient) {
           queryClient.setQueryData(USER_QUERY_KEYS.detail(decodedToken.sub), { data });
+          // Keep the standalone `useCurrentUser` query (authKeys.currentUser() ->
+          // ["auth","currentUser"]) — the source consumed by usePrivileges and the
+          // personal/bonus screens — in sync with this freshly validated user.
+          // The auth context otherwise never writes that key, so it could drift to
+          // a previous (more-privileged) session and leak privilege-gated UI while
+          // the API still enforced the real token. Stored as the raw /me response
+          // because useCurrentUser's `select` extracts `.data`.
+          queryClient.setQueryData(["auth", "currentUser"], response);
         }
       } catch {}
 

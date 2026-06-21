@@ -4,7 +4,7 @@
  * immediate visual feedback during navigation transitions.
  */
 import React, { createContext, useContext, useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Pressable, BackHandler } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Pressable, BackHandler, AppState, AppStateStatus } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { router, usePathname } from 'expo-router';
 import { useNavigationHistory } from '@/contexts/navigation-history-context';
@@ -51,6 +51,15 @@ const NavigationLoadingContext = createContext<NavigationLoadingContextType | nu
 
 const DEFAULT_TIMEOUT = 1500; // 1.5 seconds max for any navigation
 
+// Absolute ceiling for ANY overlay (navigation OR mutation via withLoading).
+// Armed imperatively inside showOverlay() so it does NOT depend on a React
+// state transition firing — this is the backstop that prevents a permanently
+// stuck overlay when the 1.5s nav timeout has been cleared (withLoading) AND
+// the state-driven 3s failsafe fails to re-arm (false→true setState collapses
+// to a no-op under React 18 auto-batching). Generous enough to let a slow
+// mutation finish on its own in the common case.
+const HARD_WATCHDOG_TIMEOUT = 12000; // 12 seconds absolute max
+
 export function NavigationLoadingProvider({ children }: { children: React.ReactNode }) {
   const { colors, isDark } = useTheme();
   const pathname = usePathname();
@@ -63,7 +72,11 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   const isNavigatingRef = useRef(false);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Imperative hard-ceiling watchdog, armed on EVERY showOverlay() call.
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousPathnameRef = useRef<string | null>(null);
+  // Tracks the previous AppState so we only react to background→active.
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   // When a screen calls claimOverlay(), auto-hide on pathname change is suppressed.
   // The screen must call endNavigation() explicitly (via useScreenReady(isReady)).
@@ -75,20 +88,10 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      if (watchdogRef.current) {
+        clearTimeout(watchdogRef.current);
+      }
     };
-  }, []);
-
-  const showOverlay = useCallback(() => {
-    // Set ref immediately for synchronous double-click guard
-    isNavigatingRef.current = true;
-    overlayClaimedRef.current = false; // Reset claim for new navigation
-    setOverlayVisible(true);
-
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
   }, []);
 
   const hideOverlay = useCallback(() => {
@@ -102,7 +105,40 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
   }, []);
+
+  const showOverlay = useCallback(() => {
+    // Set ref immediately for synchronous double-click guard
+    isNavigatingRef.current = true;
+    overlayClaimedRef.current = false; // Reset claim for new navigation
+    setOverlayVisible(true);
+
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Arm the imperative hard-ceiling watchdog. Unlike the state-driven 3s
+    // failsafe effect (which only re-arms when overlayVisible *transitions*
+    // false→true and is therefore defeated by React 18 batching collapsing a
+    // hide-then-show into a no-op), this is armed unconditionally on every
+    // single show. showOverlay() is the ONLY entry point that makes the
+    // overlay visible, so this guarantees there is ALWAYS a live timer that
+    // will hide it — closing the "zero live timers → permanently stuck"
+    // window that previously needed a minimize/maximize to recover.
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+    }
+    watchdogRef.current = setTimeout(() => {
+      console.warn('[NavigationLoading] WATCHDOG: overlay exceeded hard ceiling, forcing hide');
+      hideOverlay();
+    }, HARD_WATCHDOG_TIMEOUT);
+  }, [hideOverlay]);
 
   const claimOverlay = useCallback(() => {
     // Only claim if a navigation is actually in progress.
@@ -139,6 +175,27 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
       }
     }
   }, [pathname, hideOverlay]);
+
+  // Guaranteed recovery on app foreground. A native AppState 'active' event is
+  // delivered to JS even when JS timers have been starved (the case where the
+  // imperative watchdog above can't fire), so this is the backstop that mirrors
+  // the manual minimize/maximize workaround: any overlay still up when the app
+  // returns to the foreground is force-hidden. By the time the app is active
+  // again, any in-flight transition has long since settled, so clearing the
+  // overlay here is always safe.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      const wasBackgrounded = appStateRef.current.match(/inactive|background/);
+      appStateRef.current = nextAppState;
+      if (wasBackgrounded && nextAppState === 'active') {
+        // Only act if something is actually showing — keep it a no-op otherwise.
+        if (isNavigatingRef.current || watchdogRef.current) {
+          hideOverlay();
+        }
+      }
+    });
+    return () => subscription.remove();
+  }, [hideOverlay]);
 
   // Block hardware back button while navigating
   useEffect(() => {

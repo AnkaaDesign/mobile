@@ -8,7 +8,6 @@ import {
   SCHEDULE_FREQUENCY,
   WEEK_DAY,
   MONTH,
-  RESCHEDULE_REASON,
   PANTS_SIZE,
   SHIRT_SIZE,
   BOOT_SIZE,
@@ -1622,15 +1621,6 @@ export const ppeDeliveryScheduleCreateSchema = z.object({
     .nullable()
     .optional(),
   customMonths: z.array(z.nativeEnum(MONTH)).default([]),
-  rescheduleCount: z.number().int().min(0).default(0),
-  originalDate: z.date().nullable().optional(),
-  lastRescheduleDate: z.date().nullable().optional(),
-  rescheduleReason: z
-    .nativeEnum(RESCHEDULE_REASON, {
-      errorMap: () => ({ message: "Motivo de reagendamento inválido" }),
-    })
-    .nullable()
-    .optional(),
   weeklyConfigId: z.string().uuid().nullable().optional(),
   monthlyConfigId: z.string().uuid().nullable().optional(),
   yearlyConfigId: z.string().uuid().nullable().optional(),
@@ -1687,15 +1677,6 @@ export const ppeDeliveryScheduleUpdateSchema = z.object({
     .nullable()
     .optional(),
   customMonths: z.array(z.nativeEnum(MONTH)).optional(),
-  rescheduleCount: z.number().int().min(0).optional(),
-  originalDate: z.date().nullable().optional(),
-  lastRescheduleDate: z.date().nullable().optional(),
-  rescheduleReason: z
-    .nativeEnum(RESCHEDULE_REASON, {
-      errorMap: () => ({ message: "Motivo de reagendamento inválido" }),
-    })
-    .nullable()
-    .optional(),
   nextRun: z.date().nullable().optional(),
   lastRun: z.date().nullable().optional(),
 });
