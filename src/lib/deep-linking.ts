@@ -80,8 +80,12 @@ export const ROUTE_MAP = {
   Questionnaire: '/(tabs)/pessoal/questionarios',
   // Assessment / competency evaluation (no dedicated mobile detail page yet - notifications list)
   Assessment: '/(tabs)/pessoal/minhas-notificacoes',
-  // Reconciliation run (no dedicated mobile page yet - notifications list)
-  ReconciliationRun: '/(tabs)/pessoal/minhas-notificacoes',
+  // Payable (Contas a Pagar) — unified outflow feed; list screen, no [id].
+  Payable: '/(tabs)/financeiro/contas-a-pagar/listar',
+  // Reconciliation run — mobile has no OFX/reconciliation screen; route to the
+  // Contas a Pagar list so the user lands on something actionable (clearance
+  // status is surfaced there) instead of dead-ending at the notifications list.
+  ReconciliationRun: '/(tabs)/financeiro/contas-a-pagar/listar',
   // Order schedule detail screen
   OrderSchedule: '/(tabs)/estoque/pedidos/agendamentos/detalhes/[id]',
   // Maintenance schedule detail screen
@@ -133,6 +137,9 @@ export const LIST_ROUTE_MAP = {
 
   // Personal List Pages
   myPpes: '/(tabs)/pessoal/meus-epis',
+
+  // Financial List Pages
+  payables: '/(tabs)/financeiro/contas-a-pagar/listar',
 } as const;
 
 /**
@@ -186,6 +193,10 @@ export const LIST_ALIAS_MAP: Record<string, keyof typeof LIST_ROUTE_MAP> = {
   notifications: 'notifications',
   notificacoes: 'notifications',
 
+  // Payables (Contas a Pagar) list
+  payables: 'payables',
+  'contas-a-pagar': 'payables',
+  'contas-pagar': 'payables',
 };
 
 /**
@@ -251,6 +262,7 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   ASSESSMENT: 'Assessment',
   RECONCILIATION_RUN: 'ReconciliationRun',
   RECONCILIATIONRUN: 'ReconciliationRun',
+  PAYABLE: 'Payable',
   ORDER_SCHEDULE: 'OrderSchedule',
   ORDERSCHEDULE: 'OrderSchedule',
   TASK_QUOTE: 'TaskQuote',
@@ -316,6 +328,7 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   Questionnaire: 'Questionnaire',
   Assessment: 'Assessment',
   ReconciliationRun: 'ReconciliationRun',
+  Payable: 'Payable',
   OrderSchedule: 'OrderSchedule',
   MaintenanceSchedule: 'MaintenanceSchedule',
   TaskQuote: 'TaskQuote',
@@ -453,6 +466,12 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   'reconciliation-run': 'ReconciliationRun',
   reconciliationrun: 'ReconciliationRun',
   conciliacao: 'ReconciliationRun',
+
+  // Payable (Contas a Pagar) routes
+  payable: 'Payable',
+  payables: 'Payable',
+  'conta-a-pagar': 'Payable',
+  'contas-a-pagar': 'Payable',
 
   // Order schedule routes
   'order-schedule': 'OrderSchedule',
@@ -734,8 +753,10 @@ export function parseDeepLink(url: string): ParsedDeepLink {
         'financeiro/faturamento': 'Financial',
         'financeiro/orcamento': 'TaskQuote',
         'financeiro/notas-fiscais': 'NfseDocument',
-        // No dedicated reconciliation screen on mobile — notifications list
+        // No dedicated reconciliation screen on mobile — Contas a Pagar list
+        // (clearance status surfaced there) instead of the notifications list.
         'financeiro/conciliacao': 'ReconciliationRun',
+        'financeiro/contas-a-pagar': 'Payable',
         // Personal pages (employee's own data)
         'pessoal/meus-pontos': 'TimeEntry',
         'pessoal/mensagens': 'Message',

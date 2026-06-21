@@ -8,8 +8,23 @@ import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFinancialDashboard } from "@/hooks/dashboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatCurrency } from "@/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { hasAnyPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
-const FINANCIAL_MENU = [
+import type { PrivilegeValue } from "@/hooks/use-privilege-gate";
+
+interface FinancialMenuItem {
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  route: string;
+  /** When set, the entry only renders for users holding one of these privileges. */
+  privilege?: PrivilegeValue[];
+}
+
+const FINANCIAL_MENU: FinancialMenuItem[] = [
   {
     title: "Faturamento",
     description: "Gerenciar faturas, parcelas e boletos",
@@ -30,6 +45,14 @@ const FINANCIAL_MENU = [
     icon: "fileInvoice",
     color: "#22c55e",
     route: "/(tabs)/financeiro/notas-fiscais/listar",
+  },
+  {
+    title: "Contas a Pagar",
+    description: "Saidas, pagamentos e conciliacao",
+    icon: "receipt",
+    color: "#ef4444",
+    route: "/(tabs)/financeiro/contas-a-pagar/listar",
+    privilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ACCOUNTING],
   },
   {
     title: "Clientes",
@@ -56,6 +79,9 @@ export default function FinanceiroScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
+
+  const { user } = useAuth();
+  const visibleMenu = FINANCIAL_MENU.filter((item) => !item.privilege || hasAnyPrivilege(user, item.privilege));
 
   const { data: dashboard, isLoading, error, refetch } = useFinancialDashboard();
   useScreenReady(!isLoading);
@@ -200,7 +226,7 @@ export default function FinanceiroScreen() {
             Acesso Rapido
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {FINANCIAL_MENU.map((item) => (
+            {visibleMenu.map((item) => (
               <Pressable
                 key={item.title}
                 onPress={() => router.push(item.route as any)}

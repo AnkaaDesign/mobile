@@ -551,6 +551,14 @@ export type PayableState =
   // Settled this month — surfaced on Contas a Pagar so finance can review what was paid.
   | "PAID";
 
+/**
+ * Axis B — bank-confirmation state, derived from a non-reversed
+ * ReconciliationMatch on the payable's anchor. Independent of paymentState:
+ * a PAID row may still be UNCLEARED (awaiting the next OFX import).
+ * Mirrors api/src/types/order.ts.
+ */
+export type ClearanceState = "UNCLEARED" | "CLEARED" | "DISPUTED";
+
 export type PayableSettleVia =
   | "ORDER_LIFECYCLE"
   | "AIRBRUSHING"
@@ -589,6 +597,16 @@ export interface PayableRow {
   settleHref?: string | null;
   /** Boleto installment (parcela) id when this row settles a single installment. */
   installmentId?: string | null;
+  /**
+   * Axis B — bank-confirmation state, derived from a non-reversed
+   * ReconciliationMatch on this row's anchor. Defaults to 'UNCLEARED' for
+   * rows with no confirming bank line. Set by the web OFX import / matcher.
+   */
+  clearanceState?: ClearanceState;
+  /** When the confirming bank line cleared this row (CLEARED/DISPUTED only). */
+  clearedAt?: Date | string | null;
+  /** The bank transaction that cleared this row (for row → extrato linking). */
+  bankTransactionId?: string | null;
 }
 
 export interface PayablesSummaryBucket {

@@ -2157,6 +2157,7 @@ export enum ACCOUNTING_TYPE {
   APLICACAO_FINANCEIRA = "APLICACAO_FINANCEIRA",
   ESTORNO = "ESTORNO",
   LUCRO_DISTRIBUIDO = "LUCRO_DISTRIBUIDO",
+  RECEITA_SERVICOS = "RECEITA_SERVICOS",
 }
 
 // Category hierarchy levels: 1 = top-level Categoria, 2 = Subcategoria (leaf)

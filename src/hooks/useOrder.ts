@@ -13,6 +13,7 @@ import {
   markOrderPaid,
   markOrderAwaitingPayment,
   getPayables,
+  settlePayrollMonth,
 } from '@/api-client';
 import type {
   OrderGetManyFormData,
@@ -266,6 +267,37 @@ export const usePayables = (options?: { enabled?: boolean }) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: options?.enabled ?? true,
   });
+};
+
+/**
+ * Mutations the Contas a Pagar list invokes to settle a payable row in place.
+ *
+ * - `markPaid` settles an ORDER row (mirrors the order detail mark-paid).
+ * - `settlePayrollMonth` settles a PAYROLL competence batch (folha) via the
+ *   unified /financial/payables/settle facade.
+ *
+ * Reconciliation / OFX (Axis B) stays web-only; this is the Axis-A assertion.
+ */
+export const usePayableMutations = () => {
+  const queryClient = useQueryClient();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: orderKeys.payables() });
+    queryClient.invalidateQueries({ queryKey: orderKeys.all });
+  };
+
+  const markPaidMutation = useMutation({
+    mutationFn: (orderId: string) => markOrderPaid(orderId),
+    onSuccess: invalidate,
+  });
+
+  const settlePayrollMutation = useMutation({
+    mutationFn: (vars: { year: number; month: number; amount: number | null }) =>
+      settlePayrollMonth(vars.year, vars.month, vars.amount),
+    onSuccess: invalidate,
+  });
+
+  return { markPaidMutation, settlePayrollMutation };
 };
 
 export const useOrderBatchMutations = (options?: {
