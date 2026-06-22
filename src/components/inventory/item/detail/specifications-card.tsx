@@ -17,6 +17,7 @@ const getMeasureIconName = (measureType: MEASURE_TYPE): string => {
       return "scale";
     case MEASURE_TYPE.LENGTH:
     case MEASURE_TYPE.WIDTH:
+    case MEASURE_TYPE.THICKNESS:
       return "ruler";
     case MEASURE_TYPE.VOLUME:
       return "droplet";

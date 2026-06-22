@@ -161,15 +161,12 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       {
+        // Read-only on mobile: the map is view-only (create/edit live on the web).
+        // Tapping a structure opens its contents in a sheet, so there are no sub-routes.
         id: "localizacoes",
         title: "Localizações",
         icon: "location",
         path: "/estoque/localizacoes",
-        children: [
-          { id: "localizacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/localizacoes/cadastrar" },
-          { id: "localizacoes-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/localizacoes/detalhes/:id", isDynamic: true },
-          { id: "localizacoes-editar", title: "Editar", icon: "edit", path: "/estoque/localizacoes/editar/:id", isDynamic: true },
-        ],
       },
       {
         id: "manutencao",

@@ -15,6 +15,7 @@
  */
 import { tutorialStorage } from "./tutorial-storage";
 import { useTutorialStore } from "./engine-store";
+import { buildSteps } from "./steps";
 import { type TutorialStep, type TutorialUserContext } from "./engine-types";
 
 export interface TutorialEngineDeps {
@@ -44,7 +45,9 @@ export class TutorialEngine {
       return;
     }
     const ctx = computeUserContext(this.deps.getUser());
-    const { buildSteps } = await import("./steps");
+    // buildSteps is statically imported (the step modules are pure data, no
+    // heavy scene components), so the tour starts without a dev-time Metro
+    // async-chunk round-trip that previously delayed first launch.
     const steps = buildSteps(ctx);
     if (steps.length === 0) {
       // Nothing to show — release the pending flag so messages can proceed.

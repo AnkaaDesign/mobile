@@ -87,6 +87,8 @@ const ALL_ROUTES = [
 
   // Inventory/Stock
   { name: "estoque/index", title: "Estoque" },
+  { name: "estoque/localizacoes/index", title: "Localizações" },
+  { name: "estoque/localizacoes/listar", title: "Localizações" },
   { name: "estoque/produtos/index", title: "Produtos" },
   { name: "estoque/produtos/cadastrar", title: "Cadastrar Produto" },
   { name: "estoque/produtos/listar", title: "Produtos" },
