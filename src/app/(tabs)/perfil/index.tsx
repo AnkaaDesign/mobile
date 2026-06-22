@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, Alert, RefreshControl, KeyboardAvoidingVi
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
+import { Image } from "expo-image";
 import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -14,6 +15,9 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { getProfile, updateProfile, uploadPhoto, deletePhoto } from "@/api-client/profile";
+import { authService } from "@/api-client";
+import { changePasswordSchema, type ChangePasswordFormData } from "@/schemas";
+import { getFileUrl } from "@/utils/file-utils";
 import { useKeyboardAwareScroll, useScreenReady} from '@/hooks';
 import { Skeleton } from "@/components/ui/skeleton";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
@@ -46,7 +50,7 @@ type ProfileFormData = z.infer<typeof profileUpdateSchema>;
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
-  const { refreshUserData } = useAuth();
+  const { silentRefreshUserData } = useAuth();
 
   // Keyboard-aware scrolling (same pattern as customer form)
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -68,6 +72,7 @@ export default function ProfileScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [originalValues, setOriginalValues] = useState<ProfileFormData | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileUpdateSchema),
@@ -83,6 +88,37 @@ export default function ProfileScreen() {
       zipCode: "",
     },
   });
+
+  // Separate form for the change-password card
+  const passwordForm = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    },
+  });
+
+  // Resolved avatar URI: prefer a freshly-picked local image, otherwise the
+  // server-hosted avatar (built from its file id). Returns null → show initials.
+  const avatarUri = useMemo(() => {
+    if (photoPreview) return photoPreview;
+    if (user?.avatar?.id) return getFileUrl(user.avatar as any);
+    return null;
+  }, [photoPreview, user?.avatar]);
+
+  const onChangePassword = async (data: ChangePasswordFormData) => {
+    try {
+      setIsChangingPassword(true);
+      await authService.changePassword(data);
+      // Success/error toasts are emitted by the api-client interceptor.
+      passwordForm.reset();
+    } catch {
+      // Error handled by the api-client interceptor.
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const loadProfile = useCallback(async () => {
     try {
@@ -106,10 +142,9 @@ export default function ProfileScreen() {
 
         form.reset(formValues);
         setOriginalValues(formValues);
-
-        if (response.data.avatar) {
-          setPhotoPreview(response.data.avatar.url || null);
-        }
+        // Avatar is rendered from `user.avatar` via `avatarUri`; the local
+        // `photoPreview` is only used as an optimistic preview while uploading.
+        setPhotoPreview(null);
       }
     } catch (error: any) {
       // API client handles error alerts
@@ -124,10 +159,10 @@ export default function ProfileScreen() {
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await refreshUserData();
+    await silentRefreshUserData();
     await loadProfile();
     setIsRefreshing(false);
-  }, [refreshUserData, loadProfile]);
+  }, [silentRefreshUserData, loadProfile]);
 
   const onSubmit = async (data: ProfileFormData) => {
     try {
@@ -138,7 +173,7 @@ export default function ProfileScreen() {
         setUser(response.data);
         setOriginalValues(data);
         form.reset(data);
-        await refreshUserData();
+        await silentRefreshUserData();
       }
     } catch (error: any) {
       // API client handles error alerts
@@ -197,18 +232,15 @@ export default function ProfileScreen() {
 
       if (response.success && response.data) {
         setUser(response.data);
-        if (response.data.avatar) {
-          setPhotoPreview(response.data.avatar.url || null);
-        }
-        await refreshUserData();
+        // Clear the local preview so the avatar renders from the persisted
+        // `user.avatar` (canonical server URL) via `avatarUri`.
+        setPhotoPreview(null);
+        await silentRefreshUserData();
       }
     } catch (error: any) {
-      // API client handles error alerts
-      if (user?.avatar) {
-        setPhotoPreview(user.avatar.url || null);
-      } else {
-        setPhotoPreview(null);
-      }
+      // API client handles error alerts; drop the optimistic preview so we fall
+      // back to the existing server avatar (or initials).
+      setPhotoPreview(null);
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -231,7 +263,7 @@ export default function ProfileScreen() {
               if (response.success && response.data) {
                 setUser(response.data);
                 setPhotoPreview(null);
-                await refreshUserData();
+                await silentRefreshUserData();
               }
             } catch (error: any) {
               // API client handles error alerts
@@ -336,13 +368,13 @@ export default function ProfileScreen() {
 
           <View style={styles.photoSection}>
             <View style={[styles.avatarContainer, { backgroundColor: colors.primary }]}>
-              {photoPreview ? (
-                <View style={styles.avatarImage}>
-                  <ThemedText style={styles.avatarText}>
-                    {/* Image would be displayed here with expo-image */}
-                    {getInitials(user.name)}
-                  </ThemedText>
-                </View>
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                  transition={150}
+                />
               ) : (
                 <ThemedText style={styles.avatarText}>
                   {getInitials(user.name)}
@@ -459,6 +491,91 @@ export default function ProfileScreen() {
               disabled
             />
           </View>
+        </Card>
+
+        {/* Security Card: Change Password */}
+        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <ThemedText style={styles.cardTitle}>Segurança</ThemedText>
+          <ThemedText style={[styles.cardDescription, { color: colors.mutedForeground }]}>
+            Altere sua senha de acesso
+          </ThemedText>
+
+          <Controller
+            control={passwordForm.control}
+            name="currentPassword"
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+              <View style={styles.inputContainer}>
+                <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Senha atual</ThemedText>
+                <Input
+                  fieldKey="currentPassword"
+                  type="password"
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Digite sua senha atual"
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  editable={!isChangingPassword}
+                />
+                {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+              </View>
+            )}
+          />
+
+          <Controller
+            control={passwordForm.control}
+            name="newPassword"
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+              <View style={styles.inputContainer}>
+                <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nova senha</ThemedText>
+                <Input
+                  fieldKey="newPassword"
+                  type="password"
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Mínimo de 6 caracteres"
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  editable={!isChangingPassword}
+                />
+                {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+              </View>
+            )}
+          />
+
+          <Controller
+            control={passwordForm.control}
+            name="confirmNewPassword"
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+              <View style={styles.inputContainer}>
+                <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Confirmar nova senha</ThemedText>
+                <Input
+                  fieldKey="confirmNewPassword"
+                  type="password"
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Repita a nova senha"
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  editable={!isChangingPassword}
+                />
+                {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+              </View>
+            )}
+          />
+
+          <Button
+            variant="default"
+            onPress={passwordForm.handleSubmit(onChangePassword)}
+            disabled={isChangingPassword}
+            style={styles.changePasswordButton}
+          >
+            <ThemedText style={{ color: "#fff", fontWeight: "600" }}>
+              {isChangingPassword ? "Alterando..." : "Alterar Senha"}
+            </ThemedText>
+          </Button>
         </Card>
 
         {/* Measures Card (Read-only). */}
@@ -733,6 +850,12 @@ const styles = StyleSheet.create({
   cardDescription: {
     fontSize: 14,
     marginBottom: spacing.md,
+  },
+  changePasswordButton: {
+    marginTop: spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   photoSection: {
     alignItems: "center",

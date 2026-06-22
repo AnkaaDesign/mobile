@@ -178,13 +178,6 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         placeholder: 'Selecione os status',
       },
       {
-        key: 'isOverdue',
-        label: 'Apenas Atrasados',
-        type: 'toggle',
-        placeholder: 'Apenas Atrasados',
-        description: 'Mostrar apenas empréstimos atrasados',
-      },
-      {
         key: 'itemIds',
         label: 'Itens',
         type: 'select',

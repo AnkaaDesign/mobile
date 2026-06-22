@@ -51,14 +51,26 @@ const NavigationLoadingContext = createContext<NavigationLoadingContextType | nu
 
 const DEFAULT_TIMEOUT = 1500; // 1.5 seconds max for any navigation
 
-// Absolute ceiling for ANY overlay (navigation OR mutation via withLoading).
-// Armed imperatively inside showOverlay() so it does NOT depend on a React
-// state transition firing — this is the backstop that prevents a permanently
-// stuck overlay when the 1.5s nav timeout has been cleared (withLoading) AND
-// the state-driven 3s failsafe fails to re-arm (false→true setState collapses
-// to a no-op under React 18 auto-batching). Generous enough to let a slow
-// mutation finish on its own in the common case.
-const HARD_WATCHDOG_TIMEOUT = 12000; // 12 seconds absolute max
+// Reliable imperative backstops, armed inside showOverlay() — plain setTimeouts
+// on the live JS event loop, independent of any React state transition. These
+// replace the old state-driven failsafe effect, which re-armed only on an
+// overlayVisible false→true transition and was therefore silently defeated when
+// React 18 auto-batching collapsed a hide-then-show into a no-op, leaving the
+// overlay with NO live timer and recoverable only by a minimize/restore
+// (AppState 'active'). showOverlay() is the only way the overlay becomes
+// visible, so arming a backstop there guarantees there is ALWAYS a live timer
+// that will hide it.
+//
+// Two ceilings because the primary dismissal differs:
+//  - Navigation / wait-for-ready screens dismiss on the destination's ready
+//    signal (useScreenReady → endNavigation); the backstop only catches a
+//    screen that never signals ready. Short, so a stuck overlay self-heals
+//    before a user would reach for the app switcher.
+//  - withLoading() mutations dismiss precisely when their promise settles; the
+//    backstop only catches a promise that never settles. Long, so it never
+//    cuts a legitimately slow operation (e.g. a large file upload) early.
+const NAV_WATCHDOG_TIMEOUT = 6000; // 6s backstop for navigation overlays
+const MUTATION_WATCHDOG_TIMEOUT = 30000; // 30s backstop for withLoading overlays
 
 export function NavigationLoadingProvider({ children }: { children: React.ReactNode }) {
   const { colors, isDark } = useTheme();
@@ -111,7 +123,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     }
   }, []);
 
-  const showOverlay = useCallback(() => {
+  const showOverlay = useCallback((watchdogMs: number = NAV_WATCHDOG_TIMEOUT) => {
     // Set ref immediately for synchronous double-click guard
     isNavigatingRef.current = true;
     overlayClaimedRef.current = false; // Reset claim for new navigation
@@ -123,21 +135,20 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
       timeoutRef.current = null;
     }
 
-    // Arm the imperative hard-ceiling watchdog. Unlike the state-driven 3s
-    // failsafe effect (which only re-arms when overlayVisible *transitions*
-    // false→true and is therefore defeated by React 18 batching collapsing a
-    // hide-then-show into a no-op), this is armed unconditionally on every
-    // single show. showOverlay() is the ONLY entry point that makes the
-    // overlay visible, so this guarantees there is ALWAYS a live timer that
-    // will hide it — closing the "zero live timers → permanently stuck"
-    // window that previously needed a minimize/maximize to recover.
+    // Arm the imperative hard-ceiling watchdog. This is the single reliable
+    // backstop: armed unconditionally on every show, on the live JS event
+    // loop, independent of any React state transition. showOverlay() is the
+    // ONLY entry point that makes the overlay visible, so this guarantees
+    // there is ALWAYS a live timer that will hide it — closing the "zero live
+    // timers → permanently stuck" window that previously needed a
+    // minimize/restore to recover.
     if (watchdogRef.current) {
       clearTimeout(watchdogRef.current);
     }
     watchdogRef.current = setTimeout(() => {
       console.warn('[NavigationLoading] WATCHDOG: overlay exceeded hard ceiling, forcing hide');
       hideOverlay();
-    }, HARD_WATCHDOG_TIMEOUT);
+    }, watchdogMs);
   }, [hideOverlay]);
 
   const claimOverlay = useCallback(() => {
@@ -147,20 +158,27 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     // prevents auto-hide on the NEXT navigation.
     if (isNavigatingRef.current) {
       overlayClaimedRef.current = true;
+
+      // A claiming screen owns dismissal: it calls endNavigation() the instant
+      // its data is ready (useScreenReady). Cancel the premature 1.5s
+      // navigation timeout so the overlay genuinely WAITS for "ready" and the
+      // page is revealed exactly when it has content — instead of being
+      // force-hidden mid-load, which left the overlay/skeleton out of sync and
+      // made "wait until ready" never actually work for any screen slower than
+      // 1.5s. The hard watchdog stays armed as the only backstop.
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     }
   }, []);
 
-  // Failsafe: force hide if stuck too long
-  useEffect(() => {
-    if (overlayVisible) {
-      const maxVisibleTime = setTimeout(() => {
-        console.warn('[NavigationLoading] FAILSAFE: Overlay stuck for too long, forcing hide');
-        hideOverlay();
-      }, 3000);
-
-      return () => clearTimeout(maxVisibleTime);
-    }
-  }, [overlayVisible, hideOverlay]);
+  // NOTE: the old state-driven 3s failsafe effect was removed. It re-armed
+  // only on an overlayVisible false→true transition, so React 18 auto-batching
+  // (which can collapse a hide-then-show back to the same value) could leave it
+  // un-armed — the overlay then had NO live timer and only AppState 'active'
+  // (minimize/restore) could clear it. The imperative watchdog armed
+  // unconditionally inside showOverlay() is the single, reliable backstop.
 
   // Auto-end navigation when pathname changes (fallback for already-mounted screens
   // whose useScreenReady() won't re-fire). Skipped if a screen has claimed the overlay
@@ -299,7 +317,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
    * handling is the caller's responsibility (see useFormFlow).
    */
   const withLoading = useCallback(<T,>(fn: () => Promise<T>): Promise<T> => {
-    showOverlay();
+    showOverlay(MUTATION_WATCHDOG_TIMEOUT);
     // Long-running mutations may exceed DEFAULT_TIMEOUT; clear that timer.
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);

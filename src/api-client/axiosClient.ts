@@ -192,6 +192,16 @@ const getApiUrl = (): string => {
   return getDefaultApiUrl();
 };
 
+// Hard ceiling for read requests (GET/HEAD). The instance-level `timeout`
+// (5 min) exists for large file uploads, but applying it to reads meant a
+// stalled GET (WiFi handoff, half-open TCP, server hiccup) could leave a
+// screen's React Query `isLoading` — i.e. its skeleton/spinner — stuck for up
+// to 5 minutes, recoverable only by toggling app focus (which fires a NetInfo
+// reconnect refetch). Capping reads converts "infinite stuck" into "settles or
+// surfaces a retryable error within READ_TIMEOUT". Uploads (FormData) and
+// binary downloads keep the long timeout.
+const READ_TIMEOUT = 20000; // 20 seconds max for any read request
+
 const DEFAULT_CONFIG: ApiClientConfig = {
   baseURL: getApiUrl(),
   timeout: 300000, // 5 minutes to allow for large file uploads
@@ -573,6 +583,22 @@ const createApiClient = (
 
       config.metadata = metadata;
 
+      // Bound read requests so a stalled GET can't leave a screen's loading
+      // state stuck for the full 5-minute upload timeout. Reads settle or
+      // surface a retryable error within READ_TIMEOUT; uploads (FormData) and
+      // binary downloads (blob/arraybuffer) keep the long timeout. Capped even
+      // when a caller passed a larger explicit timeout — the no-stuck guarantee
+      // takes precedence over a single slow read.
+      const isBinaryDownload =
+        config.responseType === "blob" || config.responseType === "arraybuffer";
+      if (
+        isCacheableMethod(config.method) &&
+        !(config.data instanceof FormData) &&
+        !isBinaryDownload
+      ) {
+        config.timeout = Math.min(config.timeout ?? READ_TIMEOUT, READ_TIMEOUT);
+      }
+
       // Log API request start
       apiPerformanceLogger.startRequest(
         requestId,
@@ -791,6 +817,21 @@ const createApiClient = (
         );
       }
 
+      // Cancelled requests are intentional and internal — they fire when the app
+      // tears a screen down on navigation, or when logout / a stale-token 401
+      // calls cancelAllRequests()/queryClient.cancelQueries(). They are NEVER a
+      // real failure, so short-circuit here BEFORE the retry, auth-logout cascade
+      // and toast logic below. Otherwise a cancellation would (a) wrongly trigger
+      // globalAuthErrorHandler and (b) surface the spurious "A operação foi
+      // cancelada." toast the user kept seeing after logout / password change.
+      // Reject with a flagged, silent error so awaiting callers can ignore it.
+      if (axios.isCancel(error)) {
+        const canceledInfo = handleApiError(error);
+        const canceledError = new ApiError(canceledInfo, requestId, error);
+        (canceledError as any).isCanceled = true;
+        return Promise.reject(canceledError);
+      }
+
       // NOTE: Network-based URL switching is now handled centrally by NetworkContext.
       // The base URL is automatically updated when network connectivity changes.
       // No per-call fallback logic is needed here.
@@ -899,7 +940,10 @@ const createApiClient = (
 
       // Show error notification with detailed messages
       if (finalConfig.enableNotifications && metadata) {
-        if (!isLoggingOut) {
+        // Cancelled requests (cancel token / aborted on navigation or auth-state
+        // changes) are intentional and internal — never surface them as an error
+        // toast (this is what produced the spurious "A operação foi cancelada.").
+        if (!isLoggingOut && !axios.isCancel(error)) {
           // Skip notifications for batch operations - they'll be handled by the dialog
           const isBatchOperation = config?.url?.includes("/batch");
           // Skip notifications for file uploads - they should be handled by upload components

@@ -4,7 +4,17 @@ import { IconFilter, IconX, IconPackage, IconClock, IconTag } from '@tabler/icon
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '@/constants';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from '@/constants';
+
+// "Minhas Movimentações" only shows movements tied to the user personally.
+// Inbound order receipts and production usage are warehouse/production-wide
+// reasons that never apply to a single user, so they are excluded from the
+// reason filter.
+const EXCLUDED_REASONS: string[] = [
+  ACTIVITY_REASON.ORDER_RECEIVED,
+  ACTIVITY_REASON.PRODUCTION_USAGE,
+];
 
 interface PersonalActivityFilterDrawerContentProps {
   filters: {
@@ -97,12 +107,15 @@ export function PersonalActivityFilterDrawerContent({
     }
   ], []);
 
-  // Reason types
+  // Reason types (excluding warehouse/production-wide reasons that never apply
+  // to a single user's own movements)
   const reasonOptions = useMemo(() =>
-    Object.entries(ACTIVITY_REASON_LABELS).map(([key, label]) => ({
-      key,
-      label,
-    }))
+    Object.entries(ACTIVITY_REASON_LABELS)
+      .filter(([key]) => !EXCLUDED_REASONS.includes(key))
+      .map(([key, label]) => ({
+        key,
+        label,
+      }))
   , []);
 
   return (
@@ -269,7 +282,7 @@ export function PersonalActivityFilterDrawerContent({
           </View>
         </View>
 
-        {/* Date Range - Simplified for mobile */}
+        {/* Date Range */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <IconClock size={18} color={colors.mutedForeground} />
@@ -278,9 +291,24 @@ export function PersonalActivityFilterDrawerContent({
             </ThemedText>
           </View>
 
-          <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
-            Use a busca na tela principal para filtrar por período específico
-          </ThemedText>
+          <DateRangePicker
+            value={{
+              from: localFilters.createdAt?.gte,
+              to: localFilters.createdAt?.lte,
+            }}
+            onChange={(range) => {
+              setLocalFilters(prev => ({
+                ...prev,
+                createdAt:
+                  range?.from || range?.to
+                    ? { gte: range?.from, lte: range?.to }
+                    : undefined,
+              }));
+            }}
+            fromPlaceholder="Data inicial"
+            toPlaceholder="Data final"
+            maximumDate={new Date()}
+          />
         </View>
       </ScrollView>
 

@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
 import { Icon } from '@/components/ui/icon';
+import { Avatar } from '@/components/ui/avatar';
+import { getFileUrl } from '@/utils/file-utils';
 import { MENU_ITEMS, MenuItem } from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { useFavorites } from '@/contexts/favorites-context';
@@ -250,7 +252,11 @@ function DrawerContentComponent({
         {/* User info section */}
         <View style={styles.userSection}>
           <View style={styles.userInfo}>
-            <Icon name="user-circle" size="lg" variant="muted" />
+            <Avatar
+              size="lg"
+              imageUrl={user?.avatar?.id ? getFileUrl(user.avatar as any) : undefined}
+              name={user?.name || "U"}
+            />
             <View style={styles.userDetails}>
               <Text style={[styles.userName, { color: isDark ? '#f5f5f5' : '#171717' }]}>
                 {user?.name || 'Usuário'}

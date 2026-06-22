@@ -98,7 +98,6 @@ export default function BonusSimulationScreen() {
   });
 
   const liveBonusData = liveBonusQuery.data?.data ?? null;
-  const isLiveStale = Boolean(liveBonusData?.isStale);
 
   // Injected list: live bonus at the top (if present) + historical
   const combinedList = useMemo(() => {
@@ -227,11 +226,16 @@ export default function BonusSimulationScreen() {
     return availablePositions.find((p) => p.id === selectedPositionId) || currentUser?.position;
   }, [availablePositions, selectedPositionId, currentUser?.position]);
 
-  // Calculate simulated average from task quantity
+  // Calculate simulated average from task quantity. Round to 2 decimals to
+  // match the live/saved bonus path (the API rounds B1 via roundAverage before
+  // the calc). Sending the full-precision value here used to make the simulated
+  // result diverge from the real bonus (R$ 35,02 vs R$ 35,56) because the
+  // degree-5 anchor polynomial amplifies a tiny B1 difference into a visible
+  // R$ swing.
   const simulatedAverage = useMemo(() => {
     if (eligibleUsersCount === 0) return 0;
     const quantity = parseFloat(taskQuantity.replace(',', '.')) || 0;
-    return quantity / eligibleUsersCount;
+    return Math.round((quantity / eligibleUsersCount) * 100) / 100;
   }, [taskQuantity, eligibleUsersCount]);
 
   // Calculate simulated bonus server-side via POST /bonuses/my-bonus-simulate.
@@ -304,6 +308,17 @@ export default function BonusSimulationScreen() {
     });
   }, []);
 
+  // Reset all simulation inputs back to the user's live values: task quantity,
+  // cargo and performance level.
+  const handleResetSimulation = useCallback(() => {
+    setTaskQuantity(totalWeightedTasks.toFixed(1));
+    setHasUserModified(false);
+    if (currentUser?.position?.id) {
+      setSelectedPositionId(currentUser.position.id);
+    }
+    setSelectedPerformanceLevel(currentUser?.performanceLevel ?? 3);
+  }, [totalWeightedTasks, currentUser?.position?.id, currentUser?.performanceLevel]);
+
   // Handle task quantity change with maximum limit
   const handleTaskQuantityChange = useCallback((value: string | number | null) => {
     // Mark as user modified
@@ -343,7 +358,6 @@ export default function BonusSimulationScreen() {
   // Stage-specific loading flags (full-screen gating only uses userLoading below).
   void taskStatsLoading;
   void positionsLoading;
-  const isLiveLoading = liveBonusQuery.isLoading;
   const isHistoricalLoading = historicalBonusesQuery.isLoading;
 
   useScreenReady(!!currentUser || refreshing);
@@ -438,52 +452,6 @@ export default function BonusSimulationScreen() {
           </ThemedText>
         </Card>
 
-        {/* Stage 3 — Live bonus card (skeleton while pending, stale pill when stale) */}
-        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <ThemedText style={styles.sectionTitle}>Bônus Atual (ao vivo)</ThemedText>
-            {isLiveStale && !isLiveLoading && (
-              <View style={[styles.stalePill, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-                <ThemedText style={[styles.stalePillText, { color: colors.mutedForeground }]}>
-                  atualizando…
-                </ThemedText>
-              </View>
-            )}
-          </View>
-
-          {isLiveLoading ? (
-            <View style={{ gap: 10 }}>
-              <Skeleton style={{ height: 40, width: '55%', borderRadius: 4, alignSelf: 'center' }} />
-              <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
-            </View>
-          ) : liveBonusData ? (
-            <>
-              <ThemedText style={[styles.resultAmount, { color: colors.primary }]}>
-                {formatCurrency(Number(liveBonusData.netBonus ?? liveBonusData.baseBonus ?? 0))}
-              </ThemedText>
-              <View style={styles.resultDetails}>
-                <View style={styles.detailRow}>
-                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Desempenho:</ThemedText>
-                  <ThemedText style={styles.detailValue}>Nível {liveBonusData.level ?? currentUser.performanceLevel ?? 3}</ThemedText>
-                </View>
-                <View style={styles.detailRow}>
-                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Tarefas ponderadas:</ThemedText>
-                  <ThemedText style={styles.detailValue}>{Number(liveBonusData.weightedTasks ?? 0).toFixed(1)}</ThemedText>
-                </View>
-                <View style={styles.detailRow}>
-                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Média por colaborador:</ThemedText>
-                  <ThemedText style={styles.detailValue}>{Number(liveBonusData.averageTaskPerUser ?? 0).toFixed(2)}</ThemedText>
-                </View>
-              </View>
-            </>
-          ) : (
-            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-              Sem cálculo ao vivo disponível.
-            </ThemedText>
-          )}
-        </Card>
-
         {/* Simulation Controls Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.sectionTitle}>Simular Bônus</ThemedText>
@@ -504,10 +472,7 @@ export default function BonusSimulationScreen() {
               </View>
               <TouchableOpacity
                 style={[styles.resetButtonInline, { backgroundColor: colors.muted, borderColor: colors.border }]}
-                onPress={() => {
-                  setTaskQuantity(totalWeightedTasks.toFixed(1));
-                  setHasUserModified(false);
-                }}
+                onPress={handleResetSimulation}
               >
                 <IconRefresh size={20} color={colors.foreground} />
               </TouchableOpacity>
@@ -693,8 +658,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   resetButtonInline: {
-    height: 48,
-    width: 48,
+    height: 42,
+    width: 42,
     borderRadius: 6,
     borderWidth: 1,
     justifyContent: "center",

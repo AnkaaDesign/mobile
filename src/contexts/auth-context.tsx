@@ -189,7 +189,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const apiLogin = async (contact: string, password: string) => {
-    return await authService.login({ contact, password });
+    try {
+      return await authService.login({ contact, password });
+    } catch (error) {
+      // A user-initiated login must not fail just because a concurrent
+      // stale-token 401 (e.g. a leftover /auth/me after logout) fired
+      // cancelAllRequests() and aborted this request mid-flight. The
+      // cancellation is spurious here, so retry the login once.
+      if ((error as any)?.isCanceled) {
+        return await authService.login({ contact, password });
+      }
+      throw error;
+    }
   };
 
   const fetchAndUpdateUserData = useCallback(async (token: string, forceRefresh = false): Promise<User | null | 'SKIP'> => {

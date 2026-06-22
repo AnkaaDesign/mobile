@@ -1,207 +1,141 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
-import { useTaskDetail } from "@/hooks";
+import { useActivity } from "@/hooks";
 import {
-  CHANGE_LOG_ENTITY_TYPE,
-  TASK_STATUS,
-  TASK_STATUS_LABELS,
+  ACTIVITY_OPERATION,
+  ACTIVITY_OPERATION_LABELS,
+  ACTIVITY_REASON_LABELS,
   routes,
 } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate } from "@/utils";
-import {
-  IconActivity,
-  IconHistory,
-  IconCalendar,
-  IconInfoCircle,
-} from "@tabler/icons-react-native";
-import type { Task } from "@/types";
+import { IconArrowsExchange, IconExternalLink } from "@tabler/icons-react-native";
+import type { Activity } from "@/types";
 
 import { DetailScreen } from "@/components/screens/detail-screen";
-import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { Badge } from "@/components/ui/badge";
+import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useNav } from "@/contexts/nav";
+
+const formatSignedQuantity = (quantity: number, operation: string) => {
+  const sign = operation === ACTIVITY_OPERATION.INBOUND ? "+" : "-";
+  const absValue = Math.abs(quantity ?? 0);
+  return `${sign}${absValue % 1 === 0 ? absValue : absValue.toFixed(2)}`;
+};
 
 export default function MovementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const nav = useNav();
 
-  const query = useTaskDetail(id || "", {
+  const query = useActivity(id || "", {
     include: {
-      sector: { select: { id: true, name: true } },
-      createdBy: { select: { id: true, name: true } },
+      item: { select: { id: true, name: true } },
     },
     enabled: !!id && id !== "",
   });
 
   return (
-    <DetailScreen<Task>
+    <DetailScreen<Activity>
       query={query as any}
-      icon={IconActivity}
-      title={(t) => t.name || "Movimentação"}
-      subtitle={(t) =>
-        t.serialNumber ? `Nº Série: ${t.serialNumber}` : undefined
+      icon={IconArrowsExchange}
+      title={(activity) => activity.item?.name || "Movimentação"}
+      subtitle={(activity) =>
+        activity.reason ? ACTIVITY_REASON_LABELS[activity.reason] : undefined
       }
-      // Read-only mirror — user views their own task movements. The production
-      // user can't edit anything, so hide the redundant refresh button
-      // (pull-to-refresh covers it) and the terminal-state banner.
+      // User-scoped read-only mirror — the user views their own stock movements
+      // and can't edit anything, so hide the refresh button (pull-to-refresh
+      // covers it) and the terminal-state banner.
       editGuard={{ editable: [] }}
       hideRefresh
       hideTerminalBanner
       notFoundFallback={mobileRoute(routes.personal.myMovements.root)}
     >
-      {(task) => (
-        <View style={styles.body}>
-          {/* Status badge */}
-          <View style={styles.statusRow}>
-            <Badge
-              variant={
-                task.status === TASK_STATUS.COMPLETED
-                  ? "success"
-                  : task.status === TASK_STATUS.IN_PRODUCTION
-                    ? "warning"
-                    : "default"
-              }
-            >
-              {TASK_STATUS_LABELS[task.status] || task.status}
-            </Badge>
+      {(activity) => {
+        const isInbound = activity.operation === ACTIVITY_OPERATION.INBOUND;
+        return (
+          <View style={styles.body}>
+            {/* Movement Info */}
+            <DetailCard title="Informações da Movimentação" icon="arrows-exchange">
+              <View style={styles.content}>
+                <DetailField
+                  label="Operação"
+                  value={
+                    <Badge
+                      variant={isInbound ? "success" : "destructive"}
+                      textStyle={styles.badgeText}
+                    >
+                      {`${isInbound ? "↑ " : "↓ "}${
+                        ACTIVITY_OPERATION_LABELS[activity.operation] || "-"
+                      }`}
+                    </Badge>
+                  }
+                />
+
+                <DetailField
+                  label="Quantidade"
+                  value={formatSignedQuantity(activity.quantity, activity.operation)}
+                />
+
+                {activity.reason && (
+                  <DetailField
+                    label="Motivo"
+                    value={ACTIVITY_REASON_LABELS[activity.reason] || "-"}
+                  />
+                )}
+              </View>
+            </DetailCard>
+
+            {/* Item */}
+            <DetailCard title="Item" icon="box">
+              {activity.item ? (
+                <TouchableOpacity
+                  onPress={() =>
+                    activity.item?.id &&
+                    nav.push(
+                      mobileRoute(routes.inventory.products.details(activity.item.id)),
+                    )
+                  }
+                  activeOpacity={0.7}
+                >
+                  <DetailField
+                    label="Nome do Item"
+                    icon="package"
+                    value={
+                      <View style={styles.nameRow}>
+                        <ThemedText style={[styles.nameText, { color: colors.foreground }]}>
+                          {activity.item.name}
+                        </ThemedText>
+                        <IconExternalLink size={14} color={colors.primary} />
+                      </View>
+                    }
+                  />
+                </TouchableOpacity>
+              ) : (
+                <DetailField label="Nome do Item" icon="package" value="-" />
+              )}
+            </DetailCard>
+
+            {/* Dates */}
+            <DetailCard title="Datas" icon="calendar">
+              <View style={styles.content}>
+                {activity.createdAt && (
+                  <DetailField
+                    label="Data da Movimentação"
+                    icon="calendar"
+                    value={formatDate(activity.createdAt)}
+                  />
+                )}
+              </View>
+            </DetailCard>
           </View>
-
-          {/* Movement Info */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconInfoCircle size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>
-                  Informações da Movimentação
-                </ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              {task.sector && (
-                <View style={styles.detailRow}>
-                  <ThemedText
-                    style={[styles.detailLabel, { color: colors.mutedForeground }]}
-                  >
-                    Setor
-                  </ThemedText>
-                  <ThemedText
-                    style={[styles.detailValue, { color: colors.foreground }]}
-                  >
-                    {task.sector.name}
-                  </ThemedText>
-                </View>
-              )}
-              {task.details && (
-                <View style={styles.detailRow}>
-                  <ThemedText
-                    style={[styles.detailLabel, { color: colors.mutedForeground }]}
-                  >
-                    Detalhes
-                  </ThemedText>
-                  <ThemedText
-                    style={[styles.detailValue, { color: colors.foreground }]}
-                  >
-                    {task.details}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-          </Card>
-
-          {/* Dates */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconCalendar size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Datas</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              {task.entryDate && (
-                <DateRow
-                  label="Entrada"
-                  value={formatDate(task.entryDate)}
-                  colors={colors}
-                />
-              )}
-              {task.term && (
-                <DateRow
-                  label="Prazo"
-                  value={formatDate(task.term)}
-                  colors={colors}
-                />
-              )}
-              {task.startedAt && (
-                <DateRow
-                  label="Iniciado em"
-                  value={formatDate(task.startedAt)}
-                  colors={colors}
-                />
-              )}
-              {task.finishedAt && (
-                <DateRow
-                  label="Finalizado em"
-                  value={formatDate(task.finishedAt)}
-                  colors={colors}
-                />
-              )}
-              {task.createdAt && (
-                <DateRow
-                  label="Criado em"
-                  value={formatDate(task.createdAt)}
-                  colors={colors}
-                />
-              )}
-            </View>
-          </Card>
-
-          {/* Changelog */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconHistory size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>
-                  Histórico de Alterações
-                </ThemedText>
-              </View>
-            </View>
-            <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.TASK}
-              entityId={task.id}
-              entityName={task.name}
-              entityCreatedAt={task.createdAt}
-              maxHeight={400}
-            />
-          </Card>
-        </View>
-      )}
+        );
+      }}
     </DetailScreen>
-  );
-}
-
-function DateRow({
-  label,
-  value,
-  colors,
-}: {
-  label: string;
-  value: string;
-  colors: any;
-}) {
-  return (
-    <View style={styles.detailRow}>
-      <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-        {label}
-      </ThemedText>
-      <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-        {value}
-      </ThemedText>
-    </View>
   );
 }
 
@@ -209,43 +143,21 @@ const styles = StyleSheet.create({
   body: {
     gap: spacing.md,
   },
-  card: {
-    padding: spacing.md,
+  content: {
+    gap: spacing.lg,
   },
-  statusRow: {
-    flexDirection: "row",
+  badgeText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
   },
-  header: {
+  nameRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  detailRow: {
-    flexDirection: "row",
-    paddingVertical: spacing.xs,
-  },
-  detailLabel: {
+  nameText: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    width: 120,
-  },
-  detailValue: {
-    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
     flex: 1,
   },
 });

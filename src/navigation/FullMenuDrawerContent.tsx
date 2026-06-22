@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
 import { Icon } from '@/components/ui/icon';
+import { Avatar } from '@/components/ui/avatar';
+import { getFileUrl } from '@/utils/file-utils';
 import { IconChevronRight, IconStar, IconStarFilled } from '@tabler/icons-react-native';
 import { MENU_ITEMS, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
@@ -496,7 +498,11 @@ function FullMenuDrawerContent({
             ]}
           >
             <View style={styles.userAvatar}>
-              <Icon name="user-circle" size="lg" variant="muted" />
+              <Avatar
+                size="lg"
+                imageUrl={user?.avatar?.id ? getFileUrl(user.avatar as any) : undefined}
+                name={user?.name || "U"}
+              />
             </View>
             <View style={styles.userInfo}>
               <Text style={[styles.userName, { color: isDarkMode ? "#f5f5f5" : "#171717" }]} numberOfLines={1}>

@@ -30,7 +30,12 @@ export function useScreenReady(isReady: boolean = true) {
     }
   }, [isReady, claimOverlay]);
 
-  // Dismiss when isReady changes (handles first-visit data load)
+  // Dismiss when isReady changes (handles first-visit data load). This fires
+  // exactly when THIS screen transitions into the ready state — i.e. it is the
+  // destination whose data just loaded — so it reveals the page and hides the
+  // overlay at the right moment, and does NOT fire when navigating AWAY from an
+  // already-ready screen (isReady unchanged), which must keep the destination's
+  // overlay up.
   useEffect(() => {
     if (isReady) {
       endNavigation();

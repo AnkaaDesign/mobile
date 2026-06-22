@@ -1,8 +1,6 @@
 import { View, StyleSheet } from "react-native";
-import { ThemedText } from "@/components/ui/themed-text";
-import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
+import { spacing } from "@/constants/design-system";
 import type { Borrow } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -12,8 +10,6 @@ interface BorrowDatesCardProps {
 }
 
 export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
-  const { colors } = useTheme();
-
   const formatDate = (date: Date | string | null) => {
     if (!date) return "Não definido";
     try {
@@ -22,6 +18,14 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
     } catch {
       return "Data inválida";
     }
+  };
+
+  const formatDuration = (start: Date | string, end: Date | string) => {
+    const startObj = typeof start === "string" ? new Date(start) : start;
+    const endObj = typeof end === "string" ? new Date(end) : end;
+    const diffTime = endObj.getTime() - startObj.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} ${diffDays === 1 ? "dia" : "dias"}`;
   };
 
   return (
@@ -43,17 +47,11 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
         )}
 
         {borrow.returnedAt && borrow.createdAt && (
-          <DetailSection title="Duração do Empréstimo">
-            <ThemedText style={StyleSheet.flatten([styles.durationText, { color: colors.mutedForeground }])}>
-              {(() => {
-                const start = new Date(borrow.createdAt);
-                const end = new Date(borrow.returnedAt);
-                const diffTime = end.getTime() - start.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return `${diffDays} ${diffDays === 1 ? "dia" : "dias"}`;
-              })()}
-            </ThemedText>
-          </DetailSection>
+          <DetailField
+            label="Duração do Empréstimo"
+            value={formatDuration(borrow.createdAt, borrow.returnedAt)}
+            icon="clock"
+          />
         )}
       </View>
     </DetailCard>
@@ -63,9 +61,5 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
 const styles = StyleSheet.create({
   content: {
     gap: spacing.lg,
-  },
-  durationText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
   },
 });

@@ -6,6 +6,8 @@ import { useRouter } from "expo-router";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { Icon } from "./icon";
+import { Avatar } from "./avatar";
+import { getFileUrl } from "@/utils/file-utils";
 
 interface AvatarMenuProps {
   onClose?: () => void;
@@ -21,7 +23,6 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
   // Enhanced theme colors matching updated navigation design
 
   const drawerTextColor = isDark ? "#f5f5f5" : "#0a0a0a"; // neutral-100 : neutral-950
-  const activeBackgroundColor = "#16a34a"; // green-600 - unified brand color
 
   const borderColor = isDark ? "#404040" : "#e5e5e5"; // neutral-700 : neutral-200
   const cardBackgroundColor = isDark ? "#262626" : "#ffffff"; // neutral-800 : white
@@ -70,20 +71,11 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
         }}
         activeOpacity={0.8}
       >
-        <View
-          className="w-12 h-12 rounded-full items-center justify-center"
-          style={{
-            backgroundColor: activeBackgroundColor,
-            // Enhanced shadow for modern look
-            shadowColor: activeBackgroundColor,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 4,
-            elevation: 3,
-          }}
-        >
-          <Text className="text-white font-bold text-lg">{user?.name?.charAt(0)?.toUpperCase() || "U"}</Text>
-        </View>
+        <Avatar
+          size="lg"
+          imageUrl={user?.avatar?.id ? getFileUrl(user.avatar as any) : undefined}
+          name={user?.name || "U"}
+        />
         <View className="flex-1 ml-3">
           <Text className="font-semibold text-base" style={{ color: drawerTextColor }} numberOfLines={1} ellipsizeMode="tail">
             {user?.name || "Usuário"}
