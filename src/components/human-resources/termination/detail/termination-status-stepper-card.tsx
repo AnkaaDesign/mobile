@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert as RNAlert } from "react-native";
 import { IconStethoscope } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,9 @@ import {
   NOTICE_TYPE,
   MEDICAL_EXAM_TYPE,
   MEDICAL_EXAM_STATUS,
+  MEDICAL_EXAM_RESULT,
 } from "@/constants";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { mobileRoute } from "@/constants/routes.types";
 import { TERMINATION_STATUS_LABELS } from "@/constants/enum-labels";
 import { useTerminationAdvance, useTerminationRegress } from "@/hooks/useTermination";
@@ -86,7 +88,7 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
 
   const handleScheduleExam = () => {
     if (!t.userId) return;
-    Alert.alert(
+    RNAlert.alert(
       "Agendar exame demissional",
       "Criar um exame demissional (ASO) agendado para este colaborador?",
       [
@@ -118,7 +120,7 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
 
   const handleAdvance = () => {
     if (!nextStep) return;
-    Alert.alert(
+    RNAlert.alert(
       "Avançar Status",
       `Avançar para "${TERMINATION_STATUS_LABELS[nextStep]}"?`,
       [
@@ -139,7 +141,7 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
 
   const handleRegress = () => {
     if (!prevStep) return;
-    Alert.alert(
+    RNAlert.alert(
       "Voltar Etapa",
       `Retroceder para "${TERMINATION_STATUS_LABELS[prevStep]}"?`,
       [
@@ -232,6 +234,15 @@ export function TerminationStatusStepperCard({ termination: t, canManage }: Prop
               createdAfter={t.createdAt}
               emptyText="Nenhum exame demissional encontrado."
             />
+            {dismissalExam?.result === MEDICAL_EXAM_RESULT.UNFIT ? (
+              <Alert variant="destructive">
+                <AlertTitle>Colaborador inapto no exame demissional</AlertTitle>
+                <AlertDescription>
+                  O ASO demissional resultou em INAPTO. Avalie a situação antes de concluir a
+                  rescisão (possível estabilidade/afastamento).
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {canManage && !dismissalExam ? (
               <Button
                 variant="outline"

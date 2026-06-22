@@ -176,13 +176,13 @@ export function TerminationVerbasCard({ termination: t, canManage }: Props) {
 
             <View style={[styles.totals, { borderTopColor: colors.border }]}>
               <View style={styles.totalRow}>
-                <ThemedText style={{ color: colors.mutedForeground }}>Total de Proventos</ThemedText>
+                <ThemedText style={{ color: colors.mutedForeground }}>Proventos</ThemedText>
                 <ThemedText style={{ color: "#16a34a", fontWeight: "600" }}>
                   {formatCurrency(totalEarnings)}
                 </ThemedText>
               </View>
               <View style={styles.totalRow}>
-                <ThemedText style={{ color: colors.mutedForeground }}>Total de Descontos</ThemedText>
+                <ThemedText style={{ color: colors.mutedForeground }}>Descontos</ThemedText>
                 <ThemedText style={{ color: colors.destructive, fontWeight: "600" }}>
                   - {formatCurrency(totalDiscounts)}
                 </ThemedText>

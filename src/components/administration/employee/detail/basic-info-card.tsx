@@ -1,7 +1,8 @@
 
 import { Linking } from "react-native";
 import type { User } from '../../../../types';
-import { formatBrazilianPhone, getUserStatusBadgeText, getCollaboratorStatus } from "@/utils";
+import { formatBrazilianPhone, getUserStatusBadgeText, getCollaboratorStatus, formatDate } from "@/utils";
+import { CONTRACT_TYPE_LABELS } from "@/constants";
 import { Badge } from "@/components/ui/badge";
 import { DetailCard, DetailField, DetailPhoneField, DetailSection } from "@/components/ui/detail-page-layout";
 
@@ -41,8 +42,16 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
           />
         )}
 
+        {employee.birth && (
+          <DetailField
+            label="Data de Nascimento"
+            icon="calendar"
+            value={formatDate(employee.birth)}
+          />
+        )}
+
         <DetailField
-          label="Status"
+          label="Situação"
           icon="shield-check"
           value={
             <Badge variant={status.variant}>
@@ -50,6 +59,18 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
             </Badge>
           }
         />
+
+        {employee.currentContractType && (
+          <DetailField
+            label="Modalidade"
+            icon="file-text"
+            value={
+              <Badge variant="outline">
+                {CONTRACT_TYPE_LABELS[employee.currentContractType]}
+              </Badge>
+            }
+          />
+        )}
       </DetailSection>
     </DetailCard>
   );

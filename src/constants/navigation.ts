@@ -41,17 +41,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/administracao",
     requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
     children: [
-      {
-        id: "colaboradores",
-        title: "Colaboradores",
-        icon: "user",
-        path: "/administracao/colaboradores",
-        children: [
-          { id: "colaboradores-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/colaboradores/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-          { id: "colaboradores-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/colaboradores/detalhes/:id", isDynamic: true },
-          { id: "colaboradores-editar", title: "Editar", icon: "edit", path: "/administracao/colaboradores/editar/:id", isDynamic: true },
-        ],
-      },
+      // NOTE: "Colaboradores" was moved out of Administração into the
+      // "Departamento Pessoal" group below, mirroring the web nav consolidation.
       {
         id: "notificacoes-admin",
         title: "Notificacoes",
@@ -537,6 +528,21 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
+        id: "dp-colaboradores",
+        title: "Colaboradores",
+        icon: "user",
+        path: "/administracao/colaboradores",
+        // Moved here from Administração to mirror web's Departamento Pessoal.
+        // Screen files stay under /administracao/colaboradores (matches web, whose
+        // collaborator pages also live outside the DP folder).
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+        children: [
+          { id: "dp-colaboradores-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/colaboradores/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
+          { id: "dp-colaboradores-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/colaboradores/detalhes/:id", isDynamic: true },
+          { id: "dp-colaboradores-editar", title: "Editar", icon: "edit", path: "/administracao/colaboradores/editar/:id", isDynamic: true },
+        ],
+      },
+      {
         id: "warnings",
         title: "Advertencias",
         icon: "alertTriangle",
@@ -559,18 +565,22 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       { id: "calculos", title: "Cálculos de Ponto", icon: "deviceIpadDollar", path: "/recursos-humanos/calculos" },
+      // CONTROLE DE PONTO — full sub-view structure mirroring the web's 6 tabs.
+      // (Cargos moved into "Salários e Cargos" below to match the web grouping.)
       {
-        id: "cargos",
-        title: "Cargos",
-        icon: "briefcase",
-        path: "/recursos-humanos/cargos",
+        id: "controle-ponto",
+        title: "Controle de Ponto",
+        icon: "fingerprint",
+        path: "/recursos-humanos/controle-ponto",
         children: [
-          { id: "cargos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/cargos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-          { id: "cargos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/cargos/detalhes/:id", isDynamic: true },
-          { id: "cargos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/cargos/editar/:id", isDynamic: true },
+          { id: "controle-ponto-colaborador", title: "Visualização Colaborador", icon: "user", path: "/recursos-humanos/controle-ponto/colaborador" },
+          { id: "controle-ponto-dia", title: "Visualização Dia", icon: "calendarEvent", path: "/recursos-humanos/controle-ponto/dia" },
+          { id: "controle-ponto-edicao", title: "Edição", icon: "edit", path: "/recursos-humanos/controle-ponto/edicao" },
+          { id: "controle-ponto-ausencias", title: "Ausências", icon: "timeOff", path: "/recursos-humanos/controle-ponto/ausencias" },
+          { id: "controle-ponto-fechamento", title: "Fechamento", icon: "checkCircle", path: "/recursos-humanos/controle-ponto/fechamento" },
+          { id: "controle-ponto-requisicoes", title: "Requisições", icon: "clipboardList", path: "/recursos-humanos/requisicoes-ponto/listar" },
         ],
       },
-      { id: "controle-ponto", title: "Controle de Ponto", icon: "fingerprint", path: "/recursos-humanos/controle-ponto" },
       {
         id: "feriados",
         title: "Feriados",
@@ -633,9 +643,22 @@ export const NAVIGATION_MENU: MenuItem[] = [
         id: "rh-salarios-e-cargos",
         title: "Salários e Cargos",
         icon: "salary",
-        path: "/recursos-humanos/faixas-salariais",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        path: "/recursos-humanos/cargos",
+        // Web gates this group [ACCOUNTING, HR, ADMIN]; was ACCOUNTING-only on mobile.
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
+          {
+            id: "rh-cargos",
+            title: "Cargos",
+            icon: "briefcase",
+            path: "/recursos-humanos/cargos",
+            children: [
+              { id: "rh-cargos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/cargos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
+              { id: "rh-cargos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/cargos/detalhes/:id", isDynamic: true },
+              { id: "rh-cargos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/cargos/editar/:id", isDynamic: true },
+            ],
+          },
+          { id: "rh-horarios", title: "Horários", icon: "clock", path: "/recursos-humanos/horarios" },
           { id: "rh-faixas-salariais", title: "Faixas Salariais", icon: "salary", path: "/recursos-humanos/faixas-salariais" },
           {
             id: "rh-reajustes",
@@ -662,7 +685,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Benefícios",
         icon: "coins",
         path: "/recursos-humanos/beneficios/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
+        // Web gates Benefícios [ACCOUNTING, HR, ADMIN]; was ACCOUNTING-only on mobile.
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "rh-beneficios-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/beneficios/cadastrar" },
           { id: "rh-beneficios-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/beneficios/detalhes/:id", isDynamic: true },

@@ -41,6 +41,37 @@ export function concessiveExpiryLevel(args: {
   return "ok";
 }
 
+const FINAL_STATUSES: VACATION_STATUS[] = [VACATION_STATUS.PAID, VACATION_STATUS.EXPIRED];
+
+/** A vacation in a terminal state (PAID / EXPIRED). Mirrors web. */
+export function isVacationFinal(v: { status: VACATION_STATUS }): boolean {
+  return FINAL_STATUSES.includes(v.status);
+}
+
+/**
+ * Concessivo already expired (art. 137) — vacation owed in dobro. Mirrors web
+ * `isConcessiveExpired`: true when isDouble, when status === EXPIRED, or when the
+ * concessivo date is past (and not yet finalized).
+ */
+export function isConcessiveExpired(v: { concessiveEnd?: Date | string | null; status: VACATION_STATUS; isDouble?: boolean }): boolean {
+  if (v.isDouble) return true;
+  if (v.status === VACATION_STATUS.EXPIRED) return true;
+  if (isVacationFinal(v)) return false;
+  const days = daysUntilConcessiveEnd(v.concessiveEnd);
+  return days !== null && days < 0;
+}
+
+/**
+ * Concessivo expiring soon (≤60 dias) but not yet expired/finalized. Mirrors web
+ * `isConcessiveExpiringSoon`.
+ */
+export function isConcessiveExpiringSoon(v: { concessiveEnd?: Date | string | null; status: VACATION_STATUS; isDouble?: boolean }): boolean {
+  if (isVacationFinal(v)) return false;
+  if (v.isDouble) return false;
+  const days = daysUntilConcessiveEnd(v.concessiveEnd);
+  return days !== null && days >= 0 && days <= 60;
+}
+
 /**
  * Centralized vacation status → Badge variant color map.
  * SCHEDULED = warning/amber, PAID = success/green, EXPIRED = error/red.

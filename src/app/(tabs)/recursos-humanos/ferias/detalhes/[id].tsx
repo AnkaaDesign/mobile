@@ -1,30 +1,101 @@
-import { View, StyleSheet, Alert } from "react-native";
+import { useState } from "react";
+import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { IconBeach } from "@tabler/icons-react-native";
+import { IconBeach, IconCash, IconCheck } from "@tabler/icons-react-native";
 
 import { useVacation, useVacationMutations, useVacationAdvance } from "@/hooks/useVacation";
 import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, VACATION_STATUS } from "@/constants";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import { ThemedText } from "@/components/ui/themed-text";
 import { spacing } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
+import { formatDate } from "@/utils/formatters";
 import { useNav } from "@/contexts/nav";
 import { usePrivilegeGate } from "@/hooks/use-privilege-gate";
 import {
-  VacationStatusCard,
-  VacationPeriodsCard,
-  VacationEntitlementCard,
+  VacationStatusStepperCard,
+  VacationSummaryCard,
   VacationPeriodBalanceCard,
-  VacationValuesCard,
   VacationReciboCard,
 } from "@/components/human-resources/vacation";
 import type { Vacation } from "@/types";
 
+/**
+ * Inline "Marcar como pago" action — lives at the foot of the Recibo de Férias
+ * card (paying the férias IS paying this recibo). Collects a payment date, stamps
+ * it via updateVacation({ paymentDate }), then advances the status machine to
+ * PAID. Disabled until the recibo exists (baseRemuneration != null).
+ */
+function PaymentSlot({ vacation }: { vacation: Vacation }) {
+  const { colors } = useTheme();
+  const nav = useNav();
+  const { updateAsync } = useVacationMutations();
+  const advance = useVacationAdvance();
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
+
+  const isPaid = vacation.status === VACATION_STATUS.PAID;
+  const reciboReady = vacation.baseRemuneration != null;
+  const isPending = advance.isPending;
+
+  if (isPaid) {
+    return (
+      <View style={styles.paidRow}>
+        <View style={styles.paidLeft}>
+          <IconCheck size={16} color="#16a34a" />
+          <ThemedText style={[styles.paidText, { color: "#16a34a" }]}>Férias paga</ThemedText>
+        </View>
+        <ThemedText style={{ color: colors.mutedForeground }}>
+          {vacation.paymentDate ? formatDate(vacation.paymentDate) : ""}
+        </ThemedText>
+      </View>
+    );
+  }
+
+  const handleMarkPaid = async () => {
+    if (!paymentDate || !reciboReady) return;
+    try {
+      await nav.withLoading(async () => {
+        await updateAsync({ id: vacation.id, data: { paymentDate } as any });
+        await advance.mutateAsync({ id: vacation.id });
+      });
+    } catch {
+      // api-client surfaces the error toast.
+    }
+  };
+
+  return (
+    <View style={styles.paySlot}>
+      <ThemedText style={[styles.payHint, { color: colors.mutedForeground }]}>
+        {reciboReady
+          ? "Informe a data de pagamento e conclua como Paga."
+          : "O recibo ainda não foi calculado — não é possível concluir o pagamento."}
+      </ThemedText>
+      <DatePicker
+        mode="date"
+        value={paymentDate}
+        onChange={(d) => setPaymentDate(d instanceof Date ? d : undefined)}
+        placeholder="Data de pagamento"
+      />
+      <Button
+        variant="default"
+        loading={isPending}
+        disabled={!reciboReady || !paymentDate || isPending}
+        onPress={handleMarkPaid}
+        icon={<IconCash size={16} color={colors.primaryForeground} />}
+      >
+        Marcar como pago
+      </Button>
+    </View>
+  );
+}
+
 export default function VacationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const vacationId = id || "";
-  const nav = useNav();
   const { deleteMutation } = useVacationMutations();
-  const advance = useVacationAdvance();
 
   // Manage (edit / mark-as-paid) is ACCOUNTING/HR/ADMIN — PRODUCTION_MANAGER has
   // read-only access (mirrors the API @Roles and the web detail page). The page
@@ -41,41 +112,6 @@ export default function VacationDetailScreen() {
     enabled: !!vacationId,
   });
 
-  const vacation = (query.data as any)?.data as Vacation | undefined;
-
-  // markPaid: transition SCHEDULED | EXPIRED → PAID. PAID is the only terminal
-  // state. Recibo is always present (auto-calculated on create), so the only
-  // guard is "not already paid".
-  const isPaid = vacation?.status === VACATION_STATUS.PAID;
-
-  let advanceDisabledReason: string | null = null;
-  if (vacation && isPaid) {
-    advanceDisabledReason = "Estas férias já estão pagas.";
-  }
-
-  const handleMarkPaid = () => {
-    if (!vacation || advanceDisabledReason) return;
-    Alert.alert(
-      "Marcar férias como pagas",
-      `Confirmar o pagamento do recibo de férias de ${vacation.user?.name ?? "este colaborador"}?`,
-      [
-        { text: "Voltar", style: "cancel" },
-        {
-          text: "Marcar como Paga",
-          onPress: async () => {
-            try {
-              await nav.withLoading(async () =>
-                advance.mutateAsync({ id: vacation.id, data: { status: VACATION_STATUS.PAID } }),
-              );
-            } catch {
-              // api-client surfaces the error.
-            }
-          },
-        },
-      ],
-    );
-  };
-
   return (
     <DetailScreen
       query={query as any}
@@ -86,16 +122,9 @@ export default function VacationDetailScreen() {
       }}
       editRoute={(v: Vacation) => `/recursos-humanos/ferias/editar/${v.id}` as any}
       editPrivilege={MANAGE_PRIVILEGE}
-      actions={[
-        {
-          key: "markPaid",
-          label: "Marcar como Paga",
-          icon: "cash",
-          onPress: handleMarkPaid,
-          disabled: !!advanceDisabledReason || advance.isPending,
-          hidden: !canManage,
-        },
-      ]}
+      // Editar is hidden once the vacation is PAID (PAID is terminal).
+      editGuard={{ field: "status", editable: [VACATION_STATUS.SCHEDULED, VACATION_STATUS.EXPIRED] }}
+      hideTerminalBanner
       deleteAction={{
         mutation: deleteMutation,
         confirmText: "Tem certeza que deseja excluir o registro de férias? Esta ação não pode ser desfeita.",
@@ -106,12 +135,10 @@ export default function VacationDetailScreen() {
     >
       {(v: Vacation) => (
         <View style={styles.body}>
-          <VacationStatusCard vacation={v} />
-          <VacationPeriodsCard vacation={v} />
-          <VacationEntitlementCard vacation={v} />
+          <VacationStatusStepperCard vacation={v} />
+          <VacationSummaryCard vacation={v} />
           <VacationPeriodBalanceCard vacation={v} />
-          <VacationValuesCard vacation={v} />
-          <VacationReciboCard vacation={v} />
+          <VacationReciboCard vacation={v} paymentSlot={canManage ? <PaymentSlot vacation={v} /> : undefined} />
           <ChangelogTimeline
             entityType={CHANGE_LOG_ENTITY_TYPE.VACATION}
             entityId={v.id}
@@ -129,4 +156,9 @@ const styles = StyleSheet.create({
   body: {
     gap: spacing.md,
   },
+  paySlot: { gap: spacing.sm },
+  payHint: { fontSize: 13, lineHeight: 18 },
+  paidRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  paidLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+  paidText: { fontSize: 14, fontWeight: "600" },
 });

@@ -1,7 +1,8 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
-import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
+import { Badge, getBadgeVariantFromStatus } from "@/components/ui/badge";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import type { Termination } from "@/types";
 import {
@@ -10,9 +11,10 @@ import {
   NOTICE_TYPE_LABELS,
   NOTICE_REDUCTION_LABELS,
 } from "@/constants/enum-labels";
-import { NOTICE_REDUCTION } from "@/constants";
+import { NOTICE_REDUCTION, TERMINATION_TYPE, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
 import { formatDate } from "@/utils/date";
-import { formatCurrency } from "@/utils/number";
+import { isPaymentOverdue } from "./termination-utils";
 
 interface Props {
   termination: Termination;
@@ -20,99 +22,113 @@ interface Props {
 
 export function TerminationSummaryCard({ termination: t }: Props) {
   const { colors } = useTheme();
+  const router = useRouter();
+  const overdue = isPaymentOverdue(t);
 
   return (
-    <DetailCard title="Resumo da Rescisão" icon="user-minus">
+    <DetailCard title="Resumo" icon="user">
       <View style={styles.content}>
-        <DetailSection title="Colaborador">
-          <DetailField
-            label="Colaborador"
-            icon="user"
-            value={
-              <View>
-                <ThemedText style={{ color: colors.foreground, fontWeight: "600" }}>
-                  {t.user?.name || "—"}
+        {/* Colaborador (link para o detalhe do colaborador) */}
+        <DetailField
+          label="Colaborador"
+          icon="user"
+          value={
+            t.user ? (
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(
+                    mobileRoute(routes.administration.collaborators.details(t.userId)) as any,
+                  )
+                }
+              >
+                <ThemedText style={{ color: colors.primary, fontWeight: "600" }}>
+                  {t.user.name}
                 </ThemedText>
-                {t.user?.position && (
-                  <ThemedText style={{ color: colors.mutedForeground, fontSize: 13 }}>
-                    {(t.user as any).position?.name}
-                  </ThemedText>
-                )}
-              </View>
-            }
-          />
-        </DetailSection>
+              </TouchableOpacity>
+            ) : (
+              "—"
+            )
+          }
+        />
 
-        <DetailSection title="Modalidade e Status">
-          <DetailField
-            label="Modalidade"
-            value={
-              <Badge variant="outline">
-                <ThemedText style={styles.badge}>
-                  {t.type ? TERMINATION_TYPE_LABELS[t.type] : "—"}
-                </ThemedText>
-              </Badge>
-            }
-          />
-          <DetailField
-            label="Status"
-            value={
-              <Badge variant="secondary">
-                <ThemedText style={styles.badge}>
-                  {t.status ? TERMINATION_STATUS_LABELS[t.status] : "—"}
-                </ThemedText>
-              </Badge>
-            }
-          />
-          {t.justCauseArticle ? (
-            <DetailField label="Artigo (Justa Causa)" value={t.justCauseArticle} />
-          ) : null}
-        </DetailSection>
-
-        <DetailSection title="Datas">
-          <DetailField label="Data da Rescisão" icon="calendar" value={formatDate(t.terminationDate)} />
-          <DetailField label="Último Dia Trabalhado" value={formatDate(t.lastWorkingDate)} />
-          <DetailField label="Vencimento do Pagamento" value={formatDate(t.paymentDueDate)} />
-          <DetailField label="Data do Pagamento" value={formatDate(t.paymentDate)} />
-        </DetailSection>
-
-        {t.noticeType ? (
-          <DetailSection title="Aviso Prévio">
-            <DetailField label="Tipo" value={NOTICE_TYPE_LABELS[t.noticeType]} />
-            <DetailField
-              label="Redução"
-              value={NOTICE_REDUCTION_LABELS[t.noticeReduction ?? NOTICE_REDUCTION.NONE]}
-            />
-            <DetailField label="Dias" value={t.noticeDays != null ? String(t.noticeDays) : "—"} />
-            <DetailField label="Início" value={formatDate(t.noticeStartDate)} />
-          </DetailSection>
+        {(t.user as any)?.position?.name ? (
+          <DetailField label="Cargo" value={(t.user as any).position.name} />
+        ) : null}
+        {(t.user as any)?.sector?.name ? (
+          <DetailField label="Setor" value={(t.user as any).sector.name} />
         ) : null}
 
-        <DetailSection title="Bases e Valores">
-          <DetailField
-            label="Remuneração Base"
-            value={t.baseRemuneration != null ? formatCurrency(t.baseRemuneration) : "—"}
-          />
-          <DetailField
-            label="Saldo de FGTS"
-            value={t.fgtsBalance != null ? formatCurrency(t.fgtsBalance) : "—"}
-          />
-          <DetailField label="Períodos de Férias Vencidas" value={String(t.accruedVacationPeriods ?? 0)} />
-          <DetailField
-            label="Valor Líquido Pago"
-            value={
-              <ThemedText style={{ color: colors.primary, fontWeight: "700" }}>
-                {t.paidAmount != null ? formatCurrency(t.paidAmount) : "—"}
+        <DetailField
+          label="Tipo"
+          value={
+            <Badge variant="secondary">
+              <ThemedText style={styles.badge}>
+                {t.type ? TERMINATION_TYPE_LABELS[t.type] : "—"}
               </ThemedText>
-            }
-          />
-        </DetailSection>
+            </Badge>
+          }
+        />
 
-        {t.reason ? (
-          <DetailSection title="Motivo">
-            <ThemedText style={{ color: colors.foreground }}>{t.reason}</ThemedText>
-          </DetailSection>
+        <DetailField
+          label="Status"
+          value={
+            <Badge variant={(t.status ? getBadgeVariantFromStatus(t.status, "TERMINATION") : "secondary") as any}>
+              <ThemedText style={styles.badge}>
+                {t.status ? TERMINATION_STATUS_LABELS[t.status] : "—"}
+              </ThemedText>
+            </Badge>
+          }
+        />
+
+        <DetailField
+          label="Aviso Prévio"
+          value={t.noticeType ? NOTICE_TYPE_LABELS[t.noticeType] : "—"}
+        />
+        <DetailField
+          label="Dias de Aviso"
+          value={t.noticeDays != null ? String(t.noticeDays) : "—"}
+        />
+        {t.noticeReduction && t.noticeReduction !== NOTICE_REDUCTION.NONE ? (
+          <DetailField
+            label="Redução do Aviso"
+            value={NOTICE_REDUCTION_LABELS[t.noticeReduction]}
+          />
         ) : null}
+        <DetailField label="Início do Aviso" value={formatDate(t.noticeStartDate)} />
+
+        <DetailField label="Data da Rescisão" icon="calendar" value={formatDate(t.terminationDate)} />
+        <DetailField label="Último Dia Trabalhado" value={formatDate(t.lastWorkingDate)} />
+        <DetailField label="Projeção do Contrato" value={formatDate(t.projectedEndDate)} />
+
+        <DetailField
+          label="Prazo de Pagamento"
+          value={
+            t.paymentDueDate ? (
+              <View style={styles.inlineRow}>
+                <ThemedText
+                  style={{ color: overdue ? colors.destructive : colors.foreground, fontWeight: overdue ? "600" : "400" }}
+                >
+                  {formatDate(t.paymentDueDate)}
+                </ThemedText>
+                {overdue ? (
+                  <Badge variant="destructive" size="sm">
+                    <ThemedText style={{ fontSize: 10, color: "#fff" }}>Atrasado</ThemedText>
+                  </Badge>
+                ) : null}
+              </View>
+            ) : (
+              "—"
+            )
+          }
+        />
+
+        {t.type === TERMINATION_TYPE.WITH_CAUSE ? (
+          <DetailField label="Artigo" value={t.justCauseArticle || "—"} />
+        ) : null}
+
+        {t.reason ? <DetailField label="Motivo" value={t.reason} /> : null}
+
+        <DetailField label="Iniciada por" value={t.initiatedBy?.name || "—"} />
       </View>
     </DetailCard>
   );
@@ -121,4 +137,5 @@ export function TerminationSummaryCard({ termination: t }: Props) {
 const styles = StyleSheet.create({
   content: { gap: 8 },
   badge: { fontSize: 12 },
+  inlineRow: { flexDirection: "row", alignItems: "center", gap: 8 },
 });

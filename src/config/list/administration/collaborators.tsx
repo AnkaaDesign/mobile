@@ -6,6 +6,7 @@ import { CONTRACT_TYPE, CONTRACT_STATUS, EMPLOYEE_TYPE } from '@/constants/enums
 import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, EMPLOYEE_TYPE_LABELS } from '@/constants/enum-labels'
 import { Badge } from '@/components/ui/badge'
 import { getCollaboratorStatus } from '@/utils/user'
+import { getDocumentProgress } from '@/components/personnel-department/admission/utils'
 
 export const collaboratorsListConfig: ListConfig<User> = {
   key: 'administration-collaborators',
@@ -63,6 +64,13 @@ export const collaboratorsListConfig: ListConfig<User> = {
           id: true,
           name: true,
         },
+      },
+      // Most-recent admission + its checklist documents drive the "DOCUMENTOS"
+      // progress column (matches web getDocumentProgress over admissions[0]).
+      admissions: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        include: { documents: true },
       },
       _count: {
         select: {
@@ -133,6 +141,29 @@ export const collaboratorsListConfig: ListConfig<User> = {
         width: 1.5,
         align: 'left',
         render: (user) => user.sector?.name || '-',
+      },
+      {
+        // DOCUMENTOS — admission checklist progress (done/total) from the most
+        // recent admission. Mirrors the web "DOCUMENTOS" column.
+        key: 'documents',
+        label: 'DOCUMENTOS',
+        sortable: false,
+        width: 1.3,
+        align: 'left',
+        render: (user) => {
+          const latestAdmission = user.admissions?.[0]
+          const { done, total } = getDocumentProgress(latestAdmission?.documents)
+          if (total === 0) return '-'
+          return (
+            <Badge
+              variant={done >= total ? 'success' : 'warning'}
+              size="sm"
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {`${done}/${total}`}
+            </Badge>
+          )
+        },
       },
       {
         key: 'phone',
@@ -303,7 +334,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['name', 'sector', 'currentContractType'],
+    defaultVisible: ['payrollNumber', 'name', 'position', 'sector', 'currentContractType', 'documents'],
     rowHeight: 48,
     actions: [
       {
@@ -476,7 +507,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
   },
 
   search: {
-    placeholder: 'Buscar colaboradores...',
+    placeholder: 'Buscar: nome, email, CPF ou nº folha (apenas números)',
     debounce: 300,
   },
 

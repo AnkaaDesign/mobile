@@ -1,8 +1,25 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Admission } from '@/types'
-import { ADMISSION_STATUS } from '@/constants/enums'
-import { ADMISSION_STATUS_LABELS } from '@/constants/enum-labels'
+import { ADMISSION_STATUS, MEDICAL_EXAM_RESULT } from '@/constants/enums'
+import {
+  ADMISSION_STATUS_LABELS,
+  CONTRACT_TYPE_LABELS,
+  MEDICAL_EXAM_RESULT_LABELS,
+  MEDICAL_EXAM_STATUS_LABELS,
+} from '@/constants/enum-labels'
+import { getBadgeVariantFromStatus } from '@/components/ui/badge'
+import { getDocumentProgress } from '@/components/personnel-department/admission/utils'
 import { canEditHrEntities, canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
+
+// Non-final statuses = "em andamento". By default the list shows only these
+// (Concluída/Cancelada stay hidden until the user explicitly filters them in).
+// Mirrors web AdmissionList ACTIVE_ADMISSION_STATUSES.
+const ACTIVE_ADMISSION_STATUSES: ADMISSION_STATUS[] = [
+  ADMISSION_STATUS.DOCS_PENDING,
+  ADMISSION_STATUS.MEDICAL_EXAM,
+  ADMISSION_STATUS.CONTRACT,
+  ADMISSION_STATUS.REGISTRATION,
+]
 
 export const admissionsListConfig: ListConfig<Admission> = {
   key: 'hr-admissions',
@@ -15,8 +32,10 @@ export const admissionsListConfig: ListConfig<Admission> = {
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
-      user: true,
+      user: { include: { position: true, sector: true } },
+      createdBy: true,
       documents: true,
+      admissionExam: true,
     },
   },
 
@@ -32,6 +51,38 @@ export const admissionsListConfig: ListConfig<Admission> = {
         style: { fontWeight: '500' },
       },
       {
+        key: 'user.sector',
+        label: 'SETOR',
+        sortable: false,
+        width: 1.4,
+        align: 'left',
+        render: (admission) => admission.user?.sector?.name || '—',
+      },
+      {
+        key: 'user.position',
+        label: 'CARGO',
+        sortable: false,
+        width: 1.4,
+        align: 'left',
+        render: (admission) => admission.user?.position?.name || '—',
+      },
+      {
+        key: 'user.currentContractType',
+        label: 'TIPO DE CONTRATO',
+        sortable: false,
+        width: 1.5,
+        align: 'left',
+        render: (admission) =>
+          admission.user?.currentContractType
+            ? CONTRACT_TYPE_LABELS[admission.user.currentContractType] || admission.user.currentContractType
+            : '',
+        format: 'badge',
+        badge: (admission) =>
+          admission.user?.currentContractType
+            ? { variant: getBadgeVariantFromStatus(admission.user.currentContractType, 'USER') }
+            : { variant: 'secondary' },
+      },
+      {
         key: 'status',
         label: 'STATUS',
         sortable: true,
@@ -39,16 +90,59 @@ export const admissionsListConfig: ListConfig<Admission> = {
         align: 'left',
         render: (admission) => admission.status ? ADMISSION_STATUS_LABELS[admission.status] : '—',
         format: 'badge',
-        badge: () => ({ variant: 'primary' }),
+        badge: (admission) => ({ variant: getBadgeVariantFromStatus(admission.status, 'ADMISSION') }),
       },
       {
         key: 'hireDate',
-        label: 'ADMISSÃO',
+        label: 'DATA DE ADMISSÃO',
         sortable: true,
         width: 1.2,
         align: 'left',
         render: (admission) => admission.hireDate,
         format: 'date',
+      },
+      {
+        key: 'admissionExam',
+        label: 'EXAME',
+        sortable: false,
+        width: 1.1,
+        align: 'left',
+        render: (admission) => {
+          const exam = admission.admissionExam
+          if (!exam) return ''
+          const hasResult = !!exam.result && exam.result !== MEDICAL_EXAM_RESULT.PENDING
+          return hasResult
+            ? MEDICAL_EXAM_RESULT_LABELS[exam.result] || exam.result
+            : MEDICAL_EXAM_STATUS_LABELS[exam.status] || exam.status
+        },
+        format: 'badge',
+        badge: (admission) => {
+          const exam = admission.admissionExam
+          if (!exam) return { variant: 'secondary' }
+          const hasResult = !!exam.result && exam.result !== MEDICAL_EXAM_RESULT.PENDING
+          return hasResult
+            ? { variant: getBadgeVariantFromStatus(exam.result, 'MEDICAL_EXAM_RESULT') }
+            : { variant: getBadgeVariantFromStatus(exam.status, 'MEDICAL_EXAM') }
+        },
+      },
+      {
+        key: 'documents',
+        label: 'DOCUMENTOS',
+        sortable: false,
+        width: 1.2,
+        align: 'left',
+        render: (admission) => {
+          const { done, total } = getDocumentProgress(admission.documents)
+          return total === 0 ? '—' : `${done}/${total}`
+        },
+      },
+      {
+        key: 'createdBy.name',
+        label: 'CRIADO POR',
+        sortable: false,
+        width: 1.4,
+        align: 'left',
+        render: (admission) => admission.createdBy?.name || '—',
       },
       {
         key: 'createdAt',
@@ -60,7 +154,17 @@ export const admissionsListConfig: ListConfig<Admission> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['user.name', 'status', 'hireDate'],
+    defaultVisible: [
+      'user.name',
+      'user.sector',
+      'user.position',
+      'user.currentContractType',
+      'status',
+      'hireDate',
+      'admissionExam',
+      'documents',
+      'createdBy.name',
+    ],
     rowHeight: 72,
     actions: [
       {
@@ -100,6 +204,11 @@ export const admissionsListConfig: ListConfig<Admission> = {
   },
 
   filters: {
+    // Default bucket = active-only (em andamento). Renders as removable status
+    // chips; removing them all reveals Concluída/Cancelada. Mirrors web.
+    defaultValues: {
+      statuses: ACTIVE_ADMISSION_STATUSES,
+    },
     fields: [
       {
         key: 'statuses',
@@ -154,7 +263,7 @@ export const admissionsListConfig: ListConfig<Admission> = {
   },
 
   search: {
-    placeholder: 'Buscar admissões...',
+    placeholder: 'Buscar por colaborador ou observação',
     debounce: 500,
   },
 

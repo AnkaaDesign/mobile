@@ -3,6 +3,9 @@ import type {
   SecullumApuracaoListResponse,
   SecullumApuracaoDetailResponse,
   SecullumApuracaoActionResponse,
+  SecullumAbsenceDaysResponse,
+  SecullumAssinaturasResponse,
+  SecullumAssinaturaDetailResponse,
 } from "@/types/secullum";
 
 export interface SecullumAuthCredentials {
@@ -164,6 +167,19 @@ export const secullumService = {
         entry: any | null;
       }>;
     }>("/integrations/secullum/time-entries/by-day", { params: { date } }),
+
+  // Ausências (HR view) — per-day absence rows for a period (and optional
+  // sector). Returns SecullumAbsenceDayRow[] in the {success,data} envelope.
+  getAbsenceDays: (params: { startDate: string; endDate: string; sectorId?: string }) =>
+    apiClient.get<SecullumAbsenceDaysResponse>("/integrations/secullum/absence-days", { params }),
+
+  // Fechamento (Assinatura Digital) — read-only list of apuração batches.
+  getAssinaturas: () =>
+    apiClient.get<SecullumAssinaturasResponse>("/integrations/secullum/assinatura-digital"),
+
+  // Fechamento detail — per-funcionário signature items for one apuração.
+  getAssinaturaById: (id: number) =>
+    apiClient.get<SecullumAssinaturaDetailResponse>(`/integrations/secullum/assinatura-digital/${id}`),
 
   // Pendencias (simple requests endpoint)
   getPendencias: (userCpf?: string) =>

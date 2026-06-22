@@ -1,26 +1,53 @@
+import { View } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
-import type { Termination } from '@/types'
+import type { Termination, TerminationItem } from '@/types'
 import { TERMINATION_TYPE, TERMINATION_STATUS } from '@/constants/enums'
 import {
   TERMINATION_TYPE_LABELS,
   TERMINATION_STATUS_LABELS,
 } from '@/constants/enum-labels'
+import { Badge, getBadgeVariantFromStatus } from '@/components/ui/badge'
+import { ThemedText } from '@/components/ui/themed-text'
+import { extendedColors } from '@/lib/theme/extended-colors'
 import { canEditHrEntities, canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
 import { formatCurrency } from '@/utils/number'
+import { formatDate } from '@/utils/date'
 
-// Status → badge variant mapping for the Rescisões list.
-function statusBadgeVariant(status?: TERMINATION_STATUS): string {
-  switch (status) {
-    case TERMINATION_STATUS.COMPLETED:
-      return 'success'
-    case TERMINATION_STATUS.CANCELLED:
-      return 'destructive'
-    case TERMINATION_STATUS.PAYMENT:
-    case TERMINATION_STATUS.HOMOLOGATION:
-      return 'primary'
-    default:
-      return 'secondary'
-  }
+// Não-finais: por padrão a lista mostra apenas rescisões em andamento
+// (Concluída/Cancelada ficam ocultas até serem filtradas explicitamente).
+// Mirror do web (TerminationList.ACTIVE_TERMINATION_STATUSES).
+const ACTIVE_TERMINATION_STATUSES: TERMINATION_STATUS[] = Object.values(
+  TERMINATION_STATUS,
+).filter(
+  (status) =>
+    status !== TERMINATION_STATUS.COMPLETED &&
+    status !== TERMINATION_STATUS.CANCELLED,
+) as TERMINATION_STATUS[]
+
+const FINAL_STATUSES: TERMINATION_STATUS[] = [
+  TERMINATION_STATUS.COMPLETED,
+  TERMINATION_STATUS.CANCELLED,
+]
+
+function isTerminationFinal(t: Termination): boolean {
+  return FINAL_STATUSES.includes(t.status)
+}
+
+// Pagamento em atraso: prazo no passado, rescisão ainda em andamento e ainda
+// não paga (mesmo que paga em atraso → deixa de ser "atrasado"). Mirror do web.
+function isPaymentOverdue(t: Termination): boolean {
+  if (!t.paymentDueDate) return false
+  if (isTerminationFinal(t)) return false
+  if (t.paymentDate) return false
+  return new Date(t.paymentDueDate).getTime() < Date.now()
+}
+
+// Líquido = soma de items[].amount (positivos − descontos). null quando não há
+// verbas lançadas ainda. Mirror do web (getTerminationNet).
+function getTerminationNet(t: Termination): number | null {
+  const items = (t.items ?? []) as TerminationItem[]
+  if (items.length === 0) return null
+  return items.reduce((sum, item) => sum + (item.amount ?? 0), 0)
 }
 
 export const terminationsListConfig: ListConfig<Termination> = {
@@ -34,7 +61,8 @@ export const terminationsListConfig: ListConfig<Termination> = {
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
-      user: { include: { position: true } },
+      user: { include: { position: true, sector: true } },
+      items: true,
     },
   },
 
@@ -50,6 +78,22 @@ export const terminationsListConfig: ListConfig<Termination> = {
         style: { fontWeight: '500' },
       },
       {
+        key: 'user.sector',
+        label: 'SETOR',
+        sortable: false,
+        width: 1.5,
+        align: 'left',
+        render: (t) => (t.user as any)?.sector?.name || '—',
+      },
+      {
+        key: 'user.position',
+        label: 'CARGO',
+        sortable: false,
+        width: 1.7,
+        align: 'left',
+        render: (t) => (t.user as any)?.position?.name || '—',
+      },
+      {
         key: 'type',
         label: 'TIPO',
         sortable: true,
@@ -57,7 +101,7 @@ export const terminationsListConfig: ListConfig<Termination> = {
         align: 'left',
         render: (t) => (t.type ? TERMINATION_TYPE_LABELS[t.type] : '—'),
         format: 'badge',
-        badge: () => ({ variant: 'primary' }),
+        badge: () => ({ variant: 'secondary' }),
       },
       {
         key: 'status',
@@ -67,24 +111,74 @@ export const terminationsListConfig: ListConfig<Termination> = {
         align: 'left',
         render: (t) => (t.status ? TERMINATION_STATUS_LABELS[t.status] : '—'),
         format: 'badge',
-        badge: (t: Termination) => ({ variant: statusBadgeVariant(t.status) as any }),
+        badge: (t: Termination) => ({
+          variant: (t.status
+            ? getBadgeVariantFromStatus(t.status, 'TERMINATION')
+            : 'secondary') as any,
+        }),
       },
       {
         key: 'terminationDate',
-        label: 'DATA',
+        label: 'DATA DA RESCISÃO',
         sortable: true,
-        width: 1.2,
+        width: 1.3,
         align: 'left',
         render: (t) => t.terminationDate,
         format: 'date',
       },
       {
-        key: 'paidAmount',
-        label: 'VALOR LÍQUIDO',
+        key: 'paymentDueDate',
+        label: 'PRAZO DE PAGAMENTO',
         sortable: true,
+        width: 1.6,
+        align: 'left',
+        render: (t) => {
+          if (!t.paymentDueDate) return '—'
+          const overdue = isPaymentOverdue(t)
+          return (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+              <ThemedText
+                style={{
+                  fontSize: 12,
+                  fontWeight: '500',
+                  color: overdue ? extendedColors.red[600] : undefined,
+                }}
+                numberOfLines={1}
+              >
+                {formatDate(t.paymentDueDate)}
+              </ThemedText>
+              {overdue ? (
+                <Badge variant="destructive" size="sm">
+                  <ThemedText style={{ fontSize: 10, color: '#fff' }}>Atrasado</ThemedText>
+                </Badge>
+              ) : null}
+            </View>
+          )
+        },
+      },
+      {
+        key: 'net',
+        label: 'LÍQUIDO',
+        sortable: false,
         width: 1.4,
         align: 'right',
-        render: (t) => (t.paidAmount != null ? formatCurrency(t.paidAmount) : '—'),
+        render: (t) => {
+          const net = getTerminationNet(t)
+          if (net === null) return '—'
+          return (
+            <ThemedText
+              style={{
+                fontSize: 12,
+                fontWeight: '500',
+                textAlign: 'right',
+                color: net < 0 ? extendedColors.red[600] : undefined,
+              }}
+              numberOfLines={1}
+            >
+              {formatCurrency(net)}
+            </ThemedText>
+          )
+        },
       },
       {
         key: 'createdAt',
@@ -96,7 +190,16 @@ export const terminationsListConfig: ListConfig<Termination> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['user.name', 'type', 'status'],
+    defaultVisible: [
+      'user.name',
+      'user.sector',
+      'user.position',
+      'type',
+      'status',
+      'terminationDate',
+      'paymentDueDate',
+      'net',
+    ],
     rowHeight: 72,
     actions: [
       {
@@ -124,9 +227,13 @@ export const terminationsListConfig: ListConfig<Termination> = {
         icon: 'trash',
         variant: 'destructive',
         canPerform: canDeleteDpRecords,
+        // Excluir apenas rescisões CANCELADAS (mirror do guard no servidor e do
+        // detalhe): em andamento devem ser canceladas antes; concluídas nunca.
+        visible: (t) => t.status === TERMINATION_STATUS.CANCELLED,
         confirm: {
           title: 'Confirmar Exclusão',
-          message: () => `Deseja excluir esta rescisão?`,
+          message: (t) =>
+            `Tem certeza que deseja excluir a rescisão${t.user?.name ? ` de "${t.user.name}"` : ''}? Esta ação não pode ser desfeita.`,
         },
         onPress: async (t, _, context) => {
           await context?.delete?.(t.id)
@@ -136,6 +243,12 @@ export const terminationsListConfig: ListConfig<Termination> = {
   },
 
   filters: {
+    // Por padrão exibe apenas rescisões em andamento (oculta Concluída/Cancelada
+    // até o usuário filtrar explicitamente). Mirror do web. As chips de status
+    // resultantes são removíveis para revelar as finais.
+    defaultValues: {
+      statuses: ACTIVE_TERMINATION_STATUSES,
+    },
     fields: [
       {
         key: 'types',
@@ -207,7 +320,7 @@ export const terminationsListConfig: ListConfig<Termination> = {
   },
 
   search: {
-    placeholder: 'Buscar rescisões...',
+    placeholder: 'Buscar por colaborador, motivo ou artigo',
     debounce: 500,
   },
 
@@ -217,10 +330,13 @@ export const terminationsListConfig: ListConfig<Termination> = {
     formats: ['csv', 'json', 'pdf'],
     columns: [
       { key: 'user', label: 'Colaborador', path: 'user.name' },
+      { key: 'sector', label: 'Setor', path: 'user.sector.name' },
+      { key: 'position', label: 'Cargo', path: 'user.position.name' },
       { key: 'type', label: 'Tipo', path: 'type', format: (value: any): string => (value ? TERMINATION_TYPE_LABELS[value as TERMINATION_TYPE] : '—') },
       { key: 'status', label: 'Status', path: 'status', format: (value: any): string => (value ? TERMINATION_STATUS_LABELS[value as TERMINATION_STATUS] : '—') },
-      { key: 'terminationDate', label: 'Data', path: 'terminationDate', format: 'date' },
-      { key: 'paidAmount', label: 'Valor Líquido', path: 'paidAmount', format: (value: any): string => (value != null ? formatCurrency(Number(value)) : '—') },
+      { key: 'terminationDate', label: 'Data da Rescisão', path: 'terminationDate', format: 'date' },
+      { key: 'paymentDueDate', label: 'Prazo de Pagamento', path: 'paymentDueDate', format: 'date' },
+      { key: 'paidAmount', label: 'Valor Pago', path: 'paidAmount', format: (value: any): string => (value != null ? formatCurrency(Number(value)) : '—') },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],
   },

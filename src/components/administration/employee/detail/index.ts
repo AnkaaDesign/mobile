@@ -8,3 +8,8 @@ export { ActivitiesTimelineCard } from "./activities-timeline-card";
 export { WarningsTable } from "./warnings-table";
 export { BorrowsTable } from "./borrows-table";
 export { PpeDeliveriesTable } from "./ppe-deliveries-table";
+export { DocumentationCard } from "./documentation-card";
+export { PositionHistoryCard } from "./position-history-card";
+export { BenefitsCard } from "./benefits-card";
+export { DependentsCard } from "./dependents-card";
+export { ThirteenthCard } from "./thirteenth-card";

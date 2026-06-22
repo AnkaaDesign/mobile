@@ -6,17 +6,16 @@ import { useVacation } from "@/hooks/useVacation";
 import { DetailScreen } from "@/components/screens/detail-screen";
 import { spacing } from "@/constants/design-system";
 import {
-  VacationStatusCard,
-  VacationPeriodsCard,
-  VacationEntitlementCard,
+  VacationStatusStepperCard,
+  VacationSummaryCard,
   VacationPeriodBalanceCard,
 } from "@/components/human-resources/vacation";
 import type { Vacation } from "@/types";
 
 /**
  * Employee read-only self-service detail for one of the signed-in user's
- * vacations. Reuses the HR detail cards but omits Valores/Recibo and every
- * mutating action (advance / delete / edit).
+ * vacations. Reuses the HR detail cards but omits the Recibo and every mutating
+ * action (advance / delete / edit).
  */
 export default function MyVacationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,9 +37,8 @@ export default function MyVacationDetailScreen() {
     >
       {(v: Vacation) => (
         <View style={styles.body}>
-          <VacationStatusCard vacation={v} />
-          <VacationPeriodsCard vacation={v} />
-          <VacationEntitlementCard vacation={v} />
+          <VacationStatusStepperCard vacation={v} />
+          <VacationSummaryCard vacation={v} />
           <VacationPeriodBalanceCard vacation={v} />
         </View>
       )}

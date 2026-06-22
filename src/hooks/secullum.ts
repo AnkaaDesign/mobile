@@ -22,6 +22,10 @@ export const secullumKeys = {
   timeEntriesByDay: (date?: string) => [...secullumKeys.all, "time-entries-by-day", date] as const,
   horarios: (params?: any) => [...secullumKeys.all, "horarios", params] as const,
   horarioDetail: (id: number | string) => [...secullumKeys.all, "horarios", "detail", id] as const,
+  absenceDays: (params?: { startDate: string; endDate: string; sectorId?: string }) =>
+    [...secullumKeys.all, "absence-days", params] as const,
+  assinaturas: () => [...secullumKeys.all, "assinaturas"] as const,
+  assinaturaDetail: (id?: number) => [...secullumKeys.all, "assinaturas", "detail", id] as const,
 };
 
 // Authentication hooks
@@ -239,6 +243,38 @@ export const useSecullumApprovedRequests = (params?: {
     queryKey: secullumKeys.approvedRequests(params),
     queryFn: () => secullumService.getApprovedRequests(params),
     staleTime: 60 * 1000, // 1 minute
+  });
+};
+
+// Ausências (HR view) — per-day absence rows for a period.
+export const useSecullumAbsenceDays = (
+  params: { startDate: string; endDate: string; sectorId?: string },
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: secullumKeys.absenceDays(params),
+    queryFn: () => secullumService.getAbsenceDays(params),
+    enabled: options?.enabled !== false && !!params.startDate && !!params.endDate,
+    staleTime: 60 * 1000, // 1 minute
+  });
+};
+
+// Fechamento (Assinatura Digital) — read-only list of apuração batches.
+export const useSecullumAssinaturas = () => {
+  return useQuery({
+    queryKey: secullumKeys.assinaturas(),
+    queryFn: () => secullumService.getAssinaturas(),
+    staleTime: 60 * 1000, // 1 minute
+  });
+};
+
+// Fechamento detail — per-funcionário signature items for one apuração.
+export const useSecullumAssinaturaById = (id?: number, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: secullumKeys.assinaturaDetail(id),
+    queryFn: () => secullumService.getAssinaturaById(id as number),
+    enabled: options?.enabled !== false && id != null && Number.isFinite(id),
+    staleTime: 60 * 1000,
   });
 };
 

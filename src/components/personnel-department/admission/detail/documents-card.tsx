@@ -22,7 +22,7 @@ import {
 import { formatDateTime } from "@/utils/date";
 import { useAdmissionDocumentUpload } from "@/hooks/useAdmission";
 import type { Admission, AdmissionDocument } from "@/types/admission";
-import { getDocumentProgress } from "../utils";
+import { getDocumentProgress, getAdmissionChecklistDocuments } from "../utils";
 import { SignLgpdButton } from "./sign-lgpd-button";
 
 interface DocumentsCardProps {
@@ -130,8 +130,9 @@ function DocumentRow({ admissionId, document }: { admissionId: string; document:
 
 export function DocumentsCard({ admission }: DocumentsCardProps) {
   const { colors } = useTheme();
-  const documents = admission.documents || [];
-  const { done, total } = getDocumentProgress(documents);
+  // Only the admission checklist document types (legacy extras are excluded).
+  const documents = getAdmissionChecklistDocuments(admission.documents);
+  const { done, total } = getDocumentProgress(admission.documents);
 
   return (
     <DetailCard
@@ -140,7 +141,7 @@ export function DocumentsCard({ admission }: DocumentsCardProps) {
       badge={
         total > 0 ? (
           <ThemedText style={[styles.progress, { color: done === total ? "#16a34a" : colors.mutedForeground }]}>
-            {done}/{total} recebidos
+            {done}/{total} documentos recebidos
           </ThemedText>
         ) : undefined
       }

@@ -20,6 +20,11 @@ import {
   ContractPhasesCard,
   WarningsTable,
   PpeDeliveriesTable,
+  DocumentationCard,
+  PositionHistoryCard,
+  BenefitsCard,
+  DependentsCard,
+  ThirteenthCard,
 } from "@/components/administration/employee/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
@@ -48,18 +53,37 @@ export default function EmployeeDetailsScreen() {
       query={query as any}
       icon={IconUser}
       title={(e) => e.name ?? "Colaborador"}
-      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+      privilege={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+          SECTOR_PRIVILEGES.ACCOUNTING,
+          SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+        ],
+      }}
       editRoute={(e) => mobileRoute(routes.administration.collaborators.edit(e.id))}
       notFoundFallback={mobileRoute(routes.administration.collaborators.list)}
     >
       {(employee) => (
         <View style={styles.body}>
+          {/* Identidade → Trabalho → Documentos/EPI → Históricos → Folha → Auditoria
+              (mirrors the web Colaborador detail). Heavy cards (Documentação,
+              Cargos, Benefícios, Dependentes, 13º) fan out to their own
+              endpoints and self-hide when they have no records. */}
           <BasicInfoCard employee={employee} />
-          <AddressCard employee={employee} />
           <ProfessionalInfoCard employee={employee} />
-          <ContractPhasesCard employee={employee} />
+          <AddressCard employee={employee} />
           <LoginInfoCard employee={employee} />
+          <DocumentationCard userId={employee.id} />
           <PpeSizesCard employee={employee} />
+          {/* Histórico de Vínculos: mobile lacks an employment-contracts hook,
+              so ContractPhasesCard (from the embedded currentContract.phaseHistory)
+              is the closest analog. */}
+          <ContractPhasesCard employee={employee} />
+          <PositionHistoryCard userId={employee.id} />
+          <BenefitsCard userId={employee.id} />
+          <DependentsCard userId={employee.id} />
+          <ThirteenthCard userId={employee.id} />
           <WarningsTable employee={employee} maxHeight={400} />
           <PpeDeliveriesTable employee={employee} maxHeight={400} />
           <Card style={styles.card}>

@@ -1,36 +1,39 @@
+import React from 'react'
+import { View } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
-import type { Vacation } from '@/types'
+import type { Vacation, User } from '@/types'
 import { VACATION_STATUS } from '@/constants/enums'
 import { VACATION_STATUS_LABELS } from '@/constants/enum-labels'
-import { canEditHrEntities, canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
-import { isVacationInProgress } from '@/components/human-resources/vacation/vacation-utils'
-
-// Status → Badge variant (no VACATION entry in getBadgeVariant; map inline like warnings).
-const STATUS_VARIANT: Record<VACATION_STATUS, string> = {
-  [VACATION_STATUS.SCHEDULED]: 'warning',
-  [VACATION_STATUS.PAID]: 'success',
-  [VACATION_STATUS.EXPIRED]: 'error',
-}
+import { canDeleteDpRecords } from '@/utils/permissions/entity-permissions'
+import { isVacationInProgress, isConcessiveExpired, isConcessiveExpiringSoon } from '@/components/human-resources/vacation/vacation-utils'
+import { Badge } from '@/components/ui/badge'
+import { ThemedText } from '@/components/ui/themed-text'
+import { formatDate } from '@/utils/formatters'
+import type { BadgeVariant } from '@/constants/badge-colors'
+import { hasAnyPrivilege } from '@/utils'
+import { SECTOR_PRIVILEGES } from '@/constants'
 
 /**
- * Concessivo-expiry helper: how many days until the período concessivo
- * (art. 137 dobro) expires. Negative → already expired.
+ * Manage (create / edit / mark-as-paid) férias is ACCOUNTING / HR / ADMIN.
+ * PRODUCTION_MANAGER has read-only access (mirrors the web list+detail pages
+ * and the API @Roles). This is broader than the shared `canEditHrEntities`
+ * helper (which omits ACCOUNTING), so it is defined locally for vacations.
  */
-export function vacationDaysUntilConcessiveEnd(v: Vacation): number | null {
-  if (!v.concessiveEnd) return null
-  const end = new Date(v.concessiveEnd)
-  if (isNaN(end.getTime())) return null
-  return Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+function canManageVacations(user: User | null): boolean {
+  if (!user) return false
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ACCOUNTING,
+    SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+    SECTOR_PRIVILEGES.ADMIN,
+  ])
 }
 
-/** Expiry badge: 'expired' (vencido/dobro), 'onHold' (<30d) or null. */
-export function vacationConcessiveBadge(v: Vacation): string | null {
-  if (v.status === VACATION_STATUS.PAID) return null
-  const days = vacationDaysUntilConcessiveEnd(v)
-  if (days === null) return null
-  if (days < 0) return 'expired'
-  if (days <= 30) return 'onHold'
-  return null
+// Status → Badge variant (no VACATION entry in getBadgeVariant; map inline like warnings).
+// SCHEDULED = warning/amber, PAID = success/green, EXPIRED = destructive/red.
+const STATUS_VARIANT: Record<VACATION_STATUS, BadgeVariant> = {
+  [VACATION_STATUS.SCHEDULED]: 'warning',
+  [VACATION_STATUS.PAID]: 'success',
+  [VACATION_STATUS.EXPIRED]: 'destructive',
 }
 
 export const vacationsListConfig: ListConfig<Vacation> = {
@@ -41,104 +44,139 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     hook: 'useVacationsInfinite',
     mutationsHook: 'useVacationMutations',
     batchMutationsHook: 'useVacationBatchMutations',
-    defaultSort: { field: 'concessiveEnd', direction: 'asc' },
+    defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
-      user: { include: { position: true } },
+      user: { include: { position: true, sector: true } },
     },
   },
 
   table: {
     columns: [
+      // COLABORADOR (+ "Coletiva" badge when groupId is set)
       {
         key: 'user.name',
         label: 'COLABORADOR',
         sortable: true,
-        width: 2.0,
+        width: 2.2,
         align: 'left',
-        render: (v) => v.user?.name || '—',
-        style: { fontWeight: '500' },
+        render: (v) =>
+          React.createElement(
+            View,
+            { style: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 } },
+            React.createElement(
+              ThemedText,
+              { numberOfLines: 1, style: { flexShrink: 1, fontSize: 14, fontWeight: '500' } },
+              v.user?.name || '—',
+            ),
+            v.groupId ? React.createElement(Badge, { variant: 'secondary', size: 'sm' }, 'Coletiva') : null,
+          ),
       },
+      // PERÍODO AQUISITIVO (start — end)
+      {
+        key: 'acquisitiveStart',
+        label: 'PERÍODO AQUISITIVO',
+        sortable: true,
+        width: 1.8,
+        align: 'left',
+        render: (v) =>
+          v.acquisitiveStart && v.acquisitiveEnd
+            ? `${formatDate(v.acquisitiveStart)} — ${formatDate(v.acquisitiveEnd)}`
+            : '—',
+      },
+      // LIMITE CONCESSIVO (date + Vencido / A vencer badge)
+      {
+        key: 'concessiveEnd',
+        label: 'LIMITE CONCESSIVO',
+        sortable: true,
+        width: 1.6,
+        align: 'left',
+        render: (v) => {
+          if (!v.concessiveEnd) return '—'
+          const expired = isConcessiveExpired(v)
+          const expiring = isConcessiveExpiringSoon(v)
+          return React.createElement(
+            View,
+            { style: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 } },
+            React.createElement(ThemedText, { numberOfLines: 1, style: { fontSize: 14 } }, formatDate(v.concessiveEnd)),
+            expired
+              ? React.createElement(Badge, { variant: 'destructive', size: 'sm' }, 'Vencido')
+              : expiring
+                ? React.createElement(Badge, { variant: 'warning', size: 'sm' }, 'A vencer')
+                : null,
+          )
+        },
+      },
+      // GOZO (startDate · N dia(s))
+      {
+        key: 'gozo',
+        label: 'GOZO',
+        sortable: false,
+        width: 1.5,
+        align: 'left',
+        render: (v) => {
+          const dias = v.days ?? 0
+          if (v.startDate) return `${formatDate(v.startDate)} · ${dias} dia${dias > 1 ? 's' : ''}`
+          return dias > 0 ? `Não agendado · ${dias} dias` : 'Não agendado'
+        },
+      },
+      // DIAS DE DIREITO
+      {
+        key: 'entitledDays',
+        label: 'DIAS DE DIREITO',
+        sortable: true,
+        width: 1.0,
+        align: 'center',
+        render: (v) => String(v.entitledDays ?? 0),
+      },
+      // ABONO
+      {
+        key: 'abonoPecuniarioDays',
+        label: 'ABONO',
+        sortable: false,
+        width: 0.9,
+        align: 'center',
+        render: (v) =>
+          (v.abonoPecuniarioDays ?? 0) > 0
+            ? React.createElement(Badge, { variant: 'secondary', size: 'sm' }, `${v.abonoPecuniarioDays} dia${v.abonoPecuniarioDays > 1 ? 's' : ''}`)
+            : '—',
+      },
+      // DOBRO (art. 137)
+      {
+        key: 'isDouble',
+        label: 'DOBRO',
+        sortable: false,
+        width: 0.9,
+        align: 'center',
+        render: (v) => (v.isDouble ? React.createElement(Badge, { variant: 'destructive', size: 'sm' }, 'Em dobro') : '—'),
+      },
+      // STATUS ("Em gozo" computed, else persisted status)
       {
         key: 'status',
         label: 'STATUS',
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (v) => (isVacationInProgress(v) ? 'Em gozo' : VACATION_STATUS_LABELS[v.status] || v.status),
-        format: 'badge',
-        badge: (v) => ({ variant: isVacationInProgress(v) ? 'active' : STATUS_VARIANT[v.status] ?? 'default' }),
+        render: (v) =>
+          isVacationInProgress(v)
+            ? React.createElement(Badge, { variant: 'active', size: 'sm' }, 'Em gozo')
+            : React.createElement(
+                Badge,
+                { variant: STATUS_VARIANT[v.status] ?? 'default', size: 'sm' },
+                VACATION_STATUS_LABELS[v.status] || v.status,
+              ),
       },
+      // PAGAMENTO (date or "Prazo: …")
       {
-        key: 'days',
-        label: 'GOZO (DIAS)',
+        key: 'paymentDate',
+        label: 'PAGAMENTO',
         sortable: true,
-        width: 0.9,
-        align: 'center',
-        render: (v) => `${v.days ?? 0}d`,
-      },
-      {
-        key: 'startDate',
-        label: 'INÍCIO DO GOZO',
-        sortable: true,
-        width: 1.5,
+        width: 1.4,
         align: 'left',
-        render: (v) => v.startDate ?? '—',
-        format: 'date',
+        render: (v) =>
+          v.paymentDate ? formatDate(v.paymentDate) : v.paymentDueDate ? `Prazo: ${formatDate(v.paymentDueDate)}` : '—',
       },
-      {
-        key: 'entitledDays',
-        label: 'DIREITO (DIAS)',
-        sortable: true,
-        width: 1.0,
-        align: 'center',
-        render: (v) => `${v.entitledDays ?? 0}d`,
-      },
-      {
-        key: 'acquisitiveStart',
-        label: 'AQUISITIVO',
-        sortable: true,
-        width: 1.6,
-        align: 'left',
-        render: (v) => v.acquisitiveStart,
-        format: 'date',
-      },
-      {
-        key: 'concessiveEnd',
-        label: 'LIMITE CONCESSIVO',
-        sortable: true,
-        width: 1.5,
-        align: 'left',
-        render: (v) => v.concessiveEnd,
-        format: 'date',
-      },
-      {
-        key: 'vencimento',
-        label: 'VENCIMENTO',
-        sortable: false,
-        width: 1.2,
-        align: 'center',
-        render: (v) => {
-          const days = vacationDaysUntilConcessiveEnd(v)
-          if (days === null) return '—'
-          if (days < 0) return 'Vencido'
-          if (days <= 30) return `${days}d`
-          return '—'
-        },
-        format: 'badge',
-        badge: (v) => {
-          const variant = vacationConcessiveBadge(v)
-          return variant ? { variant } : { variant: 'muted' }
-        },
-      },
-      {
-        key: 'isDouble',
-        label: 'DOBRO',
-        sortable: false,
-        width: 0.8,
-        align: 'center',
-        render: (v) => (v.isDouble ? 'Sim' : '—'),
-      },
+      // CRIADO EM
       {
         key: 'createdAt',
         label: 'CRIADO EM',
@@ -149,7 +187,16 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['user.name', 'status', 'days', 'startDate'],
+    defaultVisible: [
+      'user.name',
+      'acquisitiveStart',
+      'gozo',
+      'concessiveEnd',
+      'entitledDays',
+      'abonoPecuniarioDays',
+      'isDouble',
+      'status',
+    ],
     rowHeight: 72,
     actions: [
       {
@@ -166,7 +213,9 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
-        canPerform: canEditHrEntities,
+        canPerform: canManageVacations,
+        // Editar is hidden once the vacation is paid (PAID is terminal).
+        visible: (v) => v.status !== VACATION_STATUS.PAID,
         onPress: (v, router) => {
           router.push(`/recursos-humanos/ferias/editar/${v.id}`)
         },
@@ -249,7 +298,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
   },
 
   search: {
-    placeholder: 'Buscar férias...',
+    placeholder: 'Buscar por colaborador ou observações',
     debounce: 500,
   },
 
@@ -275,7 +324,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     create: {
       label: 'Cadastrar Férias',
       route: '/recursos-humanos/ferias/cadastrar',
-      canCreate: canEditHrEntities,
+      canCreate: canManageVacations,
     },
     bulk: [
       {

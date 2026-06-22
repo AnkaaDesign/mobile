@@ -199,3 +199,81 @@ export interface SecullumApuracaoActionResponse {
   message: string;
   data?: SecullumApuracao;
 }
+
+// ============================================================================
+// Ausências (HR view) — per-day absence rows derived from /Calculos +
+// /FuncionariosAfastamentos. Includes partial-day absences (employee clocked
+// in but still has Faltas). Mirrors web's SecullumAbsenceDayRow.
+// ============================================================================
+
+export interface SecullumAbsenceDayRow {
+  date: string;
+  userId: string;
+  userName: string;
+  sectorId?: string | null;
+  sectorName: string | null;
+  FuncionarioId: number;
+  JustificativaId: number;
+  JustificativaDescricao: string;
+  Motivo: string;
+  faltas: string | null;
+  normais?: string | null;
+  carga?: string | null;
+  isPartialDay: boolean;
+  absenceRecordId?: number;
+}
+
+export interface SecullumAbsenceDaysResponse {
+  success: boolean;
+  message: string;
+  data?: SecullumAbsenceDayRow[];
+}
+
+// ============================================================================
+// Fechamento (Assinatura Digital de Cartão Ponto) — HR read-only viewer.
+// List of apuração batches and their per-funcionário signature items.
+// Status: 1=Aprovado, 2=Rejeitado, else Pendente.
+// ============================================================================
+
+export const ASSINATURA_ITEM_STATUS = {
+  APROVADO: 1,
+  REJEITADO: 2,
+} as const;
+
+export interface SecullumAssinaturaListItem {
+  Id: number;
+  Descricao: string;
+  DataInicio: string;
+  DataFim: string;
+  DataInclusao: string;
+  NumeroCartoes: number;
+  Aprovados: number;
+  Rejeitados: number;
+  Compactada: boolean;
+}
+
+export interface SecullumAssinaturasResponse {
+  success: boolean;
+  message: string;
+  data: SecullumAssinaturaListItem[];
+}
+
+export interface SecullumAssinaturaItem {
+  Id: number;
+  FuncionarioId: number;
+  Funcionario: string;
+  Status: number;
+  DataResposta: string | null;
+  Resposta?: string | null;
+  RespostasGerentes?: unknown[];
+}
+
+export interface SecullumAssinaturaDetail {
+  ListaItensAssinatura: SecullumAssinaturaItem[];
+}
+
+export interface SecullumAssinaturaDetailResponse {
+  success: boolean;
+  message: string;
+  data?: SecullumAssinaturaDetail;
+}

@@ -13,6 +13,10 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
   return (
     <DetailCard title="Dados Profissionais" icon="briefcase">
       <DetailSection title="Dados Funcionais">
+        {employee.payrollNumber != null && (
+          <DetailField label="Número da Folha" icon="hash" value={String(employee.payrollNumber)} />
+        )}
+
         {employee.position && (
           <DetailField label="Cargo" icon="briefcase" value={employee.position.name} />
         )}
@@ -42,7 +46,7 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
         )}
 
         {contract?.effectedAt && (
-          <DetailField label="Data de Efetivação" icon="calendar-check" value={formatDate(contract.effectedAt)} />
+          <DetailField label="Data de Contratação" icon="calendar-check" value={formatDate(contract.effectedAt)} />
         )}
 
         {contract?.terminationDate && (

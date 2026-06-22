@@ -23,8 +23,10 @@ function AdmissionDetailScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: admissionResponse, isLoading, error, refetch } = useAdmission(id!, {
     include: {
-      user: { include: { position: true, sector: true } },
+      user: { include: { position: { include: { remunerations: true } }, sector: true, currentContract: true } },
+      createdBy: true,
       documents: { include: { file: true, signedFile: true, signedBy: true } },
+      admissionExam: true,
     },
   });
 

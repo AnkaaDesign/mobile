@@ -13,6 +13,7 @@ import {
   TerminationStatusStepperCard,
   TerminationSummaryCard,
   TerminationVerbasCard,
+  TerminationPaymentCard,
   TerminationDocumentsCard,
 } from "@/components/human-resources/termination/detail";
 import type { Termination } from "@/types";
@@ -53,6 +54,7 @@ export default function TerminationDetailScreen() {
       initiatedBy: true,
       items: { orderBy: { createdAt: "asc" } },
       documents: { include: { file: true }, orderBy: { type: "asc" } },
+      dismissalExam: true,
     },
     enabled: !!terminationId,
   });
@@ -96,6 +98,7 @@ export default function TerminationDetailScreen() {
             <TerminationStatusStepperCard termination={termination} canManage={canManage} />
             <TerminationSummaryCard termination={termination} />
             <TerminationVerbasCard termination={termination} canManage={canManage} />
+            <TerminationPaymentCard termination={termination} />
             <TerminationDocumentsCard termination={termination} canManage={canManage} />
             <ChangelogTimeline
               entityType={CHANGE_LOG_ENTITY_TYPE.TERMINATION}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { IconReceipt, IconCalculator, IconPrinter } from "@tabler/icons-react-native";
 
@@ -15,6 +15,50 @@ import { exportVacationReciboPdf } from "@/utils/vacation-recibo-pdf-generator";
 
 interface VacationReciboCardProps {
   vacation: Vacation;
+  /** Payment action rendered at the foot of the recibo (e.g. "Marcar como pago"). */
+  paymentSlot?: React.ReactNode;
+}
+
+/** Coerce a possibly-string Decimal (or null/NaN) to a finite number. */
+function toNum(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Build a display recibo from the persisted vacation fields so the card hydrates
+ * on load (the recibo is auto-calculated at create). A manual recalc replaces it.
+ * Monetary fields may arrive as Prisma Decimal strings — coerce before summing,
+ * otherwise the totals become string concatenation → NaN.
+ */
+function reciboFromEntity(vacation: Vacation): VacationRecibo | null {
+  if (vacation.baseRemuneration == null) return null;
+  const baseRemuneration = toNum(vacation.baseRemuneration);
+  const oneThird = toNum(vacation.oneThird);
+  const abonoAmount = toNum(vacation.abonoAmount);
+  const inss = toNum(vacation.inss);
+  const irrf = toNum(vacation.irrf);
+  const abonoOneThird = 0; // not persisted separately on the entity
+  const earnings = baseRemuneration + oneThird + abonoAmount + abonoOneThird;
+  const discounts = inss + irrf;
+  return {
+    vacationId: vacation.id,
+    userId: vacation.userId,
+    vacationDays: Math.max(0, (vacation.entitledDays ?? 0) - (vacation.abonoPecuniarioDays ?? 0)),
+    abonoPecuniarioDays: vacation.abonoPecuniarioDays ?? 0,
+    baseRemuneration,
+    oneThird,
+    abonoAmount,
+    abonoOneThird,
+    isDouble: vacation.isDouble,
+    taxableBase: baseRemuneration + oneThird,
+    inss,
+    irrf,
+    earnings,
+    discounts,
+    net: earnings - discounts,
+    lines: [],
+  };
 }
 
 function Line({ label, amount, negative }: { label: string; amount: number; negative?: boolean }) {
@@ -35,16 +79,20 @@ function Line({ label, amount, negative }: { label: string; amount: number; nega
  * POST /vacations/:id/calculate (férias + 1/3 + abono − INSS/IRRF), then the
  * Imprimir button renders a PDF and opens the OS share sheet (print / WhatsApp).
  */
-export function VacationReciboCard({ vacation }: VacationReciboCardProps) {
+export function VacationReciboCard({ vacation, paymentSlot }: VacationReciboCardProps) {
   const { colors } = useTheme();
   const calculate = useVacationCalculate();
-  const [recibo, setRecibo] = useState<VacationRecibo | null>(null);
+  const [recalculated, setRecalculated] = useState<VacationRecibo | null>(null);
+
+  // Hydrate from the persisted entity; a manual recalc overrides it.
+  const persisted = useMemo(() => reciboFromEntity(vacation), [vacation]);
+  const recibo = recalculated ?? persisted;
 
   const handleCalculate = async () => {
     try {
       const result = await calculate.mutateAsync(vacation.id);
       const data = (result as any)?.data?.recibo;
-      if (data) setRecibo(data);
+      if (data) setRecalculated(data);
     } catch {
       // api-client surfaces the error toast.
     }
@@ -149,12 +197,17 @@ export function VacationReciboCard({ vacation }: VacationReciboCardProps) {
           </View>
         </View>
       )}
+
+      {paymentSlot ? (
+        <View style={[styles.paymentSlot, { borderTopColor: colors.border }]}>{paymentSlot}</View>
+      ) : null}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: { padding: spacing.md, gap: spacing.md },
+  paymentSlot: { borderTopWidth: 1, paddingTop: spacing.md },
   header: {
     flexDirection: "row",
     alignItems: "center",
