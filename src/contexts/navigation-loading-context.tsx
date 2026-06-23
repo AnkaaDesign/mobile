@@ -255,15 +255,24 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
 
     startNavigation();
 
-    // Defer navigation to next frame so overlay renders before heavy work starts
-    requestAnimationFrame(() => {
-      try {
-        action();
-      } catch (error) {
-        console.error('[NavigationLoading] Navigation error:', error);
-        endNavigation();
-      }
-    });
+    // Run the navigation SYNCHRONOUSLY, inside this tap handler. Do NOT defer it
+    // to a later tick (requestAnimationFrame OR setTimeout): on RN 0.81 New
+    // Architecture, when the app is idle the native run loop / timer display-link
+    // pauses, so a queued rAF/timer callback — and the router.push inside it — is
+    // stranded until a native event (a push notification, or app
+    // background→foreground) wakes the JS thread. The destination then never
+    // mounts, nothing fetches, nothing wakes the thread, and the overlay sticks.
+    // The tap itself is a native event being processed right now, so the JS
+    // thread is awake here: doing the push synchronously makes the navigation
+    // state update + React commit happen inside this guaranteed-to-flush cycle.
+    // React 19 batches the overlay-show with the navigation, so the destination's
+    // skeleton renders together with the overlay on top — no idle-freeze window.
+    try {
+      action();
+    } catch (error) {
+      console.error('[NavigationLoading] Navigation error:', error);
+      endNavigation();
+    }
 
     // Set custom timeout if provided
     if (options?.timeout) {

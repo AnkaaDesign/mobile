@@ -24,7 +24,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // HOME - Pagina Inicial (Excecao - sempre primeiro)
   {
     id: "home",
-    title: "Inicio",
+    title: "Início",
     icon: "home",
     path: "/",
   },
@@ -36,7 +36,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // ADMINISTRACAO
   {
     id: "administracao",
-    title: "Administracao",
+    title: "Administração",
     icon: "briefcase",
     path: "/administracao",
     requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
@@ -45,7 +45,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       // "Departamento Pessoal" group below, mirroring the web nav consolidation.
       {
         id: "notificacoes-admin",
-        title: "Notificacoes",
+        title: "Notificações",
         icon: "notification",
         path: "/administracao/notificacoes",
         children: [
@@ -91,7 +91,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // so including them here would duplicate the entry in their drawer.
   {
     id: "catalogo",
-    title: "Catalogo",
+    title: "Catálogo",
     icon: "palette",
     path: "/catalogo",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, TEAM_LEADER, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
@@ -108,7 +108,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     children: [
       {
         id: "emprestimos",
-        title: "Emprestimos",
+        title: "Empréstimos",
         icon: "borrowing",
         path: "/estoque/emprestimos",
         children: [
@@ -170,7 +170,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "manutencao",
-        title: "Manutencao",
+        title: "Manutenção",
         icon: "maintenance",
         path: "/estoque/manutencao",
         children: [
@@ -192,7 +192,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "movimentacoes",
-        title: "Movimentacoes",
+        title: "Movimentações",
         icon: "movement",
         path: "/estoque/movimentacoes",
         children: [
@@ -220,7 +220,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           },
           {
             id: "pedidos-automaticos",
-            title: "Automaticos",
+            title: "Automáticos",
             icon: "automation",
             path: "/estoque/pedidos/automaticos",
             children: [
@@ -252,7 +252,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           },
           { id: "produtos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/produtos/detalhes/:id", isDynamic: true },
           { id: "produtos-editar", title: "Editar", icon: "edit", path: "/estoque/produtos/editar/:id", isDynamic: true },
-          { id: "produtos-balanco-estoque", title: "Balanco de Estoque", icon: "scale", path: "/estoque/balanco" },
+          { id: "produtos-balanco-estoque", title: "Balanço de Estoque", icon: "scale", path: "/estoque/balanco" },
           {
             id: "produtos-marcas",
             title: "Marcas",
@@ -284,7 +284,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // MANUTENCAO
   {
     id: "manutencao",
-    title: "Manutencao",
+    title: "Manutenção",
     icon: "maintenance",
     path: "/manutencao",
     requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
@@ -327,7 +327,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       // Questionarios - self-fill, visible to ALL users (no requiredPrivilege),
       // but only while the user has at least one non-submitted (open) entry.
-      { id: "meus-questionarios", title: "Questionarios", icon: "clipboardList", path: "/pessoal/questionarios", requiresOpenQuestionnaire: true },
+      { id: "meus-questionarios", title: "Questionários", icon: "clipboardList", path: "/pessoal/questionarios", requiresOpenQuestionnaire: true },
       { id: "minhas-mensagens", title: "Minhas Mensagens", icon: "message", path: "/pessoal/minhas-mensagens" },
       {
         id: "meu-bonus",
@@ -343,7 +343,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "meus-emprestimos",
-        title: "Meus Emprestimos",
+        title: "Meus Empréstimos",
         icon: "loan",
         path: "/pessoal/meus-emprestimos",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
@@ -374,7 +374,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "minhas-advertencias",
-        title: "Minhas Advertencias",
+        title: "Minhas Advertências",
         icon: "alertTriangle",
         path: "/pessoal/minhas-advertencias",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ACCOUNTING], // NOT for DESIGNER (matches web)
@@ -382,7 +382,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "minhas-movimentacoes",
-        title: "Minhas Movimentacoes",
+        title: "Minhas Movimentações",
         icon: "movement",
         path: "/pessoal/minhas-movimentacoes",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
@@ -399,7 +399,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/pintura",
     requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     children: [
-      { id: "catalogo", title: "Catalogo", icon: "palette", path: "/pintura/catalogo" },
+      { id: "catalogo", title: "Catálogo", icon: "palette", path: "/pintura/catalogo" },
       {
         id: "marcas-de-tinta",
         title: "Marcas de Tinta",
@@ -413,7 +413,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "producoes-pintura",
-        title: "Producoes",
+        title: "Produções",
         icon: "colorPicker",
         path: "/pintura/producoes",
         requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
@@ -436,7 +436,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // PRODUCAO - Note: PRODUCTION users see direct access items at root level instead of this grouped menu
   {
     id: "producao",
-    title: "Producao",
+    title: "Produção",
     icon: "factory",
     path: "/producao",
     requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ADMIN],
@@ -468,10 +468,10 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "cronograma-cadastrar", title: "Nova Tarefa", icon: "plus", path: "/producao/cronograma/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-      { id: "historico", title: "Historico", icon: "history", path: "/producao/historico", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ADMIN] },
+      { id: "historico", title: "Histórico", icon: "history", path: "/producao/historico", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ADMIN] },
       {
         id: "observacoes",
-        title: "Observacoes",
+        title: "Observações",
         icon: "note",
         path: "/producao/observacoes",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
@@ -501,7 +501,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           },
           {
             id: "requisicao-de-recorte",
-            title: "Requisicao de Recorte",
+            title: "Requisição de Recorte",
             icon: "clipboard",
             path: "/producao/recorte/requisicao-de-recorte/listar",
             children: [
@@ -541,7 +541,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "warnings",
-        title: "Advertencias",
+        title: "Advertências",
         icon: "alertTriangle",
         path: "/recursos-humanos/advertencias",
         children: [
@@ -589,7 +589,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       // { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" }, // Temporarily hidden for testing
-      { id: "requisicoes", title: "Requisicoes", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
+      { id: "requisicoes", title: "Requisições", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
 
       // ============================================================
       // DEPARTAMENTO PESSOAL (Área Andressa) — mirrors web departamento-pessoal,
@@ -740,6 +740,17 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "pm-ferias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/ferias/editar/:id", isDynamic: true },
         ],
       },
+      {
+        id: "pm-advertencias",
+        title: "Advertências",
+        icon: "alertTriangle",
+        path: "/recursos-humanos/advertencias",
+        children: [
+          { id: "pm-advertencias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/advertencias/cadastrar" },
+          { id: "pm-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/advertencias/detalhes/:id", isDynamic: true },
+          { id: "pm-advertencias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/advertencias/editar/:id", isDynamic: true },
+        ],
+      },
     ],
   },
 
@@ -838,7 +849,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "servidor-implantacoes",
-        title: "Implantacoes",
+        title: "Implantações",
         icon: "rocket",
         path: "/servidor/implantacoes",
         children: [
@@ -848,11 +859,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       { id: "servidor-gerenciador-de-arquivos", title: "Gerenciador de Arquivos", icon: "sharedFolders", path: "/servidor/file-manager" },
       { id: "servidor-logs", title: "Logs do Sistema", icon: "systemLogs", path: "/servidor/logs" },
-      { id: "servidor-metricas", title: "Metricas do Sistema", icon: "systemMetrics", path: "/servidor/metricas" },
+      { id: "servidor-metricas", title: "Métricas do Sistema", icon: "systemMetrics", path: "/servidor/metricas" },
       { id: "servidor-rate-limiting", title: "Rate Limiting", icon: "shield", path: "/servidor/rate-limiting" },
       {
         id: "registros-de-alteracoes",
-        title: "Registros de Alteracoes",
+        title: "Registros de Alterações",
         icon: "auditLog",
         path: "/servidor/registros-de-alteracoes",
         children: [
@@ -860,11 +871,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/registros-de-alteracoes/detalhes/:id", isDynamic: true },
         ],
       },
-      { id: "servidor-servicos", title: "Servicos do Sistema", icon: "services", path: "/servidor/services" },
-      { id: "servidor-sincronizacao-bd", title: "Sincronizacao BD", icon: "repeat", path: "/servidor/database-sync", onlyInStaging: true },
+      { id: "servidor-servicos", title: "Serviços do Sistema", icon: "services", path: "/servidor/services" },
+      { id: "servidor-sincronizacao-bd", title: "Sincronização BD", icon: "repeat", path: "/servidor/database-sync", onlyInStaging: true },
       {
         id: "servidor-usuarios",
-        title: "Usuarios do Sistema",
+        title: "Usuários do Sistema",
         icon: "systemUsers",
         path: "/servidor/usuarios",
         children: [{ id: "servidor-usuarios-cadastrar", title: "Criar Usuario", icon: "plus", path: "/servidor/usuarios/cadastrar" }],
@@ -1070,7 +1081,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // Historico - Direct access for DESIGNER, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER, COMMERCIAL, PLOTTING
   {
     id: "historico-direct",
-    title: "Historico",
+    title: "Histórico",
     icon: "history",
     path: "/producao/historico",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.PLOTTING],
@@ -1130,7 +1141,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "requisicao-de-recorte-direct",
-        title: "Requisicao de Recorte",
+        title: "Requisição de Recorte",
         icon: "clipboard",
         path: "/producao/recorte/requisicao-de-recorte/listar",
         children: [
@@ -1170,7 +1181,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // Historico - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
   {
     id: "historico-production",
-    title: "Historico",
+    title: "Histórico",
     icon: "history",
     path: "/producao/historico",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
@@ -1180,7 +1191,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // Observacoes - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
   {
     id: "observacoes-production",
-    title: "Observacoes",
+    title: "Observações",
     icon: "note",
     path: "/producao/observacoes",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
@@ -1210,7 +1221,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "requisicao-de-recorte-production",
-        title: "Requisicao de Recorte",
+        title: "Requisição de Recorte",
         icon: "clipboard",
         path: "/producao/recorte/requisicao-de-recorte/listar",
         children: [
@@ -1246,7 +1257,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "meus-emprestimos-production",
-        title: "Meus Emprestimos",
+        title: "Meus Empréstimos",
         icon: "loan",
         path: "/pessoal/meus-emprestimos",
         children: [{ id: "meus-emprestimos-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/meus-emprestimos/detalhes/:id", isDynamic: true }],
@@ -1275,14 +1286,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       {
         id: "minhas-advertencias-production",
-        title: "Minhas Advertencias",
+        title: "Minhas Advertências",
         icon: "alertTriangle",
         path: "/pessoal/minhas-advertencias",
         children: [{ id: "minhas-advertencias-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
       },
       {
         id: "minhas-movimentacoes-production",
-        title: "Minhas Movimentacoes",
+        title: "Minhas Movimentações",
         icon: "movement",
         path: "/pessoal/minhas-movimentacoes",
         children: [{ id: "minhas-movimentacoes-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-movimentacoes/detalhes/:id", isDynamic: true }],
@@ -1311,7 +1322,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   },
   {
     id: "meus-questionarios-maintenance",
-    title: "Questionarios",
+    title: "Questionários",
     icon: "clipboardList",
     path: "/pessoal/questionarios",
     requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
@@ -1321,7 +1332,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // never bonifiable, so the bonus pages never apply to this sector.
   {
     id: "meus-emprestimos-maintenance",
-    title: "Meus Emprestimos",
+    title: "Meus Empréstimos",
     icon: "loan",
     path: "/pessoal/meus-emprestimos",
     requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
@@ -1353,7 +1364,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   },
   {
     id: "minhas-advertencias-maintenance",
-    title: "Minhas Advertencias",
+    title: "Minhas Advertências",
     icon: "alertTriangle",
     path: "/pessoal/minhas-advertencias",
     requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
@@ -1361,7 +1372,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   },
   {
     id: "minhas-movimentacoes-maintenance",
-    title: "Minhas Movimentacoes",
+    title: "Minhas Movimentações",
     icon: "movement",
     path: "/pessoal/minhas-movimentacoes",
     requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],

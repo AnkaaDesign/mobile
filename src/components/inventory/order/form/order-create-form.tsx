@@ -102,8 +102,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   const [itemIpi, setItemIpi] = useState<Record<string, number>>({});
 
   // File upload states
-  const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>([]);
-  const [invoiceFiles, setInvoiceFiles] = useState<FilePickerItem[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
@@ -376,10 +374,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       };
 
       // Check if there are files to upload
-      const hasFiles =
-        budgetFiles.length > 0 ||
-        invoiceFiles.length > 0 ||
-        receiptFiles.length > 0;
+      const hasFiles = receiptFiles.length > 0;
 
       let result;
       setIsUploadingFiles(hasFiles);
@@ -395,9 +390,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           const formDataWithFiles = createOrderFormData(
             orderData,
             {
-              budgets: budgetFiles.length > 0 ? budgetFiles : undefined,
               receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
-              invoices: invoiceFiles.length > 0 ? invoiceFiles : undefined,
             },
             supplier
               ? {
@@ -423,8 +416,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           setTemporaryItems([]);
           setItemIcms({});
           setItemIpi({});
-          setBudgetFiles([]);
-          setInvoiceFiles([]);
           setReceiptFiles([]);
 
           if (onSuccess) {
@@ -449,8 +440,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
     freightValue,
     discountValue,
     forecastDate,
-    budgetFiles,
-    invoiceFiles,
     receiptFiles,
     suppliers,
     createAsync,
@@ -479,8 +468,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               setTemporaryItems([]);
               setItemIcms({});
               setItemIpi({});
-              setBudgetFiles([]);
-              setInvoiceFiles([]);
               setReceiptFiles([]);
               goBack();
             },
@@ -622,45 +609,19 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               </CardContent>
             </Card>
 
-            {/* Documents Section */}
+            {/* Comprovantes Section */}
             <Card style={styles.lastCard}>
               <CardHeader>
-                <CardTitle>Documentos (Opcional)</CardTitle>
+                <CardTitle>Comprovantes (Opcional)</CardTitle>
               </CardHeader>
               <CardContent>
-                <FilePicker
-                  value={budgetFiles}
-                  onChange={setBudgetFiles}
-                  maxFiles={10}
-                  label="Orçamentos"
-                  placeholder="Adicionar orçamentos"
-                  helperText="Selecione até 10 arquivos de orçamento"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
-                <View style={styles.fieldSpacer} />
-                <FilePicker
-                  value={invoiceFiles}
-                  onChange={setInvoiceFiles}
-                  maxFiles={10}
-                  label="Notas Fiscais"
-                  placeholder="Adicionar notas fiscais"
-                  helperText="Selecione até 10 notas fiscais"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
-                <View style={styles.fieldSpacer} />
                 <FilePicker
                   value={receiptFiles}
                   onChange={setReceiptFiles}
                   maxFiles={10}
-                  label="Recibos"
-                  placeholder="Adicionar recibos"
-                  helperText="Selecione até 10 recibos"
+                  label="Comprovantes"
+                  placeholder="Adicionar comprovantes"
+                  helperText="Selecione até 10 comprovantes"
                   disabled={isSubmitting}
                   showCamera={true}
                   showGallery={true}
@@ -1278,32 +1239,16 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               </CardContent>
             </Card>
 
-            {/* Documents Summary */}
-            {(budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0) && (
+            {/* Comprovantes Summary */}
+            {receiptFiles.length > 0 && (
               <Card style={styles.card}>
                 <CardHeader>
-                  <CardTitle>Documentos Anexados</CardTitle>
+                  <CardTitle>Comprovantes Anexados</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {budgetFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Orçamentos</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{budgetFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {invoiceFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Notas Fiscais</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{invoiceFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
                   {receiptFiles.length > 0 && (
                     <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Recibos</ThemedText>
+                      <ThemedText style={styles.docLabel}>Comprovantes</ThemedText>
                       <Badge variant="secondary">
                         <ThemedText>{receiptFiles.length} arquivo(s)</ThemedText>
                       </Badge>

@@ -131,7 +131,7 @@ export function BudgetCreateWizard() {
       guaranteeYears: null as number | null,
       customGuaranteeText: null as string | null,
       customForecastDays: null as number | null,
-      layoutFileId: null as string | null,
+      layoutFileIds: [] as string[],
       simultaneousTasks: null as number | null,
       customerConfigs: [] as any[],
       services: [
@@ -371,11 +371,14 @@ export function BudgetCreateWizard() {
     setIsSubmitting(true);
 
     try {
-      // 1. Upload layout file if needed
-      let layoutFileId = data.layoutFileId || null;
-      const newLayoutFiles = layoutFiles.filter((f) => !f.uploaded);
-      if (newLayoutFiles.length > 0) {
-        const file = newLayoutFiles[0];
+      // 1. Resolve the ordered FILE ids for the layout array (upload new files).
+      //    Always FILE ids; order preserved (max 2).
+      const resolvedLayoutIds: string[] = [];
+      for (const file of layoutFiles.slice(0, 2)) {
+        if (file.uploaded && file.id) {
+          resolvedLayoutIds.push(file.id);
+          continue;
+        }
         const formData = new FormData();
         formData.append("file", {
           uri: file.uri,
@@ -383,8 +386,10 @@ export function BudgetCreateWizard() {
           type: file.mimeType || "image/jpeg",
         } as any);
         const result = await uploadSingleFile(formData, { fileContext: "quote-layout" });
-        if (result?.id) layoutFileId = result.id;
+        if (result?.id) resolvedLayoutIds.push(result.id);
       }
+      const layoutFileIds =
+        resolvedLayoutIds.length > 0 ? resolvedLayoutIds : (data.layoutFileIds ?? []);
 
       // 2. Build service orders
       const serviceOrders = (data.serviceOrders || []).filter(
@@ -472,7 +477,7 @@ export function BudgetCreateWizard() {
           guaranteeYears: toNumber(data.guaranteeYears),
           customGuaranteeText: data.customGuaranteeText || null,
           customForecastDays: toNumber(data.customForecastDays),
-          layoutFileId: layoutFileId || null,
+          layoutFileIds,
           simultaneousTasks: toNumber(data.simultaneousTasks),
           customerConfigs: (data.customerConfigs || []).map((c: any) => ({
             customerId: c.customerId,

@@ -589,4 +589,8 @@ export const mapToWarningFormData = createMapToFormDataHelper<Warning, WarningUp
   followUpDate: warning.followUpDate,
   hrNotes: warning.hrNotes,
   resolvedAt: warning.resolvedAt,
+  suspensionDays: warning.suspensionDays,
+  terminationId: warning.terminationId,
+  witnessIds: (warning.witness as any[])?.map((w: any) => w.id) ?? [],
+  attachmentIds: (warning.attachments as any[])?.map((a: any) => a.id) ?? [],
 }));

@@ -150,10 +150,10 @@ export function StepQuoteInfo({
   });
   const customerConfigsValue =
     useWatch({ control, name: f("customerConfigs") }) || [];
-  const currentLayoutFileId = useWatch({
-    control,
-    name: f("layoutFileId"),
-  });
+  // Reflect the first uploaded layout file in the artwork combobox preview.
+  // The layout array is the source of truth.
+  const currentLayoutFileId =
+    layoutFiles.find((file) => file.uploaded && file.id)?.id || "";
 
   const isBilling = mode === "billing";
 
@@ -243,16 +243,26 @@ export function StepQuoteInfo({
     [setValue, f],
   );
 
+  // Sync form's layoutFileIds from the ordered layout file array. Only already
+  // uploaded files contribute ids here; new files get their ids at submit.
+  const syncLayoutFileIds = useCallback(
+    (files: FilePickerItem[]) => {
+      const ids = files
+        .filter((file) => file.uploaded && file.id)
+        .map((file) => file.id as string)
+        .slice(0, 2);
+      setValue(f("layoutFileIds"), ids, { shouldDirty: true });
+    },
+    [setValue, f],
+  );
+
   const handleLayoutChange = useCallback(
     (files: FilePickerItem[]) => {
-      onLayoutFilesChange(files);
-      if (files.length > 0 && files[0].id && files[0].uploaded) {
-        setValue(f("layoutFileId"), files[0].id);
-      } else if (files.length === 0) {
-        setValue(f("layoutFileId"), null);
-      }
+      const next = files.slice(0, 2);
+      onLayoutFilesChange(next);
+      syncLayoutFileIds(next);
     },
-    [setValue, f, onLayoutFilesChange],
+    [onLayoutFilesChange, syncLayoutFileIds],
   );
 
   const handleArtworkSelect = useCallback(
@@ -273,16 +283,21 @@ export function StepQuoteInfo({
             uploaded: true,
             uri: `${ONLINE_API_URL}/files/thumbnail/${artwork.id}`,
           };
-          onLayoutFilesChange([fileItem]);
-          setValue(f("layoutFileId"), artwork.id);
+          // Append the artwork to the layout array (max 2, no duplicates).
+          const next = [
+            ...layoutFiles.filter((file) => file.id !== artwork.id),
+            fileItem,
+          ].slice(0, 2);
+          onLayoutFilesChange(next);
+          syncLayoutFileIds(next);
           setShowLayoutUploadMode(false);
         }
       } else {
         onLayoutFilesChange([]);
-        setValue(f("layoutFileId"), null);
+        syncLayoutFileIds([]);
       }
     },
-    [artworks, setValue, f, onLayoutFilesChange],
+    [artworks, onLayoutFilesChange, layoutFiles, syncLayoutFileIds],
   );
 
   const artworkOptions = useMemo(() => {
@@ -940,8 +955,8 @@ export function StepQuoteInfo({
               <FilePicker
                 value={layoutFiles}
                 onChange={handleLayoutChange}
-                maxFiles={1}
-                placeholder="Selecione o layout aprovado"
+                maxFiles={2}
+                placeholder="Selecione até 2 layouts aprovados"
                 helperText="Arraste ou clique para selecionar"
                 showCamera={true}
                 showGallery={true}

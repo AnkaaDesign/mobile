@@ -152,8 +152,8 @@ export const taskQuoteCreateNestedSchema = z
       (val) => val === '' || val === null || val === undefined ? null : Number(val),
       z.number().int().min(1).max(30).optional().nullable()
     ),
-    // Layout File
-    layoutFileId: z.string().uuid().optional().nullable(),
+    // Layout Files (up to 2, ordered File ids)
+    layoutFileIds: z.array(z.string().uuid()).max(2).optional().nullable(),
     // Customer configs for per-customer billing (at least 1 required)
     customerConfigs: z.array(taskQuoteCustomerConfigSchema).optional(),
     // Advanced pricing features
@@ -222,8 +222,8 @@ export const taskQuoteSchema = z.object({
   customGuaranteeText: z.string().max(2000).optional().nullable(),
   // Custom Forecast
   customForecastDays: z.number().int().min(1).max(30).optional().nullable(),
-  // Layout File
-  layoutFileId: z.string().uuid().optional().nullable(),
+  // Layout Files (up to 2, ordered File ids)
+  layoutFileIds: z.array(z.string().uuid()).max(2).optional().nullable(),
   // Customer configs for per-customer billing (at least 1 required)
   customerConfigs: z.array(taskQuoteCustomerConfigSchema).min(1, 'Pelo menos uma configuração de cliente é obrigatória'),
   // Advanced pricing features

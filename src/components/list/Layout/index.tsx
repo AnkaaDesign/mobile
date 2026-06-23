@@ -65,8 +65,12 @@ export const Layout = memo(function Layout({
     // If config has a custom onRowPress handler, use it with loading
     if (config.table.onRowPress) {
       startNavigation()
-      // Defer navigation to next frame so overlay renders before heavy work
-      requestAnimationFrame(() => config.table.onRowPress!(item, router))
+      // Navigate SYNCHRONOUSLY inside the tap handler — never defer to rAF or
+      // setTimeout. On RN 0.81 New Architecture the run loop / timer display-link
+      // pauses when the app is idle, so a deferred push is stranded until a
+      // native event (notification / app resume) wakes the thread — the stuck
+      // overlay. The tap is an active native event, so the push flushes here.
+      config.table.onRowPress!(item, router)
       return
     }
 
@@ -94,8 +98,9 @@ export const Layout = memo(function Layout({
     // Execute the action with loading overlay
     if (action.onPress) {
       startNavigation()
-      // Defer navigation to next frame so overlay renders before heavy work
-      requestAnimationFrame(() => action.onPress!(item, router, {}))
+      // Synchronous — see handleRowPress above. Deferring strands the push when
+      // the app is idle (run loop paused), leaving the overlay stuck.
+      action.onPress!(item, router, {})
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
       pushWithLoading(route)

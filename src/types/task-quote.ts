@@ -64,9 +64,8 @@ export interface TaskQuote extends BaseEntity {
   // Custom Forecast - manual override for production days displayed in budget
   customForecastDays: number | null;
 
-  // Layout File
-  layoutFileId: string | null;
-  layoutFile?: File;
+  // Layout Files (up to 2)
+  layoutFiles?: File[];
 
   simultaneousTasks: number | null; // Number of simultaneous tasks (1-100)
 

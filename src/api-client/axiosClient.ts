@@ -943,7 +943,10 @@ const createApiClient = (
         // Cancelled requests (cancel token / aborted on navigation or auth-state
         // changes) are intentional and internal — never surface them as an error
         // toast (this is what produced the spurious "A operação foi cancelada.").
-        if (!isLoggingOut && !axios.isCancel(error)) {
+        // `suppressToast` lets a caller own the messaging itself (e.g. the login
+        // screen shows a contextual Alert) so the generic global toast doesn't
+        // double up or get eaten by the dedup window.
+        if (!isLoggingOut && !axios.isCancel(error) && !metadata?.suppressToast) {
           // Skip notifications for batch operations - they'll be handled by the dialog
           const isBatchOperation = config?.url?.includes("/batch");
           // Skip notifications for file uploads - they should be handled by upload components

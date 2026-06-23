@@ -8,8 +8,6 @@ import {
   IconFileText,
   IconList,
   IconLayoutGrid,
-  IconCurrencyReal,
-  IconFileInvoice,
   IconReceipt
 } from "@tabler/icons-react-native";
 import { FileItem, useFileViewer, type FileViewMode } from "@/components/file";
@@ -24,19 +22,9 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
   const [viewMode, setViewMode] = useState<FileViewMode>("grid");
   const fileViewer = useFileViewer();
 
-  const budgets = order.budgets || [];
-  const invoices = order.invoices || [];
   const receipts = order.receipts || [];
-  const reimbursements = order.reimbursements || [];
-  const invoiceReimbursements = order.invoiceReimbursements || [];
 
-  const allDocuments = [
-    ...budgets,
-    ...invoices,
-    ...receipts,
-    ...reimbursements,
-    ...invoiceReimbursements,
-  ];
+  const allDocuments = [...receipts];
   const hasDocuments = allDocuments.length > 0;
 
   const handleFilePress = (file: File) => {
@@ -80,7 +68,7 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
 
   return (
     <DetailCard
-      title="Documentos"
+      title="Comprovantes"
       icon="file-text"
       badge={
         hasDocuments ? (
@@ -132,34 +120,10 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
         {hasDocuments ? (
           <>
             {renderFileSection(
-              "Orçamentos",
-              budgets,
-              <IconCurrencyReal size={20} color="#10b981" />,
-              "#10b981"
-            )}
-            {renderFileSection(
-              "Notas Fiscais",
-              invoices,
-              <IconFileInvoice size={20} color="#3b82f6" />,
-              "#3b82f6"
-            )}
-            {renderFileSection(
-              "Recibos",
+              "Comprovantes",
               receipts,
               <IconReceipt size={20} color="#a855f7" />,
               "#a855f7"
-            )}
-            {renderFileSection(
-              "Reembolsos",
-              reimbursements,
-              <IconCurrencyReal size={20} color="#f97316" />,
-              "#f97316"
-            )}
-            {renderFileSection(
-              "NFEs de Reembolso",
-              invoiceReimbursements,
-              <IconFileInvoice size={20} color="#ef4444" />,
-              "#ef4444"
             )}
           </>
         ) : (
@@ -173,7 +137,7 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
               <IconFileText size={32} color={colors.mutedForeground} />
             </View>
             <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
-              Nenhum documento cadastrado
+              Nenhum comprovante cadastrado
             </ThemedText>
             <ThemedText
               style={[
@@ -181,7 +145,7 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
                 { color: colors.mutedForeground },
               ]}
             >
-              Este pedido não possui documentos anexados.
+              Este pedido não possui comprovantes anexados.
             </ThemedText>
           </View>
         )}

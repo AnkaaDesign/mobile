@@ -54,8 +54,6 @@ export interface OrderFormData {
   prices: Record<string, number>;
   icmses: Record<string, number>;
   ipis: Record<string, number>;
-  budgetId?: string | null;
-  nfeId?: string | null;
   receiptId?: string | null;
 }
 
@@ -220,8 +218,6 @@ export function transformFormDataForAPI(formData: OrderFormData): OrderCreateFor
     status: ORDER_STATUS.CREATED,
     supplierId: formData.supplierId || undefined,
     notes: formData.notes?.trim() || undefined,
-    budgetIds: formData.budgetId ? [formData.budgetId] : undefined,
-    invoiceIds: formData.nfeId ? [formData.nfeId] : undefined,
     receiptIds: formData.receiptId ? [formData.receiptId] : undefined,
     items,
   };
@@ -247,11 +243,7 @@ export function sanitizeDirectoryName(name: string): string {
 export function createOrderFormData(
   data: Record<string, any>,
   files: {
-    budgets?: { uri: string; name: string; type: string }[];
     receipts?: { uri: string; name: string; type: string }[];
-    invoices?: { uri: string; name: string; type: string }[];
-    reimbursements?: { uri: string; name: string; type: string }[];
-    reimbursementInvoices?: { uri: string; name: string; type: string }[];
   },
   supplier?: { id: string; name?: string; fantasyName?: string },
   user?: { name: string }
@@ -284,49 +276,9 @@ export function createOrderFormData(
   });
 
   // Add files with proper field names
-  if (files.budgets && files.budgets.length > 0) {
-    files.budgets.forEach((file) => {
-      formData.append("budgets", {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as any);
-    });
-  }
-
   if (files.receipts && files.receipts.length > 0) {
     files.receipts.forEach((file) => {
       formData.append("receipts", {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as any);
-    });
-  }
-
-  if (files.invoices && files.invoices.length > 0) {
-    files.invoices.forEach((file) => {
-      formData.append("invoices", {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as any);
-    });
-  }
-
-  if (files.reimbursements && files.reimbursements.length > 0) {
-    files.reimbursements.forEach((file) => {
-      formData.append("reimbursements", {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as any);
-    });
-  }
-
-  if (files.reimbursementInvoices && files.reimbursementInvoices.length > 0) {
-    files.reimbursementInvoices.forEach((file) => {
-      formData.append("reimbursementInvoices", {
         uri: file.uri,
         name: file.name,
         type: file.type,

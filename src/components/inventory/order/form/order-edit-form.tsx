@@ -104,11 +104,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       items: {
         include: { item: { include: { brands: true, category: true } } },
       },
-      budgets: true,
-      invoices: true,
       receipts: true,
-      reimbursements: true,
-      invoiceReimbursements: true,
       paymentResponsible: true,
     },
   });
@@ -126,19 +122,11 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   const [itemIpi, setItemIpi] = useState<Record<string, number>>({});
 
   // File upload states
-  const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>([]);
-  const [invoiceFiles, setInvoiceFiles] = useState<FilePickerItem[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>([]);
-  const [reimbursementFiles, setReimbursementFiles] = useState<FilePickerItem[]>([]);
-  const [reimbursementInvoiceFiles, setReimbursementInvoiceFiles] = useState<FilePickerItem[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
   // Track existing file IDs (already uploaded)
-  const [existingBudgetIds, setExistingBudgetIds] = useState<string[]>([]);
-  const [existingInvoiceIds, setExistingInvoiceIds] = useState<string[]>([]);
   const [existingReceiptIds, setExistingReceiptIds] = useState<string[]>([]);
-  const [existingReimbursementIds, setExistingReimbursementIds] = useState<string[]>([]);
-  const [existingReimbursementInvoiceIds, setExistingReimbursementInvoiceIds] = useState<string[]>([]);
 
   // Track whether we've initialized from order data
   const [isInitialized, setIsInitialized] = useState(false);
@@ -292,11 +280,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     }
 
     // Load existing file IDs
-    if (order.budgets) setExistingBudgetIds(order.budgets.map((f: any) => f.id));
-    if (order.invoices) setExistingInvoiceIds(order.invoices.map((f: any) => f.id));
     if (order.receipts) setExistingReceiptIds(order.receipts.map((f: any) => f.id));
-    if (order.reimbursements) setExistingReimbursementIds(order.reimbursements.map((f: any) => f.id));
-    if (order.invoiceReimbursements) setExistingReimbursementInvoiceIds(order.invoiceReimbursements.map((f: any) => f.id));
 
     setIsInitialized(true);
   }, [order, isInitialized]);
@@ -534,19 +518,10 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       changedData.items = itemsData;
 
       // Include existing file IDs
-      if (existingBudgetIds.length > 0) changedData.budgetIds = existingBudgetIds;
-      if (existingInvoiceIds.length > 0) changedData.invoiceIds = existingInvoiceIds;
       if (existingReceiptIds.length > 0) changedData.receiptIds = existingReceiptIds;
-      if (existingReimbursementIds.length > 0) changedData.reimbursementIds = existingReimbursementIds;
-      if (existingReimbursementInvoiceIds.length > 0) changedData.reimbursementInvoiceIds = existingReimbursementInvoiceIds;
 
       // Check if there are new files to upload
-      const hasNewFiles =
-        budgetFiles.length > 0 ||
-        invoiceFiles.length > 0 ||
-        receiptFiles.length > 0 ||
-        reimbursementFiles.length > 0 ||
-        reimbursementInvoiceFiles.length > 0;
+      const hasNewFiles = receiptFiles.length > 0;
 
       setIsUploadingFiles(hasNewFiles);
 
@@ -561,11 +536,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           const formDataWithFiles = createOrderFormData(
             { ...changedData, id: orderId },
             {
-              budgets: budgetFiles.length > 0 ? budgetFiles : undefined,
               receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
-              invoices: invoiceFiles.length > 0 ? invoiceFiles : undefined,
-              reimbursements: reimbursementFiles.length > 0 ? reimbursementFiles : undefined,
-              reimbursementInvoices: reimbursementInvoiceFiles.length > 0 ? reimbursementInvoiceFiles : undefined,
             },
             supplier
               ? {
@@ -605,16 +576,8 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     freightValue,
     discountValue,
     forecastDate,
-    budgetFiles,
-    invoiceFiles,
     receiptFiles,
-    reimbursementFiles,
-    reimbursementInvoiceFiles,
-    existingBudgetIds,
-    existingInvoiceIds,
     existingReceiptIds,
-    existingReimbursementIds,
-    existingReimbursementInvoiceIds,
     suppliers,
     updateAsync,
     onSuccess,
@@ -778,81 +741,25 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               </CardContent>
             </Card>
 
-            {/* Documents Section */}
+            {/* Comprovantes Section */}
             <Card style={styles.lastCard}>
               <CardHeader>
-                <CardTitle>Documentos (Opcional)</CardTitle>
+                <CardTitle>Comprovantes (Opcional)</CardTitle>
               </CardHeader>
               <CardContent>
-                {(existingBudgetIds.length > 0 || existingInvoiceIds.length > 0 || existingReceiptIds.length > 0 || existingReimbursementIds.length > 0 || existingReimbursementInvoiceIds.length > 0) && (
+                {existingReceiptIds.length > 0 && (
                   <ThemedText style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.md }}>
-                    {existingBudgetIds.length > 0 && `${existingBudgetIds.length} orçamento(s) existente(s). `}
-                    {existingInvoiceIds.length > 0 && `${existingInvoiceIds.length} nota(s) fiscal(is) existente(s). `}
-                    {existingReceiptIds.length > 0 && `${existingReceiptIds.length} recibo(s) existente(s). `}
-                    {existingReimbursementIds.length > 0 && `${existingReimbursementIds.length} reembolso(s) existente(s). `}
-                    {existingReimbursementInvoiceIds.length > 0 && `${existingReimbursementInvoiceIds.length} NF(s) de reembolso existente(s). `}
+                    {existingReceiptIds.length > 0 && `${existingReceiptIds.length} comprovante(s) existente(s). `}
                   </ThemedText>
                 )}
 
                 <FilePicker
-                  value={budgetFiles}
-                  onChange={setBudgetFiles}
-                  maxFiles={10}
-                  label="Adicionar Orçamentos"
-                  placeholder="Adicionar orçamentos"
-                  helperText="Selecione até 10 arquivos de orçamento"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
-                <View style={styles.fieldSpacer} />
-                <FilePicker
-                  value={invoiceFiles}
-                  onChange={setInvoiceFiles}
-                  maxFiles={10}
-                  label="Adicionar Notas Fiscais"
-                  placeholder="Adicionar notas fiscais"
-                  helperText="Selecione até 10 notas fiscais"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
-                <View style={styles.fieldSpacer} />
-                <FilePicker
                   value={receiptFiles}
                   onChange={setReceiptFiles}
                   maxFiles={10}
-                  label="Adicionar Recibos"
-                  placeholder="Adicionar recibos"
-                  helperText="Selecione até 10 recibos"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
-                <View style={styles.fieldSpacer} />
-                <FilePicker
-                  value={reimbursementFiles}
-                  onChange={setReimbursementFiles}
-                  maxFiles={10}
-                  label="Adicionar Reembolsos"
-                  placeholder="Adicionar reembolsos"
-                  helperText="Selecione até 10 arquivos de reembolso"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
-                <View style={styles.fieldSpacer} />
-                <FilePicker
-                  value={reimbursementInvoiceFiles}
-                  onChange={setReimbursementInvoiceFiles}
-                  maxFiles={10}
-                  label="Adicionar Notas Fiscais de Reembolso"
-                  placeholder="Adicionar notas de reembolso"
-                  helperText="Selecione até 10 notas de reembolso"
+                  label="Adicionar Comprovantes"
+                  placeholder="Adicionar comprovantes"
+                  helperText="Selecione até 10 comprovantes"
                   disabled={isSubmitting}
                   showCamera={true}
                   showGallery={true}
@@ -1471,93 +1378,26 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               </CardContent>
             </Card>
 
-            {/* Documents Summary */}
-            {(budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0 ||
-              reimbursementFiles.length > 0 || reimbursementInvoiceFiles.length > 0 ||
-              existingBudgetIds.length > 0 || existingInvoiceIds.length > 0 || existingReceiptIds.length > 0 ||
-              existingReimbursementIds.length > 0 || existingReimbursementInvoiceIds.length > 0) && (
+            {/* Comprovantes Summary */}
+            {(receiptFiles.length > 0 || existingReceiptIds.length > 0) && (
               <Card style={styles.card}>
                 <CardHeader>
-                  <CardTitle>Documentos</CardTitle>
+                  <CardTitle>Comprovantes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {existingBudgetIds.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Orçamentos (existentes)</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{existingBudgetIds.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {existingInvoiceIds.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Notas Fiscais (existentes)</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{existingInvoiceIds.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
                   {existingReceiptIds.length > 0 && (
                     <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Recibos (existentes)</ThemedText>
+                      <ThemedText style={styles.docLabel}>Comprovantes (existentes)</ThemedText>
                       <Badge variant="secondary">
                         <ThemedText>{existingReceiptIds.length} arquivo(s)</ThemedText>
                       </Badge>
                     </View>
                   )}
-                  {existingReimbursementIds.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Reembolsos (existentes)</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{existingReimbursementIds.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {existingReimbursementInvoiceIds.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>NF Reembolso (existentes)</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{existingReimbursementInvoiceIds.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {budgetFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Orçamentos (novos)</ThemedText>
-                      <Badge variant="default">
-                        <ThemedText>{budgetFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {invoiceFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Notas Fiscais (novas)</ThemedText>
-                      <Badge variant="default">
-                        <ThemedText>{invoiceFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
                   {receiptFiles.length > 0 && (
                     <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Recibos (novos)</ThemedText>
+                      <ThemedText style={styles.docLabel}>Comprovantes (novos)</ThemedText>
                       <Badge variant="default">
                         <ThemedText>{receiptFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {reimbursementFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Reembolsos (novos)</ThemedText>
-                      <Badge variant="default">
-                        <ThemedText>{reimbursementFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {reimbursementInvoiceFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>NF Reembolso (novos)</ThemedText>
-                      <Badge variant="default">
-                        <ThemedText>{reimbursementInvoiceFiles.length} arquivo(s)</ThemedText>
                       </Badge>
                     </View>
                   )}

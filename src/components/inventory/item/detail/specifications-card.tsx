@@ -103,11 +103,11 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
             const base = item.warehouseLocation.section
               ? `${item.warehouseLocation.name} (${item.warehouseLocation.section})`
               : item.warehouseLocation.name;
-            const cell =
-              item.locationLevel != null && item.locationColumn != null
-                ? ` — Nível ${item.locationLevel} · Coluna ${item.locationColumn}`
-                : "";
-            return `${base}${cell}`;
+            const cells = (item.locationCells ?? [])
+              .slice()
+              .sort((a, b) => a.level - b.level || (a.column ?? 0) - (b.column ?? 0));
+            const suffix = cells.map((c) => `-P${c.level}${c.column != null ? `-C${c.column}` : ""}`).join("");
+            return `${base}${suffix}`;
           })()}
           icon="location"
         />

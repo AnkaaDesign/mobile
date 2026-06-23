@@ -20,7 +20,12 @@ export default function WarningEditScreen() {
 function WarningEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: warningResponse, isLoading, error, refetch } = useWarning(id!, {
-    include: { witness: true, attachments: true }
+    include: {
+      collaborator: { include: { position: true } },
+      supervisor: { include: { position: true } },
+      witness: true,
+      attachments: true,
+    }
   });
 
   useScreenReady(!isLoading);

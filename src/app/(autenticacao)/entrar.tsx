@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable, Alert } from "react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useScreenReady } from "@/hooks/use-screen-ready";
@@ -111,9 +111,33 @@ export default function LoginScreen() {
         nav.replace(authRoute(routes.authentication.changePassword));
       }
     },
-    onError: (err) => {
+    onError: (err: any) => {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error("[Login] Login error:", errorMessage);
+
+      // The verification/redirect cases never re-throw, so they don't reach here.
+      // Everything that does is a genuine failure the user must see — most
+      // importantly: account not found (404), wrong password (401) and a
+      // deactivated account (403 "Sua conta está inativa..."). The API already
+      // returns a clear pt-BR message; surface it instead of swallowing it.
+      if (errorMessage === "VERIFICATION_REDIRECT") return;
+
+      const category = err?.category;
+      const status = err?._statusCode ?? err?.statusCode ?? err?.status;
+      const isNetwork =
+        category === "network" ||
+        category === "timeout" ||
+        status === 0 ||
+        status === 408 ||
+        /network error|timed? ?out|sem conexão|offline/i.test(errorMessage);
+
+      Alert.alert(
+        "Não foi possível entrar",
+        isNetwork
+          ? "Não conseguimos conectar ao servidor. Verifique sua conexão com a internet e tente novamente."
+          : errorMessage || "Ocorreu um erro ao fazer login. Verifique suas credenciais e tente novamente.",
+        [{ text: "OK" }],
+      );
     },
   });
 

@@ -179,7 +179,7 @@ export function getDefaultBudgetCreateValues() {
     guaranteeYears: null as number | null,
     customGuaranteeText: null as string | null,
     customForecastDays: null as number | null,
-    layoutFileId: null as string | null,
+    layoutFileIds: [] as string[],
     simultaneousTasks: null as number | null,
     customerConfigs: [] as any[],
     services: [
@@ -199,7 +199,7 @@ export function getDefaultQuoteEditValues() {
       expiresAt: getDefaultExpiresAt(),
       guaranteeYears: null as number | null,
       customGuaranteeText: null as string | null,
-      layoutFileId: null as string | null,
+      layoutFileIds: [] as string[],
       customForecastDays: null as number | null,
       simultaneousTasks: null as number | null,
       customerConfigs: [] as any[],

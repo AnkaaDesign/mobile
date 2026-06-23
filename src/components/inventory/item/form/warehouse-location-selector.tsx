@@ -6,6 +6,7 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
 import { getWarehouseLocations } from "@/api-client";
 import { useWarehouseLocationDetail } from "@/hooks";
+import { WAREHOUSE_LOCATION_TYPE } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { fontSize, fontWeight } from "@/constants/design-system";
 import type { ItemCreateFormData, ItemUpdateFormData } from "../../../../schemas";
@@ -92,30 +93,42 @@ export function WarehouseLocationSelector({ disabled, initialWarehouseLocation }
   });
   const selectedLocation = locationResponse?.data;
 
-  const watchedLevel = watch("locationLevel");
+  const isKanban = selectedLocation?.type === WAREHOUSE_LOCATION_TYPE.ESTANTE_KANBAN;
+  const isPanel = selectedLocation?.type === WAREHOUSE_LOCATION_TYPE.PAINEL;
+  const levelLabel = isPanel ? "Linha" : "Prateleira";
 
-  // Bounded options for Nível
-  const levelOptions: ComboboxOption[] = useMemo(() => {
-    const levels = selectedLocation?.levels ?? 0;
-    return Array.from({ length: levels }, (_, i) => ({
-      value: String(i + 1),
-      label: String(i + 1),
-    }));
-  }, [selectedLocation?.levels]);
-
-  // Bounded options for Coluna — per-level override falls back to columns
-  const columnOptions: ComboboxOption[] = useMemo(() => {
+  // Selectable cells: one option per prateleira (estante/painel) or per
+  // prateleira×caixa (kanban). Tokens: "<level>" or "<level>:<column>".
+  const cellOptions: ComboboxOption[] = useMemo(() => {
     if (!selectedLocation) return [];
+    const levels = selectedLocation.levels ?? 0;
     const perLevel = selectedLocation.columnsPerLevel ?? [];
-    const cols =
-      watchedLevel && perLevel[Number(watchedLevel) - 1]
-        ? perLevel[Number(watchedLevel) - 1]
-        : selectedLocation.columns;
-    return Array.from({ length: cols ?? 0 }, (_, i) => ({
-      value: String(i + 1),
-      label: String(i + 1),
-    }));
-  }, [selectedLocation, watchedLevel]);
+    const opts: ComboboxOption[] = [];
+    for (let lvl = 1; lvl <= levels; lvl++) {
+      if (isKanban) {
+        const cols = (perLevel[lvl - 1] || selectedLocation.columns) ?? 0;
+        for (let col = 1; col <= cols; col++) opts.push({ value: `${lvl}:${col}`, label: `Prateleira ${lvl} · Caixa ${col}` });
+      } else {
+        opts.push({ value: String(lvl), label: `${levelLabel} ${lvl}` });
+      }
+    }
+    return opts;
+  }, [selectedLocation, isKanban, levelLabel]);
+
+  // Form value (cells) <-> combobox tokens.
+  const locationCells = watch("locationCells");
+  const selectedTokens = useMemo(
+    () => (locationCells ?? []).map((c) => (c.column != null ? `${c.level}:${c.column}` : String(c.level))),
+    [locationCells],
+  );
+  const handleCellsChange = (next: string | string[] | null | undefined) => {
+    const tokens = Array.isArray(next) ? next : next ? [next] : [];
+    const cells = tokens.map((t) => {
+      const [l, c] = String(t).split(":");
+      return { level: Number(l), column: c != null ? Number(c) : null };
+    });
+    setValue("locationCells", cells, { shouldDirty: true, shouldValidate: true });
+  };
 
   return (
     <View style={{ gap: 12 }}>
@@ -131,9 +144,8 @@ export function WarehouseLocationSelector({ disabled, initialWarehouseLocation }
               value={value || ""}
               onValueChange={(next) => {
                 onChange(next || null);
-                // Clear the exact cell whenever the location changes/clears
-                setValue("locationLevel", null, { shouldDirty: true, shouldValidate: true });
-                setValue("locationColumn", null, { shouldDirty: true, shouldValidate: true });
+                // Clear the chosen cells whenever the location changes/clears
+                setValue("locationCells", [], { shouldDirty: true, shouldValidate: true });
               }}
               async={true}
               queryKey={["warehouseLocations", "search"]}
@@ -156,48 +168,21 @@ export function WarehouseLocationSelector({ disabled, initialWarehouseLocation }
         )}
       />
 
-      {warehouseLocationId && levelOptions.length > 0 && (
+      {warehouseLocationId && cellOptions.length > 0 && (
         <Controller
           control={control}
-          name="locationLevel"
-          render={({ field: { onChange, value }, fieldState: { error } }) => (
+          name="locationCells"
+          render={({ fieldState: { error } }) => (
             <View style={{ gap: 8 }}>
-              <Label nativeID="locationLevel" style={{ marginBottom: 4 }}>
-                Nível
+              <Label nativeID="locationCells" style={{ marginBottom: 4 }}>
+                {isKanban ? "Prateleiras e Caixas" : `${levelLabel}s`}
               </Label>
               <Combobox
-                options={levelOptions}
-                value={value != null ? String(value) : ""}
-                onValueChange={(next) => {
-                  onChange(next ? Number(next) : null);
-                  // Column bounds depend on the level — reset on change
-                  setValue("locationColumn", null, { shouldDirty: true, shouldValidate: true });
-                }}
-                placeholder="Selecione o nível"
-                disabled={disabled}
-                searchable={false}
-                clearable={true}
-              />
-              {error && <ThemedText style={{ fontSize: 12, color: "#ef4444" }}>{error.message}</ThemedText>}
-            </View>
-          )}
-        />
-      )}
-
-      {warehouseLocationId && columnOptions.length > 0 && (
-        <Controller
-          control={control}
-          name="locationColumn"
-          render={({ field: { onChange, value }, fieldState: { error } }) => (
-            <View style={{ gap: 8 }}>
-              <Label nativeID="locationColumn" style={{ marginBottom: 4 }}>
-                Coluna
-              </Label>
-              <Combobox
-                options={columnOptions}
-                value={value != null ? String(value) : ""}
-                onValueChange={(next) => onChange(next ? Number(next) : null)}
-                placeholder="Selecione a coluna"
+                mode="multiple"
+                options={cellOptions}
+                value={selectedTokens}
+                onValueChange={handleCellsChange}
+                placeholder={`Selecione as ${levelLabel.toLowerCase()}s`}
                 disabled={disabled}
                 searchable={false}
                 clearable={true}

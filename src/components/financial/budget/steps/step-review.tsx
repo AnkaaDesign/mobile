@@ -122,23 +122,17 @@ export function StepReview({
   const plates = useWatch({ control, name: "plates" });
   const serialNumbers = useWatch({ control, name: "serialNumbers" });
 
-  // Build layout file for preview
-  const layoutFileForPreview = (() => {
-    if (layoutFiles.length > 0) {
-      const pickedFile = layoutFiles[0];
-      return pickedFile.uploaded && pickedFile.id
-        ? { id: pickedFile.id }
-        : { uri: pickedFile.uri };
-    }
-    const layoutFileId = formQuoteValues?.layoutFileId;
-    if (layoutFileId) {
-      return { id: layoutFileId };
-    }
-    if (existingQuote?.layoutFile) {
-      return existingQuote.layoutFile;
-    }
-    return null;
-  })();
+  // Build the layout files array for preview. Prefer the picked files (which may
+  // be brand-new local uris), else fall back to the existing quote's files.
+  const layoutFilesForPreview = (
+    layoutFiles.length > 0
+      ? layoutFiles.map((picked) =>
+          picked.uploaded && picked.id
+            ? { id: picked.id }
+            : { uri: picked.uri },
+        )
+      : existingQuote?.layoutFiles ?? []
+  ).slice(0, 2);
 
   // Build the quote data object for BudgetPreview
   const quoteData = formQuoteValues
@@ -147,7 +141,7 @@ export function StepReview({
         services: formQuoteValues.services ? [...formQuoteValues.services] : [],
         budgetNumber: existingQuote?.budgetNumber,
         createdAt: existingQuote?.createdAt || new Date(),
-        layoutFile: layoutFileForPreview,
+        layoutFiles: layoutFilesForPreview,
       }
     : null;
 

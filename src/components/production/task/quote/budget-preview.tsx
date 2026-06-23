@@ -50,8 +50,7 @@ interface BudgetPreviewProps {
     customGuaranteeText?: string | null;
     customForecastDays?: number | null;
     simultaneousTasks?: number | null;
-    layoutFileId?: string | null;
-    layoutFile?: { id: string } | null;
+    layoutFiles?: Array<{ id?: string; uri?: string } | null> | null;
     services?: ServiceItem[];
     customerConfigs?: CustomerConfig[];
     createdAt?: Date | string;
@@ -133,12 +132,15 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
   })();
 
   // Handle both uploaded files (with id) and newly selected files (with uri)
-  const layoutImageUrl =
-    (quote.layoutFile as any)?.uri // Newly selected file - use local URI
-      ? (quote.layoutFile as any).uri
-      : quote.layoutFile?.id // Uploaded file - use getFileUrl
-      ? getFileUrl(quote.layoutFile as any)
+  const resolveLayoutUrl = (lf: any) =>
+    lf?.uri // Newly selected file - use local URI
+      ? lf.uri
+      : lf?.id // Uploaded file - use getFileUrl
+      ? getFileUrl(lf)
       : null;
+  const layoutImageUrls = (quote.layoutFiles ?? [])
+    .map(resolveLayoutUrl)
+    .filter(Boolean) as string[];
 
   // Render a single service row
   const renderServiceRow = (item: ServiceItem, index: number) => {
@@ -436,17 +438,20 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
             </View>
           ) : null}
 
-          {/* Layout Image */}
-          {layoutImageUrl ? (
+          {/* Layout Images */}
+          {layoutImageUrls.length > 0 ? (
             <View style={styles.section}>
               <ThemedText style={styles.sectionTitle}>
                 Layout aprovado
               </ThemedText>
-              <Image
-                source={{ uri: layoutImageUrl }}
-                style={styles.layoutImage}
-                resizeMode="contain"
-              />
+              {layoutImageUrls.map((url, i) => (
+                <Image
+                  key={`${url}-${i}`}
+                  source={{ uri: url }}
+                  style={styles.layoutImage}
+                  resizeMode="contain"
+                />
+              ))}
             </View>
           ) : null}
 

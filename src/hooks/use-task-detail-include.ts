@@ -192,8 +192,7 @@ export function useTaskDetailFullInclude(user: any) {
           customGuaranteeText: true,
           customForecastDays: true,
           simultaneousTasks: true,
-          layoutFileId: true,
-          layoutFile: true,
+          layoutFiles: true,
           services: {
             select: {
               id: true,

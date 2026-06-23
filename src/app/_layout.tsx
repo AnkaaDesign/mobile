@@ -10,6 +10,7 @@ import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persi
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeepAlivePump } from "@/components/keep-alive-pump";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { NetworkProvider, useNetwork } from "@/contexts/network-context";
@@ -273,6 +274,9 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* UI-thread JS-pump: keeps the JS thread alive so renders/redirects/timers
+          flush even when the New-Arch JS event loop would otherwise park. */}
+      <KeepAlivePump />
       <SafeAreaProvider>
         <ThemeProvider>
           <NetworkProvider onConnectivityChange={handleConnectivityChange}>

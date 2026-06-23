@@ -23,28 +23,36 @@ import { useNavigationLoading } from '@/contexts/navigation-loading-context';
 export function useScreenReady(isReady: boolean = true) {
   const { endNavigation, claimOverlay, isNavigatingRef } = useNavigationLoading();
 
-  // Synchronous claim during commit phase (before any useEffect)
+  // PRIMARY, commit-driven claim/dismiss. This is a LAYOUT effect, not a
+  // passive effect and not useFocusEffect, on purpose:
+  //
+  //  - It runs synchronously on every commit whose `isReady` changed —
+  //    including the exact commit where this screen's data query resolves and
+  //    flips `isReady` false→true. React schedules that commit through its own
+  //    (microtask-based) scheduler, never through the native frame loop, so the
+  //    dismiss fires even when no frame is being produced. That is what makes
+  //    "page ready → hide overlay" deterministic instead of dependent on a
+  //    frame/timer ever firing.
+  //  - useFocusEffect (used previously as the dismiss path) only runs its
+  //    callback AFTER the navigation transition animation settles. If that
+  //    animation stalls because the frame loop went idle, focus never fires and
+  //    the overlay is stranded until a background→foreground — the bug.
+  //
+  // While not ready it claims the overlay (suppressing the pathname auto-hide
+  // so the overlay genuinely waits for content); the instant it is ready it
+  // ends navigation and reveals the page in the same paint as the dismiss.
   useLayoutEffect(() => {
-    if (!isReady) {
-      claimOverlay();
-    }
-  }, [isReady, claimOverlay]);
-
-  // Dismiss when isReady changes (handles first-visit data load). This fires
-  // exactly when THIS screen transitions into the ready state — i.e. it is the
-  // destination whose data just loaded — so it reveals the page and hides the
-  // overlay at the right moment, and does NOT fire when navigating AWAY from an
-  // already-ready screen (isReady unchanged), which must keep the destination's
-  // overlay up.
-  useEffect(() => {
     if (isReady) {
       endNavigation();
+    } else {
+      claimOverlay();
     }
-  }, [isReady, endNavigation]);
+  }, [isReady, endNavigation, claimOverlay]);
 
-  // Focus-aware dismiss (handles return visits with cached data)
-  // Fires every time the screen gains focus, even if isReady is
-  // already true from a previous visit.
+  // Redundant focus-aware safety for RETURN visits to an already-mounted screen
+  // (kept in the stack) whose `isReady` did not change, so the layout effect
+  // above won't re-fire. Harmless when it does fire late — by then the layout
+  // effect or the pathname auto-hide has usually already dismissed.
   useFocusEffect(
     useCallback(() => {
       if (isReady) {
@@ -55,7 +63,8 @@ export function useScreenReady(isReady: boolean = true) {
     }, [isReady, endNavigation, claimOverlay])
   );
 
-  // Conditional cleanup — don't interfere with new navigations
+  // Conditional cleanup — don't interfere with a new navigation that is already
+  // in progress (isNavigatingRef true means another screen owns the overlay).
   useEffect(() => {
     return () => {
       if (!isNavigatingRef.current) {

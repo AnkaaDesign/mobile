@@ -49,8 +49,6 @@ export interface OrderFormData {
   prices: Record<string, number>;
   icmses: Record<string, number>;
   ipis: Record<string, number>;
-  budgetId?: string | null;
-  nfeId?: string | null;
   receiptId?: string | null;
 }
 

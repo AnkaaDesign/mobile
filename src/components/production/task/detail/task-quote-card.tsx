@@ -98,9 +98,9 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
     }
   };
 
-  const handleViewLayoutFile = () => {
-    if (quote.layoutFile) {
-      fileViewer.actions.viewFile(quote.layoutFile);
+  const handleViewLayoutFile = (file?: { id: string } | null) => {
+    if (file) {
+      fileViewer.actions.viewFile(file as any);
     }
   };
 
@@ -292,20 +292,29 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
           </View>
         ) : null}
 
-        {/* Layout Aprovado */}
-        {quote.layoutFile && (
+        {/* Layout Aprovado (up to 2) */}
+        {(quote.layoutFiles?.length ?? 0) > 0 && (
           <View style={[styles.infoSection, { backgroundColor: colors.muted + "30" }]}>
             <View style={styles.infoSectionHeader}>
               <IconPhoto size={16} color={colors.mutedForeground} />
               <ThemedText style={styles.infoSectionTitle}>Layout Aprovado</ThemedText>
             </View>
-            <TouchableOpacity onPress={handleViewLayoutFile} activeOpacity={0.7} style={styles.layoutImageContainer}>
-              <Image
-                source={{ uri: `${process.env.EXPO_PUBLIC_API_URL}/files/thumbnail/${quote.layoutFile.id}` }}
-                style={styles.layoutImage}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
+            {(quote.layoutFiles ?? [])
+              .filter(Boolean)
+              .map((file: any) => (
+                <TouchableOpacity
+                  key={file.id}
+                  onPress={() => handleViewLayoutFile(file)}
+                  activeOpacity={0.7}
+                  style={styles.layoutImageContainer}
+                >
+                  <Image
+                    source={{ uri: `${process.env.EXPO_PUBLIC_API_URL}/files/thumbnail/${file.id}` }}
+                    style={styles.layoutImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
           </View>
         )}
 

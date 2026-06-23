@@ -615,7 +615,11 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
     if (config.table.onRowPress) {
       startNavigation()
-      requestAnimationFrame(() => config.table.onRowPress!(item, router))
+      // Navigate SYNCHRONOUSLY inside the tap handler — never defer (rAF or
+      // setTimeout). On RN 0.81 New Architecture an idle run loop pauses timers,
+      // so a deferred push is stranded until a native event wakes the thread —
+      // the stuck overlay. The tap is an active native event; push now.
+      config.table.onRowPress!(item, router)
       return
     }
 
@@ -635,7 +639,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
     if (action.onPress) {
       startNavigation()
-      requestAnimationFrame(() => action!.onPress!(item, router, {}))
+      // Synchronous — see handleRowPress above.
+      action!.onPress!(item, router, {})
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
       pushWithLoading(route)

@@ -22,8 +22,14 @@ import type { User, AuthTokenResponse, AuthMessageResponse, AuthUserResponse } f
 // =====================
 
 export const authService = {
-  // Login with email or phone
-  login: (data: SignInFormData) => apiClient.post<AuthTokenResponse>("/auth/login", data).then((res) => res.data),
+  // Login with email or phone.
+  // `suppressToast` keeps the generic global error toast quiet — the login
+  // screen surfaces the API message (account not found / deactivated / wrong
+  // password) itself via a contextual Alert, so it owns the single message.
+  login: (data: SignInFormData) =>
+    apiClient
+      .post<AuthTokenResponse>("/auth/login", data, { metadata: { suppressToast: true } } as any)
+      .then((res) => res.data),
 
   // Logout current user
   logout: () => apiClient.post<AuthMessageResponse>("/auth/logout").then((res) => res.data),

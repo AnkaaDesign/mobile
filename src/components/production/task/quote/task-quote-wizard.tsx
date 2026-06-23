@@ -127,7 +127,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         })(),
         guaranteeYears: null,
         customGuaranteeText: null,
-        layoutFileId: null,
+        layoutFileIds: [],
         customForecastDays: null,
         simultaneousTasks: null,
         customerConfigs: [],
@@ -154,7 +154,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
     setValue("quote.total", p.total || 0);
     setValue("quote.guaranteeYears", p.guaranteeYears ?? null);
     setValue("quote.customGuaranteeText", p.customGuaranteeText ?? null);
-    setValue("quote.layoutFileId", p.layoutFileId ?? null);
+    setValue("quote.layoutFileIds", (p.layoutFiles ?? []).map((f: any) => f.id));
     setValue("quote.customForecastDays", p.customForecastDays ?? null);
     setValue("quote.simultaneousTasks", p.simultaneousTasks ?? null);
     setValue("quote.customerConfigs", p.customerConfigs?.map((c: any) => ({
@@ -185,17 +185,19 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       );
     }
 
-    if (p.layoutFile?.id) {
-      setLayoutFiles([
-        {
-          id: p.layoutFile.id,
-          name: "Layout",
-          uri: "",
-          type: "image/jpeg",
-          size: 0,
-          uploaded: true,
-        },
-      ]);
+    // Build the layout file array from quote.layoutFiles (ordered, up to 2).
+    const initialLayoutFiles: FilePickerItem[] = (p.layoutFiles ?? [])
+      .slice(0, 2)
+      .map((lf: any, i: number) => ({
+        id: lf.id,
+        name: lf.filename || lf.originalName || `Layout ${i + 1}`,
+        uri: "",
+        type: lf.mimetype || "image/jpeg",
+        size: lf.size || 0,
+        uploaded: true,
+      }));
+    if (initialLayoutFiles.length > 0) {
+      setLayoutFiles(initialLayoutFiles);
     }
 
     // Initialize customers cache from existing configs
@@ -284,24 +286,22 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
   const previewQuote = (() => {
     if (!quoteData) return null;
 
-    let layoutFileForPreview = null;
-    if (layoutFiles.length > 0) {
-      const pickedFile = layoutFiles[0];
-      layoutFileForPreview = pickedFile.uploaded && pickedFile.id
-        ? { id: pickedFile.id }
-        : { uri: pickedFile.uri };
-    } else if (quoteData.layoutFileId) {
-      layoutFileForPreview = { id: quoteData.layoutFileId };
-    } else if (existingQuote?.layoutFile) {
-      layoutFileForPreview = existingQuote.layoutFile;
-    }
+    // Build the layout files array for preview: prefer the picked files (which
+    // may be brand-new local uris), else fall back to the existing quote's files.
+    const layoutFilesForPreview = (
+      layoutFiles.length > 0
+        ? layoutFiles.map(f =>
+            f.uploaded && f.id ? { id: f.id } : { uri: f.uri },
+          )
+        : existingQuote?.layoutFiles ?? []
+    ).slice(0, 2);
 
     return {
       ...quoteData,
       services: quoteData.services ? [...quoteData.services] : [],
       budgetNumber: existingQuote?.budgetNumber,
       createdAt: existingQuote?.createdAt || new Date(),
-      layoutFile: layoutFileForPreview,
+      layoutFiles: layoutFilesForPreview,
     };
   })();
 
@@ -429,17 +429,34 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
           total: toNumber(config.total) ?? 0,
         }));
       }
-      const newLayoutFiles = layoutFiles.filter(f => !f.uploaded);
-
-      // Layout-removal detection (canonical web fix): a pure layout removal —
-      // existing quote had a layoutFileId but the user cleared all picked files
-      // — must still trigger an update. Don't trust the stale form field; force
-      // layoutFileId to null when no files remain. Works for budget AND billing.
-      const layoutRemoved =
-        !!existingQuote?.layoutFileId && layoutFiles.length === 0;
-      if (layoutFiles.length === 0) {
-        quotePayload.layoutFileId = null;
+      // Resolve the ordered FILE ids for the layout array. Uploaded files keep
+      // their id; new files are uploaded individually via the dedicated file
+      // endpoint (mirrors the locked path) so we always carry FILE ids. The
+      // ordering of `layoutFiles` is preserved.
+      const resolvedLayoutIds: string[] = [];
+      for (const f of layoutFiles.slice(0, 2)) {
+        if (f.uploaded && f.id) {
+          resolvedLayoutIds.push(f.id);
+          continue;
+        }
+        const uploadResponse = await uploadSingleFile(
+          { uri: f.uri, type: f.type, name: f.name } as any,
+          { fileContext: 'quote-layout' },
+        );
+        if (uploadResponse.success && uploadResponse.data?.id) {
+          resolvedLayoutIds.push(uploadResponse.data.id);
+        }
       }
+      // Wire the ordered File ids as the layout array. Always FILE ids.
+      quotePayload.layoutFileIds = resolvedLayoutIds;
+
+      // Layout-change detection (canonical web fix): a pure layout change/removal
+      // must still trigger an update even when no other field is dirty. Compare
+      // the resolved id array against the existing quote's stored layout files.
+      const existingLayoutIds = (existingQuote?.layoutFiles ?? []).map((f: any) => f.id);
+      const layoutChanged =
+        resolvedLayoutIds.length !== existingLayoutIds.length ||
+        resolvedLayoutIds.some((id, i) => id !== existingLayoutIds[i]);
 
       // Quotes that have reached BILLING_APPROVED or later are "locked": the API
       // rejects edits to billing-structural fields (subtotal/total/services/
@@ -461,30 +478,9 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         !!existingStatus && BILLING_LOCKED_STATUSES.includes(existingStatus);
 
       if (isQuoteLocked && existingQuote?.id) {
-        // Resolve the layout file id for the locked path. Mirror web: upload a
-        // new layout via the dedicated file endpoint first, then persist its id.
-        // We cannot use the nested task.update multipart path here because that
-        // path only writes the quote when a non-empty `services` array is
-        // present (which the reduced locked payload deliberately omits).
-        let lockedLayoutFileId: string | null = quotePayload.layoutFileId ?? null;
-
-        if (newLayoutFiles.length > 0) {
-          const layoutFile = newLayoutFiles[0];
-          const uploadResponse = await uploadSingleFile(
-            {
-              uri: layoutFile.uri,
-              type: layoutFile.type,
-              name: layoutFile.name,
-            } as any,
-            { fileContext: 'quote-layout' },
-          );
-          if (uploadResponse.success && uploadResponse.data?.id) {
-            lockedLayoutFileId = uploadResponse.data.id;
-          }
-        }
-
+        // Layout ids were already resolved (and any new files uploaded) above.
         // Reduced payload: ONLY the fields the API allows on a locked quote
-        // (SAFE_AFTER_BILLING_FIELDS). layoutFileId is included so a layout
+        // (SAFE_AFTER_BILLING_FIELDS). The layout array is included so a layout
         // change/removal still persists.
         const lockedPayload: Record<string, any> = {
           expiresAt: quotePayload.expiresAt,
@@ -492,7 +488,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
           customGuaranteeText: quotePayload.customGuaranteeText,
           customForecastDays: quotePayload.customForecastDays,
           simultaneousTasks: quotePayload.simultaneousTasks,
-          layoutFileId: lockedLayoutFileId,
+          layoutFileIds: resolvedLayoutIds,
         };
         await taskQuoteService.update(existingQuote.id, lockedPayload as any);
 
@@ -532,8 +528,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       const dirty = methods.formState.dirtyFields as Record<string, any>;
       const dq = (dirty.quote || {}) as Record<string, unknown>;
       const quoteFieldDirty =
-        newLayoutFiles.length > 0 ||
-        layoutRemoved ||
+        layoutChanged ||
         Boolean(
           dq.status ||
             dq.expiresAt ||
@@ -542,27 +537,15 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
             dq.guaranteeYears ||
             dq.customGuaranteeText ||
             dq.customForecastDays ||
-            dq.layoutFileId ||
+            dq.layoutFileIds ||
             dq.simultaneousTasks ||
             dq.customerConfigs ||
             dq.services,
         );
 
-      if (newLayoutFiles.length > 0) {
-        const formData = new FormData();
-        const layoutFile = newLayoutFiles[0];
-        formData.append('quoteLayoutFile', {
-          uri: layoutFile.uri,
-          type: layoutFile.type,
-          name: layoutFile.name,
-        } as any);
-        formData.append('quote', JSON.stringify(quotePayload));
-
-        await updateAsync({
-          id: taskId,
-          data: formData as any,
-        });
-      } else if (quoteFieldDirty) {
+      // Layout files are already uploaded and their ids are on quotePayload, so
+      // the nested quote update is a plain JSON payload (no multipart needed).
+      if (quoteFieldDirty) {
         await updateAsync({
           id: taskId,
           data: { quote: quotePayload } as any,

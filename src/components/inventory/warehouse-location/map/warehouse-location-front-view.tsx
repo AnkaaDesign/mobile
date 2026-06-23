@@ -45,8 +45,9 @@ const Badge = React.memo(function Badge({ label, hot, fullWidth, colors }: { lab
  * - pallet → single bin
  * - kanban → level × column cells (columns left → right)
  * - estante / painel → per level (levels top → bottom, nível 1 no topo)
- * - an item with no level occupies the WHOLE structure → shown on every shelf/cell
- * - items with an out-of-range level/column fall into "Sem posição"
+ * - an item can occupy MULTIPLE cells (locationCells) → shown on every listed shelf/cell
+ * - an item with no cells occupies the WHOLE structure → shown on every shelf/cell
+ * - items whose every cell is out-of-range fall into "Sem posição"
  *
  * It does NOT scroll vertically itself — the page-sheet modal owns the vertical ScrollView.
  * Only the kanban grid scrolls horizontally.
@@ -92,23 +93,31 @@ export function WarehouseLocationFrontView({ location, highlightItemIds }: Props
         pallet.push(item);
         continue;
       }
-      const L = item.locationLevel;
-      if (L == null) {
-        whole.push(item);
+      const cells = item.locationCells ?? [];
+      if (cells.length === 0) {
+        whole.push(item); // whole structure → every shelf
         continue;
       }
-      if (L < 1 || L > levels) {
-        noPos.push(item);
-        continue;
-      }
-      if (hasColumns) {
-        const C = item.locationColumn;
-        if (C == null || C < 1 || C > columnsForLevel(location, L)) {
-          noPos.push(item);
+      let placed = false;
+      let bad = false;
+      for (const { level: L, column: C } of cells) {
+        if (L == null || L < 1 || L > levels) {
+          bad = true;
           continue;
         }
-        push(cell as Map<string | number, Item[]>, `${L}:${C}`, item);
-      } else push(lvl as Map<string | number, Item[]>, L, item);
+        if (hasColumns) {
+          if (C == null || C < 1 || C > columnsForLevel(location, L)) {
+            bad = true;
+            continue;
+          }
+          push(cell as Map<string | number, Item[]>, `${L}:${C}`, item);
+          placed = true;
+        } else {
+          push(lvl as Map<string | number, Item[]>, L, item);
+          placed = true;
+        }
+      }
+      if (bad && !placed) noPos.push(item); // every listed cell was out of range
     }
     return { byCell: cell, byLevel: lvl, palletItems: pallet, wholeItems: whole, unplaced: noPos };
   }, [items, isPallet, hasColumns, levels, location]);

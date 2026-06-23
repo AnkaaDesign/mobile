@@ -698,12 +698,14 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
             startNavigation();
           }
 
-          // Defer navigation to next frame so overlay renders before heavy work starts
-          requestAnimationFrame(() => {
-            // Delegate to NavigationHistoryContext.goBack() which uses history
-            // when available, or computes the parent route from the current pathname
-            goBack();
-          });
+          // Run goBack() SYNCHRONOUSLY — do NOT defer (rAF or setTimeout). On
+          // RN 0.81 New Architecture an idle run loop pauses timers, so a
+          // deferred goBack is stranded until a native event wakes the thread —
+          // the stuck overlay. This onPress is an active native event, so the
+          // back navigation flushes here.
+          // Delegate to NavigationHistoryContext.goBack() which uses history
+          // when available, or computes the parent route from the current pathname
+          goBack();
         }}
         style={({ pressed }) => [
           styles.headerButton,
@@ -1092,11 +1094,17 @@ function InnerLayout() {
       contentStyle: headerStyles.contentStyle,
       sceneContainerStyle: headerStyles.sceneContainerStyle,
       unmountOnBlur: false,
-      detachInactiveScreens: true,
-      // Freezing inactive screens keeps them in memory but suspends their render
-      // tree — which is exactly what we want during drawer/screen transitions.
-      // Previously `false`, which caused off-screen layout work during animations.
-      freezeOnBlur: true,
+      // BLANK-SCREEN FIX: on RN 0.81 New Architecture, detaching/freezing
+      // inactive drawer screens makes react-native-screens fail to re-attach /
+      // re-render the target screen on focus — you land on a section but see the
+      // PREVIOUS section's header over a blank body. Keeping inactive screens
+      // attached and live (no detach, no freeze) makes the native screen stack
+      // stay in sync with the router, eliminating the stale/blank presentation.
+      // The KeepAlivePump already keeps the JS thread ticking, so the off-screen
+      // render work this re-enables no longer causes the animation jank that the
+      // freeze was originally added to avoid.
+      detachInactiveScreens: false,
+      freezeOnBlur: false,
     }),
     [
       headerStyles,

@@ -162,15 +162,19 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
           startNavigation()
           const currentPath = getCurrentPath()
           navigationTracker.setSource(currentPath)
-          requestAnimationFrame(async () => {
-            try {
-              await action.onPress!(item, router, actionContext)
-            } catch (error) {
+          // Invoke onPress SYNCHRONOUSLY inside this handler — do NOT defer with
+          // rAF or setTimeout. On RN 0.81 New Architecture the run loop / timer
+          // display-link pauses when the app is idle, so a deferred action (and
+          // any router.push inside it) is stranded until a native event
+          // (notification / app resume) wakes the thread — the stuck overlay.
+          // The tap is an active native event, so calling it now flushes the
+          // navigation. We still handle the (possibly async) result for errors.
+          Promise.resolve(action.onPress!(item, router, actionContext))
+            .catch((error) => {
               console.error('[RowActions] Action error:', error)
               endNavigation()
-            }
-            setActiveActionKey(null)
-          })
+            })
+            .finally(() => setActiveActionKey(null))
         } else if (action.route) {
           const route = typeof action.route === 'function' ? action.route(item) : action.route
           // Store navigation source for proper back navigation

@@ -126,7 +126,6 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
     const customPaymentText = useWatch({ control, name: "quote.customerConfigs.0.customPaymentText" });
     const guaranteeYears = useWatch({ control, name: "quote.guaranteeYears" });
     const customGuaranteeText = useWatch({ control, name: "quote.customGuaranteeText" });
-    const layoutFileId = useWatch({ control, name: "quote.layoutFileId" });
     const discountReference = useWatch({ control, name: "quote.customerConfigs.0.discountReference" });
     const simultaneousTasks = useWatch({ control, name: "quote.simultaneousTasks" });
     const customForecastDays = useWatch({ control, name: "quote.customForecastDays" });
@@ -560,17 +559,22 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       [remove]
     );
 
+    // Sync form's layoutFileIds from the ordered layout file array. Only already
+    // uploaded files contribute ids here; new files get their ids at submit.
+    const syncLayoutFileIds = useCallback((files: FilePickerItem[]) => {
+      const ids = files
+        .filter(f => f.uploaded && f.id)
+        .map(f => f.id as string)
+        .slice(0, 2);
+      setValue("quote.layoutFileIds", ids, { shouldDirty: true });
+    }, [setValue]);
+
     // Handle layout file change (from file upload)
     const handleLayoutFileChange = useCallback((files: FilePickerItem[]) => {
-      setLayoutFiles(files);
-      // Only set layoutFileId if it's an existing uploaded file (has id and uploaded=true)
-      if (files.length > 0 && files[0].id && files[0].uploaded) {
-        setValue("quote.layoutFileId", files[0].id);
-      } else if (files.length === 0) {
-        setValue("quote.layoutFileId", null);
-      }
-      // For new files, layoutFileId stays null - the file will be uploaded during form submission
-    }, [setValue, setLayoutFiles]);
+      const next = files.slice(0, 2);
+      setLayoutFiles(next);
+      syncLayoutFileIds(next);
+    }, [setLayoutFiles, syncLayoutFileIds]);
 
     // Handle artwork selection as layout file
     const UPLOAD_NEW_SENTINEL = "__UPLOAD_NEW__";
@@ -591,15 +595,17 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
             uploaded: true,
             uri: `${ONLINE_API_URL}/files/thumbnail/${artwork.id}`,
           };
-          setLayoutFiles([fileItem]);
-          setValue("quote.layoutFileId", artwork.id);
+          // Append the artwork to the layout array (max 2, no duplicates).
+          const next = [...layoutFiles.filter(f => f.id !== artwork.id), fileItem].slice(0, 2);
+          setLayoutFiles(next);
+          syncLayoutFileIds(next);
           setShowLayoutUploadMode(false);
         }
       } else {
         setLayoutFiles([]);
-        setValue("quote.layoutFileId", null);
+        syncLayoutFileIds([]);
       }
-    }, [artworks, setValue, setLayoutFiles]);
+    }, [artworks, setLayoutFiles, layoutFiles, syncLayoutFileIds]);
 
     // Artwork options for the combobox (image artworks + "upload new" action)
     const artworkOptions = useMemo(() => {
@@ -674,8 +680,9 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       );
     }, [colors]);
 
-    // Current layoutFileId to track selected artwork
-    const currentLayoutFileId = useWatch({ control, name: "quote.layoutFileId" });
+    // Track the first layout file id (used to reflect a selected artwork in the
+    // combobox preview). The layout array is the source of truth.
+    const currentLayoutFileId = layoutFiles.find(f => f.uploaded && f.id)?.id || "";
 
     const hasPricingItems = quoteItems && quoteItems.length > 0;
 
@@ -1369,8 +1376,8 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                 <FilePicker
                   value={layoutFiles}
                   onChange={handleLayoutFileChange}
-                  maxFiles={1}
-                  placeholder="Selecione o layout aprovado"
+                  maxFiles={2}
+                  placeholder="Selecione até 2 layouts aprovados"
                   helperText="Arraste ou clique para selecionar"
                   disabled={disabled}
                   showCamera={true}

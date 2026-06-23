@@ -20,7 +20,6 @@ import { useNavigationHistory } from "@/contexts/navigation-history-context";
 // `useNavigationLoading` is still imported for `isNavigatingRef` (synchronous
 // double-click guard) — `useNav` doesn't expose that ref (foundation TODO).
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
-import { useNav } from "@/contexts/nav";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -34,7 +33,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react-native";
 import { selectionHaptic, impactHaptic, lightImpactHaptic } from "@/utils/haptics";
-import { usePathname } from "expo-router";
+import { usePathname, router } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { useMyQuestionnaireEntries } from '@/hooks/useQuestionnaire';
@@ -70,9 +69,8 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const { user: authUser, logout, refreshUserData } = useAuth();
   const { theme, setTheme, isDark: isDarkMode } = useTheme();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const nav = useNav();
   const { clearHistory } = useNavigationHistory();
-  const { isNavigatingRef } = useNavigationLoading();
+  const { isNavigatingRef, navigateWithLoading } = useNavigationLoading();
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
@@ -309,10 +307,18 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       props.navigation?.closeDrawer?.();
       closeUserMenu();
 
-      // Navigate with loading overlay (useNav.push wraps pushWithLoading)
-      nav.push(tabRoute);
+      // Use router.navigate (NOT push/replace) for drawer section switching.
+      // The producao sections (cronograma, historico, observacoes, …) are
+      // SIBLING screens of a Drawer navigator. navigate() switches to the target
+      // drawer screen and de-duplicates if it's already in the navigation state,
+      // so rapid drawer hopping can't pile up duplicate screens (which is what
+      // desynced react-native-screens into the blank/stale-header bug).
+      // It also matches how navigation-history-context.goBack() navigates
+      // (router.navigate), keeping the back stack and forward nav consistent —
+      // so Back lands where the recorded history says, not a wrong computed route.
+      navigateWithLoading(() => router.navigate(tabRoute as any));
     },
-    [nav, isNavigatingRef, props.navigation, closeUserMenu],
+    [navigateWithLoading, isNavigatingRef, props.navigation, closeUserMenu],
   );
 
   // Get first submenu path for navigation
