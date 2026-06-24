@@ -17,9 +17,9 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.ankaadesign.management",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "jsEngine": "hermes",
       "requireFullScreen": true,
       "config": {

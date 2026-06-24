@@ -106,7 +106,9 @@ interface MapCanvasProps {
   matchedLocationIds: Set<string>;
   searchActive: boolean;
   colors: MapCanvasColors;
-  pulseProps: { strokeOpacity: number };
+  // useAnimatedProps() returns a Partial of the animated style, so keep this
+  // optional to match what the hook produces (passed straight to animatedProps).
+  pulseProps: Partial<{ strokeOpacity: number }>;
 }
 
 /**

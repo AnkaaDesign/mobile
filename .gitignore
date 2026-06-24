@@ -32,6 +32,10 @@ dist-ssr
 # Environment files - prevent ALL env files except examples
 .env*
 !.env.example
+# .env.production holds only public EXPO_PUBLIC_* URLs (baked into the client
+# bundle anyway) and MUST travel to the Mac build machine so release archives
+# resolve the HTTPS production API instead of leaking the dev LAN URL.
+!.env.production
 
 # Coverage
 coverage/

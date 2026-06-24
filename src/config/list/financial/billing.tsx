@@ -29,6 +29,8 @@ function getQuoteStatusBadge(status: string | undefined | null): { variant: stri
       return { variant: 'inProgress' }
     case TASK_QUOTE_STATUS.SETTLED:
       return { variant: 'completed' }
+    case TASK_QUOTE_STATUS.CANCELLED:
+      return { variant: 'cancelled' }
     default:
       return { variant: 'secondary' }
   }
@@ -287,6 +289,7 @@ export const billingListConfig: ListConfig<BillingTask> = {
           { label: 'Vencido', value: TASK_QUOTE_STATUS.DUE },
           { label: 'Parcial', value: TASK_QUOTE_STATUS.PARTIAL },
           { label: 'Liquidado', value: TASK_QUOTE_STATUS.SETTLED },
+          { label: 'Cancelado', value: TASK_QUOTE_STATUS.CANCELLED },
         ],
         placeholder: 'Todos os status',
       },

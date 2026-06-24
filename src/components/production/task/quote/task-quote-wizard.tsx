@@ -394,6 +394,20 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       return;
     }
 
+    // Multi-customer quotes must assign every service to a customer, otherwise the
+    // unassigned amounts are silently dropped from each per-customer config total
+    // (and the API approval guard would block billing later anyway). Parity with web.
+    if (
+      (data.quote?.customerConfigs || []).length >= 2 &&
+      items.some((item: any) => !item.invoiceToCustomerId)
+    ) {
+      Alert.alert(
+        "Cliente não atribuído",
+        "Atribua um cliente a todos os serviços antes de salvar (orçamento com múltiplos clientes).",
+      );
+      return;
+    }
+
     try {
       setIsSaving(true);
 

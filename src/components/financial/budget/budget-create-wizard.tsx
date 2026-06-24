@@ -13,6 +13,8 @@ import { useState, useCallback, useMemo, useRef, useEffect, Suspense, lazy } fro
 import {
   Alert,
   ActivityIndicator,
+  View,
+  StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
@@ -339,6 +341,24 @@ export function BudgetCreateWizard() {
         return { ...c, subtotal: totals.subtotal, total: totals.total };
       });
       setValue("customerConfigs", newConfigs);
+
+      // Multi-config: services not assigned to any customer (invoiceToCustomerId
+      // null) match NO per-config total above, so their amounts were dropped from
+      // the aggregate. Fold them back in at full value (they bear no config
+      // discount) so this effect agrees with StepServices and the authoritative
+      // server compute (api/src/utils/task-quote-totals.ts) — otherwise whichever
+      // effect writes last leaves the submitted/preview total too low (I05).
+      // Single-config already folds unassigned services into the one config, so
+      // only add the fold when there are 2+ configs.
+      if (!isSingleConfig) {
+        const unassignedTotal = (services || []).reduce(
+          (sum: number, s: any) =>
+            s?.invoiceToCustomerId ? sum : sum + (Number(s?.amount) || 0),
+          0,
+        );
+        aggregateSubtotal += unassignedTotal;
+        aggregateTotal += unassignedTotal;
+      }
     } else {
       // No configs: subtotal = total (no discount without config)
       (services || []).forEach((s: any) => {
@@ -365,6 +385,20 @@ export function BudgetCreateWizard() {
     }
     if (!data.expiresAt) {
       Alert.alert("Erro", "A data de validade é obrigatória.");
+      return;
+    }
+
+    // Multi-customer quotes must assign every service to a customer, otherwise the
+    // unassigned amounts are silently dropped from each per-customer config total
+    // (and the API approval guard would block billing later anyway). Parity with web.
+    if (
+      (data.customerConfigs || []).length >= 2 &&
+      servicesValid.some((s: any) => !s.invoiceToCustomerId)
+    ) {
+      Alert.alert(
+        "Erro",
+        "Atribua um cliente a todos os serviços antes de salvar (orçamento com múltiplos clientes).",
+      );
       return;
     }
 
@@ -534,73 +568,31 @@ export function BudgetCreateWizard() {
 
   // ---------------------------------------------------------------------------
   // Render current step content
+  //
+  // Step 1's task sections (BasicInfoSection / ResponsiblesSection /
+  // FilesSection) keep their entered data in component-LOCAL useState — the
+  // picked files, responsible rows, etc. live in those sections, not in the
+  // react-hook-form store (the form only mirrors the resolved ids). If Step 1
+  // were conditionally unmounted on Next, that local state would be destroyed
+  // and the user's responsibles/files would visibly vanish on Back. So Step 1
+  // is ALWAYS mounted and merely hidden (display:none) when off-step. The
+  // remaining steps are fully form-backed (setValue / useWatch / useFieldArray,
+  // which react-hook-form retains across unmount with the default
+  // shouldUnregister:false), so they can stay conditionally rendered.
   // ---------------------------------------------------------------------------
-  const renderStepContent = () => {
-    if (currentStep === 1) {
-      // Step 1 – Task form sections (matching TaskForm layout). Services
-      // are entered in Step 3 ("Serviços e preços") — quote services drive
-      // PRODUCTION SO creation via the bidirectional sync on the API.
-      return (
-        <Suspense fallback={<ActivityIndicator style={{ marginTop: 40 }} />}>
-          <BasicInfoSection mode="create" />
-          <ResponsiblesSection />
-          <DatesSection mode="create" />
-          <FilesSection mode="create" />
-        </Suspense>
-      );
-    }
-    if (currentStep === 2) {
-      return (
-        <StepQuoteInfo
-          control={control}
-          mode="create"
-          layoutFiles={layoutFiles}
-          onLayoutFilesChange={setLayoutFiles}
-          customersCache={customersCache}
-          selectedCustomers={selectedCustomers}
-          setSelectedCustomers={setSelectedCustomers}
-          fieldPrefix=""
-        />
-      );
-    }
-    if (currentStep === 3) {
-      return (
-        <StepServices
-          control={control}
-          task={null}
-          selectedCustomers={selectedCustomers}
-          mode="create"
-          fieldPrefix=""
-        />
-      );
-    }
-    if (currentStep === totalSteps) {
-      return (
-        <StepReview
-          mode="create"
-          selectedCustomers={selectedCustomers}
-          layoutFiles={layoutFiles}
-          fieldPrefix=""
-        />
-      );
-    }
-    // Customer payment steps (4 to totalSteps-1)
-    const configIndex = currentStep - 4;
-    const config = customerConfigs[configIndex];
-    if (!config) return null;
-    const customer = customersCache.current.get(config.customerId);
-    const taskResponsibles = getValues("responsibles") || [];
 
-    return (
-      <StepCustomerPayment
-        control={control}
-        configIndex={configIndex}
-        customer={customer}
-        taskResponsibles={taskResponsibles.filter((r: any) => !r.id?.startsWith("temp-"))}
-        fieldPrefix=""
-      />
-    );
-  };
+  // Customer payment steps occupy 4 .. totalSteps-1.
+  const paymentConfigIndex = currentStep - 4;
+  const paymentConfig =
+    currentStep >= 4 && currentStep < totalSteps
+      ? customerConfigs[paymentConfigIndex]
+      : undefined;
+  const paymentCustomer = paymentConfig
+    ? customersCache.current.get(paymentConfig.customerId)
+    : undefined;
+  const taskResponsibles = (getValues("responsibles") || []).filter(
+    (r: any) => !r.id?.startsWith("temp-"),
+  );
 
   // ---------------------------------------------------------------------------
   // Main render
@@ -622,8 +614,73 @@ export function BudgetCreateWizard() {
         cancelLabel="Cancelar"
         scrollable
       >
-        {renderStepContent()}
+        {/* Step 1 – Task form sections (matching TaskForm layout). Services
+            are entered in Step 3 ("Serviços e preços") — quote services drive
+            PRODUCTION SO creation via the bidirectional sync on the API.
+            Kept mounted (hidden when off-step) so its local file/responsible
+            state survives Next/Back navigation. */}
+        <View style={currentStep === 1 ? undefined : styles.hiddenStep}>
+          <Suspense fallback={<ActivityIndicator style={{ marginTop: 40 }} />}>
+            <BasicInfoSection mode="create" />
+            <ResponsiblesSection />
+            <DatesSection mode="create" />
+            <FilesSection mode="create" />
+          </Suspense>
+        </View>
+
+        {/* Steps 2..N are form-backed; render only the active one. */}
+        {currentStep === 2 && (
+          <StepQuoteInfo
+            control={control}
+            mode="create"
+            layoutFiles={layoutFiles}
+            onLayoutFilesChange={setLayoutFiles}
+            customersCache={customersCache}
+            selectedCustomers={selectedCustomers}
+            setSelectedCustomers={setSelectedCustomers}
+            fieldPrefix=""
+          />
+        )}
+
+        {currentStep === 3 && (
+          <StepServices
+            control={control}
+            task={null}
+            selectedCustomers={selectedCustomers}
+            mode="create"
+            fieldPrefix=""
+          />
+        )}
+
+        {paymentConfig && (
+          <StepCustomerPayment
+            key={`customer-config-${paymentConfigIndex}`}
+            control={control}
+            configIndex={paymentConfigIndex}
+            customer={paymentCustomer}
+            taskResponsibles={taskResponsibles}
+            fieldPrefix=""
+          />
+        )}
+
+        {currentStep === totalSteps && (
+          <StepReview
+            mode="create"
+            selectedCustomers={selectedCustomers}
+            layoutFiles={layoutFiles}
+            fieldPrefix=""
+          />
+        )}
       </MultiStepFormContainer>
     </FormProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  // Keep Step 1 mounted but out of the layout when the user is on another step.
+  // display:none removes it from the ScrollView flow (RN-supported) while
+  // preserving its component tree + local state.
+  hiddenStep: {
+    display: "none",
+  },
+});

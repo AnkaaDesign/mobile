@@ -419,6 +419,7 @@ export const ENTITY_BADGE_CONFIG = {
     [TASK_QUOTE_STATUS.DUE]: "destructive" as BadgeVariant,                // Red - payment overdue
     [TASK_QUOTE_STATUS.PARTIAL]: "inProgress" as BadgeVariant,             // Blue - partial payment
     [TASK_QUOTE_STATUS.SETTLED]: "completed" as BadgeVariant,              // Green - fully paid
+    [TASK_QUOTE_STATUS.CANCELLED]: "cancelled" as BadgeVariant,            // Red - cancelled (terminal)
   },
 
   // Maintenance Status

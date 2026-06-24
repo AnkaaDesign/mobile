@@ -42,6 +42,7 @@ const STATUS_TRIGGER_COLORS: Record<TASK_QUOTE_STATUS, { bg: string; border: str
   [TASK_QUOTE_STATUS.DUE]: { bg: "#b91c1c", border: "#991b1b" },                // red-700
   [TASK_QUOTE_STATUS.PARTIAL]: { bg: "#1d4ed8", border: "#1e40af" },            // blue-700
   [TASK_QUOTE_STATUS.SETTLED]: { bg: "#15803d", border: "#166534" },            // green-700
+  [TASK_QUOTE_STATUS.CANCELLED]: { bg: "#b91c1c", border: "#991b1b" },          // red-700 (terminal)
 };
 
 interface StepReviewProps {

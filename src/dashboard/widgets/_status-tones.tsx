@@ -230,6 +230,8 @@ export function toneForTaskQuoteStatus(
       return tone("yellow", isDark);
     case TASK_QUOTE_STATUS.SETTLED:
       return tone("green", isDark);
+    case TASK_QUOTE_STATUS.CANCELLED:
+      return tone("red", isDark);
     default:
       return NEUTRAL;
   }

@@ -62,10 +62,12 @@ export function canUpdateQuoteStatus(userRole: string): boolean {
  * to allow administrative corrections.
  */
 const VALID_TRANSITIONS: Record<TASK_QUOTE_STATUS, TASK_QUOTE_STATUS[]> = {
-  PENDING: ['BUDGET_APPROVED'],
+  // CANCELLED is reachable from the budget phase (mirrors API): cancelling the
+  // task cancels its quote. Terminal once set.
+  PENDING: ['BUDGET_APPROVED', 'CANCELLED'],
   // SETTLED from BUDGET_APPROVED covers "direct" quotes (orçamento direto)
   // paid upfront with no billing/installment phase; settleManually is safe here.
-  BUDGET_APPROVED: ['BILLING_APPROVED', 'PENDING', 'SETTLED'],
+  BUDGET_APPROVED: ['BILLING_APPROVED', 'PENDING', 'SETTLED', 'CANCELLED'],
   // BILLING_APPROVED -> SETTLED supports prepayment + stuck-quote recovery.
   BILLING_APPROVED: ['UPCOMING', 'SETTLED'],
   UPCOMING: ['PARTIAL', 'DUE', 'BILLING_APPROVED', 'SETTLED'],
@@ -75,6 +77,8 @@ const VALID_TRANSITIONS: Record<TASK_QUOTE_STATUS, TASK_QUOTE_STATUS[]> = {
   // (chargeback/estorno) scenarios where a previously settled invoice has
   // a payment reversed and returns to partial payment state.
   SETTLED: ['PARTIAL'],
+  // CANCELLED is terminal — no outbound transitions (mirrors API).
+  CANCELLED: [],
 };
 
 /**

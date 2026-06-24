@@ -54,12 +54,15 @@ export function BoletoActions({ installmentId, bankSlip, installmentStatus }: Bo
   const isActive = slipStatus === "ACTIVE" || slipStatus === "OVERDUE";
   const canRegenerate = slipStatus === "ERROR" || slipStatus === "REJECTED";
   const canCancel = slipStatus === "ACTIVE" || slipStatus === "OVERDUE";
-  // Allow mark-as-paid whenever the installment itself is unpaid: ACTIVE, OVERDUE or
-  // PENDING. PENDING covers the no-bank-slip flow (PIX/transfer) where no boleto exists.
+  // Allow mark-as-paid whenever the installment is not already paid: ACTIVE, OVERDUE,
+  // PENDING or CANCELLED. PENDING covers the no-bank-slip flow (PIX/transfer). CANCELLED
+  // lets a cancelled installment be revived straight to PAID (boleto cancelled but the
+  // customer paid by PIX/cash), with the receipt attached in this same modal.
   const canMarkPaid =
     installmentStatus === "ACTIVE" ||
     installmentStatus === "OVERDUE" ||
-    installmentStatus === "PENDING";
+    installmentStatus === "PENDING" ||
+    installmentStatus === "CANCELLED";
 
   const handleViewPdf = async () => {
     try {

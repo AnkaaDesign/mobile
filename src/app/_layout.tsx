@@ -31,7 +31,7 @@ import {
 } from "@/components/tutorial";
 import { useEffect, useState } from "react";
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { View, Text, ActivityIndicator, LogBox } from "react-native";
+import { View, Text, ActivityIndicator, LogBox, Dimensions } from "react-native";
 import { AppStatusBar } from "@/components/app-status-bar";
 import { DeepLinkHandler } from "@/components/deep-link-handler";
 import { AuthAwareMessageModal } from "@/components/message/MessageModalIntegration";
@@ -259,10 +259,18 @@ function AppContent() {
 }
 
 export default function RootLayout() {
-  // Lock the entire app to portrait by default.
-  // The file viewer unlocks orientation when opened.
+  // Phones: lock to portrait by default (the file viewer unlocks when opened).
+  // Tablets (iPad): allow rotation so the app functions as expected on large
+  // screens — required for App Store review and consistent with the iPad device
+  // family now declared in the native project.
   useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+    const { width, height } = Dimensions.get("window");
+    const isTablet = Math.min(width, height) >= 600;
+    ScreenOrientation.lockAsync(
+      isTablet
+        ? ScreenOrientation.OrientationLock.DEFAULT
+        : ScreenOrientation.OrientationLock.PORTRAIT_UP,
+    ).catch(() => {});
   }, []);
 
   // Handle connectivity changes for logging

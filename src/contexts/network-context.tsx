@@ -267,9 +267,12 @@ export const NetworkProvider = ({
           console.log("[NetworkContext] Network available but no internet - searching for local API...");
         }
 
-        // First, check if the online URL is actually reachable
-        // (might be a split-horizon DNS or the check was wrong)
-        if (await isUrlReachable(ONLINE_API_URL)) {
+        // First, double-check the online URL is actually reachable before giving
+        // up on it. `isInternetReachable === false` is sometimes wrong (split DNS,
+        // slow probe). Try twice so a single slow response doesn't bounce us onto
+        // the LAN fallback while the production API is actually fine — this is the
+        // exact scenario that broke login for Apple's reviewer (Guideline 2.1a).
+        if ((await isUrlReachable(ONLINE_API_URL)) || (await isUrlReachable(ONLINE_API_URL))) {
           if (__DEV__) {
             console.log("[NetworkContext] Online URL reachable despite no internet flag -> using it");
           }
@@ -278,7 +281,9 @@ export const NetworkProvider = ({
           return true;
         }
 
-        // Try to find a reachable local server
+        // Internet is genuinely unavailable AND the online API is unreachable.
+        // Now (and only now) try the on-premise LAN server — the intentional
+        // offline fallback for when the company internet is down.
         const localUrl = await findReachableLocalUrl();
         if (localUrl) {
           if (__DEV__) {
@@ -289,10 +294,12 @@ export const NetworkProvider = ({
           return true;
         }
 
-        // No API reachable - mark as disconnected but keep last URL
+        // No API reachable at all. Keep the HTTPS online URL active (never leave a
+        // stale LAN URL set) and mark disconnected for the UI.
         if (__DEV__) {
           console.log("[NetworkContext] No API server reachable - offline");
         }
+        setActiveUrl(ONLINE_API_URL);
         setIsConnected(false);
         return false;
       } finally {
@@ -311,6 +318,11 @@ export const NetworkProvider = ({
 
       const hasNetwork = state.isConnected === true;
       const hasInternet = state.isInternetReachable === true;
+      // Distinguish a DEFINITIVE "no internet" (false) from an UNDETERMINED state
+      // (null/undefined). The latter is common in the first moments after joining
+      // Wi-Fi and on captive/review networks — and treating it as "no internet"
+      // is exactly what bounced Apple's reviewer onto the unreachable LAN server.
+      const internetDefinitelyDown = state.isInternetReachable === false;
       const wasConnected = prevConnectedRef.current;
 
       // Quick path: if internet is available, switch immediately
@@ -329,13 +341,23 @@ export const NetworkProvider = ({
         return;
       }
 
-      // We have network but internet is either unavailable (false) or still
-      // UNDETERMINED (null — common in the first moments after joining Wi-Fi).
-      // The old `=== false` check skipped the null case and left routing stale;
-      // since the has-internet quick path already returned above, any remaining
-      // has-network state should run the async resolver (it probes the online
-      // URL first, then the LAN server). Use the resolver's returned connectivity
-      // rather than the stale closure value of `isConnected`.
+      // Has network, but internet is still UNDETERMINED (null). Be conservative:
+      // keep the HTTPS online URL and do NOT switch to the LAN fallback yet. A
+      // subsequent NetInfo event will resolve to true/false and route correctly.
+      // This guarantees a device that actually has internet (the reviewer's iPad)
+      // is never routed to the unreachable on-premise LAN server.
+      if (hasNetwork && !internetDefinitelyDown) {
+        setIsConnected(true);
+        if (currentBaseUrl !== ONLINE_API_URL) {
+          setActiveUrl(ONLINE_API_URL);
+        }
+        tryDiscoverServer();
+        setIsNetworkReady(true);
+        return;
+      }
+
+      // Has network AND internet is definitively down -> run the async resolver
+      // (it re-probes the online URL, then looks for the on-premise LAN server).
       if (hasNetwork) {
         resolveApiUrl(state).then((nowConnected) => {
           if (typeof nowConnected === "boolean" && wasConnected !== nowConnected) {
@@ -472,12 +494,16 @@ export const getApiUrlForCurrentConnectivity = async (): Promise<string> => {
     return ONLINE_API_URL;
   }
 
-  // If connected to network but no internet, try local
-  if (state.isConnected === true) {
+  // Only fall back to the on-premise LAN server when internet is DEFINITIVELY
+  // down (not merely undetermined/null) and the device is on a network. An
+  // undetermined state must never resolve to the LAN address — that broke login
+  // for a device that actually had internet (Guideline 2.1a).
+  if (state.isInternetReachable === false && state.isConnected === true) {
     const localUrl = await findReachableLocalUrl();
     if (localUrl) return localUrl;
+    return OFFLINE_API_URL !== ONLINE_API_URL ? OFFLINE_API_URL : ONLINE_API_URL;
   }
 
-  // Fallback
-  return OFFLINE_API_URL !== ONLINE_API_URL ? OFFLINE_API_URL : ONLINE_API_URL;
+  // Undetermined internet state -> prefer the HTTPS online URL.
+  return ONLINE_API_URL;
 };

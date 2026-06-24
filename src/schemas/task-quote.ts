@@ -31,6 +31,7 @@ export const taskQuoteStatusSchema = z.enum([
   'DUE',
   'PARTIAL',
   'SETTLED',
+  'CANCELLED',
 ]);
 
 export const discountTypeSchema = z.enum([

@@ -467,7 +467,7 @@ export function StepServices({
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (quoteItems && quoteItems.length > 0) {
-      const configSubtotalSum =
+      let configSubtotalSum =
         Array.isArray(watchedCustomerConfigs) &&
         watchedCustomerConfigs.length > 0
           ? watchedCustomerConfigs.reduce(
@@ -475,6 +475,25 @@ export function StepServices({
               0,
             )
           : subtotal;
+      // Mirror the aggregateTotal fold for the subtotal: with 2+ configs an
+      // unassigned service (invoiceToCustomerId null) is in no config subtotal,
+      // so fold it back in at full value to match the server (task-quote-totals.ts
+      // folds unassigned into BOTH subtotal and total) (I05).
+      if (
+        Array.isArray(watchedCustomerConfigs) &&
+        watchedCustomerConfigs.length >= 2
+      ) {
+        const unassignedSubtotal = (
+          Array.isArray(quoteItems) ? quoteItems : []
+        ).reduce(
+          (sum: number, item: any) =>
+            item?.invoiceToCustomerId
+              ? sum
+              : sum + (Number(item?.amount) || 0),
+          0,
+        );
+        configSubtotalSum += unassignedSubtotal;
+      }
       setValue(subtotalPath, configSubtotalSum, { shouldDirty: false });
       setValue(totalPath, aggregateTotal, { shouldDirty: false });
     }
