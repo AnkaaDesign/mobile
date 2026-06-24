@@ -220,19 +220,33 @@ export const useOrderMutations = (options?: {
     },
   });
 
+  // MARK INSTALLMENT PAID (settle ONE boleto parcela — not the whole order). The
+  // API endpoint closes only that Installment and re-rolls the order's payment
+  // status (PARTIALLY_PAID/PAID); the full invalidate sweep refreshes the detail
+  // card + order rollup.
+  const markInstallmentPaidMutation = useMutation({
+    mutationFn: (installmentId: string) => markInstallmentPaid(installmentId),
+    onSuccess: (data) => {
+      invalidateQueries(data.data?.supplierId || undefined);
+      queryClient.invalidateQueries({ queryKey: orderKeys.payables() });
+    },
+  });
+
   const isLoading =
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending ||
     markPaidMutation.isPending ||
-    markAwaitingPaymentMutation.isPending;
+    markAwaitingPaymentMutation.isPending ||
+    markInstallmentPaidMutation.isPending;
 
   const error =
     createMutation.error ||
     updateMutation.error ||
     deleteMutation.error ||
     markPaidMutation.error ||
-    markAwaitingPaymentMutation.error;
+    markAwaitingPaymentMutation.error ||
+    markInstallmentPaidMutation.error;
 
   return {
     create: createMutation.mutate,
@@ -245,6 +259,8 @@ export const useOrderMutations = (options?: {
     markPaidAsync: markPaidMutation.mutateAsync,
     markAwaitingPayment: markAwaitingPaymentMutation.mutate,
     markAwaitingPaymentAsync: markAwaitingPaymentMutation.mutateAsync,
+    markInstallmentPaid: markInstallmentPaidMutation.mutate,
+    markInstallmentPaidAsync: markInstallmentPaidMutation.mutateAsync,
     isLoading,
     error,
     refresh: () => invalidateQueries(),
@@ -254,6 +270,7 @@ export const useOrderMutations = (options?: {
     deleteMutation,
     markPaidMutation,
     markAwaitingPaymentMutation,
+    markInstallmentPaidMutation,
   };
 };
 

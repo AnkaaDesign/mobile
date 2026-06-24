@@ -24,9 +24,11 @@ import {
   PAYMENT_METHOD,
   PAYMENT_METHOD_LABELS,
   SECTOR_PRIVILEGES,
+  ORDER_STATUS,
+  ORDER_STATUS_LABELS,
 } from "@/constants";
 import { BoletoPaymentFields } from "./boleto-payment-fields";
-import { formatCurrency, formatQuantity, formatPixKey } from "@/utils";
+import { formatCurrency, formatQuantity, formatPixKey, MANUAL_ORDER_STATUSES, isValidOrderStatusTransition } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
 import { routes } from "@/constants";
 import type { FormStep } from "@/components/ui/form-steps";
@@ -51,6 +53,10 @@ import {
 // Form schema for edit form fields (used by react-hook-form for field-level validation)
 const orderEditFormSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória"),
+  // Whole-order workflow status. Only manual states are offered in the UI
+  // (partial fulfilment/receipt come from marking individual items; OVERDUE is
+  // forecast-derived). Optional so an edit that doesn't touch status is a no-op.
+  status: z.nativeEnum(ORDER_STATUS).optional().nullable(),
   supplierId: z.string().uuid("Selecione um fornecedor válido").optional().nullable(),
   forecast: z.date().optional().nullable(),
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
@@ -212,6 +218,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
 
     const formData: OrderEditFormData = {
       description: order.description || "",
+      status: order.status || null,
       supplierId: order.supplierId || null,
       forecast: order.forecast ? new Date(order.forecast) : null,
       notes: order.notes || "",
@@ -514,6 +521,15 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         changedData.paymentResponsibleId = multiStepForm.formData.paymentResponsibleId || null;
       }
 
+      // Send status only when the user actually changed it (mirrors web: avoids a
+      // no-op same→same transition the API would reject).
+      if (
+        multiStepForm.formData.status &&
+        multiStepForm.formData.status !== order?.status
+      ) {
+        changedData.status = multiStepForm.formData.status;
+      }
+
       // Always include items (they may have changed)
       changedData.items = itemsData;
 
@@ -672,6 +688,35 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                       )}
                     </View>
                   )}
+                />
+
+                {/* Order status dropdown — offers the current status + its valid
+                    manual next states (mirrors web order-edit-form). */}
+                <Controller
+                  control={form.control}
+                  name="status"
+                  render={({ field: { value } }) => {
+                    const current = (value || order?.status) as ORDER_STATUS;
+                    const statusOptions = MANUAL_ORDER_STATUSES.filter(
+                      (s) => s === current || isValidOrderStatusTransition(current, s),
+                    ).map((s) => ({ value: s, label: ORDER_STATUS_LABELS[s] }));
+                    return (
+                      <View style={styles.fieldGroup}>
+                        <Label>Status do Pedido</Label>
+                        <Combobox
+                          value={current || ""}
+                          options={statusOptions}
+                          onValueChange={(val) => {
+                            const next = (Array.isArray(val) ? val[0] : val) as ORDER_STATUS;
+                            if (next) handleFormChange("status", next);
+                          }}
+                          clearable={false}
+                          placeholder="Status do pedido"
+                          disabled={isSubmitting}
+                        />
+                      </View>
+                    );
+                  }}
                 />
 
                 {/* Supplier Selection */}

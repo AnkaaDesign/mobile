@@ -25,7 +25,7 @@ import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/war
 import type { Warning } from "@/types";
 import { useWarningMutations } from "@/hooks/useWarning";
 import { WARNING_SEVERITY, WARNING_CATEGORY } from "@/constants";
-import { getUsers } from "@/api-client";
+import { getUsers, getUserById } from "@/api-client";
 
 interface WarningFormProps {
   mode: "create" | "update";
@@ -178,6 +178,28 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
       };
     },
     [buildUserQuery, mapUserToOption, form]
+  );
+
+  // Mirror the web form: when a collaborator is picked, pre-fill supervisorId
+  // from that collaborator's sector leader. If the sector has no leader, leave
+  // the supervisor combobox for manual selection (it stays editable as the
+  // fallback). supervisorId is required, so this never blocks submission.
+  const deriveSupervisorFromCollaborator = useCallback(
+    async (collaboratorId: string) => {
+      if (!collaboratorId) return;
+      try {
+        const response = await getUserById(collaboratorId, {
+          include: { sector: { include: { leader: { include: { position: true } } } } },
+        } as any);
+        const leader = (response.data as any)?.sector?.leader;
+        if (leader?.id) {
+          form.setValue("supervisorId", leader.id, { shouldDirty: true, shouldValidate: true });
+        }
+      } catch {
+        // Non-fatal: user can still pick a supervisor manually.
+      }
+    },
+    [form]
   );
 
   const handleSubmit = async (data: WarningCreateFormData | WarningUpdateFormData) => {
@@ -436,7 +458,10 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                       initialOptions={initialCollaboratorOptions}
                       minSearchLength={0}
                       value={value || ""}
-                      onValueChange={onChange}
+                      onValueChange={(v) => {
+                        onChange(v);
+                        deriveSupervisorFromCollaborator(v as string);
+                      }}
                       placeholder="Selecione o colaborador"
                       searchPlaceholder="Buscar colaborador..."
                       disabled={isLoading}

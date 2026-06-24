@@ -434,7 +434,7 @@ export function StepServices({
       // No configs: total equals subtotal (no discount without config)
       return subtotal;
     }
-    return watchedCustomerConfigs.reduce(
+    const configTotal = watchedCustomerConfigs.reduce(
       (sum: number, config: any) =>
         sum +
         (typeof config?.total === "number"
@@ -442,6 +442,24 @@ export function StepServices({
           : Number(config?.total) || 0),
       0,
     );
+    // Fold unassigned services (invoiceToCustomerId == null) back in at full
+    // value (I05). With 2+ configs, computeCustomerConfigTotals only assigns a
+    // service to the matching customer, so an unassigned service is counted in
+    // NO config total and silently disappears from the preview — making the
+    // shown number lower than what the server persists (the server recomputes
+    // totals authoritatively and folds these in). With a single config they are
+    // already folded in there, so only add the fold when there are 2+ configs.
+    if (watchedCustomerConfigs.length < 2) return configTotal;
+    const unassignedTotal = (Array.isArray(quoteItems) ? quoteItems : []).reduce(
+      (sum: number, item: any) => {
+        if (item?.invoiceToCustomerId) return sum;
+        const amount =
+          typeof item?.amount === "number" ? item.amount : Number(item?.amount) || 0;
+        return sum + amount;
+      },
+      0,
+    );
+    return configTotal + unassignedTotal;
   }, [watchedCustomerConfigs, quoteItems]);
 
   // ---------------------------------------------------------------------------

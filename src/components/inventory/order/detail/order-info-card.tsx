@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { OrderStatusBadge } from "../list/order-status-badge";
@@ -9,8 +10,8 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey } from "@/utils";
 import { formatOrderNumber } from "@/utils/order-code";
 import type { Order } from "../../../../types";
-import { PAYMENT_METHOD_LABELS, ORDER_INSTALLMENT_STATUS_LABELS, getBadgeVariant } from "@/constants";
-import { useCanViewPrices } from "@/hooks";
+import { PAYMENT_METHOD_LABELS, ORDER_INSTALLMENT_STATUS_LABELS, ORDER_INSTALLMENT_STATUS, SECTOR_PRIVILEGES, getBadgeVariant } from "@/constants";
+import { useCanViewPrices, useOrderMutations, usePrivileges } from "@/hooks";
 
 interface OrderInfoCardProps {
   order: Order;
@@ -19,6 +20,26 @@ interface OrderInfoCardProps {
 export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
   const { colors } = useTheme();
   const canViewPrices = useCanViewPrices();
+  const { markInstallmentPaidMutation } = useOrderMutations();
+  const { canAccess } = usePrivileges();
+  const canManagePayments = canAccess([SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.ADMIN]);
+
+  // Settle a single parcela — financial-only. The endpoint closes only this
+  // Installment (not the whole order) and re-rolls the order payment status.
+  const handleSettleInstallment = (inst: any) =>
+    Alert.alert(
+      "Marcar parcela como paga",
+      `${inst.number}ª parcela — ${formatCurrency(inst.amount)}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Marcar pago",
+          onPress: () => {
+            markInstallmentPaidMutation.mutateAsync(inst.id).catch(() => {});
+          },
+        },
+      ],
+    );
 
   // Check if order has temporary items
   const hasTemporaryItems = order.items?.some((item) => item.temporaryItemDescription);
@@ -334,6 +355,21 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
                           {ORDER_INSTALLMENT_STATUS_LABELS[inst.status] ?? inst.status}
                         </ThemedText>
                       </Badge>
+                      {/* Settle a single parcela — financial-only. Endpoint closes only
+                          this Installment (not the whole order) and re-rolls the order
+                          payment status; the mutation invalidate refreshes this card. */}
+                      {canManagePayments &&
+                        inst.status !== ORDER_INSTALLMENT_STATUS.PAID &&
+                        inst.status !== ORDER_INSTALLMENT_STATUS.CANCELLED && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            disabled={markInstallmentPaidMutation.isPending}
+                            onPress={() => handleSettleInstallment(inst)}
+                          >
+                            Marcar pago
+                          </Button>
+                        )}
                     </View>
                   </View>
                 ))}

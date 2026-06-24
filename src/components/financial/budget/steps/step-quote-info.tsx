@@ -13,7 +13,6 @@ import {
   IconCalendar,
   IconUser,
   IconUpload,
-  IconArrowLeft,
   IconX,
 } from "@tabler/icons-react-native";
 import { useWatch, useFormContext } from "react-hook-form";
@@ -126,7 +125,6 @@ export function StepQuoteInfo({
 
   const [validityPeriod, setValidityPeriod] = useState<string>("");
   const [showCustomGuarantee, setShowCustomGuarantee] = useState(false);
-  const [showLayoutUploadMode, setShowLayoutUploadMode] = useState(false);
 
   // Build field names with prefix
   const f = useCallback(
@@ -243,6 +241,24 @@ export function StepQuoteInfo({
     [setValue, f],
   );
 
+  // Declared ABOVE the layout callbacks because they partition layoutFiles
+  // against this option set (TDZ-safe order).
+  const artworkOptions = useMemo(() => {
+    if (!artworks || artworks.length === 0) return [];
+    const imageArtworks = artworks.filter((a) => {
+      const mime = a.mimetype || "";
+      return mime.startsWith("image/");
+    });
+    if (imageArtworks.length === 0) return [];
+    return [
+      ...imageArtworks,
+      {
+        id: UPLOAD_NEW_SENTINEL,
+        filename: "Enviar novo arquivo",
+      } as ArtworkOption,
+    ];
+  }, [artworks]);
+
   // Sync form's layoutFileIds from the ordered layout file array. Only already
   // uploaded files contribute ids here; new files get their ids at submit.
   const syncLayoutFileIds = useCallback(
@@ -256,20 +272,34 @@ export function StepQuoteInfo({
     [setValue, f],
   );
 
+  // The FilePicker manages ONLY the uploaded (non-artwork) layouts. Merge its
+  // output with the currently-selected artwork layouts into one ordered array,
+  // capped at 2 (artwork slots first), mirroring web budget-step-info.
   const handleLayoutChange = useCallback(
     (files: FilePickerItem[]) => {
-      const next = files.slice(0, 2);
+      const optionIds = new Set((artworkOptions ?? []).map((a) => a.id));
+      const artworkLayoutFiles = layoutFiles.filter(
+        (file) => file.id && optionIds.has(file.id),
+      );
+      const pureUploads = files.filter((file) => !(file.id && optionIds.has(file.id)));
+      const next = [...artworkLayoutFiles, ...pureUploads].slice(0, 2);
       onLayoutFilesChange(next);
       syncLayoutFileIds(next);
     },
-    [onLayoutFilesChange, syncLayoutFileIds],
+    [artworkOptions, layoutFiles, onLayoutFilesChange, syncLayoutFileIds],
   );
+
+  // Files the upload field should display: everything that is NOT a known artwork.
+  const uploadedLayoutFiles = useMemo(() => {
+    const optionIds = new Set((artworkOptions ?? []).map((a) => a.id));
+    return layoutFiles.filter((file) => !(file.id && optionIds.has(file.id)));
+  }, [artworkOptions, layoutFiles]);
 
   const handleArtworkSelect = useCallback(
     (value: string | string[] | null | undefined) => {
       const fileId = typeof value === "string" ? value : null;
       if (fileId === UPLOAD_NEW_SENTINEL) {
-        setShowLayoutUploadMode(true);
+        // The upload field is always shown now; selecting the sentinel is a no-op.
         return;
       }
       if (fileId) {
@@ -290,31 +320,21 @@ export function StepQuoteInfo({
           ].slice(0, 2);
           onLayoutFilesChange(next);
           syncLayoutFileIds(next);
-          setShowLayoutUploadMode(false);
         }
       } else {
-        onLayoutFilesChange([]);
-        syncLayoutFileIds([]);
+        // Clearing the artwork combobox must remove ONLY the artwork-sourced file,
+        // never the uploaded (non-artwork) layouts. Drop files that match a known
+        // artwork option id; keep everything else.
+        const optionIds = new Set((artworkOptions ?? []).map((a) => a.id));
+        const next = layoutFiles.filter(
+          (file) => !(file.id && optionIds.has(file.id)),
+        );
+        onLayoutFilesChange(next);
+        syncLayoutFileIds(next);
       }
     },
-    [artworks, onLayoutFilesChange, layoutFiles, syncLayoutFileIds],
+    [artworks, artworkOptions, onLayoutFilesChange, layoutFiles, syncLayoutFileIds],
   );
-
-  const artworkOptions = useMemo(() => {
-    if (!artworks || artworks.length === 0) return [];
-    const imageArtworks = artworks.filter((a) => {
-      const mime = a.mimetype || "";
-      return mime.startsWith("image/");
-    });
-    if (imageArtworks.length === 0) return [];
-    return [
-      ...imageArtworks,
-      {
-        id: UPLOAD_NEW_SENTINEL,
-        filename: "Enviar novo arquivo",
-      } as ArtworkOption,
-    ];
-  }, [artworks]);
 
   const renderArtworkOption = useCallback(
     (artwork: ArtworkOption) => {
@@ -842,8 +862,8 @@ export function StepQuoteInfo({
       {/* ----------------------------------------------------------------- */}
       {!isBilling && (
         <FormCard title="Layout Aprovado" icon="IconPhoto">
-          {/* Artwork selector mode */}
-          {artworkOptions.length > 0 && !showLayoutUploadMode && (
+          {/* Artwork selector — always shown when artworks exist (no XOR with upload). */}
+          {artworkOptions.length > 0 && (
             <>
               <Combobox<ArtworkOption>
                 value={currentLayoutFileId || ""}
@@ -930,46 +950,25 @@ export function StepQuoteInfo({
             </>
           )}
 
-          {/* File upload mode */}
-          {(artworkOptions.length === 0 || showLayoutUploadMode) && (
-            <>
-              {artworkOptions.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setShowLayoutUploadMode(false)}
-                  style={styles.backToArtworksBtn}
-                >
-                  <IconArrowLeft
-                    size={13}
-                    color={colors.mutedForeground}
-                  />
-                  <ThemedText
-                    style={{
-                      fontSize: 12,
-                      color: colors.mutedForeground,
-                    }}
-                  >
-                    Voltar para seleção de artes
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-              <FilePicker
-                value={layoutFiles}
-                onChange={handleLayoutChange}
-                maxFiles={2}
-                placeholder="Selecione até 2 layouts aprovados"
-                helperText="Arraste ou clique para selecionar"
-                showCamera={true}
-                showGallery={true}
-                showFilePicker={false}
-                acceptedFileTypes={[
-                  "image/jpeg",
-                  "image/png",
-                  "image/gif",
-                  "image/webp",
-                ]}
-              />
-            </>
-          )}
+          {/* Upload field — always available, manages ONLY the non-artwork (uploaded)
+              layouts so it can never evict a selected artwork. Combined with the
+              artwork selector into one ordered layoutFileIds[] capped at 2. */}
+          <FilePicker
+            value={uploadedLayoutFiles}
+            onChange={handleLayoutChange}
+            maxFiles={2}
+            placeholder="Selecione até 2 layouts aprovados"
+            helperText="Arraste ou clique para selecionar"
+            showCamera={true}
+            showGallery={true}
+            showFilePicker={false}
+            acceptedFileTypes={[
+              "image/jpeg",
+              "image/png",
+              "image/gif",
+              "image/webp",
+            ]}
+          />
         </FormCard>
       )}
     </View>
@@ -1103,13 +1102,5 @@ const styles = StyleSheet.create({
     height: 192,
     width: "100%",
     borderRadius: borderRadius.md,
-  },
-
-  // Back to artworks link
-  backToArtworksBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
   },
 });

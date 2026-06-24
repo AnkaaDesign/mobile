@@ -46,6 +46,22 @@ export function isValidStatusTransition(fromStatus: ORDER_STATUS, toStatus: ORDE
   return validTransitions[fromStatus]?.includes(toStatus) || false;
 }
 
+// Manual whole-order statuses offered in the edit form (mirrors web). Partial
+// fulfilment/receipt come from marking individual items; OVERDUE is
+// forecast-derived, so neither is user-selectable here.
+export const MANUAL_ORDER_STATUSES: ORDER_STATUS[] = [
+  ORDER_STATUS.CREATED,
+  ORDER_STATUS.FULFILLED,
+  ORDER_STATUS.RECEIVED,
+  ORDER_STATUS.CANCELLED,
+];
+
+// Mirrors web/src/utils/order.ts isValidStatusTransition (same transition map);
+// thin alias so the edit-form options stay in lockstep with web. Keep in sync.
+export function isValidOrderStatusTransition(fromStatus: ORDER_STATUS, toStatus: ORDER_STATUS): boolean {
+  return isValidStatusTransition(fromStatus, toStatus);
+}
+
 /**
  * Get order status label
  */

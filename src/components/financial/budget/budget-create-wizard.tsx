@@ -487,11 +487,17 @@ export function BudgetCreateWizard() {
             discountValue: toNumber(c.discountValue),
             discountReference: c.discountReference || null,
             paymentCondition: c.paymentCondition || null,
+            // Thread through the structured payment plan + signature verbatim so
+            // a save never nulls a field the wizard simply didn't re-render (I07).
+            // Absence = preserve; pass-through with ?? null instead of dropping.
+            paymentConfig: c.paymentConfig ?? null,
             customPaymentText: c.customPaymentText || null,
             generateInvoice: c.generateInvoice ?? true,
             generateBankSlip: c.generateBankSlip ?? true,
             responsibleId: c.responsibleId || null,
+            customerSignatureId: c.customerSignatureId ?? null,
             orderNumber: c.orderNumber || null,
+            installments: c.installments ?? undefined,
           })),
           services: servicesValid.map((s: any) => ({
             description: s.description,

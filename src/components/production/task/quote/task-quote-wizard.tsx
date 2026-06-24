@@ -165,11 +165,21 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       discountValue: c.discountValue ?? null,
       discountReference: c.discountReference ?? null,
       paymentCondition: c.paymentCondition ?? null,
+      // Preserve the structured installment plan + signature so a save that
+      // doesn't re-render them never nulls them (I07). Absence = preserve.
+      paymentConfig: c.paymentConfig ?? null,
       customPaymentText: c.customPaymentText ?? null,
       responsibleId: c.responsibleId ?? null,
+      customerSignatureId: c.customerSignatureId ?? null,
       generateInvoice: c.generateInvoice ?? true,
       generateBankSlip: c.generateBankSlip ?? true,
       orderNumber: c.orderNumber ?? null,
+      installments: c.installments?.map((inst: any) => ({
+        ...(inst.id ? { id: inst.id } : {}),
+        number: inst.number,
+        dueDate: inst.dueDate ? new Date(inst.dueDate) : new Date(),
+        amount: typeof inst.amount === "number" ? inst.amount : Number(inst.amount) || 0,
+      })) ?? [],
     })) || []);
 
     if (p.services && p.services.length > 0) {
