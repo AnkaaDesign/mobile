@@ -13,7 +13,10 @@ import {
   WarningEmployeeCard,
   WarningDescriptionCard,
   WarningAttachmentsCard,
+  SignWarningButton,
+  WarningSignatureEvidenceCard,
 } from "@/components/personal/warning/detail";
+import { RefuseSignatureAction } from "@/components/human-resources/warning/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function WarningDetailScreen() {
@@ -62,6 +65,14 @@ export default function WarningDetailScreen() {
           <WarningDetailsCard warning={warning} />
           <WarningDescriptionCard warning={warning} />
           <WarningAttachmentsCard warning={warning} />
+
+          {/* In-app electronic signature — shows when the HR viewer is also
+              the collaborator/witness; refusal action is HR/supervisor-only
+              (the screen is already gated to HR/ADMIN). */}
+          <SignWarningButton warning={warning} />
+          <RefuseSignatureAction warning={warning} />
+          <WarningSignatureEvidenceCard warning={warning} />
+
           <ChangelogTimeline
             entityType={CHANGE_LOG_ENTITY_TYPE.WARNING}
             entityId={warning.id}

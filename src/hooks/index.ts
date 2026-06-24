@@ -77,6 +77,7 @@ export {
 } from "./payrollDetails";
 export * from "./useHoliday";
 export * from "./useWarning";
+export * from "./useWarningSignature";
 export * from "./useBorrow";
 export * from "./usePpe";
 export * from "./usePpeSignature";

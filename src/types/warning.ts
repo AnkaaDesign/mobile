@@ -4,6 +4,61 @@ import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreate
 import type { WARNING_CATEGORY, WARNING_SEVERITY, ORDER_BY_DIRECTION } from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
 import type { File, FileIncludes } from "./file";
+import type { BiometricMethod, NetworkType } from "./ppe";
+
+// =====================
+// Warning Signature Types
+// =====================
+
+export type WarningSignerRole = "COLLABORATOR" | "WITNESS";
+
+export interface WarningSignature extends BaseEntity {
+  warningId: string;
+  signedByUserId: string | null;
+  signerRole: WarningSignerRole;
+  // True when this record represents a refusal-to-sign (registered by HR/supervisor).
+  refused: boolean;
+  refusedReason: string | null;
+  // Who registered the signature/refusal (the logged-in user that performed it).
+  registeredById: string | null;
+
+  biometricMethod: BiometricMethod;
+  biometricSuccess: boolean;
+  deviceBrand: string | null;
+  deviceModel: string | null;
+  deviceOs: string | null;
+  deviceOsVersion: string | null;
+  appVersion: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  locationAccuracy: number | null;
+  networkType: NetworkType;
+  ipAddress: string | null;
+  clientTimestamp: Date;
+  serverTimestamp: Date;
+  evidenceHash: string;
+  hmacSignature: string;
+  signedDocumentId: string | null;
+  consentGiven: boolean;
+
+  // PAdES seal (ICP-Brasil cert applied server-side over the signed PDF)
+  padesSealed?: boolean;
+  padesSealedAt?: Date | null;
+
+  // Relations
+  signedByUser?: Pick<User, "id" | "name"> | User;
+  registeredBy?: Pick<User, "id" | "name"> | User;
+  signedDocument?: {
+    id: string;
+    filename?: string;
+    originalName?: string;
+    mimetype?: string;
+    path?: string;
+    size?: number;
+  } | null;
+}
+
+export type WarningSignatureEvent = WarningSignature;
 
 // =====================
 // Main Entity Interface
@@ -26,11 +81,18 @@ export interface Warning extends BaseEntity {
   hrNotes: string | null;
   resolvedAt: Date | null;
 
+  // Auto-resolution flags
+  autoResolve: boolean;
+  autoResolved: boolean;
+
   // Relations (optional, populated based on query)
   collaborator?: User;
   supervisor?: User;
   witness?: User[];
   attachments?: File[];
+  // Electronic signatures (collaborator + witnesses + any refusal). Returned by
+  // GET /warnings/:id by default.
+  signatures?: WarningSignature[];
 }
 
 // =====================

@@ -544,6 +544,44 @@ export const warningBatchDeleteSchema = z.object({
   warningIds: z.array(z.string().uuid({ message: "Advertência inválida" })).min(1, "Pelo menos um ID deve ser fornecido"),
 });
 
+// =====================
+// Warning Signing Schemas (in-app electronic signature / refusal)
+// =====================
+
+const biometricMethodSchema = z.enum(["FINGERPRINT", "FACE_ID", "IRIS", "DEVICE_PIN", "NONE"]);
+const networkTypeSchema = z.enum(["WIFI", "CELLULAR", "ETHERNET", "UNKNOWN"]);
+
+// Shared evidence shape — mirrors the PPE delivery sign payload.
+const warningEvidenceShape = {
+  deviceBrand: z.string().nullable().optional(),
+  deviceModel: z.string().nullable().optional(),
+  deviceOs: z.string().nullable().optional(),
+  deviceOsVersion: z.string().nullable().optional(),
+  appVersion: z.string().nullable().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  locationAccuracy: z.number().nullable().optional(),
+  networkType: networkTypeSchema,
+  clientTimestamp: z.string(),
+  evidenceHash: z.string().length(64, "Hash de evidência inválido"),
+  consentGiven: z.literal(true),
+};
+
+// Used by both the collaborator and witnesses — the API infers the role.
+export const warningSignSchema = z.object({
+  biometricMethod: biometricMethodSchema,
+  biometricSuccess: z.literal(true),
+  ...warningEvidenceShape,
+});
+
+// Registered by a supervisor/HR user when the collaborator refuses to sign.
+export const warningRefuseSignSchema = z.object({
+  biometricMethod: biometricMethodSchema.default("NONE"),
+  biometricSuccess: z.boolean().default(false),
+  refusedReason: z.string().min(1, "Informe o motivo da recusa"),
+  ...warningEvidenceShape,
+});
+
 // Query schema for include parameter
 export const warningQuerySchema = z.object({
   include: warningIncludeSchema.optional(),
@@ -565,6 +603,9 @@ export type WarningBatchQueryFormData = z.infer<typeof warningBatchQuerySchema>;
 
 export type WarningCreateFormData = z.infer<typeof warningCreateSchema>;
 export type WarningUpdateFormData = z.infer<typeof warningUpdateSchema>;
+
+export type WarningSignFormData = z.infer<typeof warningSignSchema>;
+export type WarningRefuseSignFormData = z.infer<typeof warningRefuseSignSchema>;
 
 export type WarningBatchCreateFormData = z.infer<typeof warningBatchCreateSchema>;
 export type WarningBatchUpdateFormData = z.infer<typeof warningBatchUpdateSchema>;

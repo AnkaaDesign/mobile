@@ -17,6 +17,8 @@ import {
   WarningEmployeeCard,
   WarningDescriptionCard,
   WarningAttachmentsCard,
+  SignWarningButton,
+  WarningSignatureEvidenceCard,
 } from "@/components/personal/warning/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
@@ -49,6 +51,10 @@ export default function PersonalWarningDetailScreen() {
           <WarningDetailsCard warning={warning} />
           <WarningDescriptionCard warning={warning} />
           <WarningAttachmentsCard warning={warning} />
+
+          {/* In-app electronic signature — collaborator or witness */}
+          <SignWarningButton warning={warning} />
+          <WarningSignatureEvidenceCard warning={warning} />
 
           <Card style={styles.card}>
             <View style={styles.header}>

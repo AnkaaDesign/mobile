@@ -115,6 +115,76 @@ export class WarningService {
 }
 
 // =====================
+// Warning Signing Service (in-app electronic signature / refusal)
+// =====================
+
+export type WarningSignerRole = "COLLABORATOR" | "WITNESS";
+
+export interface WarningSignResponse {
+  success: boolean;
+  signatureId: string;
+  hmac: string;
+  signerRole: WarningSignerRole;
+}
+
+export interface WarningRefuseSignResponse {
+  success: boolean;
+  signatureId: string;
+}
+
+export interface WarningVerifySignatureResponse {
+  valid: boolean;
+  signatures: { signatureId: string; signerRole: WarningSignerRole; valid: boolean }[];
+  details?: string;
+}
+
+export class WarningSigningService {
+  private static readonly basePath = "/warnings";
+
+  /**
+   * Sign a warning. Works for BOTH the collaborator and witnesses — the API
+   * infers the role from the logged-in user. The evidence payload mirrors the
+   * PPE delivery sign call.
+   */
+  static async signWarning(
+    warningId: string,
+    evidence: Record<string, any>,
+  ): Promise<WarningSignResponse> {
+    const response = await apiClient.post<WarningSignResponse>(
+      `${this.basePath}/${warningId}/sign`,
+      evidence,
+    );
+    return response.data;
+  }
+
+  /**
+   * Register that the collaborator refused to sign the warning. Same evidence
+   * fields plus `refusedReason`. The API rejects with 400 when the warning has
+   * fewer than 2 witnesses.
+   */
+  static async refuseWarningSignature(
+    warningId: string,
+    evidence: Record<string, any> & { refusedReason: string },
+  ): Promise<WarningRefuseSignResponse> {
+    const response = await apiClient.post<WarningRefuseSignResponse>(
+      `${this.basePath}/${warningId}/refuse-signature`,
+      evidence,
+    );
+    return response.data;
+  }
+
+  /** Verify the integrity of every signature attached to the warning. */
+  static async verifySignature(
+    warningId: string,
+  ): Promise<WarningVerifySignatureResponse> {
+    const response = await apiClient.get<WarningVerifySignatureResponse>(
+      `${this.basePath}/${warningId}/signature/verify`,
+    );
+    return response.data;
+  }
+}
+
+// =====================
 // Export service instance
 // =====================
 
