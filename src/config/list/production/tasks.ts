@@ -9,6 +9,7 @@ import { hasAnyPrivilege } from '@/utils'
 import { getTaskQuoteDisplayLabel, isTaskQuoteBillingPhase } from '@/constants/enum-labels'
 import { SECTOR_PRIVILEGES } from '@/constants'
 import { navigationTracker } from '@/utils/navigation-tracker'
+import { areAllServiceOrdersComplete } from '@/utils/serviceOrder'
 
 // Column visibility helpers matching web task-edit-form.tsx
 const canViewRestrictedFields = (user: any) => {
@@ -478,7 +479,10 @@ export const tasksListConfig: ListConfig<Task> = {
         canPerform: (user: any) => canFinishTask(user),
         visible: (task: Task, user: any) => {
           if (task.status !== TASK_STATUS.IN_PRODUCTION) return false
-          return canFinishTask(user)
+          if (!canFinishTask(user)) return false
+          // Only finishable once every (non-cancelled) service order is complete —
+          // including the checkout-driven "Checklist Saída".
+          return areAllServiceOrdersComplete(task.serviceOrders)
         },
         confirm: {
           title: 'Finalizar Tarefa',

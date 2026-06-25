@@ -24,8 +24,9 @@ import { ArtworkFileUploadField, type ArtworkFileItem } from '../artwork-file-up
 import { ThemedText } from '@/components/ui/themed-text';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormContext } from 'react-hook-form';
-import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from '@/constants/enums';
+import { areAllProductionServiceOrdersComplete } from '@/utils/serviceOrder';
 import { spacing, fontSize, borderRadius } from '@/constants/design-system';
 import { useTheme } from '@/lib/theme';
 import type { File as AnkaaFile } from '@/types';
@@ -249,10 +250,12 @@ export default function FilesSection({
   const canEditProjectFiles = isAdmin || isCommercial || isLogistic || isProductionManager;
 
   // Check-in/Check-out: visible to ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER; editable by ADMIN, LOGISTIC, PRODUCTION_MANAGER
-  // Not available in create mode; checkout only available for completed tasks
+  // Not available in create mode; checkout becomes available once ALL production
+  // SOs are complete (not when the task is finished) — doing the checkout then
+  // auto-completes "Checklist Saída", enabling Finalizar.
   const isEditMode = mode === 'edit';
   const canViewCheckinCheckout = isEditMode && (isAdmin || isCommercial || isFinancial || isLogistic || isProductionManager);
-  const canViewCheckout = canViewCheckinCheckout && taskStatus === TASK_STATUS.COMPLETED;
+  const canViewCheckout = canViewCheckinCheckout && areAllProductionServiceOrdersComplete(serviceOrders);
   const canEditCheckinCheckout = isAdmin || isLogistic || isProductionManager;
 
   // Filter active service orders (non-cancelled, with ID)

@@ -17,7 +17,7 @@ import { useTaskMutations, useTaskDetail, useScreenReady } from '@/hooks'
 import { PrivilegeGate } from '@/components/auth/privilege-gate'
 import { navigationTracker } from '@/utils/navigation-tracker'
 import { useTheme } from '@/lib/theme'
-import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
+import { SECTOR_PRIVILEGES } from '@/constants'
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from '@/constants/enums'
 import { spacing, fontSize, borderRadius } from '@/constants/design-system'
 import { getApiBaseUrl } from '@/utils/file'
@@ -240,13 +240,16 @@ function CheckinCheckoutInner() {
     setHasChanges(true)
   }, [])
 
-  const taskStatus = task?.status as string | undefined
-  const isCompleted = taskStatus === TASK_STATUS.COMPLETED
-  const showCheckout = isCompleted
+  // Checkout becomes available once every active production service order is
+  // complete (not when the task is finished). Doing the checkout then auto-
+  // completes "Checklist Saída" on the API side, which enables Finalizar.
+  const showCheckout =
+    activeServiceOrders.length > 0 &&
+    activeServiceOrders.every((so: any) => so.status === SERVICE_ORDER_STATUS?.COMPLETED)
 
-  // Steps based on task status:
-  // Not completed → Check-in + Resumo
-  // COMPLETED → Check-in + Check-out + Resumo
+  // Steps based on checkout availability:
+  // Production not done → Check-in + Resumo
+  // All production SOs done → Check-in + Check-out + Resumo
   const steps: FormStep[] = useMemo(() => {
     if (showCheckout) {
       return [
@@ -710,7 +713,7 @@ function CheckinCheckoutInner() {
                       )}
 
                       {/* Check-out summary */}
-                      {isCompleted && (
+                      {showCheckout && (
                         <>
                           <View style={styles.overviewRow}>
                             <ThemedText style={[styles.overviewLabel, { color: colors.mutedForeground }]}>Check-out:</ThemedText>
@@ -777,7 +780,7 @@ function CheckinCheckoutInner() {
                     <ThemedText style={styles.overviewTotalLabel}>Total check-in:</ThemedText>
                     <ThemedText style={styles.overviewTotalValue}>{totals.totalCheckin} foto(s)</ThemedText>
                   </View>
-                  {isCompleted && (
+                  {showCheckout && (
                     <View style={styles.overviewRow}>
                       <ThemedText style={styles.overviewTotalLabel}>Total check-out:</ThemedText>
                       <ThemedText style={styles.overviewTotalValue}>{totals.totalCheckout} foto(s)</ThemedText>
