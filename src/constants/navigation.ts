@@ -555,14 +555,16 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Bônus",
         icon: "coins",
         path: "/recursos-humanos/bonus/listar",
-        hidden: true, // TEMP: bonus feature hidden from navigation
+        // Gated like the web "Gratificações" group ([ACCOUNTING, HR, ADMIN]) so the
+        // bonus pages don't leak to other sectors now that they're visible again.
+        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "nivel-de-performance", title: "Nível de Performance", icon: "trendingUp", path: "/recursos-humanos/bonus/nivel-de-performance" },
           { id: "simulacao-bonus", title: "Simulação de Bônus", icon: "calculator", path: "/recursos-humanos/bonus/simulacao" },
         ],
       },
-      { id: "calculos", title: "Cálculos de Ponto", icon: "deviceIpadDollar", path: "/recursos-humanos/calculos" },
       // CONTROLE DE PONTO — full sub-view structure mirroring the web's 6 tabs.
+      // ("Cálculos de Ponto" removed — it duplicated Controle de Ponto.)
       // (Cargos moved into "Salários e Cargos" below to match the web grouping.)
       {
         id: "controle-ponto",
@@ -656,7 +658,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
             ],
           },
           { id: "rh-horarios", title: "Horários", icon: "clock", path: "/recursos-humanos/horarios" },
-          { id: "rh-faixas-salariais", title: "Faixas Salariais", icon: "salary", path: "/recursos-humanos/faixas-salariais" },
           {
             id: "rh-reajustes",
             title: "Reajustes",

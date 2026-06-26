@@ -23,8 +23,18 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderInfoCard } from "@/components/inventory/order/detail/order-info-card";
 import { OrderItemsTable } from "@/components/inventory/order/detail/order-items-table";
 import { OrderDocumentsCard } from "@/components/inventory/order/detail/order-documents-card";
-import { OrderPdfExportCard } from "@/components/inventory/order/detail/order-pdf-export-card";
+import { exportOrderPdf, type OrderPdfData, type OrderPdfLineItem } from "@/utils/order-pdf-generator";
+import { buildOrderCode } from "@/utils/order-code";
 import type { Order } from "@/types";
+
+/** One-line measures summary (value + unit, first two) for the export PDF. */
+function formatMeasures(measures?: { value: number | null; unit: string | null }[] | null): string {
+  if (!measures || measures.length === 0) return "-";
+  const parts = measures.filter((m) => m.value != null).map((m) => `${m.value}${m.unit ? ` ${m.unit}` : ""}`);
+  if (parts.length === 0) return "-";
+  if (parts.length > 2) return `${parts.slice(0, 2).join(" - ")} +${parts.length - 2}`;
+  return parts.join(" - ");
+}
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -108,11 +118,42 @@ export default function OrderDetailScreen() {
     );
   };
 
+  // Export the supplier budget-request PDF ("Solicitação de Orçamento" — no
+  // pricing), matching the web. Lives in the header overflow menu now (the
+  // separate "Exportar Pedido" card + WhatsApp button were removed).
+  const handleExport = () => {
+    if (!order) return;
+    const items: OrderPdfLineItem[] = (order.items || []).map((orderItem: any) => ({
+      code: orderItem.item?.uniCode || "-",
+      name: orderItem.temporaryItemDescription || orderItem.item?.name || "-",
+      brand: orderItem.item?.brands?.map((b: any) => b.name).join(", ") || "-",
+      measures: formatMeasures(orderItem.item?.measures),
+      quantity: orderItem.orderedQuantity || 0,
+    }));
+    const data: OrderPdfData = {
+      title: buildOrderCode(order),
+      documentType: "Solicitação de Orçamento",
+      includePricing: false,
+      description: order.description || undefined,
+      supplierName: order.supplier?.fantasyName || order.supplier?.corporateName || undefined,
+      orderDate: order.createdAt,
+      notes: order.notes,
+      items,
+    };
+    void exportOrderPdf(data, { dialogTitle: "Solicitação de Orçamento" });
+  };
+
   // Payment actions are restricted to ADMIN/FINANCIAL. An order is payable
   // (show "Marcar como Pago") while paymentStatus !== PAID; once PAID, offer
   // "Desfazer pagamento" to revert to awaiting payment.
   const isPaid = order?.paymentStatus === ORDER_PAYMENT_STATUS.PAID;
-  const actions: PageAction[] = !canManagePayment
+  const exportAction: PageAction = {
+    key: "export",
+    label: "Exportar",
+    icon: "file-text",
+    onPress: handleExport,
+  };
+  const paymentActions: PageAction[] = !canManagePayment
     ? []
     : isPaid
       ? [
@@ -120,6 +161,7 @@ export default function OrderDetailScreen() {
             key: "mark-awaiting-payment",
             label: "Desfazer pagamento",
             icon: "receipt",
+            variant: "destructive",
             loading: markAwaitingPaymentMutation.isPending,
             onPress: handleMarkAwaitingPayment,
           },
@@ -133,6 +175,7 @@ export default function OrderDetailScreen() {
             onPress: handleMarkPaid,
           },
         ];
+  const actions: PageAction[] = order ? [exportAction, ...paymentActions] : [];
 
   return (
     <DetailScreen<Order>
@@ -165,7 +208,6 @@ export default function OrderDetailScreen() {
         <View style={styles.body}>
           <OrderInfoCard order={order} />
           <OrderItemsTable order={order} />
-          <OrderPdfExportCard order={order} />
           <OrderDocumentsCard order={order} />
 
           <Card style={styles.card}>

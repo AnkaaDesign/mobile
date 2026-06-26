@@ -74,7 +74,7 @@ export function AirbrushingTaskCard({ airbrushing }: AirbrushingTaskCardProps) {
         <DetailField
           label="Veículo"
           icon="truck"
-          value={`${airbrushing.task.truck.model} - ${airbrushing.task.truck.plate}`}
+          value={airbrushing.task.truck.plate || '-'}
         />
       )}
 

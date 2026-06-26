@@ -1,10 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, Keyboard } from 'react-native';
-import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
 import { ThemedText } from '@/components/ui/themed-text';
-import { IconPlus, IconLayoutGrid } from '@tabler/icons-react-native';
+import { IconPlus, IconLayoutGrid, IconStack2 } from '@tabler/icons-react-native';
 import { BlockEditor } from './block-editor';
 import { BlockTypeSelector } from './block-type-selector';
 import { MessageTemplatesModal } from './message-templates-modal';
@@ -47,63 +46,66 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
     [blocks, onBlocksChange]
   );
 
-  const handleDragBegin = useCallback(() => {
-    Keyboard.dismiss();
-  }, []);
+  // Reorder via up/down controls. Drag-and-drop is intentionally avoided here:
+  // a draggable VirtualizedList nested inside the form's parent ScrollView
+  // breaks vertical scrolling. Up/down buttons are reliable and touch-friendly.
+  const handleMove = useCallback(
+    (index: number, direction: -1 | 1) => {
+      const target = index + direction;
+      if (target < 0 || target >= blocks.length) return;
+      const next = [...blocks];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved);
+      onBlocksChange(next);
+    },
+    [blocks, onBlocksChange]
+  );
 
-  const handleDragEnd = useCallback(
-    ({ data }: { data: ContentBlock[] }) => {
-      onBlocksChange(data);
+  const handleTemplateSelect = useCallback(
+    (newBlocks: ContentBlock[]) => {
+      onBlocksChange(newBlocks);
+      setShowTemplates(false);
     },
     [onBlocksChange]
   );
 
-  const renderItem = useCallback(
-    ({ item, drag, isActive }: RenderItemParams<ContentBlock>) => (
-      <BlockEditor
-        block={item}
-        onUpdate={(updates) => handleUpdateBlock(item.id, updates)}
-        onDelete={() => handleDeleteBlock(item.id)}
-        drag={drag}
-        isActive={isActive}
-        disabled={disabled}
-      />
-    ),
-    [handleUpdateBlock, handleDeleteBlock, disabled]
-  );
-
-  const keyExtractor = useCallback((item: ContentBlock) => item.id, []);
-
+  // ─── Empty state ──────────────────────────────────────────────────────────
   if (blocks.length === 0) {
     return (
       <View>
-        <TouchableOpacity
-          style={[styles.emptyState, { borderColor: colors.border }]}
-          onPress={() => setShowSelector(true)}
-          disabled={disabled}
-        >
-          <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-            Nenhum bloco adicionado ainda
-          </ThemedText>
-          <View style={styles.emptyActions}>
-            <View style={[styles.addFirstButton, { backgroundColor: colors.primary }]}>
-              <IconPlus size={16} color="#FFFFFF" />
-              <ThemedText style={styles.addFirstText}>Adicionar Primeiro Bloco</ThemedText>
-            </View>
-            <TouchableOpacity
-              style={[styles.templatesButton, { borderColor: colors.border }]}
-              onPress={() => {
-                setShowTemplates(true);
-              }}
-              disabled={disabled}
-            >
-              <IconLayoutGrid size={16} color={colors.foreground} />
-              <ThemedText style={[styles.templatesButtonText, { color: colors.foreground }]}>
-                Exemplos
-              </ThemedText>
-            </TouchableOpacity>
+        <View style={[styles.emptyState, { borderColor: colors.border }]}>
+          <View style={[styles.emptyIconWrap, { backgroundColor: colors.muted }]}>
+            <IconStack2 size={26} color={colors.mutedForeground} />
           </View>
-        </TouchableOpacity>
+          <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
+            Comece a montar sua mensagem
+          </ThemedText>
+          <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+            Adicione blocos de texto, imagens e botões, ou use um modelo pronto.
+          </ThemedText>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+            onPress={() => setShowSelector(true)}
+            disabled={disabled}
+            activeOpacity={0.85}
+          >
+            <IconPlus size={18} color="#FFFFFF" />
+            <ThemedText style={styles.primaryButtonText}>Adicionar Primeiro Bloco</ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => setShowTemplates(true)}
+            disabled={disabled}
+            activeOpacity={0.7}
+          >
+            <IconLayoutGrid size={16} color={colors.primary} />
+            <ThemedText style={[styles.linkButtonText, { color: colors.primary }]}>
+              Ver Exemplos
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
 
         <BlockTypeSelector
           open={showSelector}
@@ -114,43 +116,50 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
         <MessageTemplatesModal
           visible={showTemplates}
           onClose={() => setShowTemplates(false)}
-          onSelect={(newBlocks) => {
-            onBlocksChange(newBlocks);
-            setShowTemplates(false);
-          }}
+          onSelect={handleTemplateSelect}
           hasExistingBlocks={blocks.length > 0}
         />
       </View>
     );
   }
 
+  // ─── Populated state ──────────────────────────────────────────────────────
   return (
     <View>
-      <DraggableFlatList
-        data={blocks}
-        scrollEnabled={false}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        onDragBegin={handleDragBegin}
-        onDragEnd={handleDragEnd}
-      />
+      <View style={styles.blockList}>
+        {blocks.map((block, index) => (
+          <BlockEditor
+            key={block.id}
+            block={block}
+            index={index}
+            total={blocks.length}
+            onUpdate={(updates) => handleUpdateBlock(block.id, updates)}
+            onDelete={() => handleDeleteBlock(block.id)}
+            onMoveUp={() => handleMove(index, -1)}
+            onMoveDown={() => handleMove(index, 1)}
+            disabled={disabled}
+          />
+        ))}
+      </View>
 
       <View style={styles.bottomActions}>
         <TouchableOpacity
-          style={[styles.addButton, { borderColor: colors.border, flex: 1 }]}
+          style={[styles.addButton, { backgroundColor: colors.primary }]}
           onPress={() => setShowSelector(true)}
           disabled={disabled}
+          activeOpacity={0.85}
         >
-          <IconPlus size={16} color={colors.primary} />
-          <ThemedText style={[styles.addButtonText, { color: colors.primary }]}>
+          <IconPlus size={16} color="#FFFFFF" />
+          <ThemedText style={[styles.addButtonText, { color: '#FFFFFF' }]}>
             Adicionar Bloco
           </ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.addButton, { borderColor: colors.border }]}
+          style={[styles.templatesButton, { borderColor: colors.border }]}
           onPress={() => setShowTemplates(true)}
           disabled={disabled}
+          activeOpacity={0.7}
         >
           <IconLayoutGrid size={16} color={colors.foreground} />
           <ThemedText style={[styles.addButtonText, { color: colors.foreground }]}>
@@ -168,10 +177,7 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
       <MessageTemplatesModal
         visible={showTemplates}
         onClose={() => setShowTemplates(false)}
-        onSelect={(newBlocks) => {
-          onBlocksChange(newBlocks);
-          setShowTemplates(false);
-        }}
+        onSelect={handleTemplateSelect}
         hasExistingBlocks={blocks.length > 0}
       />
     </View>
@@ -179,6 +185,7 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
 }
 
 const styles = StyleSheet.create({
+  // Empty state
   emptyState: {
     borderWidth: 2,
     borderStyle: 'dashed',
@@ -186,55 +193,80 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
+  },
+  emptyIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-  },
-  addFirstButton: {
+  primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
     borderRadius: borderRadius.md,
+    alignSelf: 'stretch',
   },
-  addFirstText: {
+  primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
-  templatesButton: {
+  linkButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
+    paddingVertical: spacing.sm,
   },
-  templatesButtonText: {
+  linkButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Populated state
+  blockList: {
+    gap: spacing.sm,
   },
   bottomActions: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
   addButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
     paddingVertical: 12,
+    borderRadius: borderRadius.md,
+  },
+  templatesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderRadius: borderRadius.md,
   },
   addButtonText: {

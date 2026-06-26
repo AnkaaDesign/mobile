@@ -2,90 +2,62 @@
 
 > For the Claude session running on the build/API **server**. The iOS Release was
 > built and installed from a Mac. Your job: produce the matching **Android release
-> APK** and **publish the OTA bundle** so the server serves updates both binaries
-> can consume. Read `docs/OTA_FINGERPRINT_SYNC.md` first — this is the operational
-> checklist.
+> APK** and **publish the OTA bundle**. Read `docs/OTA_FINGERPRINT_SYNC.md` first —
+> this is the operational checklist.
 
-## The non-negotiable rule
+## The rule (now simple)
 
-iOS (built on the Mac) and Android (built here) must come from the **same git
-commit** with a **frozen dependency install**. The OTA bundle must be published
-from that **same commit** too. If any of the three diverges, the runtimeVersion
-fingerprints won't match and OTA silently won't apply.
+OTA matching uses a **static `runtimeVersion` string** in `app.json` (e.g. `"7"`),
+the SAME for both platforms. It does **not** depend on the build machine, the
+installed dependency tree, or the git commit. So:
 
-## Pinned state for THIS release
-
-- **Branch:** `main`
-- **Release commit:** the latest commit on `main` (it bakes the
-  `pod install`-regenerated `ios/Podfile.lock` that the iOS build used).
-  `ota:verify` is the real gate — match the fingerprints below, not a SHA.
-- **Expected fingerprints** (the consistency anchor — `npm run ota:verify` must
-  print these, matching what's embedded in the committed native files):
-  - iOS:     `77cbbd1a8705277a6f859279e4958bf6a4c6bd05`  (already built+installed on the Mac)
-  - Android: `367b668accf94352a99076777441c0b5da49afc2`  (you build this)
-- These hold only if `node_modules` is installed from the committed lockfile
-  (`corepack pnpm install --frozen-lockfile`, pinned pnpm@10.15.1) and you're on
-  the same commit as the Mac. The committed
-  `ios/Podfile.lock` is what makes the iOS fingerprint reproducible here without
-  running `pod install` (you only build Android).
+- iOS (Mac) and Android (here) just need the **same `app.json` `runtimeVersion`**.
+- The OTA bundle is published into a single `updates/<runtimeVersion>/` folder that
+  serves both platforms.
+- `npm run ota:verify` is the gate: it must show both native files embed the
+  `app.json` value. No fingerprint/frozen-install/same-pnpm requirement anymore.
 
 ## Steps
 
-1. **Sync to the exact commit:**
+1. **Get the release source** (same branch the Mac built; a matching commit is good
+   hygiene but only the `app.json` `runtimeVersion` must agree):
    ```sh
    cd mobile
-   git fetch origin
-   git checkout main
-   git pull --ff-only
+   git fetch origin && git checkout main && git pull --ff-only
+   pnpm install            # frozen install still recommended for a clean build
    ```
-2. **Frozen install with the PINNED pnpm** (reproducible fingerprint). pnpm is
-   pinned to `pnpm@10.15.1` via `package.json` → `packageManager`; corepack uses
-   it automatically. Using a DIFFERENT pnpm (or npm) version computes a DIFFERENT
-   fingerprint — that exact mismatch is what this pin fixes. Do NOT run plain
-   `npm install`/`pnpm install` without the frozen flag.
-   ```sh
-   corepack enable
-   corepack pnpm install --frozen-lockfile
-   ```
-3. **Verify you're consistent with the iOS build** — this MUST pass and print the
-   fingerprints above. If it reports drift or different hashes, STOP: you're on
-   the wrong commit or deps differ.
+2. **Verify the runtimeVersion is embedded** — must print the same value on both
+   rows (it reads `app.json`):
    ```sh
    npm run ota:verify
    ```
-4. **Build the release APK** (syncs the fingerprint into the native files first,
+   If it shows drift, run `npm run ota:sync-version` and commit.
+3. **Build the release APK** (syncs the runtimeVersion into the native files first,
    then runs Gradle — no device/emulator needed):
    ```sh
    npm run android:apk
    ```
    Output: `android/app/build/outputs/apk/release/app-release.apk`
-5. **Publish the OTA bundle from the same commit** (verify runs again as a guard):
+4. **Publish the OTA bundle:**
    ```sh
    npm run ota:publish
    ```
-   This exports the JS bundle and writes it to `../api/updates/<iosFp>/` and
-   `../api/updates/<androidFp>/` (override the location with `UPDATES_DEST=...`).
-6. **Deploy the updates folder** to the live API host if it isn't already there,
-   e.g. `rsync -avz ../api/updates/ <prod-api-host>:/path/to/api/updates/`.
+   This exports the JS bundle and writes it to `../api/updates/<runtimeVersion>/`
+   (one folder for both platforms; override the location with `UPDATES_DEST=...`).
+5. **Deploy the updates folder** to the live API host if it isn't already there:
+   ```sh
+   rsync -avz ../api/updates/ <prod-api-host>:/path/to/api/updates/
+   ```
 
 ## Environment prerequisites (verify before building)
 
 - **Android signing:** a release keystore + `signingConfigs.release` must be
-  configured (it was for the v1.0.4 / versionCode 5 release). An unsigned/debug
-  APK won't be installable as a release.
-- **New store submission?** If this APK goes to a store, bump `versionCode`
-  (and `versionName`) — OTA-only/internal installs don't require it.
+  configured. An unsigned/debug APK won't be installable as a release.
+- **New store submission?** Bump `versionCode` (and `versionName`) in
+  `android/app/build.gradle`. This is independent of `runtimeVersion` — but note
+  that any **native** change you ship also means bumping `app.json`
+  `runtimeVersion` and rebuilding both platforms (see OTA_FINGERPRINT_SYNC.md).
 - **API OTA env (production):** `UPDATES_PUBLIC_URL=https://api.ankaadesign.com.br`
   must be set (asset URLs must be absolute HTTPS for iOS ATS). The API serves from
   `UPDATES_ROOT` (defaults to `<cwd>/updates`).
 - **JDK / Android SDK** present and `ANDROID_HOME` set for Gradle.
-
-## If `ota:verify` shows different hashes than above
-
-That means the source/deps here don't match the Mac's iOS build. Do **not**
-force-publish. Most likely causes: wrong commit, the wrong pnpm version (must be
-the pinned `pnpm@10.15.1` via corepack — a different version changes the
-fingerprint), a non-frozen install, or uncommitted local changes (`git status`
-must be clean). Fix the
-cause, not the symptom — overriding with `OTA_SKIP_VERIFY=1` will serve a bundle
-no binary can use.

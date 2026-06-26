@@ -5,16 +5,15 @@ import { IconChevronRight } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
+import { StatChip } from "@/components/human-resources/time-clock/fechamento-stat-chip";
 import { useTheme } from "@/lib/theme";
 import { useSecullumAssinaturas } from "@/hooks/secullum";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { format } from "date-fns";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import type { SecullumAssinaturaListItem } from "@/types/secullum";
-import { TimeClockTabs } from "@/components/human-resources/time-clock/time-clock-tabs";
 
 const PAGE_SIZE = 20;
 
@@ -61,45 +60,36 @@ export default function FechamentoListScreen() {
   }, [refetch]);
 
   const renderRow = useCallback(
-    ({ item }: { item: SecullumAssinaturaListItem }) => (
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => router.push(`/recursos-humanos/controle-ponto/fechamento/${item.Id}` as never)}
-      >
-        <Card style={styles.rowCard}>
-          <View style={styles.rowHeader}>
-            <View style={styles.rowHeaderLeft}>
-              <ThemedText style={styles.descricao} numberOfLines={2}>
-                {item.Descricao || `Apuração #${item.Id}`}
-              </ThemedText>
-              <ThemedText style={[styles.period, { color: colors.mutedForeground }]}>
-                {formatPeriod(item.DataInicio, item.DataFim)}
-              </ThemedText>
+    ({ item }: { item: SecullumAssinaturaListItem }) => {
+      const pendentes = Math.max(0, (item.NumeroCartoes ?? 0) - (item.Aprovados ?? 0) - (item.Rejeitados ?? 0));
+      return (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.push(`/recursos-humanos/controle-ponto/fechamento/${item.Id}` as never)}
+        >
+          <Card style={styles.rowCard}>
+            <View style={styles.rowHeader}>
+              <View style={styles.rowHeaderLeft}>
+                <ThemedText style={styles.descricao} numberOfLines={2}>
+                  {item.Descricao || `Apuração #${item.Id}`}
+                </ThemedText>
+                <ThemedText style={[styles.period, { color: colors.mutedForeground }]}>
+                  Nº {item.Id} · {formatPeriod(item.DataInicio, item.DataFim)}
+                </ThemedText>
+              </View>
+              <IconChevronRight size={20} color={colors.mutedForeground} />
             </View>
-            <IconChevronRight size={20} color={colors.mutedForeground} />
-          </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>Nª</ThemedText>
-              <ThemedText style={styles.statValue}>{item.Id}</ThemedText>
+            <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
+              <StatChip label="Cartões" value={item.NumeroCartoes ?? 0} tone="neutral" colors={colors} />
+              <StatChip label="Aprovados" value={item.Aprovados ?? 0} tone="success" colors={colors} />
+              <StatChip label="Rejeitados" value={item.Rejeitados ?? 0} tone="danger" colors={colors} />
+              <StatChip label="Pendentes" value={pendentes} tone="warning" colors={colors} />
             </View>
-            <View style={styles.stat}>
-              <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>Cartões</ThemedText>
-              <ThemedText style={styles.statValue}>{item.NumeroCartoes}</ThemedText>
-            </View>
-            <View style={styles.stat}>
-              <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>Aprovados</ThemedText>
-              <Badge variant="success">{String(item.Aprovados)}</Badge>
-            </View>
-            <View style={styles.stat}>
-              <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>Rejeitados</ThemedText>
-              <Badge variant="destructive">{String(item.Rejeitados)}</Badge>
-            </View>
-          </View>
-        </Card>
-      </TouchableOpacity>
-    ),
+          </Card>
+        </TouchableOpacity>
+      );
+    },
     [colors],
   );
 
@@ -108,15 +98,13 @@ export default function FechamentoListScreen() {
       (error as any)?.response?.data?.message || (error as any)?.message || "Erro ao carregar fechamentos";
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <TimeClockTabs />
-        <ErrorScreen message="Erro ao carregar fechamentos" detail={errorMessage} onRetry={handleRefresh} />
+          <ErrorScreen message="Erro ao carregar fechamentos" detail={errorMessage} onRetry={handleRefresh} />
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <TimeClockTabs />
 
       <View style={styles.headerContainer}>
         <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar por descrição..." />
@@ -164,8 +152,5 @@ const styles = StyleSheet.create({
   rowHeaderLeft: { flex: 1, gap: 2 },
   descricao: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   period: { fontSize: fontSize.xs },
-  statsRow: { flexDirection: "row", justifyContent: "space-between" },
-  stat: { alignItems: "center", gap: 4, flex: 1 },
-  statLabel: { fontSize: 10, fontWeight: fontWeight.medium },
-  statValue: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+  statsRow: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing.sm },
 });

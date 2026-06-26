@@ -120,35 +120,41 @@ export const warningsListConfig: ListConfig<Warning> = {
   filters: {
     fields: [
       {
-        key: 'severity',
+        // API filter key is plural `severities` (array); singular `severity`
+        // was silently stripped → filter did nothing.
+        key: 'severities',
         label: 'Severidade',
         type: 'select',
-        multiple: false,
+        multiple: true,
         options: Object.entries(WARNING_SEVERITY_LABELS).map(([key, label]) => ({
           label,
           value: key,
         })),
-        placeholder: 'Selecione a severidade',
+        placeholder: 'Selecione as severidades',
       },
       {
-        key: 'category',
+        // API filter key is plural `categories` (array); singular `category`
+        // was silently stripped → filter did nothing.
+        key: 'categories',
         label: 'Categoria',
         type: 'select',
-        multiple: false,
+        multiple: true,
         options: Object.entries(WARNING_CATEGORY_LABELS).map(([key, label]) => ({
           label,
           value: key,
         })),
-        placeholder: 'Selecione a categoria',
+        placeholder: 'Selecione as categorias',
       },
       {
+        // API isActive is z.boolean(); the string values 'active'/'resolved'
+        // were rejected → 400. Use booleans (Ativas = active, Resolvidas = not).
         key: 'isActive',
         label: 'Status',
         type: 'select',
         multiple: false,
         options: [
-          { label: 'Ativas', value: 'active' },
-          { label: 'Resolvidas', value: 'resolved' },
+          { label: 'Ativas', value: true },
+          { label: 'Resolvidas', value: false },
         ],
         placeholder: 'Selecione o status',
       },

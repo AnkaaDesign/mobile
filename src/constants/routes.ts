@@ -268,10 +268,6 @@ export const routes = {
       list: "/recursos-humanos/ferias/listar",
       root: "/recursos-humanos/ferias",
     },
-    salaryRanges: {
-      list: "/recursos-humanos/faixas-salariais",
-      root: "/recursos-humanos/faixas-salariais",
-    },
     salaryAdjustments: {
       details: (id: string) => `/recursos-humanos/reajustes/detalhes/${id}`,
       list: "/recursos-humanos/reajustes/listar",

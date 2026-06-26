@@ -1,53 +1,44 @@
 /**
- * Shared OTA runtime-version computation.
+ * Shared OTA runtime-version resolution — SINGLE SOURCE OF TRUTH.
  *
- * The runtimeVersion is an automatic, deterministic "fingerprint" of everything
- * that affects the NATIVE runtime (native dirs, package.json, config plugins,
- * app icons) — but NOT your JS/business code in `src/`. That is exactly what we
- * want: JS-only changes keep the same runtimeVersion (so OTA updates apply),
- * while native changes bump it (so a new store build is required).
+ * The runtimeVersion is a STATIC string declared once in `app.json`
+ * (`expo.runtimeVersion`). It is identical on every machine and for BOTH
+ * platforms, and the OTA server serves updates from a folder named exactly after
+ * it (`updates/<runtimeVersion>/`).
  *
- * iOS and Android fingerprints differ, so we combine them into ONE version
- * string shared by both platforms. It is content-derived, so any clone of the
- * repo (built on any machine) produces the same value — provided node_modules
- * is installed from the committed lockfile (use a frozen install in CI/builds).
+ * Why NOT the fingerprint policy:
+ *   A fingerprint is recomputed from node_modules / Podfile.lock / the native
+ *   dirs, so it DRIFTS between the Mac that builds iOS, the PC that builds
+ *   Android, and the Linux box that publishes the OTA. The binary then embeds one
+ *   hash while the server publishes under another, and updates silently never
+ *   apply. (The Android Gradle build even recomputed and overwrote the synced
+ *   value at build time.) A hand-bumped integer removes every such variable.
+ *
+ * Bump `expo.runtimeVersion` ONLY when you ship a new native binary (a native
+ * code / dependency / config change). JS-only changes keep the same value, so
+ * OTA updates apply to the installed binaries.
  */
-import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const updatesCli = join(mobileRoot, "node_modules", "expo-updates", "bin", "cli.js");
-
-/** Run `expo-updates fingerprint:generate` for a platform and return its hash. */
-function platformFingerprint(platform) {
-  const out = execFileSync(
-    process.execPath,
-    [updatesCli, "fingerprint:generate", "--platform", platform],
-    { cwd: mobileRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
-  );
-  const { hash } = JSON.parse(out);
-  if (!hash || typeof hash !== "string") {
-    throw new Error(`fingerprint:generate returned no hash for ${platform}`);
-  }
-  return hash;
-}
 
 /**
- * Compute the per-platform runtimeVersion fingerprints.
+ * Read the static OTA runtimeVersion from app.json. Both platforms share it.
  *
- * iOS and Android intentionally get DIFFERENT values — this matches exactly what
- * Expo's own build-time fingerprint injection produces, so the value the binary
- * embeds and the value the server serves always agree, whether it was written by
- * `sync-runtime-version.mjs` or by Expo's build.
- *
- * @returns {{ ios: string, android: string }}
+ * @returns {string} e.g. "7"
  */
-export function computeRuntimeVersions() {
-  return {
-    ios: platformFingerprint("ios"),
-    android: platformFingerprint("android"),
-  };
+export function getRuntimeVersion() {
+  const appJson = JSON.parse(readFileSync(join(mobileRoot, "app.json"), "utf8"));
+  const rv = appJson?.expo?.runtimeVersion;
+  if (typeof rv !== "string" || rv.trim() === "") {
+    throw new Error(
+      `app.json expo.runtimeVersion must be a non-empty STATIC string (got ${JSON.stringify(rv)}).\n` +
+        `The self-hosted OTA workflow requires a static runtimeVersion, not a { policy } object.`,
+    );
+  }
+  return rv.trim();
 }
 
 export { mobileRoot };

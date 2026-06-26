@@ -237,7 +237,7 @@
       "reactCompiler": true
     },
     "newArchEnabled": true,
-    "runtimeVersion": { "policy": "fingerprint" },
+    "runtimeVersion": "7",
     "updates": {
       "enabled": true,
       "url": "https://api.ankaadesign.com.br/updates/manifest",

@@ -13,13 +13,12 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { TimeClockTabs } from "@/components/human-resources/time-clock/time-clock-tabs";
 
 interface DayRow {
   userId: string;
   userName: string;
+  // Only the sector is shown under the name on the day view — never the position.
   sectorName: string | null;
-  positionName: string | null;
   entry1: string;
   exit1: string;
   entry2: string;
@@ -61,7 +60,6 @@ export default function TimeEntriesDayScreen() {
         userId: item.user?.id ?? "",
         userName: item.user?.name ?? "Sem nome",
         sectorName: item.user?.sectorName ?? null,
-        positionName: item.user?.positionName ?? null,
         entry1: dash(e.Entrada1 ?? e.entry1),
         exit1: dash(e.Saida1 ?? e.exit1),
         entry2: dash(e.Entrada2 ?? e.entry2),
@@ -155,15 +153,13 @@ export default function TimeEntriesDayScreen() {
       (error as any)?.response?.data?.message || (error as any)?.message || "Erro ao carregar registros";
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <TimeClockTabs />
-        <ErrorScreen message="Erro ao carregar registros do dia" detail={errorMessage} onRetry={handleRefresh} />
+          <ErrorScreen message="Erro ao carregar registros do dia" detail={errorMessage} onRetry={handleRefresh} />
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <TimeClockTabs />
 
       <View style={styles.headerContainer}>
         <View style={[styles.daySelector, { backgroundColor: colors.input, borderColor: colors.border }]}>

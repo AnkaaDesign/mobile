@@ -27,6 +27,10 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
   const allDocuments = [...receipts];
   const hasDocuments = allDocuments.length > 0;
 
+  // Hide the whole Comprovantes section when there's nothing to show, instead of
+  // rendering an empty-state card.
+  if (!hasDocuments) return null;
+
   const handleFilePress = (file: File) => {
     const index = allDocuments.findIndex((f) => f.id === file.id);
     fileViewer.actions.viewFiles(allDocuments, index);

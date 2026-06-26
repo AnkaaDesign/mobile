@@ -252,6 +252,9 @@ export const catalogListConfig: ListConfig<Paint> = {
         label: 'Montadora',
         type: 'select',
         multiple: true,
+        // Values MUST match the TRUCK_MANUFACTURER enum — the API validates the
+        // `manufacturers` filter with z.nativeEnum(TRUCK_MANUFACTURER), so any
+        // value outside the enum (previously MAN/FORD/AGRALE/OTHER) → 400.
         options: [
           { label: 'Volkswagen', value: 'VOLKSWAGEN' },
           { label: 'Mercedes-Benz', value: 'MERCEDES_BENZ' },
@@ -259,10 +262,6 @@ export const catalogListConfig: ListConfig<Paint> = {
           { label: 'Volvo', value: 'VOLVO' },
           { label: 'Iveco', value: 'IVECO' },
           { label: 'DAF', value: 'DAF' },
-          { label: 'MAN', value: 'MAN' },
-          { label: 'Ford', value: 'FORD' },
-          { label: 'Agrale', value: 'AGRALE' },
-          { label: 'Outro', value: 'OTHER' },
         ],
         placeholder: 'Selecione as montadoras',
       },

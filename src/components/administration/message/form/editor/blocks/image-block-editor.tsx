@@ -324,14 +324,19 @@ const styles = StyleSheet.create({
   },
   buttonGroup: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
+    alignSelf: 'stretch',
   },
   pickButton: {
+    flexGrow: 1,
+    flexBasis: '45%',
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: borderRadius.md,
   },
   pickButtonText: {

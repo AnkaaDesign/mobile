@@ -299,20 +299,22 @@ export function MessageTemplatesModal({
                     onPress={() => handleSelectTemplate(template)}
                     activeOpacity={0.75}
                   >
-                    {/* Title + category badge */}
+                    {/* Category badge */}
                     <View style={styles.cardHeader}>
-                      <Text style={[styles.cardName, { color: colors.foreground }]} numberOfLines={1}>
-                        {template.name}
-                      </Text>
-                      <View style={[styles.categoryBadge, { backgroundColor: colors.muted }]}>
-                        <Text style={[styles.categoryText, { color: colors.mutedForeground }]}>
+                      <View style={[styles.categoryBadge, { backgroundColor: colors.primaryContainer }]}>
+                        <Text style={[styles.categoryText, { color: colors.primary }]}>
                           {template.category}
                         </Text>
                       </View>
                     </View>
 
+                    {/* Title — wraps to 2 lines instead of truncating */}
+                    <Text style={[styles.cardName, { color: colors.foreground }]} numberOfLines={2}>
+                      {template.name}
+                    </Text>
+
                     {/* Description */}
-                    <Text style={[styles.cardDescription, { color: colors.mutedForeground }]} numberOfLines={2}>
+                    <Text style={[styles.cardDescription, { color: colors.mutedForeground }]} numberOfLines={3}>
                       {template.description}
                     </Text>
 
@@ -383,38 +385,40 @@ const styles = StyleSheet.create({
     width: '47%',
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    padding: spacing.sm,
-    gap: spacing.xs,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.xs,
   },
   cardName: {
-    fontSize: 13,
-    fontWeight: '600',
-    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 19,
   },
   categoryBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
   },
   categoryText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   cardDescription: {
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 12,
+    lineHeight: 16,
+    flex: 1,
   },
   blockBadges: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   blockBadge: {
     paddingHorizontal: 5,

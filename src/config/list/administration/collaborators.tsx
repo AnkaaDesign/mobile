@@ -334,7 +334,9 @@ export const collaboratorsListConfig: ListConfig<User> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['payrollNumber', 'name', 'position', 'sector', 'currentContractType', 'documents'],
+    // Mobile screens are narrow — default to the three essential columns
+    // (name, sector, contract type). Users can reveal more via the column manager.
+    defaultVisible: ['name', 'sector', 'currentContractType'],
     rowHeight: 48,
     actions: [
       {

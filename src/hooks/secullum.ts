@@ -487,6 +487,25 @@ export const useSecullumUpdateTimeEntry = () => {
   });
 };
 
+/**
+ * Update a full day's time entry (all punch fields at once) on Secullum.
+ * Mirrors the web edit flow, which submits the whole Batidas row — we forward the
+ * original entry merged with the edited Entrada1..Saida5 + an optional reason
+ * (Observacoes), so Versao/FonteDados metadata is preserved for the upstream API.
+ */
+export const useSecullumUpdateTimeEntryFull = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: { entryId: string; payload: Record<string, any> }) =>
+      secullumService.updateTimeEntry(parseInt(params.entryId), params.payload as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: secullumKeys.timeEntries() });
+      queryClient.invalidateQueries({ queryKey: ["secullum", "time-entries"] });
+    },
+  });
+};
+
 // Compatibility hook for batch updates
 export const useTimeClockEntryBatchUpdateWithJustification = () => {
   const queryClient = useQueryClient();

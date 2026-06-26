@@ -32,11 +32,14 @@ export interface GitCommitInfo {
 // =====================
 
 export interface Deployment extends BaseEntity {
+  // Foreign keys
+  appId?: string;
+  gitCommitId?: string;
+
   environment: DEPLOYMENT_ENVIRONMENT;
-  commitSha: string;
-  branch: string;
   status: DEPLOYMENT_STATUS;
   statusOrder: number;
+  triggeredBy?: string;
   deployedBy: string | null;
   version: string | null;
   previousCommit: string | null;
@@ -48,8 +51,43 @@ export interface Deployment extends BaseEntity {
   completedAt: Date | null;
   rolledBackAt: Date | null;
 
+  // Legacy git fields (deprecated — the API now returns the `gitCommit`/`app`
+  // relations instead; kept optional for backwards compatibility).
+  commitSha?: string;
+  branch?: string;
+  commitMessage?: string;
+  commitAuthor?: string;
+  application?: string;
+
   // Relations
   user?: User;
+  app?: App;
+  gitCommit?: GitCommit;
+}
+
+// =====================
+// Git Commit / App relations (current API shape)
+// =====================
+
+export interface GitCommit {
+  id: string;
+  hash: string;
+  shortHash?: string;
+  message: string;
+  body?: string | null;
+  author: string;
+  authorEmail?: string;
+  committedAt?: Date;
+  branch: string;
+}
+
+export interface App {
+  id: string;
+  name: string;
+  displayName: string;
+  appType?: 'API' | 'WEB' | 'MOBILE' | 'WORKER' | 'CRON';
+  version?: string | null;
+  isActive?: boolean;
 }
 
 // =====================

@@ -111,7 +111,7 @@ export default function ResponsibleDetailScreen() {
               <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
             </View>
             <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.REPRESENTATIVE}
+              entityType={CHANGE_LOG_ENTITY_TYPE.RESPONSIBLE}
               entityId={rep.id}
               entityName={rep.name}
               entityCreatedAt={rep.createdAt}

@@ -15,7 +15,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import type { SecullumAbsenceDayRow } from "@/types/secullum";
-import { TimeClockTabs } from "@/components/human-resources/time-clock/time-clock-tabs";
 
 const formatDateDisplay = (dateStr: string) => {
   try {
@@ -146,15 +145,13 @@ export default function AbsencesScreen() {
       (error as any)?.response?.data?.message || (error as any)?.message || "Erro ao carregar ausências";
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <TimeClockTabs />
-        <ErrorScreen message="Erro ao carregar ausências" detail={errorMessage} onRetry={handleRefresh} />
+          <ErrorScreen message="Erro ao carregar ausências" detail={errorMessage} onRetry={handleRefresh} />
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <TimeClockTabs />
 
       <View style={styles.headerContainer}>
         <View style={[styles.monthSelector, { backgroundColor: colors.input, borderColor: colors.border }]}>

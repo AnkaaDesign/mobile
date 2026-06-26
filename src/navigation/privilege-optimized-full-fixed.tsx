@@ -3,6 +3,7 @@
 
 import React, { useMemo, Suspense, lazy, useEffect, useRef, useCallback } from "react";
 import { Drawer } from "expo-router/drawer";
+import { router } from "expo-router";
 import { DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform, AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -247,6 +248,13 @@ const ALL_ROUTES = [
   { name: "recursos-humanos/controle-ponto", title: "Controle de Ponto" },
   { name: "recursos-humanos/controle-ponto/index", title: "Controle de Ponto" },
   { name: "recursos-humanos/controle-ponto/listar", title: "Controle de Ponto" },
+  { name: "recursos-humanos/controle-ponto/colaborador", title: "Visualização Colaborador" },
+  { name: "recursos-humanos/controle-ponto/dia", title: "Visualização Dia" },
+  { name: "recursos-humanos/controle-ponto/edicao", title: "Edição de Ponto" },
+  { name: "recursos-humanos/controle-ponto/ausencias", title: "Ausências" },
+  { name: "recursos-humanos/controle-ponto/fechamento/index", title: "Fechamento" },
+  { name: "recursos-humanos/controle-ponto/fechamento/[id]", title: "Fechamento" },
+  { name: "recursos-humanos/controle-ponto/detalhes/[id]", title: "Registro de Ponto" },
   { name: "recursos-humanos/colaboradores/cadastrar", title: "Cadastrar Colaborador" },
   { name: "recursos-humanos/colaboradores/listar", title: "Colaboradores" },
   { name: "recursos-humanos/colaboradores/detalhes/[id]", title: "Detalhes do Colaborador" },
@@ -896,8 +904,18 @@ function InnerLayout() {
   }, [isDark, drawerColors.background]);
 
   // Handle authentication redirect at the root level
-  // (Done at root via useNav.replace to avoid issues with replace from inside
-  // nested Drawer navigators.)
+  //
+  // CRITICAL: these forced auth redirects use the RAW expo-router `router.replace`
+  // instead of `nav.replace`. `nav.replace` routes through `navigateWithLoading`,
+  // which silently drops a navigation when `isNavigatingRef` is already true
+  // (its anti-double-tap guard). On a stale-token cold start the root `index`
+  // screen fires `nav.replace('/inicio')` first (optimistic, from cached user) and
+  // leaves that guard set; the /me 401 then clears the session, this layout mounts
+  // with user=null, and its `nav.replace(login)` was being swallowed by that guard
+  // — while `hasRedirectedToLogin` latched true, so it never retried. The result
+  // was a permanent "Carregando..." hang. A security redirect must never be
+  // dropped, so it bypasses the double-tap guard. The destination's pathname
+  // change auto-hides any overlay index left up.
   useEffect(() => {
     // Don't redirect if we already did
     if (hasRedirectedToLogin.current) return;
@@ -914,7 +932,7 @@ function InnerLayout() {
       if ((user as any).requirePasswordChange) {
         if (!hasRedirectedToPasswordChange.current) {
           hasRedirectedToPasswordChange.current = true;
-          nav.replace(authRoute(routes.authentication.changePassword));
+          router.replace(authRoute(routes.authentication.changePassword) as any);
         }
       } else {
         hasRedirectedToPasswordChange.current = false;
@@ -930,7 +948,7 @@ function InnerLayout() {
     if (isLoggingOut) {
       hasRedirectedToLogin.current = true;
       console.log("[PrivilegeOptimizedFullLayout] Logout in progress, redirecting to login");
-      nav.replace(authRoute(routes.authentication.login));
+      router.replace(authRoute(routes.authentication.login) as any);
       return;
     }
 
@@ -946,7 +964,7 @@ function InnerLayout() {
         hasRedirectedToLogin.current = true;
         console.log("[PrivilegeOptimizedFullLayout] No user and no token, redirecting to login");
         // Use replace to prevent back navigation to protected screens
-        nav.replace(authRoute(routes.authentication.login));
+        router.replace(authRoute(routes.authentication.login) as any);
       } else {
         console.log("[PrivilegeOptimizedFullLayout] No user but token present — waiting for session restore");
       }

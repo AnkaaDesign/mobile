@@ -14,18 +14,21 @@ const MOBILE_USERS_PAGE_SIZE = 25;
 export function useUsersInfiniteMobile(params?: Partial<UserGetManyFormData> & { enabled?: boolean }) {
   // Prepare parameters with mobile-optimized page size.
   // DEFAULT to isActive: true (matching web behavior: hide dismissed users).
-  // This is OVERRIDABLE: `...params` is spread AFTER, so a caller / list filter
-  // can pass isActive:false (Demitidos) or isActive:'__all__' (Todos — stripped
-  // by the schema transform → omits the filter) to reach dismissed users.
-  // The userTransform maps isActive → currentContractStatus { not: TERMINATED } / TERMINATED.
-  const queryParams = useMemo(
-    () => ({
-      isActive: true,
-      ...params,
+  // A caller / list filter can pass isActive:false (Demitidos) or
+  // isActive:'__all__' (Todos) to reach dismissed users.
+  //
+  // IMPORTANT: params reach the API RAW — getMany does NOT .parse(), so the
+  // mobile user schema's transform that strips the '__all__' sentinel never
+  // runs. The API's isActive is z.boolean(), so a raw '__all__' string → 400.
+  // We resolve the sentinel here: '__all__' means "omit the isActive filter".
+  const queryParams = useMemo(() => {
+    const { isActive, ...rest } = params ?? {};
+    return {
+      ...(isActive === "__all__" ? {} : { isActive: isActive ?? true }),
+      ...rest,
       limit: MOBILE_USERS_PAGE_SIZE,
-    }),
-    [params],
-  );
+    };
+  }, [params]);
 
   // Use the existing infinite query hook
   const infiniteQuery = useUsersInfinite(queryParams);

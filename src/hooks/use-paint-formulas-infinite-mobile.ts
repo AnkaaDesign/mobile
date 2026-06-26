@@ -11,7 +11,7 @@ export const usePaintFormulasInfiniteMobile = (filters?: Partial<PaintFormulaGet
     queryFn: async ({ pageParam = 1 }) => {
       const params: PaintFormulaGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
+        limit: pageSize,
         orderBy: filters?.orderBy || { createdAt: "desc" },
         include: {
           paint: {

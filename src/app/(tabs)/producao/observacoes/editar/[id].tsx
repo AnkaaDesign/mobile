@@ -131,7 +131,7 @@ function EditObservationScreenInner() {
             )}
             {observation.task.truck && (
               <ThemedText style={{ fontSize: 12, color: colors.muted }}>
-                Veículo: {observation.task.truck.model} - {observation.task.truck.plate}
+                Veículo: {observation.task.truck.plate}
               </ThemedText>
             )}
           </View>

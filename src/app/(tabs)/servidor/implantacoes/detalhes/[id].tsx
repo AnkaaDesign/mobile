@@ -24,7 +24,7 @@ export default function DeploymentDetailsScreen() {
     <DetailScreen<any>
       query={query as any}
       icon={IconRocket}
-      title={(d) => `${(d as any).application || d.environment} - v${d.version || "N/A"}`}
+      title={(d) => `${(d as any).app?.displayName || (d as any).app?.name || (d as any).application || d.environment} - v${d.version || "N/A"}`}
       privilege={SECTOR_PRIVILEGES.ADMIN}
       notFoundFallback={mobileRoute(routes.server.deployments.list)}
     >
@@ -51,7 +51,7 @@ export default function DeploymentDetailsScreen() {
               <View style={{ gap: 8 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <Text style={{ color: colors.mutedForeground }}>Aplicação</Text>
-                  <Text style={{ fontWeight: "500" }}>{(deployment as any).application || deployment.environment}</Text>
+                  <Text style={{ fontWeight: "500" }}>{deployment.app?.displayName || deployment.app?.name || deployment.application || deployment.environment}</Text>
                 </View>
                 <Separator />
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -77,7 +77,7 @@ export default function DeploymentDetailsScreen() {
           </Card>
 
           {/* Git Info Card */}
-          {(deployment.commitSha || deployment.branch || (deployment as any).commitAuthor) && (
+          {(deployment.gitCommit?.hash || deployment.commitSha || deployment.gitCommit?.branch || deployment.branch || deployment.gitCommit?.author || deployment.commitAuthor) && (
             <Card style={styles.card}>
               <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <View style={styles.headerLeft}>
@@ -86,28 +86,28 @@ export default function DeploymentDetailsScreen() {
                 </View>
               </View>
               <View style={styles.content}>
-                {deployment.commitSha && (
+                {(deployment.gitCommit?.hash || deployment.commitSha) && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <Icon name="git-commit" size={20} color={colors.mutedForeground} />
-                    <Text style={{ fontFamily: "Courier" }}>{deployment.commitSha}</Text>
+                    <Text style={{ fontFamily: "Courier" }}>{deployment.gitCommit?.hash || deployment.commitSha}</Text>
                   </View>
                 )}
-                {deployment.branch && (
+                {(deployment.gitCommit?.branch || deployment.branch) && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <Icon name="git-branch" size={20} color={colors.mutedForeground} />
-                    <Text>{deployment.branch}</Text>
+                    <Text>{deployment.gitCommit?.branch || deployment.branch}</Text>
                   </View>
                 )}
-                {(deployment as any).commitAuthor && (
+                {(deployment.gitCommit?.author || deployment.commitAuthor) && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <Icon name="user" size={20} color={colors.mutedForeground} />
-                    <Text>{(deployment as any).commitAuthor}</Text>
+                    <Text>{deployment.gitCommit?.author || deployment.commitAuthor}</Text>
                   </View>
                 )}
-                {(deployment as any).commitMessage && (
+                {(deployment.gitCommit?.message || deployment.commitMessage) && (
                   <View style={{ marginTop: 8 }}>
                     <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
-                      {(deployment as any).commitMessage}
+                      {deployment.gitCommit?.message || deployment.commitMessage}
                     </Text>
                   </View>
                 )}

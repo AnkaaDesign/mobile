@@ -3,6 +3,13 @@
 This is the master runbook for shipping the **Ankaa Design** mobile app (Expo SDK 54,
 bare/prebuilt native projects, **no EAS Build** — the project is too large for EAS).
 
+> ⚠️ **OTA runtimeVersion model changed (2026-06-25):** OTA matching now uses a
+> **static `runtimeVersion` string** in `app.json` (same for both platforms), not
+> an `@expo/fingerprint` hash. Sections below that describe per-platform
+> fingerprints, "same commit + frozen install", or matching hashes are superseded
+> by `docs/OTA_FINGERPRINT_SYNC.md` — the static value just needs to be identical
+> in `app.json`, both native files, and the `updates/<value>/` folder name.
+
 > 🚫 **NEVER use `expo build` / EAS Build / `eas build`.** This app is too large
 > for EAS to build — it fails. **Android is ALWAYS built locally with
 > `./gradlew` on this PC, and iOS is ALWAYS built natively with Xcode /

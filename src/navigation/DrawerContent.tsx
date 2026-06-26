@@ -152,6 +152,20 @@ function DrawerContentComponent({
     return normalizedPathname.startsWith(normalizedPath);
   }, [pathname]);
 
+  // A group is "on the active path" only when one of ITS OWN descendants is the
+  // active route — NOT merely because the URL shares the group's path prefix.
+  // (Colaboradores lives under the Departamento Pessoal group but its route is
+  // /administracao/colaboradores; prefix-matching wrongly lit up Administração too.)
+  const isItemOnActivePath = useCallback((item: MenuItem): boolean => {
+    if (isPathActive(item.path)) return true;
+    if (item.children && item.children.length > 0) {
+      return item.children.some(isItemOnActivePath);
+    }
+    // Leaf: prefix match so dynamic detail routes (.../detalhes/:id) still
+    // highlight their parent list item.
+    return isPathInRoute(item.path);
+  }, [isPathActive, isPathInRoute]);
+
   // Toggle expanded state
   const toggleExpanded = useCallback((itemId: string) => {
     setExpandedItems(prev => {
@@ -204,7 +218,7 @@ function DrawerContentComponent({
   // Render menu items recursively
   const renderMenuItem = useCallback((item: MenuItem, level = 0) => {
     const isActive = isPathActive(item.path);
-    const isInPath = isPathInRoute(item.path);
+    const isInPath = isItemOnActivePath(item);
     const isExpanded = expandedItems.has(item.id);
     const hasChildren = item.children && item.children.length > 0;
 
@@ -232,7 +246,7 @@ function DrawerContentComponent({
   }, [
     expandedItems,
     isPathActive,
-    isPathInRoute,
+    isItemOnActivePath,
     handleNavigate,
     toggleExpanded,
     handlePrefetch,

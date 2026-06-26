@@ -106,7 +106,10 @@ export function buildOrderPdfHtml(data: OrderPdfData): string {
 
   const metaParts: string[] = [];
   if (orderDate) metaParts.push(`<strong>Data do Pedido:</strong> ${formatDate(orderDate)}`);
-  if (forecastDate) metaParts.push(`<strong>Entrega:</strong> ${formatDate(forecastDate)}`);
+  // The delivery forecast ("Entrega") only belongs on an actual purchase order.
+  // A budget/quote request (includePricing=false) has no committed delivery date
+  // yet — matches the web generator (order-pdf-generator.ts).
+  if (forecastDate && includePricing) metaParts.push(`<strong>Entrega:</strong> ${formatDate(forecastDate)}`);
   metaParts.push(`<strong>Fornecedor:</strong> ${escapeHtml(data.supplierName || "-")}`);
 
   const itemRowsHtml = rows

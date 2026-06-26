@@ -1,5 +1,10 @@
 # Self-Hosted OTA Updates (Expo Updates, no EAS)
 
+> ⚠️ **runtimeVersion model changed (2026-06-25):** the `runtimeVersion` is now a
+> **static string** in `app.json` (the same for both platforms), NOT an
+> `@expo/fingerprint` hash. Wherever this doc says "fingerprint", read "the static
+> `app.json` runtimeVersion". `docs/OTA_FINGERPRINT_SYNC.md` is the current runbook.
+
 The API serves over-the-air JS bundle updates to the mobile app directly, using
 the Expo Updates protocol. No EAS Build / EAS Update involved — you build the
 native binary locally and ship JS-only changes instantly from your own server.

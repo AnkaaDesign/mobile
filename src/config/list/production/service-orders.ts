@@ -20,16 +20,10 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
     pageSize: 40,
     include: {
       task: {
+        // API serviceOrderIncludeSchema types task.include.customer as z.boolean();
+        // passing a {select} object fails the union → 400. Use `true`.
         include: {
-          customer: {
-            select: {
-              id: true,
-              fantasyName: true,
-              corporateName: true,
-              cnpj: true,
-              cpf: true,
-            },
-          },
+          customer: true,
         },
       },
     },

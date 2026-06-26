@@ -163,8 +163,12 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
     const filterDetailPages = (items: MenuItem[]): MenuItem[] => {
       return items
         .filter((item) => {
-          // Hide detail/edit/create/list pages from menu
-          if (item.path) {
+          // Hide detail/edit/create/list CRUD pages from the menu — but ONLY for
+          // LEAF items. Section/group items (which have children) often legitimately
+          // point at a ".../listar" landing page (e.g. Férias, Admissões, Bônus);
+          // filtering those by path wrongly removed whole sections from the menu.
+          const itemIsLeaf = !item.children || item.children.length === 0;
+          if (item.path && itemIsLeaf) {
             const path = item.path.toLowerCase();
 
             // Always hide CRUD pages from menu - users navigate to them via list actions
@@ -361,8 +365,17 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         if (hasMatchingChild) {
           return true;
         }
+
+        // A GROUP item must NOT be considered active merely because the URL shares
+        // its path prefix — otherwise "Administração" (/administracao) lights up
+        // when you open Colaboradores (/administracao/colaboradores), which lives
+        // under the Departamento Pessoal group instead. Group activeness comes only
+        // from a matching descendant (handled above).
+        return false;
       }
 
+      // Leaf item: a path-prefix match covers dynamic detail routes
+      // (e.g. a list item staying active on its .../detalhes/:id page).
       if (normalizedCurrent.startsWith(normalizedItem + "/")) {
         return true;
       }

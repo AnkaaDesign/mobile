@@ -66,20 +66,25 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
         format: 'badge',
       },
       {
+        // Not sortable: branch/commit live on the gitCommit relation now, and
+        // the API deployment orderBy schema has no branch/commitSha key.
         key: 'branch',
         label: 'BRANCH',
-        sortable: true,
+        sortable: false,
         width: 1.5,
         align: 'left',
-        render: (deployment) => deployment.branch || '-',
+        render: (deployment) => deployment.gitCommit?.branch || deployment.branch || '-',
       },
       {
         key: 'commitSha',
         label: 'COMMIT',
-        sortable: true,
+        sortable: false,
         width: 1.0,
         align: 'left',
-        render: (deployment) => deployment.commitSha ? deployment.commitSha.substring(0, 7) : '-',
+        render: (deployment) => {
+          const sha = deployment.gitCommit?.hash || deployment.commitSha;
+          return sha ? sha.substring(0, 7) : '-';
+        },
         style: { fontFamily: 'monospace' },
       },
       {
@@ -166,8 +171,8 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
       { key: 'environment', label: 'Ambiente', path: 'environment', format: (value) => ENVIRONMENT_LABELS[value] || value },
       { key: 'version', label: 'Versão', path: 'version' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
-      { key: 'branch', label: 'Branch', path: 'branch' },
-      { key: 'commitSha', label: 'Commit', path: 'commitSha' },
+      { key: 'branch', label: 'Branch', path: 'gitCommit.branch' },
+      { key: 'commitSha', label: 'Commit', path: 'gitCommit.hash' },
       { key: 'deployedBy', label: 'Implantado Por', path: 'deployedBy' },
       { key: 'startedAt', label: 'Iniciado Em', path: 'startedAt', format: 'date' },
       { key: 'completedAt', label: 'Concluído Em', path: 'completedAt', format: 'date' },

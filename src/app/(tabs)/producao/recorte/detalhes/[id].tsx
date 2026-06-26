@@ -78,33 +78,22 @@ export default function CuttingDetailsScreen() {
   const { data: response, isLoading, error, refetch } = useCut(id as string, {
     include: {
       file: true,
+      // cutIncludeSchema allows only `include` (with boolean leaves) for these
+      // relations — a `{select}` object is stripped, so the nested customer/
+      // sector/file were silently dropped (blank thumbnails & labels).
       task: {
-        select: {
-          id: true,
-          name: true,
-          customer: {
-            select: {
-              id: true,
-              fantasyName: true,
-            },
-          },
-          sector: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+        include: {
+          customer: true,
+          sector: true,
         },
       },
       parentCut: {
-        select: {
-          id: true,
+        include: {
           file: true,
         },
       },
       childCuts: {
-        select: {
-          id: true,
+        include: {
           file: true,
         },
       },

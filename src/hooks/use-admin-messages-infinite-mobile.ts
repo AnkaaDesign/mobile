@@ -29,10 +29,13 @@ export function useAdminMessagesInfiniteMobile(
         flatOrderBy = orderBy;
       }
 
+      // The messages endpoint sorts via `sortBy`/`sortOrder` (class-validator
+      // DTO with whitelist:true) — `orderBy`/`order` were silently stripped, so
+      // the chosen sort had no effect.
       return {
         ...rest,
-        ...(flatOrderBy ? { orderBy: flatOrderBy } : {}),
-        ...(flatOrder ? { order: flatOrder } : {}),
+        ...(flatOrderBy ? { sortBy: flatOrderBy } : {}),
+        ...(flatOrder ? { sortOrder: flatOrder } : {}),
         limit: MOBILE_PAGE_SIZE,
       };
     },

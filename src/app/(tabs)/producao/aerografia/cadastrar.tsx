@@ -39,7 +39,10 @@ export default function AirbrushingCreateScreen() {
       customer: { select: { id: true, fantasyName: true } },
       truck: { select: { id: true, plate: true } },
     },
-    where: { airbrushing: null },
+    // Tasks without any airbrushing yet. taskWhereSchema is .strict() and only
+    // knows the plural relation `airbrushings`; the singular `airbrushing` key
+    // is rejected → 400 (empty picker).
+    where: { airbrushings: { none: {} } },
   });
 
   const tasks = tasksQuery.data?.data || [];

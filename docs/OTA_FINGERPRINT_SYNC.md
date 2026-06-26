@@ -1,87 +1,87 @@
-# Keeping OTA fingerprints in sync (server ↔ iOS ↔ Android)
+# Keeping OTA runtimeVersion in sync (server ↔ iOS ↔ Android)
+
+> **2026-06-25 — model change.** We replaced the Expo **fingerprint policy** with a
+> **static `runtimeVersion` string** declared in `app.json`. The fingerprint was a
+> hash of `node_modules` / `Podfile.lock` / the native dirs, so it drifted between
+> the Mac (iOS build), the PC (Android build) and the Linux box (OTA publish) — the
+> binary embedded one hash while the server published under another, and updates
+> silently never applied. A hand-bumped string removes every cross-machine
+> variable. This doc is the current, authoritative runbook.
 
 The OTA system matches an installed app to the bundle the server serves using a
-**runtimeVersion** — a per-platform `@expo/fingerprint` hash of everything that
-affects native compatibility (native dirs, dependencies, app config). JS-only
-changes keep the same fingerprint (so OTA applies); native changes bump it (so a
-new store/dev build is required).
+**runtimeVersion** — now a single static string (e.g. `"7"`) that is the SAME for
+both platforms. JS-only changes keep it (so OTA applies); native changes require
+bumping it (so a new store/dev build is required).
 
 ## The one invariant
 
-For **each platform**, all three of these must be the same string:
+All of these must be the **same string** — and they no longer depend on the build
+machine, the installed deps, or the git commit:
 
 ```
-value embedded in the binary  ==  folder name on the OTA server  ==  computeRuntimeVersions()[platform]
+app.json expo.runtimeVersion
+  == EXUpdatesRuntimeVersion in ios/AnkaaDesign/Supporting/Expo.plist
+  == expo_runtime_version in android/app/src/main/res/values/expo_runtime.xml
+  == the folder name on the OTA server: updates/<runtimeVersion>/
 ```
 
-…all computed from the **same git commit** with the **same installed deps**.
+`app.json` is the single source of truth. `npm run ota:sync-version` copies it
+into the two native files; `npm run ota:publish` exports into `updates/<value>/`.
+**One** server folder serves both platforms — the server reads `metadata.json` and
+hands each platform its own bundle.
 
-- iOS embeds it in `ios/AnkaaDesign/Supporting/Expo.plist` (`EXUpdatesRuntimeVersion`).
-- Android embeds it in `android/app/src/main/res/values/expo_runtime.xml` (`expo_runtime_version`).
-- The server stores each published bundle in `updates/<fingerprint>/`.
+## The rule (this is the whole thing)
 
-iOS and Android have **different** fingerprints — that's expected.
+> **Bump `expo.runtimeVersion` in `app.json` ONLY when you ship a new native
+> binary** (a native code / dependency / config change). Then `ota:sync-version`,
+> rebuild + redistribute both binaries, and `ota:publish`. For JS-only changes,
+> leave it unchanged and just `ota:publish` — installed binaries pick it up.
 
-## Why drift happens (and how this repo prevents it)
+Because the value is static, there is **no** "same commit / frozen install / pnpm
+pin" requirement for OTA correctness anymore. iOS can be built on the Mac, Android
+on the PC, and the OTA published from Linux — all independently — as long as every
+one of them carries the same `app.json` `runtimeVersion`.
 
-The embedded values are a **cache** written by `ota:sync-version`. Anything that
-changes native compatibility (a dependency bump, an `app.json` edit, a merge)
-shifts the computed fingerprint, and the cache silently goes stale until someone
-re-syncs. Guards:
+### Bump for a new native release
 
-1. **`fingerprint.config.js`** skips the `scripts` block of `package.json`
-   (`PackageJsonScriptsAll`), so adding npm scripts never bumps the fingerprint.
-2. **`npm run ota:verify`** computes both fingerprints, compares them to the two
-   native files, and **fails loudly** on drift (and warns on a dirty git tree).
-3. **`npm run ios:release` / `npm run android:release`** run `ota:sync-version`
-   *first*, so a binary can never embed a stale value.
-4. **`npm run ota:publish`** runs `ota:verify` before publishing, so the server
-   never serves a fingerprint that no freshly-built binary embeds.
+1. Edit `app.json` → `"runtimeVersion": "8"` (next integer). Commit.
+2. `npm run ota:sync-version` (writes `8` into the two native files). Commit.
+3. Rebuild **both** binaries — iOS (`npm run ios:release`) and Android
+   (`npm run android:apk` / `:release`); both run `ota:sync-version` first as a
+   safety net. Distribute them.
+4. `npm run ota:publish` → deploy `api/updates/` to the production host. Now
+   `updates/8/` exists and the new binaries (which embed `8`) consume it.
 
-## The discipline (this is the whole rule)
+> Binaries already in the field still embed their OLD runtimeVersion and will NOT
+> jump to a new one — that's by design (a native change is not OTA-safe). They keep
+> getting OTA updates published under their own value until users install the new
+> build. If you must reach an old field build over OTA, publish a JS-only bundle
+> under that build's value too.
 
-> Build iOS, build Android, and publish OTA from the **same git commit**, each on
-> a **frozen install with the pinned pnpm** (`corepack pnpm install
-> --frozen-lockfile`; pnpm is pinned to `pnpm@10.15.1` via `package.json` →
-> `packageManager`). Per-platform fingerprints then match automatically across
-> machines.
+### Ship a JS-only OTA update (no new store build, the common case)
 
-### Release a native build + OTA
+1. Make JS changes in `src/`, commit. (`app.json` `runtimeVersion` is unchanged.)
+2. `npm run ota:verify` (sanity: native files still embed the app.json value).
+3. `npm run ota:publish`, then deploy `api/updates/`. Existing binaries pick it up.
 
-1. Commit everything. Confirm the tree is clean (`git status`).
-2. **iOS (this Mac):** `corepack pnpm install --frozen-lockfile && npm run ios:release`
-   (syncs the fingerprint, builds Release, installs to the connected iPhone).
-3. **Android (server):** `corepack pnpm install --frozen-lockfile && npm run android:release`
-   (whatever the server's build pipeline is, it must run `ota:sync-version`
-   first — `android:release` does this for you).
-4. **Publish OTA (from the same commit/deps):** `npm run ota:publish`
-   then deploy `api/updates/` to the production host. The verify guard refuses to
-   publish if the native files don't match the current tree.
+## Guards
 
-### Ship a JS-only OTA update (no new store build)
-
-1. Make JS changes, commit. `npm run ota:verify` must still pass (fingerprint
-   unchanged because nothing native changed).
-2. `npm run ota:publish` and deploy `api/updates/`. Existing binaries pick it up.
-
-## Cross-machine reproducibility
-
-The fingerprint depends on the installed dependency tree, which depends on BOTH
-the lockfile AND the package-manager version. The iOS Mac and the Android server
-**must install from the committed lockfile with the pinned pnpm**
-(`corepack pnpm install --frozen-lockfile`, `pnpm@10.15.1` via `packageManager`)
-and build from the same commit. A different pnpm version (or npm) hoists deps
-differently → a different fingerprint (this bit us once: npm vs pnpm and pnpm
-10.15.1 vs another 10.x produced different hashes). Otherwise the same source can
-fingerprint
-differently per machine.
+- **`npm run ota:verify`** — fails loudly if either native file embeds a value
+  other than `app.json`'s. Use it in builds / publish / CI / a git hook.
+- **`npm run ota:publish`** runs `ota:verify` first, so the server never serves a
+  runtimeVersion no built binary embeds. (`OTA_SKIP_VERIFY=1` overrides — don't.)
+- **`*:release` / `*:apk`** run `ota:sync-version` first, so a binary can't embed a
+  stale value.
 
 ## Quick reference
 
 | Command | What it does |
 |---------|--------------|
-| `npm run ota:verify` | Report drift between native files and the current tree; exit 1 on mismatch. |
-| `npm run ota:sync-version` | Write the current fingerprints into Expo.plist + expo_runtime.xml. |
+| `npm run ota:verify` | Fail if the native files don't embed `app.json`'s `runtimeVersion`. |
+| `npm run ota:sync-version` | Write `app.json`'s `runtimeVersion` into Expo.plist + expo_runtime.xml. |
 | `npm run ios:release` | Sync → build Release → install to connected iPhone (`IOS_DEVICE_UDID` to pick a device). |
-| `npm run android:release` | Sync → build Android release. |
-| `npm run ota:publish` | Verify → export → publish bundle under each platform's fingerprint folder. |
+| `npm run android:apk` | Sync → Gradle `assembleRelease` → `app-release.apk`. |
+| `npm run ota:publish` | Verify → `expo export` → publish bundle to `updates/<runtimeVersion>/`. |
+
+`fingerprint.config.js` and `.fingerprintignore` are now vestigial (the
+fingerprint policy is no longer used) and can be deleted whenever convenient.

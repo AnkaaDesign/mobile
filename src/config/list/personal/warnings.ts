@@ -118,7 +118,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
   filters: {
     fields: [
       {
-        key: 'severity',
+        key: 'severities',
         label: 'Severidade',
         type: 'select',
         multiple: true,
@@ -129,7 +129,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
         placeholder: 'Selecione as severidades',
       },
       {
-        key: 'category',
+        key: 'categories',
         label: 'Categoria',
         type: 'select',
         multiple: true,

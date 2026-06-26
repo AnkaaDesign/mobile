@@ -11,7 +11,7 @@ export const usePpeInfiniteMobile = (filters?: Partial<ItemGetManyFormData>) => 
     queryFn: async ({ pageParam = 1 }) => {
       const params: ItemGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
+        limit: pageSize,
         orderBy: filters?.orderBy || { createdAt: "desc" },
         include: {
           item: {

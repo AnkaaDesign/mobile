@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from "react-native";
 import { IconChevronLeft, IconChevronRight, IconEdit } from "@tabler/icons-react-native";
-import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { EditTimeEntryModal } from "@/components/human-resources/time-clock/edit-time-entry-modal";
 import { useTheme } from "@/lib/theme";
 import { useSecullumTimeEntries } from "@/hooks/secullum";
 import { useUsers } from "@/hooks/useUser";
@@ -17,7 +17,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { TimeClockTabs } from "@/components/human-resources/time-clock/time-clock-tabs";
 
 interface EditRow {
   id: string;
@@ -26,6 +25,8 @@ interface EditRow {
   exit1: string;
   entry2: string;
   exit2: string;
+  /** Full raw Secullum row, passed to the edit modal. */
+  raw: Record<string, any>;
 }
 
 // Parse Secullum "MM/DD/YYYY - Day" → ISO "YYYY-MM-DD".
@@ -60,6 +61,7 @@ export default function TimeEntriesEditScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [editingRow, setEditingRow] = useState<EditRow | null>(null);
 
   const { data: usersData, isLoading: usersLoading } = useUsers({
     where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED }, secullumEmployeeId: { not: null } },
@@ -105,8 +107,14 @@ export default function TimeEntriesEditScreen() {
       exit1: entry.Saida1 || "",
       entry2: entry.Entrada2 || "",
       exit2: entry.Saida2 || "",
+      raw: entry,
     }));
   }, [timeEntriesData]);
+
+  const selectedUserName = useMemo(
+    () => userOptions.find((o) => o.value === selectedUserId)?.label ?? "",
+    [userOptions, selectedUserId],
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -141,7 +149,7 @@ export default function TimeEntriesEditScreen() {
           <ThemedText style={styles.rowDate}>{formatDateDisplay(item.date)}</ThemedText>
           <TouchableOpacity
             style={[styles.editButton, { borderColor: colors.border }]}
-            onPress={() => router.push(`/recursos-humanos/controle-ponto/detalhes/${item.id}` as never)}
+            onPress={() => setEditingRow(item)}
             activeOpacity={0.7}
           >
             <IconEdit size={16} color={colors.primary} />
@@ -167,20 +175,22 @@ export default function TimeEntriesEditScreen() {
     [colors],
   );
 
+  const editSubtitle = editingRow
+    ? [selectedUserName, formatDateDisplay(editingRow.date)].filter(Boolean).join(" · ")
+    : undefined;
+
   if (error) {
     const errorMessage =
       (error as any)?.response?.data?.message || (error as any)?.message || "Erro ao carregar registros";
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <TimeClockTabs />
-        <ErrorScreen message="Erro ao carregar registros" detail={errorMessage} onRetry={handleRefresh} />
+          <ErrorScreen message="Erro ao carregar registros" detail={errorMessage} onRetry={handleRefresh} />
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <TimeClockTabs />
 
       <View style={styles.headerContainer}>
         <Combobox
@@ -228,6 +238,14 @@ export default function TimeEntriesEditScreen() {
           )
         }
         showsVerticalScrollIndicator={false}
+      />
+
+      <EditTimeEntryModal
+        visible={!!editingRow}
+        entry={editingRow?.raw ?? null}
+        subtitle={editSubtitle}
+        onClose={() => setEditingRow(null)}
+        onSaved={refetch}
       />
     </ThemedView>
   );

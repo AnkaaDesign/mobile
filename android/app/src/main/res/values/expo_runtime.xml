@@ -1,5 +1,7 @@
 <resources>
-  <!-- OTA runtimeVersion (fingerprint). Managed by scripts/sync-runtime-version.mjs.
-       Excluded from the fingerprint via .fingerprintignore to avoid a feedback loop. -->
-  <string name="expo_runtime_version" translatable="false">cc8b81bf6343bee4ef46f08df6c64e01a0903a2f</string>
+  <!-- OTA runtimeVersion. STATIC string, single source of truth = app.json expo.runtimeVersion.
+       Written by scripts/sync-runtime-version.mjs (run before every native build).
+       Must equal the iOS EXUpdatesRuntimeVersion and the published updates/<rv>/ folder name.
+       Bump ONLY when shipping a new native binary; JS-only changes keep it so OTA applies. -->
+  <string name="expo_runtime_version" translatable="false">7</string>
 </resources>

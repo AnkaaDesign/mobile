@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { View, TouchableOpacity, ViewStyle, StyleSheet, Modal, Pressable } from "react-native";
+import { View, TouchableOpacity, ViewStyle, StyleSheet, Modal, Pressable, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
+import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight, shadow } from "@/constants/design-system";
 import { IconRefresh, IconEdit, IconDotsVertical } from "@tabler/icons-react-native";
@@ -99,6 +101,7 @@ export function DetailPageHeader<T extends BaseEntity>({
   refreshAccessibilityLabel,
 }: DetailPageHeaderProps<T>) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const titleText = displayName ?? entity.name ?? "";
@@ -216,38 +219,54 @@ export function DetailPageHeader<T extends BaseEntity>({
           onRequestClose={() => setMenuOpen(false)}
         >
           <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)}>
-            <View
+            <Pressable
               style={StyleSheet.flatten([
                 styles.menuSheet,
-                { backgroundColor: colors.card, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border, paddingBottom: insets.bottom + spacing.sm },
               ])}
+              onPress={(e) => e.stopPropagation()}
             >
-              {visibleActions.map((action) => {
+              <View style={StyleSheet.flatten([styles.menuHandle, { backgroundColor: colors.border }])} />
+              <ThemedText style={StyleSheet.flatten([styles.menuTitle, { color: colors.mutedForeground }])}>Ações</ThemedText>
+
+              {visibleActions.map((action, idx) => {
                 const isDestructive = action.variant === "destructive";
+                const disabled = action.disabled || action.loading;
+                const tint = isDestructive ? colors.destructive : colors.foreground;
                 return (
                   <TouchableOpacity
                     key={action.key}
                     onPress={() => {
+                      // Close the menu FIRST, then run the action after the modal has
+                      // finished dismissing. Presenting a native sheet (PDF share/print)
+                      // while this Modal is still animating out silently no-ops on iOS.
                       setMenuOpen(false);
-                      action.onPress?.();
+                      const fn = action.onPress;
+                      if (fn) setTimeout(fn, 300);
                     }}
-                    disabled={action.disabled || action.loading}
-                    style={StyleSheet.flatten([styles.menuItem, { borderBottomColor: colors.border }])}
+                    disabled={disabled}
+                    style={StyleSheet.flatten([
+                      styles.menuItem,
+                      { backgroundColor: isDestructive ? `${colors.destructive}12` : colors.muted },
+                      disabled && styles.menuItemDisabled,
+                      idx > 0 && { marginTop: spacing.sm },
+                    ])}
                     activeOpacity={0.7}
                   >
-                    <ThemedText
-                      style={StyleSheet.flatten([
-                        styles.menuItemText,
-                        { color: isDestructive ? colors.destructive : colors.foreground },
-                        (action.disabled || action.loading) && styles.menuItemDisabled,
-                      ])}
-                    >
+                    <View style={styles.menuItemIcon}>
+                      {action.loading ? (
+                        <ActivityIndicator size="small" color={tint} />
+                      ) : action.icon ? (
+                        <Icon name={action.icon} size={20} color={tint} />
+                      ) : null}
+                    </View>
+                    <ThemedText style={StyleSheet.flatten([styles.menuItemText, { color: tint }])}>
                       {action.label}
                     </ThemedText>
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </Pressable>
           </Pressable>
         </Modal>
       )}
@@ -323,21 +342,45 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   menuSheet: {
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderRightWidth: StyleSheet.hairlineWidth,
-    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  menuHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: borderRadius.full,
+    alignSelf: "center",
+    marginBottom: spacing.sm,
+  },
+  menuTitle: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  menuItemIcon: {
+    width: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   menuItemText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
   },
   menuItemDisabled: {
     opacity: 0.5,

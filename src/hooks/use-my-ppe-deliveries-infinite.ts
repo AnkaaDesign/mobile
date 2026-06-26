@@ -15,7 +15,7 @@ export const useMyPpeDeliveriesInfinite = (filters?: Partial<PpeDeliveryGetManyF
     queryFn: async ({ pageParam = 1 }) => {
       const params: PpeDeliveryGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
+        limit: pageSize,
         orderBy: filters?.orderBy || { createdAt: "desc" },
         include: {
           item: {

@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Pressable, ActivityIndicator, Keyboard, LayoutChangeEvent } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path, Rect, Line, G, Defs, ClipPath, Text as SvgText } from "react-native-svg";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useAnimatedProps, useSharedValue, withTiming, withRepeat, runOnJS } from "react-native-reanimated";
 import { useQuery } from "@tanstack/react-query";
-import { IconPlus, IconMinus, IconMaximize, IconReload } from "@tabler/icons-react-native";
+import { IconPlus, IconMinus, IconMaximize, IconReload, IconBorderNone } from "@tabler/icons-react-native";
 import { Text } from "@/components/ui/text";
+import { Card } from "@/components/ui/card";
 import { SearchBar } from "@/components/ui/search-bar";
 import { useTheme } from "@/lib/theme";
 import { useWarehouseLocations } from "@/hooks";
@@ -132,6 +132,7 @@ const MapCanvas = React.memo(function MapCanvas({ svgW, svgH, contentW, contentH
           <Line key={`sec${i}`} x1={0} y1={yy} x2={FLOOR_W} y2={yy} stroke={colors.foreground} strokeOpacity={0.22} strokeWidth={2} />
         ))}
       </G>
+      {/* Pass 1 — structure shapes. */}
       {models.map((m) => {
         const isMatch = matchedLocationIds.has(m.id);
         const dimmed = searchActive && !isMatch;
@@ -139,17 +140,11 @@ const MapCanvas = React.memo(function MapCanvas({ svgW, svgH, contentW, contentH
           <G key={m.id} rotation={m.rotation} originX={m.cx} originY={m.cy} opacity={dimmed ? 0.35 : 1}>
             <StructureShape type={m.type} x={m.x} y={m.y} w={m.w} h={m.h} columns={m.columns} highlighted={isMatch} />
             {isMatch && <AnimatedRect x={m.x} y={m.y} width={m.w} height={m.h} fill="none" stroke={HIGHLIGHT_COLOR} strokeWidth={2.5} animatedProps={pulseProps} />}
-            {!!m.label && (
-              <G>
-                <Rect x={m.x} y={m.ly} width={m.lw} height={m.lh} rx={2.5} fill="rgba(0,0,0,0.55)" />
-                <SvgText x={m.x + 4} y={m.ly + m.lh * 0.72} fontSize={m.fs} fontWeight="600" fill="#ffffff">
-                  {m.label}
-                </SvgText>
-              </G>
-            )}
           </G>
         );
       })}
+      {/* Structure labels are intentionally NOT rendered on the map (per request) —
+          the overlapping S1-E… tags were noisy. Tap a structure to see its code. */}
     </Svg>
   );
 });
@@ -162,7 +157,6 @@ const MapCanvas = React.memo(function MapCanvas({ svgW, svgH, contentW, contentH
  */
 export function WarehouseMapView() {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
 
   const { data: locationsResponse, isLoading, refresh: refreshLocations } = useWarehouseLocations({
     isActive: true,
@@ -174,7 +168,9 @@ export function WarehouseMapView() {
   const locations = useMemo<WarehouseLocation[]>(() => locationsResponse?.data ?? EMPTY_LOCATIONS, [locationsResponse?.data]);
 
   // ---- item search → highlight matching structures ----
-  const [query, setQuery] = useState(""); // controlled input value (every keystroke)
+  // The SearchBar is UNCONTROLLED (manages its own text) and only reports the
+  // debounced term up. This stops a parent re-render on every keystroke, which
+  // was tanking map performance while typing (the SVG tree is large).
   const [debouncedTerm, setDebouncedTerm] = useState(""); // SearchBar's debounced onSearch
   const term = debouncedTerm.trim();
   const { data: searchResponse, isFetching: searching } = useQuery({
@@ -433,12 +429,35 @@ export function WarehouseMapView() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* search — same background as the map so there's no seam */}
-      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, backgroundColor: colors.background }}>
-        <SearchBar value={query} onChangeText={setQuery} onSearch={setDebouncedTerm} placeholder="Buscar item no mapa..." loading={searching} debounceMs={300} />
+      {/* search + grid-step on ONE row (like web). The grid selector is a compact
+          segmented control; the "off" option is an icon (no "Grade" label text). */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, backgroundColor: colors.background }}>
+        <View style={{ flex: 1 }}>
+          <SearchBar onSearch={setDebouncedTerm} placeholder="Buscar item no mapa..." loading={searching} debounceMs={300} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", height: 48, backgroundColor: colors.muted, borderRadius: 8, padding: 4, gap: 2 }}>
+          {GRID_OPTIONS.map((opt) => {
+            const active = gridStep === opt.value;
+            const isOff = opt.value === 0;
+            return (
+              <Pressable
+                key={opt.value}
+                onPress={() => setGridStep(opt.value)}
+                style={{ minWidth: 34, height: 40, alignItems: "center", justifyContent: "center", paddingHorizontal: isOff ? 0 : 6, borderRadius: 6, backgroundColor: active ? colors.primary : "transparent" }}
+              >
+                {isOff ? (
+                  <IconBorderNone size={18} color={active ? "#ffffff" : colors.mutedForeground} />
+                ) : (
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: active ? "#ffffff" : colors.mutedForeground }}>{opt.label}</Text>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
-      {/* canvas */}
+      {/* canvas — wrapped in a Card like the web map */}
+      <Card style={{ flex: 1, marginHorizontal: 12, marginBottom: 12, padding: 0, overflow: "hidden" }}>
       <View onLayout={onLayout} style={{ flex: 1, overflow: "hidden", backgroundColor: colors.background }}>
         {isLoading ? (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -472,11 +491,27 @@ export function WarehouseMapView() {
               </GestureDetector>
             )}
 
-            {/* zoom controls */}
-            <View style={{ position: "absolute", right: 16, bottom: insets.bottom + 16, gap: 8 }}>
-              <ZoomButton onPress={() => refreshLocations()} colors={colors}>
-                <IconReload size={18} color={colors.foreground} />
-              </ZoomButton>
+            {/* zoom controls — grouped into one floating panel (bottom-right),
+                reading as a single cohesive control rather than 4 loose buttons. */}
+            <View
+              style={{
+                position: "absolute",
+                right: 12,
+                bottom: 12,
+                backgroundColor: `${colors.card}f2`,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 4,
+                gap: 4,
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.18,
+                shadowRadius: 6,
+                elevation: 4,
+              }}
+            >
               <ZoomButton onPress={() => zoomAroundCenter(1.25)} colors={colors}>
                 <IconPlus size={18} color={colors.foreground} />
               </ZoomButton>
@@ -486,38 +521,14 @@ export function WarehouseMapView() {
               <ZoomButton onPress={() => fitContent(true)} colors={colors}>
                 <IconMaximize size={18} color={colors.foreground} />
               </ZoomButton>
-            </View>
-
-            {/* grid-step selector */}
-            <View
-              style={{
-                position: "absolute",
-                left: 16,
-                bottom: insets.bottom + 16,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 3,
-                backgroundColor: `${colors.card}e6`,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: colors.border,
-                paddingHorizontal: 8,
-                paddingVertical: 5,
-              }}
-            >
-              <Text style={{ fontSize: 11, color: colors.mutedForeground, marginRight: 3 }}>Grade</Text>
-              {GRID_OPTIONS.map((opt) => {
-                const active = gridStep === opt.value;
-                return (
-                  <Pressable key={opt.value} onPress={() => setGridStep(opt.value)} style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5, backgroundColor: active ? colors.primary : "transparent" }}>
-                    <Text style={{ fontSize: 11, fontWeight: "600", color: active ? "#ffffff" : colors.mutedForeground }}>{opt.label}</Text>
-                  </Pressable>
-                );
-              })}
+              <ZoomButton onPress={() => refreshLocations()} colors={colors}>
+                <IconReload size={18} color={colors.foreground} />
+              </ZoomButton>
             </View>
           </>
         )}
       </View>
+      </Card>
 
       {/* front-view modal (native page-sheet, like the Meu Bônus rules modal) */}
       <WarehouseFrontViewModal visible={!!selected} onClose={() => setSelected(null)} location={selected} highlightItemIds={matchedItemIds} />
@@ -526,19 +537,18 @@ export function WarehouseMapView() {
 }
 
 function ZoomButton({ onPress, colors, children }: { onPress: () => void; colors: { card: string; border: string }; children: React.ReactNode }) {
+  // Borderless icon button — the surrounding panel owns the background/border.
   return (
     <Pressable
       onPress={onPress}
-      style={{
-        height: 40,
-        width: 40,
+      style={({ pressed }) => ({
+        height: 38,
+        width: 38,
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: `${colors.card}e6`,
-      }}
+        borderRadius: 9,
+        backgroundColor: pressed ? `${colors.border}` : "transparent",
+      })}
     >
       {children}
     </Pressable>

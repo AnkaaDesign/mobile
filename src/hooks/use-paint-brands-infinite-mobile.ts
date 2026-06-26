@@ -11,7 +11,7 @@ export const usePaintBrandsInfiniteMobile = (filters?: Partial<PaintBrandGetMany
     queryFn: async ({ pageParam = 1 }) => {
       const params: PaintBrandGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
+        limit: pageSize,
         orderBy: filters?.orderBy || { name: "asc" },
         include: {
           _count: {

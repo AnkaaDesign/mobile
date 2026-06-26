@@ -14,7 +14,6 @@ import { CONTRACT_STATUS } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { TimeClockTabs } from "@/components/human-resources/time-clock/time-clock-tabs";
 
 const COLUMN_DEFINITIONS = [
   { key: "date", label: "Data" },
@@ -193,7 +192,6 @@ export default function TimeEntriesCollaboratorScreen() {
 
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <TimeClockTabs />
         <ErrorScreen
           message="Erro ao carregar registros"
           detail={errorMessage}
@@ -206,7 +204,6 @@ export default function TimeEntriesCollaboratorScreen() {
   return (
     <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-        <TimeClockTabs />
 
         {/* Header: User Selector + Month Navigator + Column Button */}
         <View style={styles.headerContainer}>

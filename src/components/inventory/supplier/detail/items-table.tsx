@@ -150,7 +150,10 @@ export function ItemsTable({ supplier, maxHeight = 500 }: ItemsTableProps) {
               </ThemedText>
             </View>
           ) : (
-            <View style={[styles.tableContainer, { height: maxHeight, maxHeight: maxHeight }]}>
+            // Size the table to its content (header + rows) capped at maxHeight,
+            // instead of a fixed 500px box — a 2–4 item list in a fixed-height
+            // scroller left a huge empty/stretched area.
+            <View style={[styles.tableContainer, { height: Math.min(maxHeight, 44 + filteredItems.length * 48 + 16) }]}>
               <ItemTable
                 items={filteredItems}
                 onItemPress={handleItemPress}
@@ -196,7 +199,6 @@ const styles = StyleSheet.create({
   tableContainer: {
     overflow: 'hidden',
     marginHorizontal: -8,
-    minHeight: 200,
   },
   loadingContainer: {
     paddingVertical: spacing.xxl,

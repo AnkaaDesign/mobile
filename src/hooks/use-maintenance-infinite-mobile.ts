@@ -11,7 +11,7 @@ export const useMaintenanceInfiniteMobile = (filters?: Partial<MaintenanceGetMan
     queryFn: async ({ pageParam = 1 }) => {
       const params: MaintenanceGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
+        limit: pageSize,
         orderBy: filters?.orderBy || { createdAt: "desc" },
         include: {
           vehicle: {

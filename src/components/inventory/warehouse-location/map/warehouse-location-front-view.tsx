@@ -21,17 +21,23 @@ interface BadgeColors {
   muted: string;
   foreground: string;
 }
+type BadgeVariant = "fixed" | "full" | "auto";
 const badgeStyles = StyleSheet.create({
-  base: { height: 46, borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, justifyContent: "center", marginBottom: 6 },
-  fixed: { width: 140, marginRight: 6 },
-  full: { alignSelf: "stretch" },
+  base: { height: 46, borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, justifyContent: "center" },
+  // Fixed-width chips (pallet / "sem posição" buckets) keep their own spacing.
+  fixed: { width: 140, marginRight: 6, marginBottom: 6 },
+  // Kanban cells: stretch to fill the column.
+  full: { alignSelf: "stretch", marginBottom: 6 },
+  // Estante shelves: size to content (like web's w-auto max-w-full), centered via
+  // the row's gap+justify; no per-chip margin so centering stays symmetric.
+  auto: { maxWidth: "100%" },
   text: { fontSize: 11, lineHeight: 14 },
 });
 
 /** Memoized item card — static styles + only re-renders when its own props change. */
-const Badge = React.memo(function Badge({ label, hot, fullWidth, colors }: { label: string; hot: boolean; fullWidth: boolean; colors: BadgeColors }) {
+const Badge = React.memo(function Badge({ label, hot, variant, colors }: { label: string; hot: boolean; variant: BadgeVariant; colors: BadgeColors }) {
   return (
-    <View style={[badgeStyles.base, fullWidth ? badgeStyles.full : badgeStyles.fixed, { borderColor: hot ? `${HIGHLIGHT_COLOR}99` : colors.border, backgroundColor: hot ? `${HIGHLIGHT_COLOR}22` : colors.muted }]}>
+    <View style={[badgeStyles.base, badgeStyles[variant], { borderColor: hot ? `${HIGHLIGHT_COLOR}99` : colors.border, backgroundColor: hot ? `${HIGHLIGHT_COLOR}22` : colors.muted }]}>
       <Text numberOfLines={2} style={[badgeStyles.text, { color: colors.foreground }]}>
         {label}
       </Text>
@@ -123,7 +129,7 @@ export function WarehouseLocationFrontView({ location, highlightItemIds }: Props
   }, [items, isPallet, hasColumns, levels, location]);
 
   const itemLabel = (it: Item) => (it.uniCode ? `${it.uniCode} - ${it.name}` : it.name);
-  const renderBadge = (item: Item, fullWidth = false) => <Badge key={item.id} label={itemLabel(item)} hot={!!highlightItemIds?.has(item.id)} fullWidth={fullWidth} colors={colors} />;
+  const renderBadge = (item: Item, variant: BadgeVariant = "fixed") => <Badge key={item.id} label={itemLabel(item)} hot={!!highlightItemIds?.has(item.id)} variant={variant} colors={colors} />;
 
   const emptyCell = <Text style={{ fontSize: 10, color: `${colors.mutedForeground}88` }}>—</Text>;
   const plank = <View style={{ height: 6, borderRadius: 3, backgroundColor: `${colors.mutedForeground}40`, marginTop: 4 }} />;
@@ -165,7 +171,7 @@ export function WarehouseLocationFrontView({ location, highlightItemIds }: Props
                     const cellItems = [...wholeItems, ...(byCell.get(`${level}:${column}`) ?? [])];
                     return (
                       <View key={column} style={{ flex: 1, minWidth: 104, minHeight: 56, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
-                        {cellItems.length === 0 ? emptyCell : <View style={{ width: "100%" }}>{cellItems.map((it) => renderBadge(it, true))}</View>}
+                        {cellItems.length === 0 ? emptyCell : <View style={{ width: "100%" }}>{cellItems.map((it) => renderBadge(it, "full"))}</View>}
                       </View>
                     );
                   })}
@@ -174,8 +180,8 @@ export function WarehouseLocationFrontView({ location, highlightItemIds }: Props
                 (() => {
                   const cellItems = [...wholeItems, ...(byLevel.get(level) ?? [])];
                   return (
-                    <View style={{ flex: 1, minHeight: 56, flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: cellItems.length ? "flex-start" : "center" }}>
-                      {cellItems.length === 0 ? emptyCell : cellItems.map((it) => renderBadge(it))}
+                    <View style={{ flex: 1, minHeight: 56, flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      {cellItems.length === 0 ? emptyCell : cellItems.map((it) => renderBadge(it, "auto"))}
                     </View>
                   );
                 })()

@@ -11,20 +11,14 @@ export const useServiceOrdersInfiniteMobile = (filters?: Partial<ServiceOrderGet
     queryFn: async ({ pageParam = 1 }) => {
       const params: ServiceOrderGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
+        limit: pageSize,
         orderBy: filters?.orderBy || { createdAt: "desc" },
         include: {
           task: {
+            // API serviceOrderIncludeSchema types task.include.customer as
+            // z.boolean(); a {select} object fails the union → 400. Use `true`.
             include: {
-              customer: {
-                select: {
-                  id: true,
-                  fantasyName: true,
-                  corporateName: true,
-                  cnpj: true,
-                  cpf: true,
-                },
-              },
+              customer: true,
             },
           },
         },

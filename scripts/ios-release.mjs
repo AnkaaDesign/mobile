@@ -15,7 +15,7 @@
  *     step, so the build never fails for that reason.
  *
  * Steps:
- *   1. `npm run ota:sync-version` — write current fingerprints into native files.
+ *   1. `npm run ota:sync-version` — write app.json's static runtimeVersion into native files.
  *   2. resolve the CoreDevice identifier used by `devicectl` to install.
  *   3. `xcodebuild ... -configuration Release -destination generic/platform=iOS`.
  *   4. `xcrun devicectl device install app` the built .app onto the phone.

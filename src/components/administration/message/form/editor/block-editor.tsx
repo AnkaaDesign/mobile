@@ -1,11 +1,15 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { ScaleDecorator } from 'react-native-draggable-flatlist';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
 import { Card, CardContent } from '@/components/ui/card';
 import { ThemedText } from '@/components/ui/themed-text';
-import { IconGripVertical, IconTrash } from '@tabler/icons-react-native';
+import {
+  IconTrash, IconChevronUp, IconChevronDown,
+  IconH1, IconH2, IconH3, IconTextSize, IconPhoto, IconClick,
+  IconMinus, IconSpacingVertical, IconList, IconQuote, IconStar,
+  IconColumns, IconPalette, IconBuilding,
+} from '@tabler/icons-react-native';
 import { TextBlockEditor } from './blocks/text-block-editor';
 import { ImageBlockEditor } from './blocks/image-block-editor';
 import { ButtonBlockEditor } from './blocks/button-block-editor';
@@ -21,19 +25,37 @@ import type { ContentBlock } from './types';
 
 interface BlockEditorProps {
   block: ContentBlock;
+  index: number;
+  total: number;
   onUpdate: (updates: Partial<ContentBlock>) => void;
   onDelete: () => void;
-  drag?: () => void;
-  isActive?: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
   disabled?: boolean;
 }
+
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+  IconH1, IconH2, IconH3, IconTextSize, IconPhoto, IconClick,
+  IconMinus, IconSpacingVertical, IconList, IconQuote, IconStar,
+  IconColumns, IconPalette, IconBuilding,
+};
 
 const BLOCK_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   BLOCK_TYPE_CONFIG.map((c) => [c.type, c.label])
 );
 
-export function BlockEditor({ block, onUpdate, onDelete, drag, isActive, disabled }: BlockEditorProps) {
+const BLOCK_TYPE_ICONS: Record<string, string> = Object.fromEntries(
+  BLOCK_TYPE_CONFIG.map((c) => [c.type, c.iconName])
+);
+
+export function BlockEditor({
+  block, index, total, onUpdate, onDelete, onMoveUp, onMoveDown, disabled,
+}: BlockEditorProps) {
   const { colors } = useTheme();
+
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+  const TypeIcon = ICON_MAP[BLOCK_TYPE_ICONS[block.type]] ?? IconTextSize;
 
   const renderBlockContent = () => {
     switch (block.type) {
@@ -71,68 +93,98 @@ export function BlockEditor({ block, onUpdate, onDelete, drag, isActive, disable
   };
 
   return (
-    <ScaleDecorator>
-      <Card style={[styles.card, isActive && { elevation: 8, shadowOpacity: 0.3 }]}>
-        <View style={styles.header}>
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={[styles.typeBadge, { backgroundColor: colors.muted }]}>
+          <TypeIcon size={14} color={colors.primary} />
+        </View>
+
+        <ThemedText style={[styles.typeLabel, { color: colors.foreground }]} numberOfLines={1}>
+          {BLOCK_TYPE_LABELS[block.type] || block.type}
+        </ThemedText>
+
+        <View style={styles.headerActions}>
           <TouchableOpacity
-            onLongPress={drag}
-            delayLongPress={150}
-            style={styles.dragHandle}
-            disabled={disabled}
+            onPress={onMoveUp}
+            style={[styles.iconButton, { backgroundColor: colors.muted }]}
+            disabled={disabled || isFirst}
+            hitSlop={4}
           >
-            <IconGripVertical size={18} color={colors.mutedForeground} />
+            <IconChevronUp
+              size={16}
+              color={isFirst ? colors.mutedForeground + '55' : colors.foreground}
+            />
           </TouchableOpacity>
 
-          <ThemedText style={[styles.typeLabel, { color: colors.mutedForeground }]}>
-            {BLOCK_TYPE_LABELS[block.type] || block.type}
-          </ThemedText>
+          <TouchableOpacity
+            onPress={onMoveDown}
+            style={[styles.iconButton, { backgroundColor: colors.muted }]}
+            disabled={disabled || isLast}
+            hitSlop={4}
+          >
+            <IconChevronDown
+              size={16}
+              color={isLast ? colors.mutedForeground + '55' : colors.foreground}
+            />
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={onDelete}
-            style={[styles.deleteButton, { backgroundColor: colors.muted }]}
+            style={[styles.iconButton, { backgroundColor: colors.muted }]}
             disabled={disabled}
+            hitSlop={4}
           >
-            <IconTrash size={14} color={colors.destructive || '#EF4444'} />
+            <IconTrash size={15} color={colors.destructive || '#EF4444'} />
           </TouchableOpacity>
         </View>
+      </View>
 
-        <CardContent style={styles.content}>
-          {renderBlockContent()}
-        </CardContent>
-      </Card>
-    </ScaleDecorator>
+      <CardContent style={styles.content}>
+        {renderBlockContent()}
+      </CardContent>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: 2,
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
-    paddingTop: spacing.sm,
-    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
   },
-  dragHandle: {
-    padding: 4,
+  typeBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   typeLabel: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
-  deleteButton: {
-    width: 28,
-    height: 28,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  iconButton: {
+    width: 30,
+    height: 30,
     borderRadius: borderRadius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
-    paddingTop: spacing.xs,
+    paddingTop: spacing.md,
   },
 });

@@ -11,7 +11,7 @@ export const usePaintTypesInfiniteMobile = (filters?: Partial<PaintTypeGetManyFo
     queryFn: async ({ pageParam = 1 }) => {
       const params: PaintTypeGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
+        limit: pageSize,
         orderBy: filters?.orderBy || { name: "asc" },
         include: {
           _count: {
