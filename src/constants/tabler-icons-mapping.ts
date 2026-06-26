@@ -28,7 +28,7 @@ export const TABLER_ICONS = {
   paintBrush: "IconBrush", // Paint brush tool
   paint: "IconPaint",
 
-  // Human Resources
+  // Personnel Department
   users: "IconUsers", // Multiple users
   hr: "IconUsers", // HR department
 

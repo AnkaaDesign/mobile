@@ -49,7 +49,6 @@ export const BLOCK_TYPE_CONFIG: Array<{
 }> = [
   { type: 'heading1', label: 'Título 1', iconName: 'IconH1', description: 'Título principal' },
   { type: 'heading2', label: 'Título 2', iconName: 'IconH2', description: 'Subtítulo' },
-  { type: 'heading3', label: 'Título 3', iconName: 'IconH3', description: 'Título menor' },
   { type: 'paragraph', label: 'Parágrafo', iconName: 'IconTextSize', description: 'Texto normal' },
   { type: 'image', label: 'Imagem', iconName: 'IconPhoto', description: 'Adicionar uma imagem' },
   { type: 'button', label: 'Botão', iconName: 'IconClick', description: 'Botão de ação com link' },

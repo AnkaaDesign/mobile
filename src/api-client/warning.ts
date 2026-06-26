@@ -64,6 +64,18 @@ export class WarningService {
     return response.data;
   }
 
+  /**
+   * Fetches the warning term as a real PDF (PAdES-sealed term once signed/refused,
+   * otherwise a freshly-rendered preview). Returns the raw bytes; fetched via the
+   * authenticated client so the auth token is sent. Mirrors the web api-client.
+   */
+  async getWarningDocument(id: string): Promise<Blob> {
+    const response = await apiClient.get(`${this.basePath}/${id}/document`, {
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  }
+
   // =====================
   // Mutation Operations
   // =====================
@@ -199,6 +211,7 @@ export const getWarnings = (params?: WarningGetManyFormData) => warningService.g
 export const getWarningById = (id: string, params?: Omit<WarningGetByIdFormData, "id">) => warningService.getWarningById(id, params);
 export const getMyWarnings = (params?: WarningGetManyFormData) => warningService.getMyWarnings(params);
 export const getTeamWarnings = (params?: WarningGetManyFormData) => warningService.getTeamWarnings(params);
+export const getWarningDocument = (id: string) => warningService.getWarningDocument(id);
 
 // Mutation Operations
 export const createWarning = (data: WarningCreateFormData, query?: WarningQueryFormData) => warningService.createWarning(data, query);

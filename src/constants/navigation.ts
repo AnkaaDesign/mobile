@@ -122,17 +122,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "helmet",
         path: "/estoque/epi",
         children: [
-          {
-            id: "epi-agendamentos",
-            title: "Agendamentos",
-            icon: "schedule",
-            path: "/estoque/epi/agendamentos",
-            children: [
-              { id: "agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/epi/agendamentos/cadastrar", requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES] },
-              { id: "agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/epi/agendamentos/detalhes/:id", isDynamic: true },
-              { id: "agendamentos-editar", title: "Editar", icon: "edit", path: "/estoque/epi/agendamentos/editar/:id", isDynamic: true, requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES] },
-            ],
-          },
           { id: "epi-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/epi/cadastrar" },
           { id: "epi-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/epi/detalhes/:id", isDynamic: true },
           { id: "epi-editar", title: "Editar", icon: "edit", path: "/estoque/epi/editar/:id", isDynamic: true },
@@ -174,17 +163,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "maintenance",
         path: "/estoque/manutencao",
         children: [
-          {
-            id: "manutencao-agendamentos",
-            title: "Agendamentos",
-            icon: "calendar",
-            path: "/estoque/manutencao/agendamentos",
-            children: [
-              { id: "agendamentos-manutencao-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/manutencao/agendamentos/cadastrar" },
-              { id: "agendamentos-manutencao-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/manutencao/agendamentos/detalhes/:id", isDynamic: true },
-              { id: "agendamentos-manutencao-editar", title: "Editar", icon: "edit", path: "/estoque/manutencao/agendamentos/editar/:id", isDynamic: true },
-            ],
-          },
           { id: "manutencao-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/manutencao/cadastrar" },
           { id: "manutencao-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/manutencao/detalhes/:id", isDynamic: true },
           { id: "manutencao-editar", title: "Editar", icon: "edit", path: "/estoque/manutencao/editar/:id", isDynamic: true },
@@ -207,26 +185,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "clipboardList",
         path: "/estoque/pedidos",
         children: [
-          {
-            id: "pedidos-agendamentos",
-            title: "Agendamentos",
-            icon: "schedule",
-            path: "/estoque/pedidos/agendamentos",
-            children: [
-              { id: "agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/pedidos/agendamentos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-              { id: "agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/pedidos/agendamentos/detalhes/:id", isDynamic: true },
-              { id: "agendamentos-editar", title: "Editar", icon: "edit", path: "/estoque/pedidos/agendamentos/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-            ],
-          },
-          {
-            id: "pedidos-automaticos",
-            title: "Automáticos",
-            icon: "automation",
-            path: "/estoque/pedidos/automaticos",
-            children: [
-              { id: "automaticos-configurar", title: "Configurar", icon: "cog", path: "/estoque/pedidos/automaticos/configurar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-            ],
-          },
           { id: "pedidos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/pedidos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
           { id: "pedidos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/pedidos/detalhes/:id", isDynamic: true },
           { id: "pedidos-editar", title: "Editar", icon: "edit", path: "/estoque/pedidos/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
@@ -482,46 +440,30 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       {
+        // Single unified Recorte list (/producao/recorte → redirects to /listar).
+        // The old "Plano de Recorte" / "Requisição de Recorte" sub-entries were
+        // stale links copied from the web's two-page split — mobile never built
+        // those screens, so they pointed to non-existent routes.
         id: "recorte",
         title: "Recorte",
         icon: "scissors",
         path: "/producao/recorte",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          {
-            id: "plano-de-recorte",
-            title: "Plano de Recorte",
-            icon: "clipboard",
-            path: "/producao/recorte/plano-de-recorte/listar",
-            children: [
-              { id: "plano-de-recorte-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/recorte/plano-de-recorte/cadastrar" },
-              { id: "plano-de-recorte-detalhes", title: "Detalhes", icon: "eye", path: "/producao/recorte/plano-de-recorte/detalhes/:id", isDynamic: true },
-              { id: "plano-de-recorte-editar", title: "Editar", icon: "edit", path: "/producao/recorte/plano-de-recorte/editar/:id", isDynamic: true },
-            ],
-          },
-          {
-            id: "requisicao-de-recorte",
-            title: "Requisição de Recorte",
-            icon: "clipboard",
-            path: "/producao/recorte/requisicao-de-recorte/listar",
-            children: [
-              { id: "requisicao-de-recorte-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/recorte/requisicao-de-recorte/cadastrar" },
-              { id: "requisicao-de-recorte-detalhes", title: "Detalhes", icon: "eye", path: "/producao/recorte/requisicao-de-recorte/detalhes/:id", isDynamic: true },
-              { id: "requisicao-de-recorte-editar", title: "Editar", icon: "edit", path: "/producao/recorte/requisicao-de-recorte/editar/:id", isDynamic: true },
-            ],
-          },
+          { id: "recorte-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/recorte/cadastrar" },
+          { id: "recorte-detalhes", title: "Detalhes", icon: "eye", path: "/producao/recorte/detalhes/:id", isDynamic: true },
         ],
       },
     ],
   },
 
   // DEPARTAMENTO PESSOAL (mirrors web's consolidated "Departamento Pessoal" section).
-  // Mobile keeps all screens under /recursos-humanos/* (paths intentionally unchanged).
+  // Mobile keeps all screens under /departamento-pessoal/* (paths intentionally unchanged).
   {
-    id: "recursos-humanos",
+    id: "departamento-pessoal",
     title: "Departamento Pessoal",
     icon: "users",
-    path: "/recursos-humanos",
+    path: "/departamento-pessoal",
     requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
@@ -543,24 +485,24 @@ export const NAVIGATION_MENU: MenuItem[] = [
         id: "warnings",
         title: "Advertências",
         icon: "alertTriangle",
-        path: "/recursos-humanos/advertencias",
+        path: "/departamento-pessoal/advertencias",
         children: [
-          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/advertencias/cadastrar" },
-          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/advertencias/detalhes/:id", isDynamic: true },
-          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/advertencias/editar/:id", isDynamic: true },
+          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/advertencias/cadastrar" },
+          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/advertencias/detalhes/:id", isDynamic: true },
+          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/advertencias/editar/:id", isDynamic: true },
         ],
       },
       {
         id: "bonus",
         title: "Bônus",
         icon: "coins",
-        path: "/recursos-humanos/bonus/listar",
+        path: "/departamento-pessoal/bonus/listar",
         // Gated like the web "Gratificações" group ([ACCOUNTING, HR, ADMIN]) so the
         // bonus pages don't leak to other sectors now that they're visible again.
         requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          { id: "nivel-de-performance", title: "Nível de Performance", icon: "trendingUp", path: "/recursos-humanos/bonus/nivel-de-performance" },
-          { id: "simulacao-bonus", title: "Simulação de Bônus", icon: "calculator", path: "/recursos-humanos/bonus/simulacao" },
+          { id: "nivel-de-performance", title: "Nível de Performance", icon: "trendingUp", path: "/departamento-pessoal/bonus/nivel-de-performance" },
+          { id: "simulacao-bonus", title: "Simulação de Bônus", icon: "calculator", path: "/departamento-pessoal/bonus/simulacao" },
         ],
       },
       // CONTROLE DE PONTO — full sub-view structure mirroring the web's 6 tabs.
@@ -570,125 +512,48 @@ export const NAVIGATION_MENU: MenuItem[] = [
         id: "controle-ponto",
         title: "Controle de Ponto",
         icon: "fingerprint",
-        path: "/recursos-humanos/controle-ponto",
+        path: "/departamento-pessoal/controle-ponto",
         children: [
-          { id: "controle-ponto-colaborador", title: "Visualização Colaborador", icon: "user", path: "/recursos-humanos/controle-ponto/colaborador" },
-          { id: "controle-ponto-dia", title: "Visualização Dia", icon: "calendarEvent", path: "/recursos-humanos/controle-ponto/dia" },
-          { id: "controle-ponto-edicao", title: "Edição", icon: "edit", path: "/recursos-humanos/controle-ponto/edicao" },
-          { id: "controle-ponto-ausencias", title: "Ausências", icon: "timeOff", path: "/recursos-humanos/controle-ponto/ausencias" },
-          { id: "controle-ponto-fechamento", title: "Fechamento", icon: "checkCircle", path: "/recursos-humanos/controle-ponto/fechamento" },
-          { id: "controle-ponto-requisicoes", title: "Requisições", icon: "clipboardList", path: "/recursos-humanos/requisicoes-ponto/listar" },
+          { id: "controle-ponto-colaborador", title: "Visualização Colaborador", icon: "user", path: "/departamento-pessoal/controle-ponto/colaborador" },
+          { id: "controle-ponto-dia", title: "Visualização Dia", icon: "calendarEvent", path: "/departamento-pessoal/controle-ponto/dia" },
+          { id: "controle-ponto-edicao", title: "Edição", icon: "edit", path: "/departamento-pessoal/controle-ponto/edicao" },
+          { id: "controle-ponto-ausencias", title: "Ausências", icon: "timeOff", path: "/departamento-pessoal/controle-ponto/ausencias" },
+          { id: "controle-ponto-fechamento", title: "Fechamento", icon: "checkCircle", path: "/departamento-pessoal/controle-ponto/fechamento" },
+          { id: "controle-ponto-requisicoes", title: "Requisições", icon: "clipboardList", path: "/departamento-pessoal/requisicoes-ponto/listar" },
         ],
       },
       {
         id: "feriados",
         title: "Feriados",
         icon: "holiday",
-        path: "/recursos-humanos/feriados",
+        path: "/departamento-pessoal/feriados",
         children: [
-          { id: "feriados-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/feriados/cadastrar" },
-          { id: "feriados-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/feriados/editar/:id", isDynamic: true },
+          { id: "feriados-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/feriados/cadastrar" },
+          { id: "feriados-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/feriados/editar/:id", isDynamic: true },
         ],
       },
-      // { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" }, // Temporarily hidden for testing
-      { id: "requisicoes", title: "Requisições", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
+      // { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/departamento-pessoal/folha-de-pagamento" }, // Temporarily hidden for testing
+      { id: "requisicoes", title: "Requisições", icon: "clipboardList", path: "/departamento-pessoal/requisicoes" },
 
       // ============================================================
       // DEPARTAMENTO PESSOAL (Área Andressa) — mirrors web departamento-pessoal,
-      // but mobile keeps all screens under /recursos-humanos/*.
+      // but mobile keeps all screens under /departamento-pessoal/*.
       // Gated for ACCOUNTING/HR/ADMIN like the equivalent web nav.
+      // (Admissões / Rescisões / Salários e Cargos / Benefícios are web-only —
+      // intentionally removed from mobile.)
       // ============================================================
-      {
-        id: "rh-admissoes",
-        title: "Admissões",
-        icon: "userCheck",
-        path: "/recursos-humanos/admissoes/listar",
-        // Mirrors web DP: HR/ACCOUNTING/ADMIN. (PM reaches it via the dedicated
-        // PRODUCTION_MANAGER "Departamento Pessoal" group below.)
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
-        children: [
-          { id: "rh-admissoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/admissoes/cadastrar" },
-          { id: "rh-admissoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/admissoes/detalhes/:id", isDynamic: true },
-          { id: "rh-admissoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/admissoes/editar/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "rh-rescisoes",
-        title: "Rescisões",
-        icon: "logOut",
-        path: "/recursos-humanos/rescisoes/listar",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
-        children: [
-          { id: "rh-rescisoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/rescisoes/cadastrar" },
-          { id: "rh-rescisoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/rescisoes/detalhes/:id", isDynamic: true },
-          { id: "rh-rescisoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/rescisoes/editar/:id", isDynamic: true },
-        ],
-      },
       {
         id: "rh-ferias",
         title: "Férias",
         icon: "beach",
-        path: "/recursos-humanos/ferias/listar",
+        path: "/departamento-pessoal/ferias/listar",
         // Match the screen-level gates (cadastrar/editar require HR/ADMIN; detalhes
         // also allows ACCOUNTING). Nav was ACCOUNTING-only, hiding it from HR/ADMIN.
         requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          { id: "rh-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
-          { id: "rh-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
-          { id: "rh-ferias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/ferias/editar/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "rh-salarios-e-cargos",
-        title: "Salários e Cargos",
-        icon: "salary",
-        path: "/recursos-humanos/cargos",
-        // Web gates this group [ACCOUNTING, HR, ADMIN]; was ACCOUNTING-only on mobile.
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
-        children: [
-          {
-            id: "rh-cargos",
-            title: "Cargos",
-            icon: "briefcase",
-            path: "/recursos-humanos/cargos",
-            children: [
-              { id: "rh-cargos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/cargos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-              { id: "rh-cargos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/cargos/detalhes/:id", isDynamic: true },
-              { id: "rh-cargos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/cargos/editar/:id", isDynamic: true },
-            ],
-          },
-          { id: "rh-horarios", title: "Horários", icon: "clock", path: "/recursos-humanos/horarios" },
-          {
-            id: "rh-reajustes",
-            title: "Reajustes",
-            icon: "trendingUp",
-            path: "/recursos-humanos/reajustes/listar",
-            children: [
-              { id: "rh-reajustes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/reajustes/detalhes/:id", isDynamic: true },
-            ],
-          },
-          {
-            id: "rh-promocoes",
-            title: "Promoções",
-            icon: "movement",
-            path: "/recursos-humanos/promocoes/listar",
-            children: [
-              { id: "rh-promocoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/promocoes/detalhes/:id", isDynamic: true },
-            ],
-          },
-        ],
-      },
-      {
-        id: "rh-beneficios",
-        title: "Benefícios",
-        icon: "coins",
-        path: "/recursos-humanos/beneficios/listar",
-        // Web gates Benefícios [ACCOUNTING, HR, ADMIN]; was ACCOUNTING-only on mobile.
-        requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
-        children: [
-          { id: "rh-beneficios-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/beneficios/cadastrar" },
-          { id: "rh-beneficios-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/beneficios/detalhes/:id", isDynamic: true },
-          { id: "rh-beneficios-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/beneficios/editar/:id", isDynamic: true },
+          { id: "rh-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/ferias/cadastrar" },
+          { id: "rh-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/ferias/detalhes/:id", isDynamic: true },
+          { id: "rh-ferias-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/ferias/editar/:id", isDynamic: true },
         ],
       },
     ],
@@ -697,7 +562,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // ============================================================
   // DEPARTAMENTO PESSOAL — PRODUCTION_MANAGER group.
   // Mirrors the web PM "Departamento Pessoal" menu group: PM gains
-  // Admissões / Rescisões / Férias (create/read/update — delete stays ADMIN-only).
+  // Férias / Advertências (create/read/update — delete stays ADMIN-only).
+  // (Admissões / Rescisões are web-only — intentionally removed from mobile.)
   // Separate section because the main DP section above excludes PM, and the
   // mobile menu filter has no ADMIN/PM bypass on a privilege-gated parent.
   // ============================================================
@@ -705,51 +571,29 @@ export const NAVIGATION_MENU: MenuItem[] = [
     id: "dp-production-manager",
     title: "Departamento Pessoal",
     icon: "users",
-    path: "/recursos-humanos/admissoes/listar",
+    path: "/departamento-pessoal/ferias/listar",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
     children: [
-      {
-        id: "pm-admissoes",
-        title: "Admissões",
-        icon: "userCheck",
-        path: "/recursos-humanos/admissoes/listar",
-        children: [
-          { id: "pm-admissoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/admissoes/cadastrar" },
-          { id: "pm-admissoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/admissoes/detalhes/:id", isDynamic: true },
-          { id: "pm-admissoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/admissoes/editar/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "pm-rescisoes",
-        title: "Rescisões",
-        icon: "logOut",
-        path: "/recursos-humanos/rescisoes/listar",
-        children: [
-          { id: "pm-rescisoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/rescisoes/cadastrar" },
-          { id: "pm-rescisoes-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/rescisoes/detalhes/:id", isDynamic: true },
-          { id: "pm-rescisoes-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/rescisoes/editar/:id", isDynamic: true },
-        ],
-      },
       {
         id: "pm-ferias",
         title: "Férias",
         icon: "beach",
-        path: "/recursos-humanos/ferias/listar",
+        path: "/departamento-pessoal/ferias/listar",
         children: [
-          { id: "pm-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
-          { id: "pm-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
-          { id: "pm-ferias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/ferias/editar/:id", isDynamic: true },
+          { id: "pm-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/ferias/cadastrar" },
+          { id: "pm-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/ferias/detalhes/:id", isDynamic: true },
+          { id: "pm-ferias-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/ferias/editar/:id", isDynamic: true },
         ],
       },
       {
         id: "pm-advertencias",
         title: "Advertências",
         icon: "alertTriangle",
-        path: "/recursos-humanos/advertencias",
+        path: "/departamento-pessoal/advertencias",
         children: [
-          { id: "pm-advertencias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/advertencias/cadastrar" },
-          { id: "pm-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/advertencias/detalhes/:id", isDynamic: true },
-          { id: "pm-advertencias-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/advertencias/editar/:id", isDynamic: true },
+          { id: "pm-advertencias-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/advertencias/cadastrar" },
+          { id: "pm-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/advertencias/detalhes/:id", isDynamic: true },
+          { id: "pm-advertencias-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/advertencias/editar/:id", isDynamic: true },
         ],
       },
     ],
@@ -757,72 +601,61 @@ export const NAVIGATION_MENU: MenuItem[] = [
 
   // ============================================================
   // MEDICINA DO TRABALHO (Área Andressa) — new top-level group.
-  // Mobile screens live under /recursos-humanos/medicina/*.
+  // Mobile screens live under /departamento-pessoal/medicina/*.
   // Gated for ACCOUNTING/HR/ADMIN like the equivalent web nav.
   // ============================================================
   {
     id: "medicina-do-trabalho",
     title: "Medicina do Trabalho",
     icon: "safety",
-    path: "/recursos-humanos/medicina/aso/listar",
+    path: "/departamento-pessoal/medicina/aso/listar",
     // ACCOUNTING-only: new accounting-sector group. HR/ADMIN keep their original
-    // Recursos Humanos menu unchanged. (Page-level route privileges stay open.)
+    // Departamento Pessoal menu unchanged. (Page-level route privileges stay open.)
     requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING],
     children: [
       {
         id: "mt-epi-entregas",
         title: "Entrega de EPIs",
         icon: "truck",
-        path: "/recursos-humanos/epi/entregas",
+        path: "/departamento-pessoal/epi/entregas",
         children: [
-          {
-            id: "mt-epi-agendamentos",
-            title: "Agendamentos",
-            icon: "schedule",
-            path: "/recursos-humanos/epi/agendamentos",
-            children: [
-              { id: "mt-epi-agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/agendamentos/cadastrar" },
-              { id: "mt-epi-agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/agendamentos/detalhes/:id", isDynamic: true },
-              { id: "mt-epi-agendamentos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/agendamentos/editar/:id", isDynamic: true },
-            ],
-          },
-          { id: "mt-epi-entregas-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/entregas/cadastrar" },
-          { id: "mt-epi-entregas-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/entregas/detalhes/:id", isDynamic: true },
-          { id: "mt-epi-entregas-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/entregas/editar/:id", isDynamic: true },
+          { id: "mt-epi-entregas-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/epi/entregas/cadastrar" },
+          { id: "mt-epi-entregas-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/epi/entregas/detalhes/:id", isDynamic: true },
+          { id: "mt-epi-entregas-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/epi/entregas/editar/:id", isDynamic: true },
         ],
       },
       {
         id: "mt-aso",
         title: "ASO / Exames",
         icon: "clipboardList",
-        path: "/recursos-humanos/medicina/aso/listar",
+        path: "/departamento-pessoal/medicina/aso/listar",
         children: [
-          { id: "mt-aso-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/aso/cadastrar" },
-          { id: "mt-aso-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/aso/detalhes/:id", isDynamic: true },
-          { id: "mt-aso-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/aso/editar/:id", isDynamic: true },
+          { id: "mt-aso-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/medicina/aso/cadastrar" },
+          { id: "mt-aso-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/medicina/aso/detalhes/:id", isDynamic: true },
+          { id: "mt-aso-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/medicina/aso/editar/:id", isDynamic: true },
         ],
       },
-      { id: "mt-exames-periodicos", title: "Exames Periódicos", icon: "calendarStats", path: "/recursos-humanos/medicina/exames-periodicos/listar" },
+      { id: "mt-exames-periodicos", title: "Exames Periódicos", icon: "calendarStats", path: "/departamento-pessoal/medicina/exames-periodicos/listar" },
       {
         id: "mt-afastamentos",
         title: "Afastamentos",
         icon: "calendar",
-        path: "/recursos-humanos/medicina/afastamentos/listar",
+        path: "/departamento-pessoal/medicina/afastamentos/listar",
         children: [
-          { id: "mt-afastamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/afastamentos/cadastrar" },
-          { id: "mt-afastamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/afastamentos/detalhes/:id", isDynamic: true },
-          { id: "mt-afastamentos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/afastamentos/editar/:id", isDynamic: true },
+          { id: "mt-afastamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/medicina/afastamentos/cadastrar" },
+          { id: "mt-afastamentos-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/medicina/afastamentos/detalhes/:id", isDynamic: true },
+          { id: "mt-afastamentos-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/medicina/afastamentos/editar/:id", isDynamic: true },
         ],
       },
       {
         id: "mt-cat",
         title: "CAT",
         icon: "clipboardList",
-        path: "/recursos-humanos/medicina/cat/listar",
+        path: "/departamento-pessoal/medicina/cat/listar",
         children: [
-          { id: "mt-cat-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/medicina/cat/cadastrar" },
-          { id: "mt-cat-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/medicina/cat/detalhes/:id", isDynamic: true },
-          { id: "mt-cat-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/medicina/cat/editar/:id", isDynamic: true },
+          { id: "mt-cat-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/medicina/cat/cadastrar" },
+          { id: "mt-cat-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/medicina/cat/detalhes/:id", isDynamic: true },
+          { id: "mt-cat-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/medicina/cat/editar/:id", isDynamic: true },
         ],
       },
     ],
@@ -848,39 +681,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "servidor-backups-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/backups/detalhes/:id", isDynamic: true },
         ],
       },
-      {
-        id: "servidor-implantacoes",
-        title: "Implantações",
-        icon: "rocket",
-        path: "/servidor/implantacoes",
-        children: [
-          { id: "servidor-implantacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/servidor/implantacoes/cadastrar" },
-          { id: "servidor-implantacoes-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/implantacoes/detalhes/:id", isDynamic: true },
-        ],
-      },
       { id: "servidor-gerenciador-de-arquivos", title: "Gerenciador de Arquivos", icon: "sharedFolders", path: "/servidor/file-manager" },
-      { id: "servidor-logs", title: "Logs do Sistema", icon: "systemLogs", path: "/servidor/logs" },
       { id: "servidor-metricas", title: "Métricas do Sistema", icon: "systemMetrics", path: "/servidor/metricas" },
-      { id: "servidor-rate-limiting", title: "Rate Limiting", icon: "shield", path: "/servidor/rate-limiting" },
-      {
-        id: "registros-de-alteracoes",
-        title: "Registros de Alterações",
-        icon: "auditLog",
-        path: "/servidor/registros-de-alteracoes",
-        children: [
-          { id: "registros-listar", title: "Listar", icon: "list", path: "/servidor/registros-de-alteracoes/listar" },
-          { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/registros-de-alteracoes/detalhes/:id", isDynamic: true },
-        ],
-      },
       { id: "servidor-servicos", title: "Serviços do Sistema", icon: "services", path: "/servidor/services" },
-      { id: "servidor-sincronizacao-bd", title: "Sincronização BD", icon: "repeat", path: "/servidor/database-sync", onlyInStaging: true },
-      {
-        id: "servidor-usuarios",
-        title: "Usuários do Sistema",
-        icon: "systemUsers",
-        path: "/servidor/usuarios",
-        children: [{ id: "servidor-usuarios-cadastrar", title: "Criar Usuario", icon: "plus", path: "/servidor/usuarios/cadastrar" }],
-      },
     ],
   },
 
@@ -1129,28 +932,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/producao/recorte",
     requiredPrivilege: [SECTOR_PRIVILEGES.PLOTTING],
     children: [
-      {
-        id: "plano-de-recorte-direct",
-        title: "Plano de Recorte",
-        icon: "clipboard",
-        path: "/producao/recorte/plano-de-recorte/listar",
-        children: [
-          { id: "plano-de-recorte-cadastrar-direct", title: "Cadastrar", icon: "plus", path: "/producao/recorte/plano-de-recorte/cadastrar" },
-          { id: "plano-de-recorte-detalhes-direct", title: "Detalhes", icon: "eye", path: "/producao/recorte/plano-de-recorte/detalhes/:id", isDynamic: true },
-          { id: "plano-de-recorte-editar-direct", title: "Editar", icon: "edit", path: "/producao/recorte/plano-de-recorte/editar/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "requisicao-de-recorte-direct",
-        title: "Requisição de Recorte",
-        icon: "clipboard",
-        path: "/producao/recorte/requisicao-de-recorte/listar",
-        children: [
-          { id: "requisicao-de-recorte-cadastrar-direct", title: "Cadastrar", icon: "plus", path: "/producao/recorte/requisicao-de-recorte/cadastrar" },
-          { id: "requisicao-de-recorte-detalhes-direct", title: "Detalhes", icon: "eye", path: "/producao/recorte/requisicao-de-recorte/detalhes/:id", isDynamic: true },
-          { id: "requisicao-de-recorte-editar-direct", title: "Editar", icon: "edit", path: "/producao/recorte/requisicao-de-recorte/editar/:id", isDynamic: true },
-        ],
-      },
+      { id: "recorte-cadastrar-direct", title: "Cadastrar", icon: "plus", path: "/producao/recorte/cadastrar" },
+      { id: "recorte-detalhes-direct", title: "Detalhes", icon: "eye", path: "/producao/recorte/detalhes/:id", isDynamic: true },
     ],
   },
 
@@ -1161,7 +944,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // ============================================================
 
   // Barracões removed for PRODUCTION users — the route filter in
-  // privilege-optimized-full-fixed.tsx blocks `/producao/garagens/*` for the
+  // privilege-layout.tsx blocks `/producao/garagens/*` for the
   // PRODUCTION privilege, so showing this drawer entry led to a dead link.
   // Garages are visible to LOGISTIC/PRODUCTION_MANAGER/COMMERCIAL via the
   // separate menu group higher in this file.
@@ -1211,24 +994,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
     sortOrder: 60,
     children: [
-      {
-        id: "plano-de-recorte-production",
-        title: "Plano de Recorte",
-        icon: "clipboard",
-        path: "/producao/recorte/plano-de-recorte/listar",
-        children: [
-          { id: "plano-de-recorte-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/recorte/plano-de-recorte/detalhes/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "requisicao-de-recorte-production",
-        title: "Requisição de Recorte",
-        icon: "clipboard",
-        path: "/producao/recorte/requisicao-de-recorte/listar",
-        children: [
-          { id: "requisicao-de-recorte-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/recorte/requisicao-de-recorte/detalhes/:id", isDynamic: true },
-        ],
-      },
+      { id: "recorte-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/recorte/detalhes/:id", isDynamic: true },
     ],
   },
 
@@ -1312,7 +1078,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   //    gets it at root via `minhas-mensagens-direct` (avoids a duplicate entry).
   //  - The Manutenção menu (gated to [MAINTENANCE]) is kept untouched — additive.
   //  - All /pessoal/* routes are globally reachable in the route guard
-  //    (privilege-optimized-full-fixed.tsx), so none of these are dead links.
+  //    (privilege-layout.tsx), so none of these are dead links.
   // ============================================================
   {
     id: "meus-feriados-maintenance",

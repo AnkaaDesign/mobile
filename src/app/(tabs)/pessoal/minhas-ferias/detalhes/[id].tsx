@@ -9,7 +9,7 @@ import {
   VacationStatusStepperCard,
   VacationSummaryCard,
   VacationPeriodBalanceCard,
-} from "@/components/human-resources/vacation";
+} from "@/components/personnel-department/vacation";
 import type { Vacation } from "@/types";
 
 /**

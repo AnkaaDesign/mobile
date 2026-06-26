@@ -23,7 +23,7 @@ import {
   TeamPpeItemCard,
   TeamPpeStatusCard,
 } from "@/components/my-team/ppe-delivery/detail";
-import { SignatureEvidenceCard } from "@/components/human-resources/ppe/delivery/detail";
+import { SignatureEvidenceCard } from "@/components/personnel-department/ppe/delivery/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function TeamPpeDeliveryDetailScreen() {

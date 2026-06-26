@@ -7,7 +7,7 @@ import { spacing } from '@/constants/design-system'
 import { useScreenReady } from '@/hooks/use-screen-ready'
 import { useCurrentUser } from '@/hooks/useAuth'
 import { useThirteenth } from '@/hooks/useThirteenth'
-import { ThirteenthDetail } from '@/components/human-resources/thirteenth/thirteenth-detail'
+import { ThirteenthDetail } from '@/components/personnel-department/thirteenth/thirteenth-detail'
 import { formatDate } from '@/utils'
 
 export default function MyThirteenthDetailScreen() {

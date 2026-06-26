@@ -171,7 +171,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
                       value={value || ""}
                       onChangeText={onChange}
                       onBlur={onBlur}
-                      placeholder="Ex: Recursos Humanos, Produção, Financeiro"
+                      placeholder="Ex: Departamento Pessoal, Produção, Financeiro"
                       editable={!isLoading}
                       error={!!form.formState.errors.name}
                       maxLength={100}

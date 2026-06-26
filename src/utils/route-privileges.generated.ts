@@ -12,7 +12,7 @@
 //   estoque       → WAREHOUSE
 //   producao      → PRODUCTION
 //   pintura       → WAREHOUSE
-//   recursos-humanos → HUMAN_RESOURCES
+//   departamento-pessoal → HUMAN_RESOURCES
 //   pessoal | meu-pessoal → BASIC
 //   financeiro    → FINANCIAL
 //   servidor      → ADMIN
@@ -130,24 +130,24 @@ export const GENERATED_ROUTE_PRIVILEGES: Record<string, GeneratedPrivilege> = {
   "/(tabs)/pintura/formulas/cadastrar": "WAREHOUSE",
   "/(tabs)/pintura/formulas/editar/[id]": "WAREHOUSE",
 
-  // Recursos Humanos
-  "/(tabs)/recursos-humanos": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/funcionarios": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/funcionarios/listar": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/funcionarios/detalhes/[id]": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/funcionarios/editar/[id]": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/colaboradores": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/epi": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/feriados": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/advertencias": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/cargos": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/setores": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/folha-de-pagamento": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/niveis-de-desempenho": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/bonus": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/calculos": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/controle-ponto": "HUMAN_RESOURCES",
-  "/(tabs)/recursos-humanos/requisicoes-ponto": "HUMAN_RESOURCES",
+  // Departamento Pessoal
+  "/(tabs)/departamento-pessoal": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/funcionarios": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/funcionarios/listar": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/funcionarios/detalhes/[id]": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/funcionarios/editar/[id]": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/colaboradores": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/epi": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/feriados": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/advertencias": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/cargos": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/setores": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/folha-de-pagamento": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/niveis-de-desempenho": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/bonus": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/calculos": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/controle-ponto": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/requisicoes-ponto": "HUMAN_RESOURCES",
 
   // Financeiro
   "/(tabs)/financeiro": "FINANCIAL",

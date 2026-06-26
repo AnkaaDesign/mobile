@@ -96,15 +96,15 @@ const PATH_PREFIX_ICON_MAP: Array<{ prefix: string; icon: Icon; color: string }>
   { prefix: "/administracao/mensagens", icon: IconMessageCircle, color: "#3b82f6" },
   { prefix: "/administracao", icon: IconBuildingSkyscraper, color: "#14b8a6" },
 
-  // Recursos Humanos
-  { prefix: "/recursos-humanos/cargos", icon: IconBriefcase, color: "#a855f7" },
-  { prefix: "/recursos-humanos/feriados", icon: IconCalendar, color: "#f97316" },
-  { prefix: "/recursos-humanos/avisos", icon: IconAlertTriangle, color: "#ef4444" },
-  { prefix: "/recursos-humanos/epi/entregas", icon: IconShield, color: "#fbbf24" },
-  { prefix: "/recursos-humanos/epi/agendamentos", icon: IconCalendar, color: "#fbbf24" },
-  { prefix: "/recursos-humanos/epi", icon: IconShield, color: "#eab308" },
-  { prefix: "/recursos-humanos/setores", icon: IconBuildingSkyscraper, color: "#14b8a6" },
-  { prefix: "/recursos-humanos", icon: IconUsers, color: "#a855f7" },
+  // Departamento Pessoal
+  { prefix: "/departamento-pessoal/cargos", icon: IconBriefcase, color: "#a855f7" },
+  { prefix: "/departamento-pessoal/feriados", icon: IconCalendar, color: "#f97316" },
+  { prefix: "/departamento-pessoal/avisos", icon: IconAlertTriangle, color: "#ef4444" },
+  { prefix: "/departamento-pessoal/epi/entregas", icon: IconShield, color: "#fbbf24" },
+  { prefix: "/departamento-pessoal/epi/agendamentos", icon: IconCalendar, color: "#fbbf24" },
+  { prefix: "/departamento-pessoal/epi", icon: IconShield, color: "#eab308" },
+  { prefix: "/departamento-pessoal/setores", icon: IconBuildingSkyscraper, color: "#14b8a6" },
+  { prefix: "/departamento-pessoal", icon: IconUsers, color: "#a855f7" },
 
   // Pessoal
   { prefix: "/pessoal/feriados", icon: IconCalendar, color: "#f97316" },
@@ -215,21 +215,21 @@ export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {
   [FAVORITE_PAGES.ADMINISTRACAO_NOTIFICACOES_LISTAR]: { icon: IconBell, color: "bg-red-500" },
   //   [FAVORITE_PAGES.ADMINISTRACAO_NOTIFICACOES_ENVIAR]: { icon: IconBell, color: "bg-red-600" },
 
-  // Recursos Humanos
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_LISTAR]: { icon: IconBriefcase, color: "bg-purple-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_CADASTRAR]: { icon: IconBriefcase, color: "bg-purple-600" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_LISTAR]: { icon: IconCalendar, color: "bg-orange-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_CADASTRAR]: { icon: IconCalendar, color: "bg-orange-600" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_LISTAR]: { icon: IconAlertTriangle, color: "bg-red-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_CADASTRAR]: { icon: IconAlertTriangle, color: "bg-red-600" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_LISTAR]: { icon: IconShield, color: "bg-yellow-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_CADASTRAR]: { icon: IconShield, color: "bg-yellow-600" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_ENTREGAS_LISTAR]: { icon: IconShield, color: "bg-yellow-400" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_ENTREGAS_CADASTRAR]: { icon: IconShield, color: "bg-yellow-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_AGENDAMENTOS_LISTAR]: { icon: IconCalendar, color: "bg-yellow-400" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_AGENDAMENTOS_CADASTRAR]: { icon: IconCalendar, color: "bg-yellow-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_LISTAR]: { icon: IconBuildingSkyscraper, color: "bg-teal-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_CADASTRAR]: { icon: IconBuildingSkyscraper, color: "bg-teal-600" },
+  // Departamento Pessoal
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_CARGOS_LISTAR]: { icon: IconBriefcase, color: "bg-purple-500" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_CARGOS_CADASTRAR]: { icon: IconBriefcase, color: "bg-purple-600" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_FERIADOS_LISTAR]: { icon: IconCalendar, color: "bg-orange-500" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_FERIADOS_CADASTRAR]: { icon: IconCalendar, color: "bg-orange-600" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_AVISOS_LISTAR]: { icon: IconAlertTriangle, color: "bg-red-500" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_AVISOS_CADASTRAR]: { icon: IconAlertTriangle, color: "bg-red-600" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_LISTAR]: { icon: IconShield, color: "bg-yellow-500" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_CADASTRAR]: { icon: IconShield, color: "bg-yellow-600" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_ENTREGAS_LISTAR]: { icon: IconShield, color: "bg-yellow-400" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_ENTREGAS_CADASTRAR]: { icon: IconShield, color: "bg-yellow-500" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_AGENDAMENTOS_LISTAR]: { icon: IconCalendar, color: "bg-yellow-400" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_AGENDAMENTOS_CADASTRAR]: { icon: IconCalendar, color: "bg-yellow-500" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_SETORES_LISTAR]: { icon: IconBuildingSkyscraper, color: "bg-teal-500" },
+  [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_SETORES_CADASTRAR]: { icon: IconBuildingSkyscraper, color: "bg-teal-600" },
 
   // Pessoal
   [FAVORITE_PAGES.PESSOAL_MEUS_FERIADOS_LISTAR]: { icon: IconCalendar, color: "bg-orange-500" },
@@ -247,7 +247,7 @@ export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {
   // Estatísticas
   //   [FAVORITE_PAGES.ESTATISTICAS_PRODUCAO_LISTAR]: { icon: IconChartBar, color: "bg-blue-500" },
   //   [FAVORITE_PAGES.ESTATISTICAS_ADMINISTRACAO_LISTAR]: { icon: IconChartBar, color: "bg-purple-500" },
-  //   [FAVORITE_PAGES.ESTATISTICAS_RECURSOS_HUMANOS_LISTAR]: { icon: IconChartBar, color: "bg-orange-500" },
+  //   [FAVORITE_PAGES.ESTATISTICAS_DEPARTAMENTO_PESSOAL_LISTAR]: { icon: IconChartBar, color: "bg-orange-500" },
   //   [FAVORITE_PAGES.ESTATISTICAS_ESTOQUE_LISTAR]: { icon: IconChartBar, color: "bg-green-500" },
 
   // Other
@@ -351,20 +351,20 @@ export function getPageIconName(path: string): string {
     "/administracao/notificacoes": "bell",
     "/administracao/notificacoes/cadastrar/enviar": "bell",
 
-    // Recursos Humanos
-    "/recursos-humanos/cargos": "briefcase",
-    "/recursos-humanos/cargos/cadastrar": "briefcase",
-    "/recursos-humanos/feriados": "calendar",
-    "/recursos-humanos/feriados/cadastrar": "calendar",
-    "/recursos-humanos/avisos": "alert-triangle",
-    "/recursos-humanos/avisos/cadastrar": "alert-triangle",
-    "/recursos-humanos/epi/entregas": "shield",
-    "/recursos-humanos/epi/entregas/cadastrar": "shield",
-    "/recursos-humanos/epi/agendamentos": "calendar",
-    "/recursos-humanos/epi/agendamentos/cadastrar": "calendar",
-    "/recursos-humanos/setores": "building-skyscraper",
-    "/recursos-humanos/setores/cadastrar": "building-skyscraper",
-    "/recursos-humanos/folha-de-pagamento": "receipt",
+    // Departamento Pessoal
+    "/departamento-pessoal/cargos": "briefcase",
+    "/departamento-pessoal/cargos/cadastrar": "briefcase",
+    "/departamento-pessoal/feriados": "calendar",
+    "/departamento-pessoal/feriados/cadastrar": "calendar",
+    "/departamento-pessoal/avisos": "alert-triangle",
+    "/departamento-pessoal/avisos/cadastrar": "alert-triangle",
+    "/departamento-pessoal/epi/entregas": "shield",
+    "/departamento-pessoal/epi/entregas/cadastrar": "shield",
+    "/departamento-pessoal/epi/agendamentos": "calendar",
+    "/departamento-pessoal/epi/agendamentos/cadastrar": "calendar",
+    "/departamento-pessoal/setores": "building-skyscraper",
+    "/departamento-pessoal/setores/cadastrar": "building-skyscraper",
+    "/departamento-pessoal/folha-de-pagamento": "receipt",
 
     // Pessoal
     "/pessoal/meus-feriados": "calendar",
@@ -377,7 +377,7 @@ export function getPageIconName(path: string): string {
     // Estatísticas
     "/estatisticas/producao": "chart-bar",
     "/estatisticas/administracao": "chart-bar",
-    "/estatisticas/recursos-humanos": "chart-bar",
+    "/estatisticas/departamento-pessoal": "chart-bar",
     "/estatisticas/estoque": "chart-bar",
 
     // Other
@@ -468,21 +468,21 @@ export function getPageIconName(path: string): string {
     [FAVORITE_PAGES.ADMINISTRACAO_NOTIFICACOES_LISTAR]: "bell",
     // [FAVORITE_PAGES.ADMINISTRACAO_NOTIFICACOES_ENVIAR]: "bell",
 
-    // Recursos Humanos
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_LISTAR]: "briefcase",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_CADASTRAR]: "briefcase",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_LISTAR]: "calendar",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_CADASTRAR]: "calendar",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_LISTAR]: "alert-triangle",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_CADASTRAR]: "alert-triangle",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_LISTAR]: "shield",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_CADASTRAR]: "shield",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_ENTREGAS_LISTAR]: "shield",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_ENTREGAS_CADASTRAR]: "shield",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_AGENDAMENTOS_LISTAR]: "calendar",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_AGENDAMENTOS_CADASTRAR]: "calendar",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_LISTAR]: "building-skyscraper",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_CADASTRAR]: "building-skyscraper",
+    // Departamento Pessoal
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_CARGOS_LISTAR]: "briefcase",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_CARGOS_CADASTRAR]: "briefcase",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_FERIADOS_LISTAR]: "calendar",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_FERIADOS_CADASTRAR]: "calendar",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_AVISOS_LISTAR]: "alert-triangle",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_AVISOS_CADASTRAR]: "alert-triangle",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_LISTAR]: "shield",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_CADASTRAR]: "shield",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_ENTREGAS_LISTAR]: "shield",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_ENTREGAS_CADASTRAR]: "shield",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_AGENDAMENTOS_LISTAR]: "calendar",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_EPI_AGENDAMENTOS_CADASTRAR]: "calendar",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_SETORES_LISTAR]: "building-skyscraper",
+    [FAVORITE_PAGES.DEPARTAMENTO_PESSOAL_SETORES_CADASTRAR]: "building-skyscraper",
 
     // Default
     "/favoritos": "star",

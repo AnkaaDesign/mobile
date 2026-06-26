@@ -16,7 +16,7 @@ import { useSlotContext } from "./slot-context";
 
 /**
  * Fake header — pixel-matches the real React Navigation header configured in
- * `src/navigation/privilege-optimized-full-fixed.tsx`:
+ * `src/navigation/privilege-layout.tsx`:
  *   - LEFT side: optional back arrow (only on detail/sub routes)
  *   - CENTER: title (centered — `headerTitleAlign: "center"`), 18px / 600
  *   - RIGHT side: bell + hamburger (in that order, left → right)

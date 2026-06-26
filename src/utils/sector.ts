@@ -39,7 +39,7 @@ export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES | typ
     [SECTOR_PRIVILEGES.LOGISTIC]: "Acesso a logística e garagens",
     [SECTOR_PRIVILEGES.PRODUCTION]: "Acesso a funcionalidades de produção",
     [TEAM_LEADER]: "Acesso de líder de equipe",
-    [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "Acesso a recursos humanos",
+    [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "Acesso a departamento pessoal",
     [SECTOR_PRIVILEGES.FINANCIAL]: "Acesso financeiro",
     [SECTOR_PRIVILEGES.COMMERCIAL]: "Acesso comercial",
     [SECTOR_PRIVILEGES.PLOTTING]: "Acesso a plotagem e recorte",

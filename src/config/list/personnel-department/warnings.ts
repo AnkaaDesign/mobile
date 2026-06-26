@@ -1,0 +1,333 @@
+import type { ListConfig } from '@/components/list/types'
+import type { Warning } from '@/types'
+import { WARNING_SEVERITY, WARNING_CATEGORY } from '@/constants/enums'
+import { WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from '@/constants/enum-labels'
+import { canEditHrEntities, canDeleteHrEntities } from '@/utils/permissions/entity-permissions'
+
+export const warningsListConfig: ListConfig<Warning> = {
+  key: 'hr-warnings',
+  title: 'Advertências',
+
+  query: {
+    hook: 'useWarningsInfiniteMobile',
+    mutationsHook: 'useWarningMutations',
+    batchMutationsHook: 'useWarningBatchMutations',
+    defaultSort: { field: 'createdAt', direction: 'desc' },
+    pageSize: 25,
+    include: {
+      collaborator: true,
+      supervisor: true,
+      attachments: true,
+    },
+  },
+
+  table: {
+    columns: [
+      {
+        key: 'collaborator.name',
+        label: 'FUNCIONÁRIO',
+        sortable: true,
+        width: 2.0,
+        align: 'left',
+        render: (warning) => warning.collaborator?.name || '—',
+        style: { fontWeight: '500' },
+      },
+      {
+        key: 'category',
+        label: 'CATEGORIA',
+        sortable: true,
+        width: 1.5,
+        align: 'left',
+        render: (warning) => warning.category ? WARNING_CATEGORY_LABELS[warning.category] : '—',
+        format: 'badge',
+        badge: () => ({ variant: 'primary' }),
+      },
+      {
+        key: 'severity',
+        label: 'SEVERIDADE',
+        sortable: true,
+        width: 1.5,
+        align: 'left',
+        render: (warning) => warning.severity ? WARNING_SEVERITY_LABELS[warning.severity] : '—',
+        format: 'badge',
+        badge: () => ({ variant: 'secondary' }),
+      },
+      {
+        key: 'supervisor.name',
+        label: 'SUPERVISOR',
+        sortable: true,
+        width: 2.0,
+        align: 'left',
+        render: (warning) => warning.supervisor?.name || '—',
+      },
+      {
+        key: 'isActive',
+        label: 'STATUS',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (warning) => (warning.isActive ? 'Ativa' : 'Resolvida'),
+        format: 'badge',
+        badge: (warning) => ({ variant: warning.isActive ? 'success' : 'secondary' }),
+      },
+      {
+        key: 'followUpDate',
+        label: 'DATA',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (warning) => warning.followUpDate,
+        format: 'date',
+      },
+      {
+        key: 'attachments',
+        label: 'ANEXO',
+        sortable: false,
+        width: 0.8,
+        align: 'center',
+        render: (warning) => warning.attachments && warning.attachments.length > 0 ? '📎' : '—',
+      },
+      {
+        key: 'createdAt',
+        label: 'CRIADO EM',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (warning) => warning.createdAt,
+        format: 'date',
+      },
+    ],
+    defaultVisible: ['collaborator.name', 'category', 'followUpDate'],
+    rowHeight: 72,
+    actions: [
+      {
+        key: 'view',
+        label: 'Visualizar',
+        icon: 'eye',
+        variant: 'default',
+        onPress: (warning, router) => {
+          router.push(`/departamento-pessoal/advertencias/detalhes/${warning.id}`)
+        },
+      },
+      {
+        key: 'edit',
+        label: 'Editar',
+        icon: 'pencil',
+        variant: 'default',
+        canPerform: canEditHrEntities,
+        onPress: (warning, router) => {
+          router.push(`/departamento-pessoal/advertencias/editar/${warning.id}`)
+        },
+      },
+      {
+        key: 'delete',
+        label: 'Excluir',
+        icon: 'trash',
+        variant: 'destructive',
+        canPerform: canDeleteHrEntities,
+        confirm: {
+          title: 'Confirmar Exclusão',
+          message: (warning) => `Deseja excluir esta advertência?`,
+        },
+        onPress: async (warning, _, context) => {
+          await context?.delete?.(warning.id)
+        },
+      },
+    ],
+  },
+
+  filters: {
+    fields: [
+      {
+        // API filter key is plural `severities` (array); singular `severity`
+        // was silently stripped → filter did nothing.
+        key: 'severities',
+        label: 'Severidade',
+        type: 'select',
+        multiple: true,
+        options: Object.entries(WARNING_SEVERITY_LABELS).map(([key, label]) => ({
+          label,
+          value: key,
+        })),
+        placeholder: 'Selecione as severidades',
+      },
+      {
+        // API filter key is plural `categories` (array); singular `category`
+        // was silently stripped → filter did nothing.
+        key: 'categories',
+        label: 'Categoria',
+        type: 'select',
+        multiple: true,
+        options: Object.entries(WARNING_CATEGORY_LABELS).map(([key, label]) => ({
+          label,
+          value: key,
+        })),
+        placeholder: 'Selecione as categorias',
+      },
+      {
+        // API isActive is z.boolean(); the string values 'active'/'resolved'
+        // were rejected → 400. Use booleans (Ativas = active, Resolvidas = not).
+        key: 'isActive',
+        label: 'Status',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ativas', value: true },
+          { label: 'Resolvidas', value: false },
+        ],
+        placeholder: 'Selecione o status',
+      },
+      {
+        key: 'collaboratorIds',
+        label: 'Colaboradores',
+        type: 'select',
+        multiple: true,
+        async: true,
+        queryKey: ['users', 'filter', 'collaborators'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Collaborator Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
+        placeholder: 'Selecione os colaboradores',
+      },
+      {
+        key: 'supervisorIds',
+        label: 'Supervisores',
+        type: 'select',
+        multiple: true,
+        async: true,
+        queryKey: ['users', 'filter', 'supervisors'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Supervisor Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
+        placeholder: 'Selecione os supervisores',
+      },
+      {
+        key: 'witnessIds',
+        label: 'Testemunhas',
+        type: 'select',
+        multiple: true,
+        async: true,
+        queryKey: ['users', 'filter', 'witnesses'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Witness Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
+        placeholder: 'Selecione as testemunhas',
+      },
+      {
+        key: 'createdAt',
+        label: 'Data de Criação',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
+      },
+      {
+        key: 'followUpDate',
+        label: 'Data de Acompanhamento',
+        type: 'date-range',
+        placeholder: 'Data de Acompanhamento',
+      },
+    ],
+  },
+
+  search: {
+    placeholder: 'Buscar advertências...',
+    debounce: 500,
+  },
+
+  export: {
+    title: 'Advertências',
+    filename: 'advertencias',
+    formats: ['csv', 'json', 'pdf'],
+    columns: [
+      { key: 'collaborator', label: 'Funcionário', path: 'collaborator.name' },
+      { key: 'category', label: 'Categoria', path: 'category', format: (value: any): string => value ? WARNING_CATEGORY_LABELS[value as WARNING_CATEGORY] : '—' },
+      { key: 'severity', label: 'Severidade', path: 'severity', format: (value: any): string => WARNING_SEVERITY_LABELS[value as WARNING_SEVERITY] || String(value) },
+      { key: 'followUpDate', label: 'Data', path: 'followUpDate', format: 'date' },
+      { key: 'attachments', label: 'Anexo', path: 'attachments', format: (value: any): string => value && value.length > 0 ? 'Sim' : 'Não' },
+      { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
+    ],
+  },
+
+  actions: {
+    create: {
+      label: 'Cadastrar Advertência',
+      route: '/departamento-pessoal/advertencias/cadastrar',
+      canCreate: canEditHrEntities,
+    },
+    bulk: [
+      {
+        key: 'delete',
+        label: 'Excluir',
+        icon: 'trash',
+        variant: 'destructive',
+        confirm: {
+          title: 'Confirmar Exclusão',
+          message: (count) => `Deseja excluir ${count} ${count === 1 ? 'advertência' : 'advertências'}?`,
+        },
+        onPress: async (ids, actions) => {
+          await actions?.batchDeleteAsync?.({ warningIds: Array.from(ids) })
+        },
+        canPerform: canDeleteHrEntities,
+      },
+    ],
+  },
+}

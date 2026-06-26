@@ -494,7 +494,7 @@ function convertPortuguesePathToEnglish(portuguesePath: string): string[] {
     'marcas-de-tinta': 'paint-brands',
     'tipos-de-tinta': 'paint-types',
     'producoes': 'productions',
-    'recursos-humanos': 'human-resources',
+    'departamento-pessoal': 'personnel-department',
     'avisos': 'warnings',
     'cargos': 'positions',
     'controle-ponto': 'time-clock',

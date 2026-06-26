@@ -33,8 +33,8 @@ import {
   getPreviousAdmissionStatus,
   hasBlockingRequiredDocs,
 } from "../utils";
-import { LinkedExamStatus, useLinkedMedicalExam } from "@/components/human-resources/medical-exam/detail/linked-exam-status";
-import { CancelReasonModal } from "@/components/human-resources/shared/cancel-reason-modal";
+import { LinkedExamStatus, useLinkedMedicalExam } from "@/components/personnel-department/medical-exam/detail/linked-exam-status";
+import { CancelReasonModal } from "@/components/personnel-department/shared/cancel-reason-modal";
 
 interface StatusCardProps {
   admission: Admission;
@@ -153,7 +153,7 @@ export function StatusCard({ admission, canManage }: StatusCardProps) {
               );
               const newId = (res as any)?.data?.id;
               if (newId) {
-                nav.push(mobileRoute(routes.humanResources.occupationalHealth.medicalExams.details(newId)));
+                nav.push(mobileRoute(routes.personnelDepartment.occupationalHealth.medicalExams.details(newId)));
               }
             } catch {
               /* interceptor toasts */

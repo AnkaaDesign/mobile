@@ -16,7 +16,7 @@ const ROUTE_FIXES: RouteMapping[] = [
   // Fix other module index routes
   { menuPath: '/producao', screenName: 'producao/index', actualPath: '(tabs)/producao/index' },
   { menuPath: '/estoque', screenName: 'estoque/index', actualPath: '(tabs)/estoque/index' },
-  { menuPath: '/recursos-humanos', screenName: 'recursos-humanos/index', actualPath: '(tabs)/recursos-humanos/index' },
+  { menuPath: '/departamento-pessoal', screenName: 'departamento-pessoal/index', actualPath: '(tabs)/departamento-pessoal/index' },
   { menuPath: '/administracao', screenName: 'administracao/index', actualPath: '(tabs)/administracao/index' },
   { menuPath: '/pintura', screenName: 'pintura/index', actualPath: '(tabs)/pintura/index' },
   { menuPath: '/servidor', screenName: 'servidor/index', actualPath: '(tabs)/servidor/index' },
@@ -37,7 +37,7 @@ export function normalizeRouteForScreen(menuPath: string): string {
 
   // For routes without /index, add it if it's a module root
   const moduleRoots = [
-    'producao', 'estoque', 'recursos-humanos', 'administracao',
+    'producao', 'estoque', 'departamento-pessoal', 'administracao',
     'pintura', 'servidor', 'meu-pessoal'
   ];
 
@@ -99,7 +99,7 @@ export function shouldLazyLoad(screenName: string): boolean {
 export function getModuleForRoute(screenName: string): string | null {
   if (screenName.startsWith('producao')) return 'production';
   if (screenName.startsWith('estoque')) return 'inventory';
-  if (screenName.startsWith('recursos-humanos')) return 'hr';
+  if (screenName.startsWith('departamento-pessoal')) return 'hr';
   if (screenName.startsWith('administracao')) return 'admin';
   if (screenName.startsWith('meu-pessoal')) return 'personal';
   if (screenName.startsWith('pessoal')) return 'personal';

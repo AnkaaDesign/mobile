@@ -92,7 +92,6 @@ export * from "./useSupplier";
 export * from "./useWarehouseLocation";
 export * from "./useExternalOperation";
 export * from "./useMaintenance";
-export * from "./use-auto-order-analysis";
 
 // =====================================================
 // Common Module Hooks
@@ -118,7 +117,6 @@ export * from "./useLayout";
 // =====================================================
 export * from "./useServer";
 export * from "./useBackup";
-export * from "./deployment";
 
 // =====================================================
 // Integration Hooks
@@ -160,7 +158,6 @@ export * from "./use-paint-types-infinite-mobile";
 export * from "./use-positions-infinite-mobile";
 export * from "./use-ppe-deliveries-infinite-mobile";
 export * from "./use-ppe-infinite-mobile";
-export * from "./use-ppe-schedules-infinite-mobile";
 export * from "./use-ppe-sizes-infinite-mobile";
 export * from "./use-request-ppe-delivery";
 export * from "./use-sectors-infinite-mobile";
@@ -176,14 +173,12 @@ export * from "./use-team-warnings-infinite-mobile";
 export * from "./use-medical-exams-infinite-mobile";
 export * from "./use-leaves-infinite-mobile";
 export * from "./use-work-accidents-infinite-mobile";
-export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
 export * from "./use-airbrushings-infinite-mobile";
 export * from "./use-observations-infinite-mobile";
 export * from "./use-paint-brands-infinite-mobile";
 export * from "./use-backups-infinite-mobile";
 export * from "./use-scheduled-backups-infinite-mobile";
-export * from "./use-deployments-infinite-mobile";
 export * from "./use-paint-productions-infinite-mobile";
 export * from "./use-paint-formula-components-infinite-mobile";
 export * from "./use-payrolls-infinite-mobile";
@@ -274,7 +269,6 @@ export * from "./useBenefit";
 export * from "./useUserBenefit";
 export * from "./useDependent";
 export * from "./useTermination";
-export * from "./useSalaryAdjustment";
 export * from "./useUserPositionHistory";
 export * from "./useAdmission";
 export * from "./useAdmissionDocumentSignature";

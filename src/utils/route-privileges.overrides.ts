@@ -66,10 +66,8 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
   // ---- Recorte: PLOTTING/DESIGNER also have access ----
   "/(tabs)/producao/recorte": ["PRODUCTION", "PLOTTING", "DESIGNER", "ADMIN"],
   "/(tabs)/producao/recorte/listar": ["PRODUCTION", "PLOTTING", "DESIGNER", "ADMIN"],
-  "/(tabs)/producao/recorte/plano-de-recorte/cadastrar": ["PRODUCTION", "PLOTTING"],
-  "/(tabs)/producao/recorte/plano-de-recorte/detalhes/[id]": ["PRODUCTION", "PLOTTING", "DESIGNER", "ADMIN"],
-  "/(tabs)/producao/recorte/plano-de-recorte/editar/[id]": ["PRODUCTION", "PLOTTING"],
-  "/(tabs)/producao/recorte/plano-de-recorte/listar": ["PRODUCTION", "PLOTTING", "DESIGNER", "ADMIN"],
+  "/(tabs)/producao/recorte/cadastrar": ["PRODUCTION", "PLOTTING"],
+  "/(tabs)/producao/recorte/detalhes/[id]": ["PRODUCTION", "PLOTTING", "DESIGNER", "ADMIN"],
 
   // ---- Garagens: COMMERCIAL also has access ----
   "/(tabs)/producao/garagens": ["PRODUCTION", "LOGISTIC", "PRODUCTION_MANAGER", "COMMERCIAL", "ADMIN"],
@@ -100,9 +98,9 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
   "/(tabs)/pintura/producoes": ["PRODUCTION", "WAREHOUSE", "ADMIN"],
 
   // ---- HR special cases: list = HR, create = ADMIN ----
-  "/(tabs)/recursos-humanos/funcionarios/cadastrar": "ADMIN",
-  "/(tabs)/recursos-humanos/cargos/cadastrar": "ADMIN",
-  "/(tabs)/recursos-humanos/setores/cadastrar": "ADMIN",
+  "/(tabs)/departamento-pessoal/funcionarios/cadastrar": "ADMIN",
+  "/(tabs)/departamento-pessoal/cargos/cadastrar": "ADMIN",
+  "/(tabs)/departamento-pessoal/setores/cadastrar": "ADMIN",
 
   // ---- Financeiro: FINANCIAL + COMMERCIAL + ADMIN (+ ACCOUNTING where granted) ----
   "/(tabs)/financeiro": ["FINANCIAL", "COMMERCIAL", "ADMIN", "ACCOUNTING"],
@@ -114,22 +112,22 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
 
   // ---- ACCOUNTING (Contabilidade): departamento-pessoal reads over RH routes ----
   // Create special-cases above (funcionarios/cargos/setores cadastrar) stay ADMIN-only.
-  "/(tabs)/recursos-humanos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/funcionarios": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/funcionarios/listar": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/funcionarios/detalhes/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/funcionarios/editar/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/colaboradores": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/epi": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/feriados": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/advertencias": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/cargos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/folha-de-pagamento": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/niveis-de-desempenho": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/bonus": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/calculos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/controle-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/recursos-humanos/requisicoes-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/funcionarios": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/funcionarios/listar": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/funcionarios/detalhes/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/funcionarios/editar/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/colaboradores": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/epi": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/feriados": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/advertencias": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/cargos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/folha-de-pagamento": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/niveis-de-desempenho": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/bonus": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/calculos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/controle-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/requisicoes-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
 
   // ---- Servidor: file-manager open to COMMERCIAL alongside ADMIN ----
   "/(tabs)/servidor/file-manager": ["ADMIN", "COMMERCIAL"],

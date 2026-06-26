@@ -75,7 +75,6 @@ export * from "./supplier";
 export * from "./warehouse-location";
 export * from "./task";
 export * from "./team-staff";
-export * from "./throttler";
 export * from "./truck";
 export * from "./layout";
 export * from "./services/layoutSection";
@@ -130,7 +129,6 @@ export {
   refreshSsdHealth,
 } from "./services/monitoring";
 // export * from "./services/statistics"; // Disabled - file doesn't exist
-export * from "./services/deployment";
 export * from "./platform-utils";
 export * from "./responsible";
 export * from "./push-notifications";
@@ -149,6 +147,5 @@ export * from "./work-accident";
 export * from "./benefit";
 export * from "./dependent";
 export * from "./termination";
-export * from "./salary-adjustment";
 export * from "./user-position-history";
 export * from "./admission";

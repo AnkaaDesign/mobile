@@ -61,11 +61,11 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
       case CHANGE_LOG_ENTITY_TYPE.PPE_CONFIG:
         return routes.inventory.ppe.details(entityId);
 
-      // Human Resources
+      // Personnel Department
       case CHANGE_LOG_ENTITY_TYPE.POSITION:
-        return routes.humanResources.positions.details(entityId);
+        return routes.personnelDepartment.positions.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.WARNING:
-        return routes.humanResources.warnings.details(entityId);
+        return routes.personnelDepartment.warnings.details(entityId);
 
       // Production
       case CHANGE_LOG_ENTITY_TYPE.TASK:

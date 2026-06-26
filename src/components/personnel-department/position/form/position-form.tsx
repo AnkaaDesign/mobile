@@ -1,0 +1,359 @@
+import { useMemo } from "react";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
+import { FormActionBar } from "@/components/forms";
+import { useTheme } from "@/lib/theme";
+import { formSpacing } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, INSALUBRITY_DEGREE, INSALUBRITY_DEGREE_LABELS } from "@/constants";
+import { useNav } from "@/contexts/nav";
+
+import { positionCreateSchema, positionUpdateSchema } from "@/schemas/position";
+import type { PositionCreateFormData, PositionUpdateFormData } from "@/schemas/position";
+import type { Position } from "@/types";
+import { usePositionMutations } from "@/hooks/usePosition";
+
+interface PositionFormProps {
+  mode: "create" | "update";
+  position?: Position;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFormProps) {
+  const nav = useNav();
+  const goBack = () => nav.goBack();
+  const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
+  const { createAsync, updateAsync, createMutation, updateMutation } = usePositionMutations();
+
+  const form = useForm<PositionCreateFormData | PositionUpdateFormData>({
+    resolver: zodResolver(mode === "create" ? positionCreateSchema : positionUpdateSchema),
+    defaultValues:
+      mode === "create"
+        ? {
+            name: "",
+            remuneration: 0,
+            bonifiable: false,
+            hierarchy: undefined,
+            salaryFloor: undefined,
+            insalubrityDegree: INSALUBRITY_DEGREE.NONE,
+            hazardPay: false,
+            examPeriodicityMonths: undefined,
+          }
+        : {
+            name: position?.name,
+            remuneration: undefined,
+            bonifiable: position?.bonifiable,
+            hierarchy: position?.hierarchy ?? undefined,
+            salaryFloor: position?.salaryFloor ?? undefined,
+            insalubrityDegree: position?.insalubrityDegree ?? INSALUBRITY_DEGREE.NONE,
+            hazardPay: position?.hazardPay ?? false,
+            examPeriodicityMonths: position?.examPeriodicityMonths ?? undefined,
+          },
+  });
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  const insalubrityOptions: ComboboxOption[] = Object.entries(INSALUBRITY_DEGREE_LABELS).map(
+    ([value, label]) => ({ value, label })
+  );
+
+  const handleSubmit = async (data: PositionCreateFormData | PositionUpdateFormData) => {
+    try {
+      if (mode === "create") {
+        const result = await createAsync(data as PositionCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          nav.replace(mobileRoute(routes.personnelDepartment.positions.details(newId)));
+        } else {
+          goBack();
+        }
+      } else if (position) {
+        await updateAsync({
+          id: position.id,
+          data: data as PositionUpdateFormData,
+        });
+        onSuccess?.();
+        nav.replace(mobileRoute(routes.personnelDepartment.positions.details(position.id)));
+      }
+    } catch {
+      // Error toast is shown automatically by the axios response interceptor.
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      goBack();
+    }
+  };
+
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+        >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+          <FormCard title="Informações do Cargo" icon="IconBriefcase">
+          {/* Name */}
+          <FormFieldGroup
+            label="Nome"
+            required
+            error={form.formState.errors.name?.message}
+          >
+            <Controller
+              control={form.control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Nome do cargo"
+                  editable={!isLoading}
+                  error={!!form.formState.errors.name}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Remuneration */}
+          <FormFieldGroup
+            label="Remuneração"
+            required={mode === "create"}
+            helper={mode === "update" ? "Deixe em branco para manter a remuneração atual. Ao atualizar, um novo registro será criado no histórico." : undefined}
+            error={form.formState.errors.remuneration?.message}
+          >
+            <Controller
+              control={form.control}
+              name="remuneration"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="currency"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="R$ 0,00"
+                  editable={!isLoading}
+                  error={!!form.formState.errors.remuneration}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Hierarchy */}
+          <FormFieldGroup
+            label="Hierarquia"
+            helper="Valor entre 0 e 999. Maior hierarquia = número maior."
+            error={form.formState.errors.hierarchy?.message}
+          >
+            <Controller
+              control={form.control}
+              name="hierarchy"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="integer"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="0"
+                  min={0}
+                  max={999}
+                  editable={!isLoading}
+                  error={!!form.formState.errors.hierarchy}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Bonifiable */}
+          <FormFieldGroup
+            label="Bonificável"
+            helper="Cargo recebe bonificação por desempenho"
+          >
+            <View style={styles.switchRow}>
+              <Controller
+                control={form.control}
+                name="bonifiable"
+                render={({ field: { onChange, value } }) => (
+                  <Switch
+                    checked={value || false}
+                    onCheckedChange={onChange}
+                    disabled={isLoading}
+                  />
+                )}
+              />
+            </View>
+          </FormFieldGroup>
+          </FormCard>
+
+          <FormCard title="Adicionais Legais e Saúde" icon="IconShieldHalf">
+          {/* Salary Floor */}
+          <FormFieldGroup
+            label="Piso Salarial"
+            helper="Piso da categoria/sindicato. Vazio = usa o salário-mínimo nacional."
+            error={form.formState.errors.salaryFloor?.message}
+          >
+            <Controller
+              control={form.control}
+              name="salaryFloor"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="currency"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="R$ 0,00"
+                  editable={!isLoading}
+                  error={!!form.formState.errors.salaryFloor}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Insalubrity Degree */}
+          <FormFieldGroup
+            label="Insalubridade"
+            helper="Não acumula com periculosidade."
+            error={form.formState.errors.insalubrityDegree?.message}
+          >
+            <Controller
+              control={form.control}
+              name="insalubrityDegree"
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <Combobox
+                  options={insalubrityOptions}
+                  value={value ?? INSALUBRITY_DEGREE.NONE}
+                  onValueChange={(v) => {
+                    onChange(v);
+                    if (v !== INSALUBRITY_DEGREE.NONE) {
+                      form.setValue("hazardPay", false);
+                    }
+                  }}
+                  placeholder="Selecione o grau"
+                  disabled={isLoading}
+                  searchable={false}
+                  clearable={false}
+                  error={error?.message}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Hazard Pay */}
+          <FormFieldGroup
+            label="Periculosidade"
+            helper="Periculosidade NR-16 (+30%). Não acumula com insalubridade."
+          >
+            <View style={styles.switchRow}>
+              <Controller
+                control={form.control}
+                name="hazardPay"
+                render={({ field: { onChange, value } }) => (
+                  <Switch
+                    checked={value || false}
+                    onCheckedChange={(checked) => {
+                      onChange(checked);
+                      if (checked) {
+                        form.setValue("insalubrityDegree", INSALUBRITY_DEGREE.NONE);
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                )}
+              />
+            </View>
+          </FormFieldGroup>
+
+          {/* Exam Periodicity */}
+          <FormFieldGroup
+            label="Periodicidade de Exame"
+            helper="Periodicidade do exame periódico (meses). Vazio = cadência legal por idade/risco."
+            error={form.formState.errors.examPeriodicityMonths?.message}
+          >
+            <Controller
+              control={form.control}
+              name="examPeriodicityMonths"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="integer"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="12"
+                  min={1}
+                  max={60}
+                  editable={!isLoading}
+                  error={!!form.formState.errors.examPeriodicityMonths}
+                />
+              )}
+            />
+          </FormFieldGroup>
+          </FormCard>
+          </KeyboardAwareFormProvider>
+        </ScrollView>
+
+        <FormActionBar
+          onCancel={handleCancel}
+          onSubmit={form.handleSubmit(handleSubmit)}
+          isSubmitting={isLoading}
+          canSubmit={form.formState.isValid}
+          submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+  fieldGroup: {
+    gap: spacing.lg,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+});

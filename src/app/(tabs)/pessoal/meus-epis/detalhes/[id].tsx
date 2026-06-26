@@ -23,7 +23,7 @@ import {
 import {
   SignDeliveryButton,
   SignatureEvidenceCard,
-} from "@/components/human-resources/ppe/delivery/detail";
+} from "@/components/personnel-department/ppe/delivery/detail";
 
 export default function PpeDeliveryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

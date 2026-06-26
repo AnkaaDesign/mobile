@@ -2,7 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Vacation } from '@/types'
 import { VACATION_STATUS } from '@/constants/enums'
 import { VACATION_STATUS_LABELS } from '@/constants/enum-labels'
-import { isVacationInProgress } from '@/components/human-resources/vacation/vacation-utils'
+import { isVacationInProgress } from '@/components/personnel-department/vacation/vacation-utils'
 
 // Status → Badge variant. SCHEDULED = amber, PAID = green, EXPIRED = red.
 const STATUS_VARIANT: Record<VACATION_STATUS, string> = {

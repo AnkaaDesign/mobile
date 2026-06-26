@@ -20,13 +20,9 @@ import { useTheme } from "@/lib/theme";
 
 const quickAccessItems = [
   { title: "Serviços", icon: "settings", route: routes.server.services, color: "#3b82f6" },
-  { title: "Usuários", icon: "user-cog", route: routes.server.users.root, color: "#16a34a" },
   { title: "Arquivos", icon: "folder-share", route: routes.server.fileManager, color: "#a855f7" },
   { title: "Métricas", icon: "chart-line", route: routes.server.metrics, color: "#f97316" },
-  { title: "Logs", icon: "file-text", route: routes.server.logs, color: "#ef4444" },
-  { title: "Sync BD", icon: "database-import", route: routes.server.databaseSync, color: "#14b8a6" },
   { title: "Backups", icon: "archive", route: routes.server.backup, color: "#06b6d4" },
-  { title: "Rate Limit", icon: "shield", route: routes.server.throttler.root, color: "#8b5cf6" },
 ];
 
 export default function ServidorScreenWrapper() {

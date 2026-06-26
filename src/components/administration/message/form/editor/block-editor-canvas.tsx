@@ -7,7 +7,9 @@ import { IconPlus, IconLayoutGrid, IconStack2 } from '@tabler/icons-react-native
 import { BlockEditor } from './block-editor';
 import { BlockTypeSelector } from './block-type-selector';
 import { MessageTemplatesModal } from './message-templates-modal';
+import { SimplePasteDialog } from './simple-paste-dialog';
 import { createEmptyBlock } from './block-utils';
+import { buildSimpleDocument } from '@/utils/message-rich-paste';
 import type { ContentBlock, BlockType } from './types';
 
 interface BlockEditorCanvasProps {
@@ -20,12 +22,24 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
   const { colors } = useTheme();
   const [showSelector, setShowSelector] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showSimplePaste, setShowSimplePaste] = useState(false);
 
   const handleAddBlock = useCallback(
     (type: BlockType) => {
       const newBlock = createEmptyBlock(type);
       onBlocksChange([...blocks, newBlock]);
       setShowSelector(false);
+    },
+    [blocks, onBlocksChange]
+  );
+
+  // "Simples": append pasted, already-formatted content and ensure the document
+  // has a logo header at the top and a wave footer at the bottom.
+  const handleSimpleInsert = useCallback(
+    (contentBlocks: ContentBlock[]) => {
+      const next = [...blocks, ...contentBlocks];
+      onBlocksChange(buildSimpleDocument(next, next));
+      setShowSimplePaste(false);
     },
     [blocks, onBlocksChange]
   );
@@ -111,6 +125,13 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
           open={showSelector}
           onClose={() => setShowSelector(false)}
           onSelect={handleAddBlock}
+          onSimple={() => { setShowSelector(false); setShowSimplePaste(true); }}
+        />
+
+        <SimplePasteDialog
+          open={showSimplePaste}
+          onClose={() => setShowSimplePaste(false)}
+          onInsert={handleSimpleInsert}
         />
 
         <MessageTemplatesModal
@@ -172,6 +193,13 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
         open={showSelector}
         onClose={() => setShowSelector(false)}
         onSelect={handleAddBlock}
+        onSimple={() => { setShowSelector(false); setShowSimplePaste(true); }}
+      />
+
+      <SimplePasteDialog
+        open={showSimplePaste}
+        onClose={() => setShowSimplePaste(false)}
+        onInsert={handleSimpleInsert}
       />
 
       <MessageTemplatesModal

@@ -1,0 +1,201 @@
+
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { ThemedText } from "@/components/ui/themed-text";
+import { IconTrendingUp, IconTrendingDown, IconMinus, IconChevronRight } from "@tabler/icons-react-native";
+import type { Position } from '../../../../types';
+import { formatCurrency, formatDate } from "@/utils";
+import { routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { extendedColors } from "@/lib/theme/extended-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
+import { IconHistory } from "@tabler/icons-react-native";
+
+interface RemunerationsCardProps {
+  position: Position;
+}
+
+export function RemunerationsCard({ position }: RemunerationsCardProps) {
+  const { colors, isDark } = useTheme();
+  const nav = useNav();
+
+  // Get remunerations (MonetaryValue entities via remunerations relation)
+  const values = position.remunerations || [];
+  const hasRemunerations = values.length > 0;
+
+  const handleViewRemunerations = () => {
+    nav.push(mobileRoute(routes.personnelDepartment.positions.remunerations(position.id)));
+  };
+
+  // Calculate trend
+  const getTrend = (current: number, previous: number | null) => {
+    if (!previous) return "new";
+    if (current > previous) return "up";
+    if (current < previous) return "down";
+    return "same";
+  };
+
+  return (
+    <DetailCard title="Histórico de Remunerações" icon="history">
+      {!hasRemunerations ? (
+        <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
+          <IconHistory size={32} color={colors.mutedForeground} />
+          <ThemedText style={StyleSheet.flatten([styles.emptyStateText, { color: colors.mutedForeground }])}>
+            Nenhum histórico de remuneração registrado
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.remunerationsContent}>
+          <View style={styles.remunerationsList}>
+            {values.slice(0, 5).map((remuneration, index) => {
+              const previousValue = index < values.length - 1 ? values[index + 1].value : null;
+              const trend = getTrend(remuneration.value, previousValue);
+
+              const getTrendColor = () => {
+                switch (trend) {
+                  case "up":
+                    return isDark ? extendedColors.green[400] : extendedColors.green[600];
+                  case "down":
+                    return isDark ? extendedColors.red[400] : extendedColors.red[600];
+                  default:
+                    return colors.mutedForeground;
+                }
+              };
+
+              const getTrendIcon = () => {
+                switch (trend) {
+                  case "up":
+                    return <IconTrendingUp size={16} color={getTrendColor()} />;
+                  case "down":
+                    return <IconTrendingDown size={16} color={getTrendColor()} />;
+                  default:
+                    return <IconMinus size={16} color={getTrendColor()} />;
+                }
+              };
+
+              const getChangePercentage = () => {
+                if (!previousValue || trend === "new" || trend === "same") return null;
+                const change = ((remuneration.value - previousValue) / previousValue) * 100;
+                return `${change > 0 ? "+" : ""}${change.toFixed(1)}%`;
+              };
+
+              return (
+                <View
+                  key={remuneration.id}
+                  style={StyleSheet.flatten([
+                    styles.remunerationItem,
+                    {
+                      backgroundColor: colors.muted + "20",
+                      borderBottomWidth: index < Math.min(values.length, 5) - 1 ? 1 : 0,
+                      borderBottomColor: colors.border,
+                    },
+                  ])}
+                >
+                  <View style={styles.remunerationContent}>
+                    <View style={styles.remunerationInfo}>
+                      <ThemedText style={StyleSheet.flatten([styles.remunerationValue, { color: colors.foreground }])}>
+                        {formatCurrency(remuneration.value)}
+                      </ThemedText>
+                      <ThemedText style={StyleSheet.flatten([styles.remunerationDate, { color: colors.mutedForeground }])}>
+                        {formatDate(new Date(remuneration.createdAt))}
+                      </ThemedText>
+                    </View>
+                    {previousValue && (
+                      <View style={styles.trendContainer}>
+                        {getTrendIcon()}
+                        {getChangePercentage() && (
+                          <ThemedText style={StyleSheet.flatten([styles.trendText, { color: getTrendColor() }])}>
+                            {getChangePercentage()}
+                          </ThemedText>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {values.length > 5 && (
+            <TouchableOpacity
+              onPress={handleViewRemunerations}
+              style={StyleSheet.flatten([styles.viewAllButton, { backgroundColor: colors.primary + "10" }])}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={StyleSheet.flatten([styles.viewAllText, { color: colors.primary }])}>
+                Ver todos os {values.length} registros
+              </ThemedText>
+              <IconChevronRight size={18} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+    </DetailCard>
+  );
+}
+
+const styles = StyleSheet.create({
+  emptyState: {
+    padding: spacing.xl,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+  },
+  emptyStateText: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+  },
+  remunerationsContent: {
+    gap: spacing.md,
+  },
+  remunerationsList: {
+    gap: 0,
+    borderRadius: borderRadius.md,
+    overflow: "hidden",
+  },
+  remunerationItem: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  remunerationContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  remunerationInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  remunerationValue: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+  },
+  remunerationDate: {
+    fontSize: fontSize.xs,
+  },
+  trendContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  trendText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  viewAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  viewAllText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+});

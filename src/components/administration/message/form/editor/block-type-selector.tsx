@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import {
   IconH1, IconH2, IconH3, IconTextSize, IconPhoto, IconClick,
   IconMinus, IconSpacingVertical, IconList, IconQuote, IconStar,
-  IconColumns, IconPalette, IconBuilding, IconChevronRight,
+  IconColumns, IconPalette, IconBuilding, IconChevronRight, IconClipboardText,
 } from '@tabler/icons-react-native';
 import { BLOCK_TYPE_CONFIG } from './block-utils';
 import type { BlockType } from './types';
@@ -19,9 +19,9 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; color?: stri
 };
 
 // Group block types into the same categories the web editor uses, so the
-// flat 14-item grid becomes a scannable, sectioned list.
+// flat grid becomes a scannable, sectioned list. (Título 3 removed to match web.)
 const CATEGORIES: Array<{ title: string; types: BlockType[] }> = [
-  { title: 'Texto', types: ['heading1', 'heading2', 'heading3', 'paragraph', 'quote'] },
+  { title: 'Texto', types: ['heading1', 'heading2', 'paragraph', 'quote'] },
   { title: 'Mídia', types: ['image', 'button', 'divider'] },
   { title: 'Layout', types: ['spacer', 'list', 'icon', 'row'] },
   { title: 'Decorativos', types: ['decorator', 'company-asset'] },
@@ -32,9 +32,11 @@ interface BlockTypeSelectorProps {
   onClose: () => void;
   onSelect: (type: BlockType) => void;
   excludeTypes?: BlockType[];
+  /** "Simples" flow — paste already-formatted text with auto logo + footer. Omit to hide (e.g. inside rows). */
+  onSimple?: () => void;
 }
 
-export function BlockTypeSelector({ open, onClose, onSelect, excludeTypes }: BlockTypeSelectorProps) {
+export function BlockTypeSelector({ open, onClose, onSelect, excludeTypes, onSimple }: BlockTypeSelectorProps) {
   const { colors } = useTheme();
 
   const configByType = React.useMemo(
@@ -63,6 +65,34 @@ export function BlockTypeSelector({ open, onClose, onSelect, excludeTypes }: Blo
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
+          {onSimple && (
+            <View style={styles.section}>
+              <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
+                Rápido
+              </ThemedText>
+              <View style={[styles.sectionCard, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
+                <TouchableOpacity
+                  style={styles.row}
+                  onPress={() => { onSimple(); onClose(); }}
+                  activeOpacity={0.6}
+                >
+                  <View style={[styles.rowIcon, { backgroundColor: colors.card }]}>
+                    <IconClipboardText size={20} color={colors.primary} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <ThemedText style={[styles.rowLabel, { color: colors.foreground }]}>
+                      Simples
+                    </ThemedText>
+                    <ThemedText style={[styles.rowDesc, { color: colors.mutedForeground }]}>
+                      Colar texto formatado — logo e rodapé automáticos
+                    </ThemedText>
+                  </View>
+                  <IconChevronRight size={18} color={colors.mutedForeground} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           {CATEGORIES.map((category) => {
             const types = category.types.filter(
               (t) => !excludeTypes?.includes(t) && configByType[t]

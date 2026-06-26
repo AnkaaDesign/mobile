@@ -355,23 +355,29 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       }
 
       if (item.children && item.children.length > 0) {
-        const hasMatchingChild = item.children.some((child) => {
-          if (!child.path) return false;
-          const childNormalized = normalizePath(child.path);
-          return normalizedCurrent === childNormalized ||
-                 normalizedCurrent.startsWith(childNormalized + "/");
-        });
+        // A GROUP is active when the current route matches ANY descendant at any
+        // depth — NOT just direct children. This keeps the parent highlight
+        // consistent regardless of nesting depth: "Administração" lights up solid
+        // when its direct child "Mensagens" is active, and "Departamento Pessoal"
+        // must light up the same way when a grandchild (e.g. Bônus → Simulação)
+        // is active. Matching is done against each descendant's own path, so a
+        // group is NEVER active merely because the URL shares its prefix
+        // (e.g. Administração does not light up for /administracao/colaboradores,
+        // which lives under the Departamento Pessoal group).
+        const matchesDescendant = (node: MenuItem): boolean => {
+          if (node.path) {
+            const nodeNormalized = normalizePath(node.path);
+            if (
+              normalizedCurrent === nodeNormalized ||
+              normalizedCurrent.startsWith(nodeNormalized + "/")
+            ) {
+              return true;
+            }
+          }
+          return !!node.children && node.children.some(matchesDescendant);
+        };
 
-        if (hasMatchingChild) {
-          return true;
-        }
-
-        // A GROUP item must NOT be considered active merely because the URL shares
-        // its path prefix — otherwise "Administração" (/administracao) lights up
-        // when you open Colaboradores (/administracao/colaboradores), which lives
-        // under the Departamento Pessoal group instead. Group activeness comes only
-        // from a matching descendant (handled above).
-        return false;
+        return item.children.some(matchesDescendant);
       }
 
       // Leaf item: a path-prefix match covers dynamic detail routes

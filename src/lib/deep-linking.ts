@@ -33,19 +33,21 @@ export const ROUTE_MAP = {
   Category: '/(tabs)/estoque/produtos/categorias/detalhes/[id]',
 
   // HR Routes
-  Employee: '/(tabs)/recursos-humanos/funcionarios/detalhes/[id]',
-  Bonus: '/(tabs)/recursos-humanos/bonus/detalhes/[id]',
-  Warning: '/(tabs)/recursos-humanos/advertencias/detalhes/[id]',
-  Holiday: '/(tabs)/recursos-humanos/feriados/detalhes/[id]',
-  TimeRecord: '/(tabs)/recursos-humanos/controle-ponto/detalhes/[id]',
-  Position: '/(tabs)/recursos-humanos/cargos/detalhes/[id]',
-  Vacation: '/(tabs)/recursos-humanos/ferias/detalhes/[id]',
+  Employee: '/(tabs)/departamento-pessoal/funcionarios/detalhes/[id]',
+  Bonus: '/(tabs)/departamento-pessoal/bonus/detalhes/[id]',
+  Warning: '/(tabs)/departamento-pessoal/advertencias/detalhes/[id]',
+  Holiday: '/(tabs)/departamento-pessoal/feriados/detalhes/[id]',
+  TimeRecord: '/(tabs)/departamento-pessoal/controle-ponto/detalhes/[id]',
+  // Cargos (positions) are web-only on mobile — fall back to the employees list.
+  Position: '/(tabs)/departamento-pessoal/funcionarios',
+  Vacation: '/(tabs)/departamento-pessoal/ferias/detalhes/[id]',
   // Coletiva (vacation-group) is retired from the UI; map to the same individual
   // vacation detail so legacy notifications still resolve.
-  VacationGroup: '/(tabs)/recursos-humanos/ferias/detalhes/[id]',
-  Leave: '/(tabs)/recursos-humanos/medicina/afastamentos/detalhes/[id]',
-  Termination: '/(tabs)/recursos-humanos/rescisoes/detalhes/[id]',
-  Admission: '/(tabs)/recursos-humanos/admissoes/detalhes/[id]',
+  VacationGroup: '/(tabs)/departamento-pessoal/ferias/detalhes/[id]',
+  Leave: '/(tabs)/departamento-pessoal/medicina/afastamentos/detalhes/[id]',
+  // Rescisões / Admissões are web-only on mobile — fall back to the employees list.
+  Termination: '/(tabs)/departamento-pessoal/funcionarios',
+  Admission: '/(tabs)/departamento-pessoal/funcionarios',
 
   // Administration Routes
   User: '/(tabs)/administracao/usuarios/detalhes/[id]',
@@ -86,16 +88,16 @@ export const ROUTE_MAP = {
   // Contas a Pagar list so the user lands on something actionable (clearance
   // status is surfaced there) instead of dead-ending at the notifications list.
   ReconciliationRun: '/(tabs)/financeiro/contas-a-pagar/listar',
-  // Order schedule detail screen
-  OrderSchedule: '/(tabs)/estoque/pedidos/agendamentos/detalhes/[id]',
-  // Maintenance schedule detail screen
-  MaintenanceSchedule: '/(tabs)/estoque/manutencao/agendamentos/detalhes/[id]',
+  // Order schedules are web-only on mobile — fall back to the orders list.
+  OrderSchedule: '/(tabs)/estoque/pedidos',
+  // Maintenance schedules are web-only on mobile — fall back to the maintenance list.
+  MaintenanceSchedule: '/(tabs)/estoque/manutencao',
   // Task quote / budget (id is the taskId; orcamento detail screen is detalhes/[taskId])
   TaskQuote: '/(tabs)/financeiro/orcamento/detalhes/[taskId]',
   // Secullum solicitation (RH approvers review under calculos; employee self-service is meus-pontos)
-  SecullumSolicitacao: '/(tabs)/recursos-humanos/calculos',
+  SecullumSolicitacao: '/(tabs)/departamento-pessoal/calculos',
   // Secullum assinatura — HR notification when an employee signs or rejects their cartão-ponto
-  SecullumAssinatura: '/(tabs)/recursos-humanos/calculos',
+  SecullumAssinatura: '/(tabs)/departamento-pessoal/calculos',
   // Financial / billing (faturamento) detail screen
   Financial: '/(tabs)/financeiro/faturamento/detalhes/[id]',
   // NFS-e document detail screen
@@ -103,9 +105,9 @@ export const ROUTE_MAP = {
   // Time entry / clock-in (personal screen, no [id] segment)
   TimeEntry: '/(tabs)/pessoal/meus-pontos',
   // Payroll (folha de pagamento list screen, no [id] segment)
-  Payroll: '/(tabs)/recursos-humanos/folha-de-pagamento',
+  Payroll: '/(tabs)/departamento-pessoal/folha-de-pagamento',
   // Secullum payroll (same folha de pagamento screen)
-  SecullumPayroll: '/(tabs)/recursos-humanos/folha-de-pagamento',
+  SecullumPayroll: '/(tabs)/departamento-pessoal/folha-de-pagamento',
   // Bank slip / fatura (id is the taskId for these notifications; faturamento detail is detalhes/[id])
   BankSlip: '/(tabs)/financeiro/faturamento/detalhes/[id]',
 } as const;
@@ -128,7 +130,7 @@ export const LIST_ROUTE_MAP = {
   serviceOrders: '/(tabs)/producao/ordens-de-servico',
 
   // HR List Pages
-  employees: '/(tabs)/recursos-humanos/funcionarios',
+  employees: '/(tabs)/departamento-pessoal/funcionarios',
 
   // Administration List Pages
   users: '/(tabs)/administracao/usuarios',
@@ -749,13 +751,13 @@ export function parseDeepLink(url: string): ParsedDeepLink {
         // Pre-rename URLs (retiradas externas) resolve to the renamed screen
         'estoque/retiradas-externas': 'ExternalOperation',
         // HR pages
-        'recursos-humanos/funcionarios': 'Employee',
-        'recursos-humanos/bonus': 'Bonus',
-        'recursos-humanos/advertencias': 'Warning',
+        'departamento-pessoal/funcionarios': 'Employee',
+        'departamento-pessoal/bonus': 'Bonus',
+        'departamento-pessoal/advertencias': 'Warning',
         // Web "avisos" pages are warnings (mobile screen is advertencias)
-        'recursos-humanos/avisos': 'Warning',
-        'recursos-humanos/feriados': 'Holiday',
-        'recursos-humanos/folha-de-pagamento': 'Payroll',
+        'departamento-pessoal/avisos': 'Warning',
+        'departamento-pessoal/feriados': 'Holiday',
+        'departamento-pessoal/folha-de-pagamento': 'Payroll',
         // Administration pages
         'administracao/usuarios': 'User',
         'administracao/clientes': 'Customer',

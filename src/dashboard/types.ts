@@ -90,7 +90,7 @@ export type WidgetCategory =
 
 export const WIDGET_CATEGORY_LABELS: Record<WidgetCategory, string> = {
   inventory: "Estoque",
-  hr: "Recursos Humanos",
+  hr: "Departamento Pessoal",
   production: "Produção",
   financial: "Financeiro",
   other: "Outros",

@@ -15,8 +15,8 @@ import { ppeDeliveryTableWidget } from "./ppe-delivery-table";
 import { dailyPontoWidget } from "./daily-ponto";
 import { leaderPontoWidget } from "./leader-ponto";
 // HR — agent 15 additions (NEW widgets, missing on mobile until now).
-import { hrCalendarWidget } from "./hr-calendar";
-import { hrRequestsTableWidget } from "./hr-requests-table";
+import { personnelDepartmentCalendarWidget } from "./personnel-department-calendar";
+import { personnelDepartmentRequestsTableWidget } from "./personnel-department-requests-table";
 // END AGENT 15 IMPORTS
 // Inventory.
 import { itemTableWidget } from "./item-table";
@@ -42,8 +42,8 @@ const allWidgets: any[] = [
   ppeDeliveryTableWidget,
   dailyPontoWidget,
   leaderPontoWidget,
-  hrRequestsTableWidget,
-  hrCalendarWidget,
+  personnelDepartmentRequestsTableWidget,
+  personnelDepartmentCalendarWidget,
   // Production calendars.
   productionCalendarWidget,
   productivityWidget,

@@ -712,7 +712,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       hoverHighlight={display.hoverHighlight}
       onPress={() =>
         router.push(
-          `/(tabs)/recursos-humanos/time-clock?userId=${row.user.id}` as any,
+          `/(tabs)/departamento-pessoal/time-clock?userId=${row.user.id}` as any,
         )
       }
     >
@@ -800,7 +800,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         icon={<Icon size={16} color={accent.hex} />}
         viewAllHref={
           display.showViewAllLink
-            ? `/(tabs)/recursos-humanos/time-clock?date=${dateStr}`
+            ? `/(tabs)/departamento-pessoal/time-clock?date=${dateStr}`
             : undefined
         }
         showHeader={display.showHeader}

@@ -15,6 +15,8 @@ export type WarningSignerRole = "COLLABORATOR" | "WITNESS";
 export interface WarningSignature extends BaseEntity {
   warningId: string;
   signedByUserId: string | null;
+  // CPF of the signer captured at signing time (collaborator or witness).
+  signedByCpf: string | null;
   signerRole: WarningSignerRole;
   // True when this record represents a refusal-to-sign (registered by HR/supervisor).
   refused: boolean;
@@ -44,6 +46,8 @@ export interface WarningSignature extends BaseEntity {
   // PAdES seal (ICP-Brasil cert applied server-side over the signed PDF)
   padesSealed?: boolean;
   padesSealedAt?: Date | null;
+  certSubject?: string | null;
+  certCnpj?: string | null;
 
   // Relations
   signedByUser?: Pick<User, "id" | "name"> | User;

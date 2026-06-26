@@ -57,7 +57,7 @@ export function AdmissionEditForm({ admission, onSuccess, onCancel }: AdmissionE
     try {
       await updateAsync({ id: admission.id, data });
       if (onSuccess) onSuccess(admission.id);
-      else nav.replace(mobileRoute(`/recursos-humanos/admissoes/detalhes/${admission.id}`));
+      else nav.replace(mobileRoute(`/departamento-pessoal/admissoes/detalhes/${admission.id}`));
     } catch {
       // Error toast shown automatically by the axios response interceptor.
     }

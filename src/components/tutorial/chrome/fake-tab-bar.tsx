@@ -14,7 +14,7 @@ import { useTheme } from "@/lib/theme";
  * Fake bottom tab bar.
  *
  * NOTE: the real Ankaa app navigates via a RIGHT-side Drawer
- * (`src/navigation/privilege-optimized-full-fixed.tsx`) and renders NO bottom
+ * (`src/navigation/privilege-layout.tsx`) and renders NO bottom
  * tab bar, so the tutorial Stage (`fake-stage.tsx`) does not mount this
  * component. It is retained for the `SCENE_TAB` mapping contract and as an
  * optional bottom-nav affordance. When shown, it uses the real palette: active

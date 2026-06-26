@@ -1,0 +1,498 @@
+import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
+import { useTheme } from "@/lib/theme";
+import { Icon } from "@/components/ui/icon";
+import { routes, DASHBOARD_TIME_PERIOD, TASK_STATUS_LABELS } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
+import { useHRDashboard } from "@/hooks/dashboard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useCallback, useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useScreenReady } from '@/hooks/use-screen-ready';
+
+export default function PersonnelDepartmentScreen() {
+  const { colors } = useTheme();
+  const nav = useNav();
+  const insets = useSafeAreaInsets();
+  const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { data: dashboard, isLoading, error, refetch } = useHRDashboard({ timePeriod });
+
+  useScreenReady(!isLoading);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  // Stable nav handlers — without these, each Pressable in Quick Access gets a
+  // new arrow function per render, defeating Pressable's native press handling.
+  const goToEmployees = useCallback(
+    () => nav.push(mobileRoute(routes.personnelDepartment.employees.list)),
+    [nav],
+  );
+  const goToPositions = useCallback(
+    () => nav.push(mobileRoute(routes.personnelDepartment.positions.list)),
+    [nav],
+  );
+  const goToHolidays = useCallback(
+    () => nav.push(mobileRoute(routes.personnelDepartment.holidays.list)),
+    [nav],
+  );
+  // Pre-format metric values once per data change instead of re-running
+  // toLocaleString on every render for each of the 6 metric cards.
+  const formattedMetrics = useMemo(() => {
+    const data = dashboard?.data;
+    if (!data) return null;
+    const fmt = (n: number) => n.toLocaleString('pt-BR');
+    return {
+      totalEmployees: fmt(data.overview?.totalEmployees?.value || 0),
+      activeEmployees: fmt(data.overview?.activeEmployees?.value || 0),
+      newHires: fmt(data.overview?.newHires?.value || 0),
+      tasksCreated: fmt(data.taskMetrics?.totalTasksCreated?.value || 0),
+      totalPPE: fmt(data.ppeMetrics?.totalPPE || 0),
+      totalPositions: fmt(data.positionMetrics?.totalPositions || 0),
+    };
+  }, [dashboard?.data]);
+
+  // Pre-compute status percentages once per data change.
+  const employeeStatusRows = useMemo(() => {
+    const overview = dashboard?.data?.overview;
+    if (!overview) return [];
+    const total = overview.totalEmployees?.value || 1;
+    return [
+      { label: "Ativo", value: overview.activeEmployees?.value || 0, color: "#22c55e" },
+      { label: "Inativo", value: overview.inactiveEmployees?.value || 0, color: "#ef4444" },
+      { label: "Novas Contratações", value: overview.newHires?.value || 0, color: "#3b82f6" },
+    ].map(row => ({
+      ...row,
+      percentage: Math.round((row.value / total) * 100),
+    }));
+  }, [dashboard?.data?.overview]);
+
+  if (isLoading && !refreshing) {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: 16, gap: 20 }}>
+          {/* Acesso Rápido skeleton — 4 cards in 2x2 grid */}
+          <View style={{ gap: 12 }}>
+            <Skeleton style={{ height: 22, width: 130, borderRadius: 4 }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {[1, 2, 3, 4].map((i) => (
+                <View key={i} style={{ flex: 1, minWidth: "45%", backgroundColor: colors.card, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Skeleton style={{ width: 24, height: 24, borderRadius: 6 }} />
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Skeleton style={{ height: 12, width: 60, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 16, width: 30, borderRadius: 4 }} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Métricas de RH skeleton — 6 cards in 2x3 grid */}
+          <View style={{ gap: 12 }}>
+            <Skeleton style={{ height: 22, width: 140, borderRadius: 4 }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <View key={i} style={{ width: "48%", backgroundColor: colors.card, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                    <Skeleton style={{ height: 11, width: 80, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 14, width: 14, borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 18, width: 50, borderRadius: 4 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Status dos Funcionários skeleton — card with 3 progress bars */}
+          <View style={{ gap: 12 }}>
+            <Skeleton style={{ height: 22, width: 190, borderRadius: 4 }} />
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 10 }}>
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ gap: 4 }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Skeleton style={{ height: 14, width: 100 + i * 10, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 14, width: 40, borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 6, borderRadius: 3, width: `${90 - i * 12}%` }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.background }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        <View style={{ padding: 16, alignItems: "center", gap: 12 }}>
+          <Icon name="alert-circle" size="xl" color={colors.destructive} />
+          <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "600" }}>
+            Erro ao carregar dashboard
+          </Text>
+          <Text style={{ color: colors.mutedForeground, textAlign: "center" }}>
+            {(error as Error).message || "Tente novamente mais tarde"}
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  const data = dashboard?.data;
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      <View style={{ padding: 16, gap: 20 }}>
+        {/* Quick Access */}
+        <View style={{ gap: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+            Acesso Rápido
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <Pressable
+              onPress={goToEmployees}
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                backgroundColor: colors.card,
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="users" size={24} color="#3b82f6" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Funcionários</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
+                  {data?.overview?.totalEmployees?.value || 0}
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={goToPositions}
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                backgroundColor: colors.card,
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="briefcase" size={24} color="#22c55e" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Cargos</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
+                  {data?.positionMetrics?.totalPositions || 0}
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={goToHolidays}
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                backgroundColor: colors.card,
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="calendar" size={24} color="#a855f7" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Feriados</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
+                  {data?.holidayMetrics?.totalHolidays || 0}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* HR Metrics */}
+        <View style={{ gap: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+            Métricas de RH
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {[
+              { title: "Total Funcionários", value: formattedMetrics?.totalEmployees ?? '0', icon: "users", color: "#3b82f6" },
+              { title: "Ativos", value: formattedMetrics?.activeEmployees ?? '0', icon: "user-check", color: "#22c55e" },
+              { title: "Novas Contratações", value: formattedMetrics?.newHires ?? '0', icon: "user", color: "#a855f7" },
+              { title: "Tarefas Criadas", value: formattedMetrics?.tasksCreated ?? '0', icon: "clipboard-list", color: "#f97316" },
+              { title: "Total EPIs", value: formattedMetrics?.totalPPE ?? '0', icon: "helmet", color: "#06b6d4" },
+              { title: "Total Cargos", value: formattedMetrics?.totalPositions ?? '0', icon: "briefcase", color: "#8b5cf6" },
+            ].map((metric) => (
+              <View
+                key={metric.title}
+                style={{
+                  width: "48%",
+                  backgroundColor: colors.card,
+                  padding: 10,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 11, flex: 1 }} numberOfLines={1}>
+                    {metric.title}
+                  </Text>
+                  <Icon name={metric.icon} size={14} color={metric.color} />
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>
+                    {metric.value}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Employee Status */}
+        <View style={{ gap: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+            Status dos Funcionários
+          </Text>
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+            {employeeStatusRows.map((status) => (
+              <View key={status.label} style={{ gap: 4 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "500" }}>{status.label}</Text>
+                  <Text style={{ color: colors.mutedForeground }}>
+                    {status.value} ({status.percentage}%)
+                  </Text>
+                </View>
+                <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                  <View
+                    style={{
+                      height: 6,
+                      backgroundColor: status.color,
+                      borderRadius: 3,
+                      width: `${Math.min(status.percentage, 100)}%`,
+                    }}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* PPE Metrics */}
+        {data?.ppeMetrics && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Métricas de EPI
+            </Text>
+            <View style={{ gap: 8 }}>
+              {[
+                {
+                  label: "Total EPIs",
+                  value: data.ppeMetrics.totalPPE || 0,
+                  color: "#3b82f6"
+                },
+                {
+                  label: "Entregas Hoje",
+                  value: data.ppeMetrics.deliveriesToday || 0,
+                  color: "#22c55e"
+                },
+                {
+                  label: "Pendentes",
+                  value: data.ppeMetrics.pendingDeliveries || 0,
+                  color: "#f97316"
+                },
+                {
+                  label: "Entregues no Mês",
+                  value: data.ppeMetrics.deliveredThisMonth || 0,
+                  color: "#a855f7"
+                },
+              ].map((status) => (
+                <View
+                  key={status.label}
+                  style={{
+                    backgroundColor: colors.card,
+                    padding: 12,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={{ width: 4, height: 24, backgroundColor: status.color, borderRadius: 2 }} />
+                    <Text style={{ color: colors.foreground, fontWeight: "500" }}>{status.label}</Text>
+                  </View>
+                  <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 16 }}>
+                    {status.value}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Employees by Sector */}
+        {data?.sectorAnalysis?.employeesBySector?.labels && data.sectorAnalysis.employeesBySector.labels.length > 0 && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Funcionários por Setor
+            </Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              {data.sectorAnalysis.employeesBySector.labels.slice(0, 5).map((label, index) => {
+                const value = data.sectorAnalysis.employeesBySector?.datasets?.[0]?.data?.[index] || 0;
+                const maxValue = Math.max(...(data.sectorAnalysis.employeesBySector?.datasets?.[0]?.data || [1]));
+                return (
+                  <View key={label} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={1}>{label}</Text>
+                      <Text style={{ color: colors.mutedForeground }}>{value}</Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#3b82f6",
+                          borderRadius: 3,
+                          width: `${Math.min((value / maxValue) * 100, 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Employees by Position */}
+        {data?.sectorAnalysis?.employeesByPosition?.labels && data.sectorAnalysis.employeesByPosition.labels.length > 0 && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Funcionários por Cargo
+            </Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              {data.sectorAnalysis.employeesByPosition.labels.slice(0, 5).map((label, index) => {
+                const value = data.sectorAnalysis.employeesByPosition?.datasets?.[0]?.data?.[index] || 0;
+                const maxValue = Math.max(...(data.sectorAnalysis.employeesByPosition?.datasets?.[0]?.data || [1]));
+                return (
+                  <View key={label} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={1}>{label}</Text>
+                      <Text style={{ color: colors.mutedForeground }}>{value}</Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#22c55e",
+                          borderRadius: 3,
+                          width: `${Math.min((value / maxValue) * 100, 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Tasks by Status */}
+        {data?.taskMetrics?.tasksByStatus?.labels && data.taskMetrics.tasksByStatus.labels.length > 0 && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Tarefas por Status
+            </Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              {data.taskMetrics.tasksByStatus.labels.slice(0, 5).map((label, index) => {
+                const value = data.taskMetrics.tasksByStatus?.datasets?.[0]?.data?.[index] || 0;
+                const maxValue = Math.max(...(data.taskMetrics.tasksByStatus?.datasets?.[0]?.data || [1]));
+                const normalizedLabel = label.toUpperCase() as keyof typeof TASK_STATUS_LABELS;
+                const displayLabel = TASK_STATUS_LABELS[normalizedLabel] || label;
+                return (
+                  <View key={label} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={1}>{displayLabel}</Text>
+                      <Text style={{ color: colors.mutedForeground }}>{value}</Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#a855f7",
+                          borderRadius: 3,
+                          width: `${Math.min((value / maxValue) * 100, 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Performance Levels */}
+        {data?.overview?.employeesByPerformanceLevel?.labels && data.overview.employeesByPerformanceLevel.labels.length > 0 && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Níveis de Desempenho
+            </Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              {data.overview.employeesByPerformanceLevel.labels.map((label, index) => {
+                const value = data.overview.employeesByPerformanceLevel?.datasets?.[0]?.data?.[index] || 0;
+                const maxValue = Math.max(...(data.overview.employeesByPerformanceLevel?.datasets?.[0]?.data || [1]));
+                return (
+                  <View key={label} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={1}>{label}</Text>
+                      <Text style={{ color: colors.mutedForeground }}>{value}</Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#f97316",
+                          borderRadius: 3,
+                          width: `${Math.min((value / maxValue) * 100, 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+      </View>
+    </ScrollView>
+  );
+}

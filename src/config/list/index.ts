@@ -1,6 +1,6 @@
 // Re-export all list configurations from their respective modules
 
-// Administration Module (7 configs)
+// Administration Module (6 configs)
 export {
   customersListConfig,
   sectorsListConfig,
@@ -8,7 +8,6 @@ export {
   collaboratorsListConfig,
   changeLogsListConfig,
   filesListConfig,
-  deploymentsListConfig,
 } from './administration'
 
 // HR Module (6 configs)
@@ -17,9 +16,8 @@ export {
   warningsListConfig,
   positionsListConfig,
   ppeDeliveriesListConfig,
-  ppeSchedulesListConfig,
   holidaysListConfig,
-} from './hr'
+} from './personnel-department'
 
 // Inventory Module (10 configs)
 export {
@@ -33,7 +31,6 @@ export {
   categoriesListConfig,
   brandsListConfig,
   maintenanceListConfig,
-  orderSchedulesListConfig,
 } from './inventory'
 
 // Production Module (6 configs)

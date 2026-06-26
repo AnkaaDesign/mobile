@@ -269,7 +269,7 @@ export function AdmissionNewUserForm({ onSuccess, onCancel }: AdmissionNewUserFo
       } else if (newId) {
         // Literal path — the admissions nav entry (routes.ts) is registered by a
         // later agent; this matches the route screen at admissoes/detalhes/[id].
-        nav.replace(mobileRoute(`/recursos-humanos/admissoes/detalhes/${newId}`));
+        nav.replace(mobileRoute(`/departamento-pessoal/admissoes/detalhes/${newId}`));
       } else {
         nav.goBack();
       }

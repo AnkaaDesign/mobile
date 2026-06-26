@@ -21,7 +21,7 @@ import {
   thirteenthStatusBadgeVariant,
   getThirteenthStatusLabel,
   getNumericValue,
-} from '@/config/list/hr/thirteenths'
+} from '@/config/list/personnel-department/thirteenths'
 import { formatCurrency } from '@/utils'
 import type { Thirteenth } from '@/types'
 

@@ -142,7 +142,7 @@ export const changeLogsListConfig: ListConfig<ChangeLog> = {
     // The full information is already visible in the expandable row details
     actions: [],
     onRowPress: (log, router) => {
-      router.push(`/(tabs)/servidor/registros-de-alteracoes/detalhes/${log.id}` as any)
+      router.push(`/(tabs)/administracao/registros-de-alteracoes/detalhes/${log.id}` as any)
     },
   },
 

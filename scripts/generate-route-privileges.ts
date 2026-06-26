@@ -11,7 +11,7 @@
  *   estoque                       → WAREHOUSE
  *   producao                      → PRODUCTION
  *   pintura                       → WAREHOUSE
- *   recursos-humanos              → HUMAN_RESOURCES
+ *   departamento-pessoal              → HUMAN_RESOURCES
  *   pessoal | meu-pessoal         → BASIC
  *   financeiro                    → FINANCIAL
  *   servidor                      → ADMIN
@@ -55,7 +55,7 @@ const TOP_LEVEL_PRIVILEGE: Record<string, Privilege> = {
   estoque: "WAREHOUSE",
   producao: "PRODUCTION",
   pintura: "WAREHOUSE",
-  "recursos-humanos": "HUMAN_RESOURCES",
+  "departamento-pessoal": "HUMAN_RESOURCES",
   pessoal: "BASIC",
   "meu-pessoal": "BASIC",
   financeiro: "FINANCIAL",

@@ -267,13 +267,13 @@ export function UserBenefitForm(props: UserBenefitFormProps) {
         const result = await createAsync(data);
         const newId = (result as any)?.data?.id || (result as any)?.id;
         if (newId) {
-          nav.replace(`/recursos-humanos/beneficios/detalhes/${newId}` as any);
+          nav.replace(`/departamento-pessoal/beneficios/detalhes/${newId}` as any);
         } else {
           nav.goBack();
         }
       } else {
         await updateAsync({ id: props.userBenefit.id, data: data as UserBenefitUpdateFormData });
-        nav.replace(`/recursos-humanos/beneficios/detalhes/${props.userBenefit.id}` as any);
+        nav.replace(`/departamento-pessoal/beneficios/detalhes/${props.userBenefit.id}` as any);
       }
     } catch {
       // O toast de erro é exibido automaticamente pelo interceptor do api-client.
