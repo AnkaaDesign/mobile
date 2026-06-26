@@ -37,8 +37,30 @@ case "$PLATFORM" in
   *)       die "platform must be 'ios' or 'android' (got '$PLATFORM')" ;;
 esac
 
+# ---- admin token: use $ANKAA_ADMIN_TOKEN, else auto-login ----
+# No secret is hardcoded here. If ANKAA_ADMIN_TOKEN isn't already exported, we
+# read credentials from a GITIGNORED file (mobile/credentials/publish.env) and
+# fetch a FRESH token via POST /auth/login. This avoids both leaking a token in
+# git and shipping an expired one. publish.env format:
+#   ANKAA_PUBLISH_CONTACT=you@example.com
+#   ANKAA_PUBLISH_PASSWORD=yourpassword
+CRED_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/credentials/publish.env"
+if [[ -z "${ANKAA_ADMIN_TOKEN:-}" ]]; then
+  if [[ -f "$CRED_FILE" ]]; then set -a; . "$CRED_FILE"; set +a; fi
+  if [[ -n "${ANKAA_PUBLISH_CONTACT:-}" && -n "${ANKAA_PUBLISH_PASSWORD:-}" ]]; then
+    command -v jq >/dev/null 2>&1 || die "jq is required for auto-login (brew install jq), or export ANKAA_ADMIN_TOKEN yourself."
+    echo "→ no ANKAA_ADMIN_TOKEN set; logging in as $ANKAA_PUBLISH_CONTACT …"
+    ANKAA_ADMIN_TOKEN="$(curl -s -X POST "$API_BASE/auth/login" \
+      -H 'Content-Type: application/json' \
+      -d "$(jq -nc --arg c "$ANKAA_PUBLISH_CONTACT" --arg p "$ANKAA_PUBLISH_PASSWORD" '{contact:$c,password:$p}')" \
+      | jq -r '.data.token // .token // empty')"
+    [[ -n "$ANKAA_ADMIN_TOKEN" ]] && echo "  ✓ got a fresh admin token (len ${#ANKAA_ADMIN_TOKEN})"
+  fi
+fi
+[[ -n "${ANKAA_ADMIN_TOKEN:-}" ]] || \
+  die "No admin token. Either: export ANKAA_ADMIN_TOKEN=<jwt>, or create $CRED_FILE with ANKAA_PUBLISH_CONTACT/ANKAA_PUBLISH_PASSWORD."
+
 # ---- validation ----
-[[ -n "${ANKAA_ADMIN_TOKEN:-}" ]] || die "ANKAA_ADMIN_TOKEN env var is required (admin Bearer token)."
 [[ -f "$FILE" ]] || die "file not found: $FILE"
 [[ "${FILE##*.}" == "$EXPECT_EXT" ]] || die "platform '$PLATFORM' expects a .$EXPECT_EXT file (got '$FILE')."
 command -v curl >/dev/null 2>&1 || die "curl is required."
