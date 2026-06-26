@@ -62,11 +62,17 @@ android/.gradle/
 android/build/
 android/local.properties
 android/app/debug.keystore
-# Release signing keystore (EAS-generated) — keep secrets out of git
+# Release signing keystore — keep the binary keystore AND its passwords out of git.
+# The permanent keystore lives at mobile/credentials/ankaa-release.keystore and is
+# matched by *.keystore below; its passwords live in credentials/keystore.properties.
+# The README + *.example template ARE tracked so the convention is documented.
 android/app/ankaa-release.jks
 *.jks
 *.keystore
 credentials.json
+credentials/keystore.properties
+!credentials/README.md
+!credentials/keystore.properties.example
 android/gradle/wrapper/gradle-wrapper.jar
 
 # iOS
@@ -86,4 +92,7 @@ BUILD_*.md
 STYLESHEETFIX_*.md
 FIX_*.md
 *.sh
+# Release/publish tooling — tracked despite the blanket *.sh ignore above.
+!scripts/publish-install.sh
+!scripts/generate-release-keystore.sh
 .claude/

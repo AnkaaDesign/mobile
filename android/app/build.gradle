@@ -113,11 +113,20 @@ android {
             keyPassword 'android'
         }
         release {
-            // EAS-generated keystore. Passwords come from ~/.gradle/gradle.properties
-            // so they never land in git. Store and key passwords are DIFFERENT.
-            storeFile file('ankaa-release.jks')
+            // PERMANENT release keystore — the SINGLE, STABLE signing identity for
+            // every local release build. Its SHA-256 fingerprint NEVER changes as
+            // long as this same keystore file is reused, so the pinned fingerprint
+            // in assetlinks.json keeps matching and Android App Links auto-verify
+            // stays green. Generate it once with scripts/generate-release-keystore.sh.
+            //
+            // Defaults point at mobile/credentials/ankaa-release.keystore (gitignored,
+            // alias `ankaa`). All four values are overridable via Gradle properties
+            // (in ~/.gradle/gradle.properties or -P flags) so the keystore path,
+            // alias, and BOTH passwords stay out of git:
+            //   ANKAA_KEYSTORE_FILE, ANKAA_KEY_ALIAS, ANKAA_STORE_PASSWORD, ANKAA_KEY_PASSWORD
+            storeFile file(findProperty('ANKAA_KEYSTORE_FILE') ?: '../../credentials/ankaa-release.keystore')
             storePassword findProperty('ANKAA_STORE_PASSWORD') ?: ''
-            keyAlias '6111b0c119e8ec6808bde21de69c1e37'
+            keyAlias findProperty('ANKAA_KEY_ALIAS') ?: 'ankaa'
             keyPassword findProperty('ANKAA_KEY_PASSWORD') ?: ''
         }
     }

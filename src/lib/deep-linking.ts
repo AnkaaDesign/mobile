@@ -637,6 +637,23 @@ export function parseDeepLink(url: string): ParsedDeepLink {
       return { route: '', requiresAuth: false };
     }
 
+    // Custom-scheme `app` host symmetry with the universal-link /app/ prefix.
+    // The self-hosted install page deep-links into the app with the SAME path it
+    // uses for the universal link, i.e. it emits `ankaadesign://app/<path>` to
+    // mirror `https://ankaadesign.com.br/app/<path>` (the AASA / Android
+    // intent-filter pathPrefix is `/app/`). When parsed, the leading `app`
+    // segment lands in the host slot (ankaadesign://app/task/123 -> host "app",
+    // path "/task/123"), which matches no entity/section and would fall through
+    // to the home screen. Strip the `app` host and re-dispatch so the bare path
+    // (task/123, producao/cronograma/..., etc.) resolves exactly like the https
+    // universal link does below. Idempotent: a bare ankaadesign://task/123 is
+    // untouched.
+    if (/^ankaadesign:\/\/app(\/|\?|$)/i.test(url)) {
+      const rest = url.replace(/^ankaadesign:\/\/app\/?/i, '');
+      console.log('[Deep Link] Stripping custom-scheme /app prefix:', { url, rest });
+      return parseDeepLink(`ankaadesign://${rest}`);
+    }
+
     // Parse the URL
     const parsed = parseUrl(url);
     console.log('[Deep Link] Parsed URL:', JSON.stringify(parsed, null, 2));
