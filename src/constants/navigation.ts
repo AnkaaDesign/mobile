@@ -470,15 +470,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
         id: "dp-colaboradores",
         title: "Colaboradores",
         icon: "user",
-        path: "/administracao/colaboradores",
-        // Moved here from Administração to mirror web's Departamento Pessoal.
-        // Screen files stay under /administracao/colaboradores (matches web, whose
-        // collaborator pages also live outside the DP folder).
+        path: "/departamento-pessoal/colaboradores",
+        // Moved here from Administração to mirror web/api's Departamento Pessoal.
+        // Screen files live under app/(tabs)/departamento-pessoal/colaboradores.
         requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          { id: "dp-colaboradores-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/colaboradores/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-          { id: "dp-colaboradores-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/colaboradores/detalhes/:id", isDynamic: true },
-          { id: "dp-colaboradores-editar", title: "Editar", icon: "edit", path: "/administracao/colaboradores/editar/:id", isDynamic: true },
+          { id: "dp-colaboradores-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/colaboradores/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
+          { id: "dp-colaboradores-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/colaboradores/detalhes/:id", isDynamic: true },
+          { id: "dp-colaboradores-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/colaboradores/editar/:id", isDynamic: true },
         ],
       },
       {

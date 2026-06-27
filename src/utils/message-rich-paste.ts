@@ -219,7 +219,10 @@ const BLOCK_TAGS = new Set([
   'ul', 'ol', 'blockquote', 'table', 'pre', 'hr',
 ]);
 
-function isBlockEl(node: MNode): node is Extract<MNode, { t: 'el' }> {
+// NB: plain boolean (not a type predicate). At the only call site `node` is
+// already narrowed to the `{t:'el'}` union member, so a `node is …{t:'el'}`
+// predicate would narrow the false branch to `never` (TS2339 on node.children).
+function isBlockEl(node: MNode): boolean {
   return node.t === 'el' && BLOCK_TAGS.has(node.tag);
 }
 function hasBlockChild(node: Extract<MNode, { t: 'el' }>): boolean {

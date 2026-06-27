@@ -64,7 +64,8 @@ import {
   MEDICAL_EXAM_STATUS,
   MEDICAL_EXAM_RESULT,
   LEAVE_STATUS,
-  BENEFIT_ENROLLMENT_STATUS,} from "./enums";
+  BENEFIT_ENROLLMENT_STATUS,
+  VACATION_STATUS,} from "./enums";
 
 /**
  * Badge Variant Types
@@ -107,6 +108,7 @@ export type BadgeVariant =
   | "dismissed"
   | "effected"
   | "reproved"
+  | "preparation"
   // Color utilities (for entity-specific or non-status use)
   | "red"
   | "purple"
@@ -257,6 +259,10 @@ export const BADGE_COLORS: Record<
     bg: "#ea580c", // orange-600
     text: "#ffffff",
   },
+  preparation: {
+    bg: "#ea580c", // orange-600
+    text: "#ffffff",
+  },
 
   // ===== COLOR UTILITIES =====
   purple: {
@@ -394,10 +400,10 @@ export const ENTITY_BADGE_CONFIG = {
 
   // Order Installment Status (parcelas)
   ORDER_INSTALLMENT: {
-    [ORDER_INSTALLMENT_STATUS.PENDING]: "secondary" as BadgeVariant,    // Neutral - pending
+    [ORDER_INSTALLMENT_STATUS.PENDING]: "gray" as BadgeVariant,         // Gray - pending
     [ORDER_INSTALLMENT_STATUS.PARTIALLY_PAID]: "orange" as BadgeVariant, // Orange - partially paid
     [ORDER_INSTALLMENT_STATUS.PAID]: "green" as BadgeVariant,           // Green - paid
-    [ORDER_INSTALLMENT_STATUS.OVERDUE]: "destructive" as BadgeVariant,  // Red - overdue
+    [ORDER_INSTALLMENT_STATUS.OVERDUE]: "red" as BadgeVariant,          // Red - overdue
     [ORDER_INSTALLMENT_STATUS.CANCELLED]: "gray" as BadgeVariant,       // Muted - cancelled
   },
 
@@ -413,7 +419,7 @@ export const ENTITY_BADGE_CONFIG = {
   // Task Quote Status (mirrors web/quote-status-badge.tsx)
   TASK_QUOTE: {
     [TASK_QUOTE_STATUS.PENDING]: "secondary" as BadgeVariant,              // Neutral - awaiting action
-    [TASK_QUOTE_STATUS.BUDGET_APPROVED]: "approved" as BadgeVariant,       // Green - budget approved
+    [TASK_QUOTE_STATUS.BUDGET_APPROVED]: "processing" as BadgeVariant,     // Blue - budget approved
     [TASK_QUOTE_STATUS.BILLING_APPROVED]: "approved" as BadgeVariant,      // Green - billing approved
     [TASK_QUOTE_STATUS.UPCOMING]: "pending" as BadgeVariant,               // Amber - payment upcoming
     [TASK_QUOTE_STATUS.DUE]: "destructive" as BadgeVariant,                // Red - payment overdue
@@ -463,6 +469,8 @@ export const ENTITY_BADGE_CONFIG = {
     [EXTERNAL_OPERATION_STATUS.PARTIALLY_RETURNED]: "orange" as BadgeVariant,  // Entity-specific: use orange
     [EXTERNAL_OPERATION_STATUS.FULLY_RETURNED]: "green" as BadgeVariant,       // Entity-specific: use green
     [EXTERNAL_OPERATION_STATUS.CHARGED]: "blue" as BadgeVariant,               // Entity-specific: use blue
+    [EXTERNAL_OPERATION_STATUS.LIQUIDATED]: "green" as BadgeVariant,           // Entity-specific: use green
+    [EXTERNAL_OPERATION_STATUS.DELIVERED]: "delivered" as BadgeVariant,
     [EXTERNAL_OPERATION_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
   },
 
@@ -493,8 +501,8 @@ export const ENTITY_BADGE_CONFIG = {
 
   // Airbrushing Payment Status
   AIRBRUSHING_PAYMENT_STATUS: {
-    [AIRBRUSHING_PAYMENT_STATUS.PENDING]: "gray" as BadgeVariant,          // Gray - awaiting payment
-    [AIRBRUSHING_PAYMENT_STATUS.PARTIALLY_PAID]: "yellow" as BadgeVariant, // Yellow - partially paid
+    [AIRBRUSHING_PAYMENT_STATUS.PENDING]: "pending" as BadgeVariant,       // Amber - awaiting payment
+    [AIRBRUSHING_PAYMENT_STATUS.PARTIALLY_PAID]: "orange" as BadgeVariant, // Orange - partially paid
     [AIRBRUSHING_PAYMENT_STATUS.PAID]: "green" as BadgeVariant,            // Green - fully paid
   },
 
@@ -661,7 +669,7 @@ export const ENTITY_BADGE_CONFIG = {
     [BATCH_OPERATION_STATUS.PROCESSING]: "processing" as BadgeVariant,
     [BATCH_OPERATION_STATUS.COMPLETED]: "completed" as BadgeVariant,
     [BATCH_OPERATION_STATUS.FAILED]: "failed" as BadgeVariant,
-    [BATCH_OPERATION_STATUS.PARTIAL]: "partial" as BadgeVariant,
+    [BATCH_OPERATION_STATUS.PARTIAL]: "orange" as BadgeVariant,
   },
 
   // Workload Level
@@ -734,12 +742,14 @@ export const ENTITY_BADGE_CONFIG = {
     [SECTOR_PRIVILEGES.FINANCIAL]: "purple" as BadgeVariant,       // Purple - financial role (same as HR)
     [SECTOR_PRIVILEGES.DESIGNER]: "purple" as BadgeVariant,        // Purple - designer role (same as HR)
     [SECTOR_PRIVILEGES.LOGISTIC]: "purple" as BadgeVariant,        // Purple - logistics role (same as HR)
-    [SECTOR_PRIVILEGES.MAINTENANCE]: "orange" as BadgeVariant,     // Orange - maintenance role (keep current)
+    [SECTOR_PRIVILEGES.PLOTTING]: "purple" as BadgeVariant,        // Purple - plotting role (same as HR)
+    [SECTOR_PRIVILEGES.MAINTENANCE]: "orange" as BadgeVariant,     // Orange - maintenance role
     [SECTOR_PRIVILEGES.BASIC]: "gray" as BadgeVariant,             // Gray - basic access
     [SECTOR_PRIVILEGES.EXTERNAL]: "gray" as BadgeVariant,          // Gray - external access
     [SECTOR_PRIVILEGES.WAREHOUSE]: "green" as BadgeVariant,        // Green - warehouse role
-    [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "purple" as BadgeVariant, // Purple - production manager (same as logistic)
-    [SECTOR_PRIVILEGES.AIRBRUSHING]: "orange" as BadgeVariant,        // Orange - airbrushing (third-party painters)
+    [SECTOR_PRIVILEGES.COMMERCIAL]: "purple" as BadgeVariant,      // Purple - commercial role (same as HR)
+    [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "blue" as BadgeVariant, // Blue - production management
+    [SECTOR_PRIVILEGES.AIRBRUSHING]: "blue" as BadgeVariant,       // Blue - airbrushing (production family)
     [SECTOR_PRIVILEGES.ACCOUNTING]: "purple" as BadgeVariant,         // Purple - accounting role (same family as FINANCIAL)
   },
 
@@ -748,7 +758,7 @@ export const ENTITY_BADGE_CONFIG = {
     [BONIFICATION_STATUS.FULL_BONIFICATION]: "green" as BadgeVariant,     // Green - full bonification earned
     [BONIFICATION_STATUS.PARTIAL_BONIFICATION]: "blue" as BadgeVariant,   // Blue - partial bonification
     [BONIFICATION_STATUS.NO_BONIFICATION]: "orange" as BadgeVariant,      // Orange - no bonification (warning)
-    [BONIFICATION_STATUS.SUSPENDED_BONIFICATION]: "red" as BadgeVariant,  // Red - bonification suspended (critical)
+    [BONIFICATION_STATUS.SUSPENDED_BONIFICATION]: "suspended" as BadgeVariant,  // Red - bonification suspended (critical)
   },
 
   // Admission Status (Departamento Pessoal)
@@ -806,6 +816,13 @@ export const ENTITY_BADGE_CONFIG = {
     [BENEFIT_ENROLLMENT_STATUS.TERMINATED]: "red" as BadgeVariant,     // Red - terminated
   },
 
+  // Vacation Status (Departamento Pessoal)
+  VACATION: {
+    [VACATION_STATUS.SCHEDULED]: "warning" as BadgeVariant,        // Amber - agendada
+    [VACATION_STATUS.PAID]: "success" as BadgeVariant,             // Green - paga
+    [VACATION_STATUS.EXPIRED]: "destructive" as BadgeVariant,      // Red - vencida (em dobro)
+  },
+
   // Backup Status / Type / Priority (lowercase values from API)
   BACKUP: {
     // Status
@@ -842,7 +859,7 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   // Common status values
   PENDING: "pending",
   IN_PROGRESS: "inProgress",
-  IN_PRODUCTION: "inProduction",
+  IN_PRODUCTION: "inProgress",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
   ACTIVE: "active",
@@ -860,17 +877,18 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   FULFILLED: "amber",
   RECEIVED: "received",
   SENT: "sent",
+  PREPARATION: "preparation",
   Enviada: "sent",
   Pendente: "pending",
   ON_HOLD: "onHold",
   SUSPENDED: "suspended",
   BLOCKED: "blocked",
   PROCESSING: "processing",
-  PARTIAL: "partial",
-  CUTTING: "cutting",
-  FINISHED: "finished",
-  CHARGED: "charged",
-  RATE_LIMITED: "onHold",
+  PARTIAL: "orange",
+  CUTTING: "processing",
+  FINISHED: "completed",
+  CHARGED: "blue",
+  RATE_LIMITED: "pending",
   BOUNCED: "bounced",
   // Contract statuses (EmploymentContract redesign — replaced legacy DISMISSED/EFFECTED)
   // Experience is now a CONTRACT_TYPE (EXPERIENCE_PERIOD_1/2), not a status.
@@ -879,7 +897,7 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   // NOTICE_PERIOD kept: it is still a TERMINATION_STATUS value sharing this flat lookup.
   NOTICE_PERIOD: "orange",
   TERMINATED: "red",
-  REPROVED: "reproved",
+  REPROVED: "rejected",
 
   // Operations
   INBOUND: "active", // Green for entry
@@ -891,13 +909,13 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   EXCELLENT: "green",
   GOOD: "active",
   FAIR: "pending",
-  POOR: "onHold",
+  POOR: "warning",
   CRITICAL: "failed",
 
   // Priority/Urgency levels
   LOW: "muted",
   MEDIUM: "pending",
-  HIGH: "onHold",
+  HIGH: "warning",
   NORMAL: "default",
   URGENT: "failed",
 
@@ -908,7 +926,7 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   POSITIVE: "active",
   NEGATIVE: "failed",
   NEUTRAL: "default",
-  VOLATILE: "onHold",
+  VOLATILE: "warning",
   SEASONAL: "created",
 
   // Activity levels
@@ -918,13 +936,13 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
 
   // Validation
   ERROR: "failed",
-  WARNING: "onHold",
+  WARNING: "warning",
   INFO: "created",
 
   // Special
   VERBAL: "created",
   WRITTEN: "pending",
-  SUSPENSION: "onHold",
+  SUSPENSION: "suspended",
   FINAL_WARNING: "failed",
   PENDING_JUSTIFICATION: "pending",
   JUSTIFICATION_SUBMITTED: "sent",
@@ -937,7 +955,7 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   FULL_BONIFICATION: "green",
   PARTIAL_BONIFICATION: "blue",
   NO_BONIFICATION: "orange",
-  SUSPENDED_BONIFICATION: "red",
+  SUSPENDED_BONIFICATION: "suspended",
 };
 
 /**
@@ -956,7 +974,7 @@ export const ABC_BADGE_COLORS: Record<
     text: "#b91c1c", // red-700
   },
   [ABC_CATEGORY.B]: {
-    bg: "#fef3c7", // yellow-100
+    bg: "#fef9c3", // yellow-100
     text: "#a16207", // yellow-700
   },
   [ABC_CATEGORY.C]: {
@@ -978,15 +996,15 @@ export const XYZ_BADGE_COLORS: Record<
 > = {
   [XYZ_CATEGORY.X]: {
     bg: "#dbeafe", // blue-100
-    text: "#1e40af", // blue-700
+    text: "#1d4ed8", // blue-700
   },
   [XYZ_CATEGORY.Y]: {
     bg: "#f3e8ff", // purple-100
-    text: "#6b21a8", // purple-700
+    text: "#7e22ce", // purple-700
   },
   [XYZ_CATEGORY.Z]: {
     bg: "#fed7aa", // orange-100
-    text: "#9a3412", // orange-700
+    text: "#c2410c", // orange-700
   },
 };
 
@@ -1054,8 +1072,12 @@ export const ACCOUNTING_TYPE_COLORS: Record<
     text: "#0f766e", // teal-700
   },
   [ACCOUNTING_TYPE.RECEITA_SERVICOS]: {
-    bg: "#dcfce7", // green-100
-    text: "#15803d", // green-700
+    bg: "#d1fae5", // emerald-100
+    text: "#047857", // emerald-700
+  },
+  [ACCOUNTING_TYPE.EXTRAORDINARIO]: {
+    bg: "#ffedd5", // orange-100
+    text: "#c2410c", // orange-700
   },
 };
 

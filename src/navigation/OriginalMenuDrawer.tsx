@@ -361,9 +361,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         // when its direct child "Mensagens" is active, and "Departamento Pessoal"
         // must light up the same way when a grandchild (e.g. Bônus → Simulação)
         // is active. Matching is done against each descendant's own path, so a
-        // group is NEVER active merely because the URL shares its prefix
-        // (e.g. Administração does not light up for /administracao/colaboradores,
-        // which lives under the Departamento Pessoal group).
+        // group is NEVER active merely because the URL shares its prefix:
+        // a group lights up only when the current route matches one of its own
+        // descendants' paths, not because the URL happens to start with it.
         const matchesDescendant = (node: MenuItem): boolean => {
           if (node.path) {
             const nodeNormalized = normalizePath(node.path);

@@ -5,13 +5,13 @@ import { BANK_SLIP_STATUS } from "@/constants/enums";
 import { BANK_SLIP_STATUS_LABELS } from "@/constants/enum-labels";
 
 const BANK_SLIP_STATUS_VARIANT: Record<BANK_SLIP_STATUS, BadgeVariant> = {
-  [BANK_SLIP_STATUS.CREATING]: "blue",
-  [BANK_SLIP_STATUS.REGISTERING]: "blue",
-  [BANK_SLIP_STATUS.ACTIVE]: "green",
-  [BANK_SLIP_STATUS.OVERDUE]: "amber",
+  [BANK_SLIP_STATUS.CREATING]: "processing",
+  [BANK_SLIP_STATUS.REGISTERING]: "processing",
+  [BANK_SLIP_STATUS.ACTIVE]: "blue",
+  [BANK_SLIP_STATUS.OVERDUE]: "red",
   [BANK_SLIP_STATUS.PAID]: "green",
-  [BANK_SLIP_STATUS.CANCELLED]: "gray",
-  [BANK_SLIP_STATUS.REJECTED]: "red",
+  [BANK_SLIP_STATUS.CANCELLED]: "cancelled",
+  [BANK_SLIP_STATUS.REJECTED]: "rejected",
   [BANK_SLIP_STATUS.ERROR]: "red",
 };
 

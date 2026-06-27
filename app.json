@@ -93,7 +93,7 @@
             {
               "scheme": "https",
               "host": "ankaadesign.com.br",
-              "pathPrefix": "/recursos-humanos/"
+              "pathPrefix": "/departamento-pessoal/"
             },
             {
               "scheme": "https",
@@ -153,7 +153,7 @@
             {
               "scheme": "https",
               "host": "www.ankaadesign.com.br",
-              "pathPrefix": "/recursos-humanos/"
+              "pathPrefix": "/departamento-pessoal/"
             },
             {
               "scheme": "https",

@@ -2179,6 +2179,7 @@ export enum ACCOUNTING_TYPE {
   ESTORNO = "ESTORNO",
   LUCRO_DISTRIBUIDO = "LUCRO_DISTRIBUIDO",
   RECEITA_SERVICOS = "RECEITA_SERVICOS",
+  EXTRAORDINARIO = "EXTRAORDINARIO",
 }
 
 // Category hierarchy levels: 1 = top-level Categoria, 2 = Subcategoria (leaf)
@@ -2282,7 +2283,7 @@ export enum FAVORITE_PAGES {
 
   // Administration - List Pages
   ADMINISTRACAO_CLIENTES_LISTAR = "/administracao/clientes",
-  ADMINISTRACAO_COLABORADORES_LISTAR = "/administracao/colaboradores",
+  ADMINISTRACAO_COLABORADORES_LISTAR = "/departamento-pessoal/colaboradores",
   ADMINISTRACAO_ORCAMENTOS_LISTAR = "/administracao/orcamentos",
   ADMINISTRACAO_REGISTROS_ALTERACOES_LISTAR = "/administracao/registros-de-alteracoes",
   ADMINISTRACAO_ARQUIVOS_LISTAR = "/administracao/arquivos",
@@ -2292,7 +2293,7 @@ export enum FAVORITE_PAGES {
 
   // Administration - Create Pages
   ADMINISTRACAO_CLIENTES_CADASTRAR = "/administracao/clientes/cadastrar",
-  ADMINISTRACAO_COLABORADORES_CADASTRAR = "/administracao/colaboradores/cadastrar",
+  ADMINISTRACAO_COLABORADORES_CADASTRAR = "/departamento-pessoal/colaboradores/cadastrar",
   ADMINISTRACAO_ORCAMENTOS_CADASTRAR = "/administracao/orcamentos/cadastrar",
   ADMINISTRACAO_ARQUIVOS_CADASTRAR = "/administracao/arquivos/upload",
   ADMINISTRACAO_SETORES_CADASTRAR = "/administracao/setores/cadastrar",

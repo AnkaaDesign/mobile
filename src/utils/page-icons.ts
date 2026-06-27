@@ -87,7 +87,7 @@ const PATH_PREFIX_ICON_MAP: Array<{ prefix: string; icon: Icon; color: string }>
 
   // Administração
   { prefix: "/administracao/clientes", icon: IconUsers, color: "#f97316" },
-  { prefix: "/administracao/colaboradores", icon: IconUsers, color: "#a855f7" },
+  { prefix: "/departamento-pessoal/colaboradores", icon: IconUsers, color: "#a855f7" },
   { prefix: "/administracao/orcamentos", icon: IconFileInvoice, color: "#3b82f6" },
   { prefix: "/administracao/registros-de-alteracoes", icon: IconHistory, color: "#6b7280" },
   { prefix: "/administracao/arquivos", icon: IconFile, color: "#4b5563" },
@@ -340,8 +340,8 @@ export function getPageIconName(path: string): string {
     // Administração
     "/administracao/clientes": "users",
     "/administracao/clientes/cadastrar": "users",
-    "/administracao/colaboradores": "users",
-    "/administracao/colaboradores/cadastrar": "users",
+    "/departamento-pessoal/colaboradores": "users",
+    "/departamento-pessoal/colaboradores/cadastrar": "users",
     "/administracao/orcamentos": "file-invoice",
     "/administracao/orcamentos/cadastrar": "file-invoice",
     "/administracao/registros-de-alteracoes": "history",

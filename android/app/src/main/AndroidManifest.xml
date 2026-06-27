@@ -46,7 +46,7 @@
         <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/service-order/"/>
         <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/producao/"/>
         <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/estoque/"/>
-        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/recursos-humanos/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/departamento-pessoal/"/>
         <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/administracao/"/>
         <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/pintura/"/>
         <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/financeiro/"/>

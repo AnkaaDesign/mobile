@@ -28,13 +28,12 @@ export default function ServiceOrderDetailScreen() {
 
   const query = useServiceOrderDetail(id, {
     include: {
+      // API serviceOrder query schema only accepts `task: boolean | { include }`
+      // — a `task: { select }` is silently stripped, so `customer` never loads
+      // and "Cliente" renders blank. Use include (returns task scalars + customer).
       task: {
-        select: {
-          id: true,
-          name: true,
-          details: true,
-          term: true,
-          customer: { select: { id: true, fantasyName: true } },
+        include: {
+          customer: true,
         },
       },
     },

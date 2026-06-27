@@ -65,15 +65,15 @@ export function StockBadge({ item, size = "default", showIcon = true, showQuanti
       case STOCK_LEVEL.CRITICAL:
         return {
           label: STOCK_LEVEL_LABELS[STOCK_LEVEL.CRITICAL],
-          variant: "destructive",
+          variant: "warning",
           color: "#f97316", // orange-500
           icon: "alertCircle",
         };
       case STOCK_LEVEL.LOW:
         return {
           label: STOCK_LEVEL_LABELS[STOCK_LEVEL.LOW],
-          variant: "warning",
-          color: "#eab308", // yellow-500
+          variant: "pending",
+          color: "#d97706", // amber-600
           icon: "alertTriangle",
         };
       case STOCK_LEVEL.OPTIMAL:
@@ -86,8 +86,8 @@ export function StockBadge({ item, size = "default", showIcon = true, showQuanti
       case STOCK_LEVEL.OVERSTOCKED:
         return {
           label: STOCK_LEVEL_LABELS[STOCK_LEVEL.OVERSTOCKED],
-          variant: "secondary",
-          color: "#9333ea", // purple-600
+          variant: "info",
+          color: "#1d4ed8", // blue-700
           icon: "box",
         };
       default:
@@ -166,17 +166,19 @@ export function getStockStatus(
   switch (stockLevel) {
     case STOCK_LEVEL.NEGATIVE_STOCK:
     case STOCK_LEVEL.OUT_OF_STOCK:
-    case STOCK_LEVEL.CRITICAL:
       variant = "destructive";
       break;
-    case STOCK_LEVEL.LOW:
+    case STOCK_LEVEL.CRITICAL:
       variant = "warning";
+      break;
+    case STOCK_LEVEL.LOW:
+      variant = "pending";
       break;
     case STOCK_LEVEL.OPTIMAL:
       variant = "success";
       break;
     case STOCK_LEVEL.OVERSTOCKED:
-      variant = "secondary";
+      variant = "info";
       break;
     default:
       variant = "default";
@@ -207,11 +209,11 @@ export function StockIndicator({ item, hasActiveOrder = false }: { item: StockBa
       case STOCK_LEVEL.CRITICAL:
         return "#f97316"; // orange-500
       case STOCK_LEVEL.LOW:
-        return "#eab308"; // yellow-500
+        return "#d97706"; // amber-600
       case STOCK_LEVEL.OPTIMAL:
         return "#16a34a"; // green-600
       case STOCK_LEVEL.OVERSTOCKED:
-        return "#9333ea"; // purple-600
+        return "#1d4ed8"; // blue-700
       default:
         return "#737373"; // neutral-500
     }

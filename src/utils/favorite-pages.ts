@@ -73,7 +73,7 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
 
   // Administration - List Pages
   "/administracao/clientes": FAVORITE_PAGES.ADMINISTRACAO_CLIENTES_LISTAR,
-  "/administracao/colaboradores": FAVORITE_PAGES.ADMINISTRACAO_COLABORADORES_LISTAR,
+  "/departamento-pessoal/colaboradores": FAVORITE_PAGES.ADMINISTRACAO_COLABORADORES_LISTAR,
   "/administracao/orcamentos": FAVORITE_PAGES.ADMINISTRACAO_ORCAMENTOS_LISTAR,
   "/administracao/registros-de-alteracoes": FAVORITE_PAGES.ADMINISTRACAO_REGISTROS_ALTERACOES_LISTAR,
   "/administracao/arquivos": FAVORITE_PAGES.ADMINISTRACAO_ARQUIVOS_LISTAR,
@@ -82,7 +82,7 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
 
   // Administration - Create Pages
   "/administracao/clientes/cadastrar": FAVORITE_PAGES.ADMINISTRACAO_CLIENTES_CADASTRAR,
-  "/administracao/colaboradores/cadastrar": FAVORITE_PAGES.ADMINISTRACAO_COLABORADORES_CADASTRAR,
+  "/departamento-pessoal/colaboradores/cadastrar": FAVORITE_PAGES.ADMINISTRACAO_COLABORADORES_CADASTRAR,
   "/administracao/orcamentos/cadastrar": FAVORITE_PAGES.ADMINISTRACAO_ORCAMENTOS_CADASTRAR,
   "/administracao/arquivos/upload": FAVORITE_PAGES.ADMINISTRACAO_ARQUIVOS_CADASTRAR,
   "/administracao/setores/cadastrar": FAVORITE_PAGES.ADMINISTRACAO_SETORES_CADASTRAR,

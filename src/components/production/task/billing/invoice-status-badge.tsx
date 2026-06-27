@@ -7,7 +7,7 @@ import { INVOICE_STATUS_LABELS } from "@/constants/enum-labels";
 const INVOICE_STATUS_VARIANT: Record<INVOICE_STATUS, BadgeVariant> = {
   [INVOICE_STATUS.DRAFT]: "gray",
   [INVOICE_STATUS.ACTIVE]: "blue",
-  [INVOICE_STATUS.PARTIALLY_PAID]: "amber",
+  [INVOICE_STATUS.PARTIALLY_PAID]: "yellow",
   [INVOICE_STATUS.PAID]: "green",
   [INVOICE_STATUS.CANCELLED]: "red",
 };

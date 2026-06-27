@@ -1421,6 +1421,7 @@ export const ACCOUNTING_TYPE_LABELS: Record<ACCOUNTING_TYPE, string> = {
   [ACCOUNTING_TYPE.ESTORNO]: "Estorno",
   [ACCOUNTING_TYPE.LUCRO_DISTRIBUIDO]: "Lucro Distribuído",
   [ACCOUNTING_TYPE.RECEITA_SERVICOS]: "Receita de Serviços",
+  [ACCOUNTING_TYPE.EXTRAORDINARIO]: "Extraordinário",
 };
 
 export const ITEM_CATEGORY_LEVEL_LABELS: Record<ITEM_CATEGORY_LEVEL, string> = {

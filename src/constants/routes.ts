@@ -11,11 +11,11 @@ export const routes = {
       root: "/administracao/clientes",
     },
     collaborators: {
-      create: "/administracao/colaboradores/cadastrar",
-      details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
-      edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
-      list: "/administracao/colaboradores/listar",
-      root: "/administracao/colaboradores",
+      create: "/departamento-pessoal/colaboradores/cadastrar",
+      details: (id: string) => `/departamento-pessoal/colaboradores/detalhes/${id}`,
+      edit: (id: string) => `/departamento-pessoal/colaboradores/editar/${id}`,
+      list: "/departamento-pessoal/colaboradores/listar",
+      root: "/departamento-pessoal/colaboradores",
     },
     files: {
       details: (id: string) => `/administracao/arquivos/detalhes/${id}`,
@@ -668,10 +668,10 @@ export const routes = {
 
   // Users - Alias for administration users (collaborators) for backward compatibility
   users: {
-    create: "/administracao/colaboradores/cadastrar",
-    details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
-    edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
-    root: "/administracao/colaboradores",
+    create: "/departamento-pessoal/colaboradores/cadastrar",
+    details: (id: string) => `/departamento-pessoal/colaboradores/detalhes/${id}`,
+    edit: (id: string) => `/departamento-pessoal/colaboradores/editar/${id}`,
+    root: "/departamento-pessoal/colaboradores",
   },
 } as const;
 

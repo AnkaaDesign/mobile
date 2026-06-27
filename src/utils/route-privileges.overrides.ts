@@ -27,13 +27,6 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
   "/(tabs)/administracao/clientes/editar/[id]": ["ADMIN", "FINANCIAL", "LOGISTIC", "PRODUCTION_MANAGER", "COMMERCIAL"],
   "/(tabs)/administracao/clientes/editar-em-lote": ["ADMIN", "FINANCIAL", "LOGISTIC", "PRODUCTION_MANAGER", "COMMERCIAL"],
 
-  // ---- Administração: collaborators are HR-readable ----
-  "/(tabs)/administracao/colaboradores": "HUMAN_RESOURCES",
-  "/(tabs)/administracao/colaboradores/listar": "HUMAN_RESOURCES",
-  "/(tabs)/administracao/colaboradores/cadastrar": "ADMIN",
-  "/(tabs)/administracao/colaboradores/detalhes/[id]": "HUMAN_RESOURCES",
-  "/(tabs)/administracao/colaboradores/editar/[id]": "HUMAN_RESOURCES",
-
   // ---- Estoque manutenção: also accessible to MAINTENANCE ----
   "/(tabs)/estoque/manutencao": ["WAREHOUSE", "MAINTENANCE", "ADMIN"],
   "/(tabs)/estoque/manutencao/listar": ["WAREHOUSE", "MAINTENANCE", "ADMIN"],
@@ -110,14 +103,19 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
   "/(tabs)/financeiro/notas-fiscais": ["FINANCIAL", "COMMERCIAL", "ADMIN", "ACCOUNTING"],
   "/(tabs)/financeiro/clientes": ["FINANCIAL", "COMMERCIAL", "ADMIN"],
 
-  // ---- ACCOUNTING (Contabilidade): departamento-pessoal reads over RH routes ----
+  // ---- ACCOUNTING (Contabilidade): departamento-pessoal read access ----
   // Create special-cases above (funcionarios/cargos/setores cadastrar) stay ADMIN-only.
   "/(tabs)/departamento-pessoal": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/funcionarios": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/funcionarios/listar": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/funcionarios/detalhes/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/funcionarios/editar/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  // Colaboradores moved here from Administração — read for HR/ACC/ADMIN, create ADMIN-only.
   "/(tabs)/departamento-pessoal/colaboradores": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/colaboradores/listar": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/colaboradores/cadastrar": ["ADMIN"],
+  "/(tabs)/departamento-pessoal/colaboradores/detalhes/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/colaboradores/editar/[id]": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/epi": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/feriados": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/advertencias": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],

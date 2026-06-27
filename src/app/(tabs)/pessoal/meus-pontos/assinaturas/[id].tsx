@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -18,7 +18,7 @@ import {
   IconMaximize,
   IconFileText,
 } from "@tabler/icons-react-native";
-import { ThemedView, ThemedText, ErrorScreen, Button } from "@/components/ui";
+import { ThemedView, ThemedText, ErrorScreen, Button, Chip } from "@/components/ui";
 import { Textarea } from "@/components/ui";
 import { Modal, ModalContent } from "@/components/ui/modal";
 import { useTheme } from "@/lib/theme";
@@ -26,6 +26,7 @@ import {
   useMyAssinaturaDetail,
   useApproveMyAssinatura,
   useRejectMyAssinatura,
+  useMyBatidasForDate,
 } from "@/hooks/secullum";
 import { APURACAO_ESTADO } from "@/types/secullum";
 import { useScreenReady } from "@/hooks/use-screen-ready";
@@ -54,6 +55,55 @@ function fmtDateTime(iso?: string): string {
   return time ? `${date} ${time}` : date;
 }
 
+/** The ten Secullum punch slots, in the order they appear on the cartão-ponto. */
+const SLOTS = [
+  { key: "entrada1", label: "Entrada 1" },
+  { key: "saida1", label: "Saída 1" },
+  { key: "entrada2", label: "Entrada 2" },
+  { key: "saida2", label: "Saída 2" },
+  { key: "entrada3", label: "Entrada 3" },
+  { key: "saida3", label: "Saída 3" },
+  { key: "entrada4", label: "Entrada 4" },
+  { key: "saida4", label: "Saída 4" },
+  { key: "entrada5", label: "Entrada 5" },
+  { key: "saida5", label: "Saída 5" },
+] as const;
+
+type SlotKey = (typeof SLOTS)[number]["key"];
+type DayBatidas = Partial<Record<SlotKey, string | null>>;
+
+const SLOT_LABEL: Record<SlotKey, string> = SLOTS.reduce(
+  (acc, s) => ({ ...acc, [s.key]: s.label }),
+  {} as Record<SlotKey, string>,
+);
+
+/** Enumerate every day (YYYY-MM-DD) in the apuração period, inclusive. */
+function enumerateDays(startIso?: string, endIso?: string): string[] {
+  if (!startIso || !endIso) return [];
+  const start = new Date(`${startIso.slice(0, 10)}T00:00:00Z`);
+  const end = new Date(`${endIso.slice(0, 10)}T00:00:00Z`);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return [];
+  const days: string[] = [];
+  for (let t = start.getTime(), guard = 0; t <= end.getTime() && guard < 400; t += 86_400_000, guard++) {
+    days.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+/** Build the detailed motivo text from the per-day slot selections + free text. */
+function composeMotivo(selections: Record<string, SlotKey[]>, freeText: string): string {
+  const lines = Object.keys(selections)
+    .filter((ymd) => selections[ymd]?.length)
+    .sort()
+    .map((ymd) => {
+      const slots = SLOTS.filter((s) => selections[ymd].includes(s.key)).map((s) => s.label);
+      return `• ${fmtDate(ymd)}: ${slots.join(", ")}`;
+    });
+  const structured = lines.length ? `Batidas incorretas:\n${lines.join("\n")}` : "";
+  const free = freeText.trim();
+  return [structured, free].filter(Boolean).join("\n\n");
+}
+
 function estadoMeta(estado: number, colors: { primary: string; destructive: string }) {
   switch (estado) {
     case APURACAO_ESTADO.APROVADO:
@@ -75,6 +125,10 @@ export default function AssinaturaDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  // Per-day map of wrong punch slots, e.g. { "2026-05-20": ["entrada1", "saida2"] }.
+  const [slotSelections, setSlotSelections] = useState<Record<string, SlotKey[]>>({});
+  // Day whose slot chips are currently expanded for selection.
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState(false);
 
   const { data, isLoading, error, refetch } = useMyAssinaturaDetail(
@@ -86,6 +140,29 @@ export default function AssinaturaDetailScreen() {
 
   const body = data?.data;
   const apuracao = body?.success ? body.data : undefined;
+
+  const periodDays = useMemo(
+    () => enumerateDays(apuracao?.dataInicio, apuracao?.dataFim),
+    [apuracao?.dataInicio, apuracao?.dataFim],
+  );
+
+  const toggleSlot = useCallback((ymd: string, slot: SlotKey) => {
+    setSlotSelections((prev) => {
+      const current = prev[ymd] ?? [];
+      const next = current.includes(slot)
+        ? current.filter((s) => s !== slot)
+        : [...current, slot];
+      const updated = { ...prev };
+      if (next.length) updated[ymd] = next;
+      else delete updated[ymd];
+      return updated;
+    });
+  }, []);
+
+  const selectedCount = useMemo(
+    () => Object.values(slotSelections).reduce((sum, slots) => sum + slots.length, 0),
+    [slotSelections],
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -122,9 +199,12 @@ export default function AssinaturaDetailScreen() {
   }, [approveMutation, id, nav]);
 
   const handleReject = useCallback(async () => {
-    const motivo = rejectReason.trim();
+    const motivo = composeMotivo(slotSelections, rejectReason);
     if (!motivo) {
-      Alert.alert("Atenção", "Informe o motivo da reprovação.");
+      Alert.alert(
+        "Atenção",
+        "Informe o motivo da reprovação: selecione as batidas incorretas ou descreva o motivo.",
+      );
       return;
     }
     try {
@@ -138,7 +218,7 @@ export default function AssinaturaDetailScreen() {
     } catch {
       // interceptor already shows the error toast
     }
-  }, [rejectMutation, id, rejectReason, nav]);
+  }, [rejectMutation, id, slotSelections, rejectReason, nav]);
 
   if (isLoading && !refreshing) {
     return (
@@ -256,6 +336,8 @@ export default function AssinaturaDetailScreen() {
                   icon={<IconThumbDown size={18} color="#fff" />}
                   onPress={() => {
                     setRejectReason("");
+                    setSlotSelections({});
+                    setExpandedDay(null);
                     setRejectOpen(true);
                   }}
                   disabled={approveMutation.isPending || rejectMutation.isPending}
@@ -290,14 +372,58 @@ export default function AssinaturaDetailScreen() {
             {apuracao.descricao} · {period}
           </ThemedText>
 
-          <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>Motivo</ThemedText>
-          <Textarea
-            value={rejectReason}
-            onChangeText={setRejectReason}
-            placeholder="Descreva o motivo da reprovação"
-            numberOfLines={4}
-            editable={!rejectMutation.isPending}
-          />
+          <ScrollView
+            style={styles.modalScroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Batidas com erro — builds a detailed motivo from the selected days/slots */}
+            {periodDays.length > 0 && (
+              <>
+                <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>
+                  Batidas com erro {selectedCount > 0 ? `(${selectedCount})` : "(opcional)"}
+                </ThemedText>
+                <ThemedText style={[styles.pickerHint, { color: colors.mutedForeground }]}>
+                  Toque em um dia e marque as batidas incorretas.
+                </ThemedText>
+                <View style={styles.dayGrid}>
+                  {periodDays.map((ymd) => {
+                    const count = slotSelections[ymd]?.length ?? 0;
+                    const isExpanded = expandedDay === ymd;
+                    const variant = isExpanded ? "primary" : count > 0 ? "destructive" : "outline";
+                    return (
+                      <Chip
+                        key={ymd}
+                        size="sm"
+                        variant={variant}
+                        removable={false}
+                        onPress={() => setExpandedDay(isExpanded ? null : ymd)}
+                        label={count > 0 ? `${ymd.slice(8, 10)} (${count})` : ymd.slice(8, 10)}
+                      />
+                    );
+                  })}
+                </View>
+
+                {expandedDay && (
+                  <DaySlotsPicker
+                    date={expandedDay}
+                    selected={slotSelections[expandedDay] ?? []}
+                    onToggle={(slot) => toggleSlot(expandedDay, slot)}
+                    colors={colors}
+                  />
+                )}
+              </>
+            )}
+
+            <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>Motivo</ThemedText>
+            <Textarea
+              value={rejectReason}
+              onChangeText={setRejectReason}
+              placeholder="Observações adicionais (opcional)"
+              numberOfLines={4}
+              editable={!rejectMutation.isPending}
+            />
+          </ScrollView>
 
           <View style={styles.modalActions}>
             <View style={{ flex: 1 }}>
@@ -342,6 +468,53 @@ function InfoRow({
   );
 }
 
+/**
+ * Renders the ten punch slots for a single day, pre-filled with the employee's
+ * actual batidas so they can tap the ones that are wrong. Mounted only while a
+ * day is expanded, so the batidas fetch is scoped to that day.
+ */
+function DaySlotsPicker({
+  date,
+  selected,
+  onToggle,
+  colors,
+}: {
+  date: string;
+  selected: SlotKey[];
+  onToggle: (slot: SlotKey) => void;
+  colors: { card: string; border: string; mutedForeground: string; primary: string };
+}) {
+  const { data, isLoading } = useMyBatidasForDate(date);
+  const batidas = (data?.data?.success ? data.data.data : undefined) as DayBatidas | undefined;
+
+  return (
+    <View style={[styles.daySlotsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <ThemedText style={styles.daySlotsTitle}>{fmtDate(date)}</ThemedText>
+      {isLoading ? (
+        <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+      ) : (
+        <View style={styles.slotGrid}>
+          {SLOTS.map((s) => {
+            const raw = batidas?.[s.key];
+            const time = raw ? String(raw).slice(0, 5) : "—";
+            const isSel = selected.includes(s.key);
+            return (
+              <Chip
+                key={s.key}
+                size="sm"
+                variant={isSel ? "destructive" : "outline"}
+                removable={false}
+                onPress={() => onToggle(s.key)}
+                label={`${SLOT_LABEL[s.key]} · ${time}`}
+              />
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { justifyContent: "center", alignItems: "center" },
@@ -381,6 +554,12 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
   modalTitle: { fontSize: 18, fontWeight: "700" },
   modalSubtitle: { fontSize: 13, fontWeight: "500", marginBottom: 16, lineHeight: 18 },
-  motivoFieldLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
+  motivoFieldLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6, marginTop: 12 },
+  modalScroll: { maxHeight: 380 },
+  pickerHint: { fontSize: 12, marginBottom: 8, marginTop: -2 },
+  dayGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  daySlotsCard: { borderRadius: 10, borderWidth: 1, padding: 10, marginTop: 10, gap: 8 },
+  daySlotsTitle: { fontSize: 13, fontWeight: "700" },
+  slotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   modalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
 });

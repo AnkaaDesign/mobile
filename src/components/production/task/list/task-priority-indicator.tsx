@@ -22,7 +22,7 @@ export const TaskPriorityIndicator: React.FC<TaskPriorityIndicatorProps> = ({
       case PRIORITY_TYPE.LOW:
         return {
           icon: "arrow-down" as const,
-          color: "#10b981",
+          color: "#6b7280", // gray-500 (matches web PRIORITY.LOW = muted)
           label: "Baixa",
         };
       case PRIORITY_TYPE.MEDIUM:
@@ -34,7 +34,7 @@ export const TaskPriorityIndicator: React.FC<TaskPriorityIndicatorProps> = ({
       case PRIORITY_TYPE.HIGH:
         return {
           icon: "arrow-up" as const,
-          color: "#ef4444",
+          color: "#f97316", // orange-500 (matches web PRIORITY.HIGH = warning)
           label: "Alta",
         };
       case PRIORITY_TYPE.CRITICAL:

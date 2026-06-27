@@ -5,11 +5,11 @@ import { INSTALLMENT_STATUS } from "@/constants/enums";
 import { INSTALLMENT_STATUS_LABELS } from "@/constants/enum-labels";
 
 const INSTALLMENT_STATUS_VARIANT: Record<INSTALLMENT_STATUS, BadgeVariant> = {
-  [INSTALLMENT_STATUS.PENDING]: "amber",
-  [INSTALLMENT_STATUS.PROCESSING]: "blue",
+  [INSTALLMENT_STATUS.PENDING]: "pending",
+  [INSTALLMENT_STATUS.PROCESSING]: "processing",
   [INSTALLMENT_STATUS.PAID]: "green",
   [INSTALLMENT_STATUS.OVERDUE]: "red",
-  [INSTALLMENT_STATUS.CANCELLED]: "gray",
+  [INSTALLMENT_STATUS.CANCELLED]: "cancelled",
 };
 
 interface InstallmentStatusBadgeProps {

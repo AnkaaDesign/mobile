@@ -345,7 +345,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         icon: 'eye',
         variant: 'default',
         onPress: (user, router) => {
-          router.push(`/administracao/colaboradores/detalhes/${user.id}`)
+          router.push(`/departamento-pessoal/colaboradores/detalhes/${user.id}`)
         },
       },
       {
@@ -355,7 +355,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         variant: 'default',
         canPerform: canEditUsers,
         onPress: (user, router) => {
-          router.push(`/administracao/colaboradores/editar/${user.id}`)
+          router.push(`/departamento-pessoal/colaboradores/editar/${user.id}`)
         },
       },
       {
@@ -549,7 +549,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
   actions: {
     create: {
       label: 'Cadastrar Colaborador',
-      route: '/administracao/colaboradores/cadastrar',
+      route: '/departamento-pessoal/colaboradores/cadastrar',
       canCreate: canEditUsers,
     },
     bulk: [

@@ -50,16 +50,11 @@ export function ServicesTable({ taskId, maxHeight = 400 }: ServicesTableProps) {
       taskId,
     },
     include: {
+      // API serviceOrder query schema only accepts `task: boolean | { include }`
+      // — a `task: { select }` is silently stripped, so `customer` never loads.
       task: {
-        select: {
-          id: true,
-          name: true,
-          customer: {
-            select: {
-              id: true,
-              fantasyName: true,
-            },
-          },
+        include: {
+          customer: true,
         },
       },
     },
