@@ -234,7 +234,6 @@ export const routes = {
       root: "/departamento-pessoal/advertencias",
     },
     vacations: {
-      create: "/departamento-pessoal/ferias/cadastrar",
       details: (id: string) => `/departamento-pessoal/ferias/detalhes/${id}`,
       edit: (id: string) => `/departamento-pessoal/ferias/editar/${id}`,
       list: "/departamento-pessoal/ferias/listar",
@@ -304,8 +303,8 @@ export const routes = {
       list: "/departamento-pessoal/calculos",
     },
     timeRequests: {
-      root: "/departamento-pessoal/requisicoes-ponto",
-      list: "/departamento-pessoal/requisicoes-ponto/listar",
+      root: "/departamento-pessoal/requisicoes",
+      list: "/departamento-pessoal/requisicoes/listar",
     },
     syncStatus: "/departamento-pessoal/status-sincronizacao-ponto",
   },

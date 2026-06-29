@@ -15,6 +15,7 @@ import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing, fontSize } from "@/constants/design-system";
+import { CONTRACT_STATUS } from "@/constants";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { ThemedText } from "@/components/ui";
@@ -53,8 +54,8 @@ export function DependentForm({ mode, dependent, userId, onSuccess, onCancel }: 
   const { createAsync, updateAsync, createMutation, updateMutation } = useDependentMutations();
 
   const { data: users } = useUsers({
-    // Only active (not-terminated) collaborators can have dependents registered.
-    isActive: true,
+    // Only active collaborators (ACTIVE current vínculo) can have dependents registered.
+    contractStatuses: [CONTRACT_STATUS.ACTIVE],
     orderBy: { name: "asc" },
     include: { position: true },
   });

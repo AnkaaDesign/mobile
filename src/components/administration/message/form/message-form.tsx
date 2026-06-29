@@ -21,6 +21,7 @@ import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/conte
 import { useNav } from "@/contexts/nav";
 
 import type { User, Sector } from "@/types";
+import { CONTRACT_STATUS } from "@/constants";
 import { getUsers, getSectors, getPositions } from "@/api-client";
 import { userKeys, sectorKeys, positionKeys } from "@/hooks/queryKeys";
 import { createMessage, updateMessage } from "@/api-client/message";
@@ -100,7 +101,7 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
     const pageSize = 50;
     const response = await getUsers({
       searchingFor: searchTerm || undefined,
-      where: { isActive: true },
+      where: { currentContractStatus: CONTRACT_STATUS.ACTIVE },
       orderBy: { name: "asc" },
       page,
       limit: pageSize,
@@ -296,7 +297,7 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
       const sectorIds = data.targetSectors || [];
       if (sectorIds.length === 0) return [];
       const users = await getUsers({
-        where: { sectorId: { in: sectorIds }, isActive: true },
+        where: { sectorId: { in: sectorIds }, currentContractStatus: CONTRACT_STATUS.ACTIVE },
         select: { id: true },
       });
       return (users.data || []).map((u: User) => u.id);
@@ -305,7 +306,7 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
       const positionIds = data.targetPositions || [];
       if (positionIds.length === 0) return [];
       const users = await getUsers({
-        where: { positionId: { in: positionIds }, isActive: true },
+        where: { positionId: { in: positionIds }, currentContractStatus: CONTRACT_STATUS.ACTIVE },
         select: { id: true },
       });
       return (users.data || []).map((u: User) => u.id);

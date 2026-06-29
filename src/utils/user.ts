@@ -233,15 +233,16 @@ export interface CollaboratorStatus {
  * Canonical semantics:
  * - "Efetivado" = currentContractType === INDETERMINATE && currentContractStatus === ACTIVE (GREEN).
  *   It is NEVER a contract type by itself.
- * - "Demitido" / dismissed = isActive === false (RED). `isActive` is THE employed signal.
+ * - "Desligado" / dismissed = currentContractStatus === TERMINATED (RED). The current
+ *   vínculo situação is THE employed signal (the redundant User.isActive column was removed).
  *
  * afastado / aviso prévio are NO LONGER contract statuses. They are OPTIONAL
  * overlays sourced from the Leave feature / an in-progress Termination, passed in
  * via `opts`.
  *
  * Precedence (first match wins):
- * 1. isActive === false && status === TERMINATED        → TERMINATED, "Demitido", red
- * 2. isActive === false (no/empty contract)             → NO_CONTRACT, "Sem vínculo", gray
+ * 1. status === TERMINATED                              → TERMINATED, "Desligado", red
+ * 2. status == null (no current contract)              → NO_CONTRACT, "Sem vínculo", gray
  * 3. opts.activeLeave (overlay)                          → ON_LEAVE, "Afastado", purple
  * 4. opts.inNoticePeriod (overlay)                       → NOTICE_PERIOD, "Aviso prévio", orange
  * 5. off-CLT currentEmployeeType                         → labelled by category, teal/blue
@@ -254,13 +255,13 @@ export function getCollaboratorStatus(
   user: User,
   opts?: { activeLeave?: boolean; inNoticePeriod?: boolean },
 ): CollaboratorStatus {
-  // 1. Demitido — dismissed with an explicit terminated contract.
-  if (user.isActive === false && user.currentContractStatus === CONTRACT_STATUS.TERMINATED) {
+  // 1. Desligado — current vínculo situação is terminated.
+  if (user.currentContractStatus === CONTRACT_STATUS.TERMINATED) {
     return { key: "TERMINATED", label: "Desligado", variant: "red" };
   }
 
-  // 2. Dismissed with no/empty contract — "Sem vínculo".
-  if (user.isActive === false) {
+  // 2. Sem vínculo — no current contract at all (null situação).
+  if (user.currentContractStatus == null) {
     return { key: "NO_CONTRACT", label: "Sem vínculo", variant: "gray" };
   }
 

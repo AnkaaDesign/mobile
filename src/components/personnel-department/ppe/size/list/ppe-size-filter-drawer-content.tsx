@@ -6,6 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { useUsers } from '../../../../../hooks';
+import { CONTRACT_STATUS } from '@/constants/enums';
 import type { PpeSizeGetManyFormData } from '../../../../../schemas';
 
 interface PpeSizeFilterDrawerContentProps {
@@ -36,7 +37,7 @@ export function PpeSizeFilterDrawerContent({
   const { data: usersData } = useUsers({
     limit: 100,
     orderBy: { name: "asc" },
-    where: { status: "ACTIVE" }
+    where: { currentContractStatus: CONTRACT_STATUS.ACTIVE }
   });
   const users = usersData?.data || [];
 

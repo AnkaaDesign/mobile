@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useUsersInfinite } from './useUser';
 import { UserGetManyFormData } from '@/schemas';
 import type { User } from '@/types';
+import { CONTRACT_STATUS } from '@/constants';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for users
@@ -13,18 +14,38 @@ const MOBILE_USERS_PAGE_SIZE = 25;
  */
 export function useUsersInfiniteMobile(params?: Partial<UserGetManyFormData> & { enabled?: boolean }) {
   // Prepare parameters with mobile-optimized page size.
-  // DEFAULT to isActive: true (matching web behavior: hide dismissed users).
-  // A caller / list filter can pass isActive:false (Demitidos) or
-  // isActive:'__all__' (Todos) to reach dismissed users.
+  // "Currently employed" is derived from the current vínculo situação — the
+  // redundant User.isActive column was removed. Callers filter active users with
+  // the API's `contractStatuses` convenience filter (maps to currentContractStatus).
   //
-  // IMPORTANT: params reach the API RAW — getMany does NOT .parse(), so the
-  // mobile user schema's transform that strips the '__all__' sentinel never
-  // runs. The API's isActive is z.boolean(), so a raw '__all__' string → 400.
-  // We resolve the sentinel here: '__all__' means "omit the isActive filter".
+  // DEFAULT to ACTIVE-only (matching web behavior: hide dismissed users). A caller
+  // / list filter can pass [TERMINATED] (Desligados) or the '__all__' sentinel
+  // (Todos) to reach dismissed users.
+  //
+  // IMPORTANT: params reach the API RAW — getMany does NOT .parse(), so the mobile
+  // user schema transform never runs. We resolve the "Exibir" selection here:
+  //  • '__all__' sentinel (Todos)        → omit the filter (show all)
+  //  • a single status string (Ativos/…) → wrap into a [status] array
+  //  • an explicit array (direct callers) → pass through unchanged
+  //  • nothing                           → default to [ACTIVE]
   const queryParams = useMemo(() => {
-    const { isActive, ...rest } = params ?? {};
+    const rest: any = { ...(params ?? {}) };
+    const contractStatuses = rest.contractStatuses;
+    delete rest.contractStatuses;
+
+    let resolvedStatuses: CONTRACT_STATUS[] | undefined;
+    if (contractStatuses === "__all__") {
+      resolvedStatuses = undefined;
+    } else if (Array.isArray(contractStatuses)) {
+      resolvedStatuses = contractStatuses;
+    } else if (typeof contractStatuses === "string") {
+      resolvedStatuses = [contractStatuses as CONTRACT_STATUS];
+    } else {
+      resolvedStatuses = [CONTRACT_STATUS.ACTIVE];
+    }
+
     return {
-      ...(isActive === "__all__" ? {} : { isActive: isActive ?? true }),
+      ...(resolvedStatuses ? { contractStatuses: resolvedStatuses } : {}),
       ...rest,
       limit: MOBILE_USERS_PAGE_SIZE,
     };

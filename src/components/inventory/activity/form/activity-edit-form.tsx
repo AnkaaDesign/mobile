@@ -16,7 +16,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
 import { useUsers, useItem } from "@/hooks";
-import { ACTIVITY_OPERATION, ACTIVITY_REASON } from "@/constants";
+import { ACTIVITY_OPERATION, ACTIVITY_REASON, CONTRACT_STATUS } from "@/constants";
 import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants/enum-labels";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useKeyboardAwareScroll } from "@/hooks";
@@ -133,12 +133,11 @@ export function ActivityEditForm({
     mode: "onChange",
   });
 
-  // Fetch users for selection - isActive: true includes all active users regardless of status
-  // (includes dismissed third-party workers who still have isActive: true)
+  // Fetch users for selection — only users with an ACTIVE current vínculo.
   const { data: users, isLoading: isLoadingUsers } = useUsers({
     orderBy: { name: "asc" },
     limit: 100,
-    where: { isActive: true },
+    where: { currentContractStatus: CONTRACT_STATUS.ACTIVE },
     select: {
       id: true,
       name: true,

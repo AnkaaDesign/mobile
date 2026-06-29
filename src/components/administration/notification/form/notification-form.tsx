@@ -28,6 +28,7 @@ import {
   NOTIFICATION_TYPE,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_IMPORTANCE,
+  CONTRACT_STATUS,
 } from "@/constants";
 import {
   NOTIFICATION_TYPE_LABELS,
@@ -80,12 +81,12 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
   const [scheduleLater, setScheduleLater] = useState(false);
 
   // Async query function for paginated user fetching (matching web version)
-  // Filter by isActive: true to only show active users for notifications
+  // Filter to only users with an ACTIVE current vínculo for notifications
   const fetchUsers = useCallback(async (searchTerm: string, page: number = 1) => {
     const pageSize = 50;
     const response = await getUsers({
       searchingFor: searchTerm || undefined,
-      where: { isActive: true },
+      where: { currentContractStatus: CONTRACT_STATUS.ACTIVE },
       orderBy: { name: "asc" },
       page,
       limit: pageSize,
@@ -506,7 +507,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
                     render={({ field: { onChange, value }, fieldState: { error } }) => (
                       <Combobox
                         async
-                        queryKey={[...userKeys.list({ isActive: true })]}
+                        queryKey={[...userKeys.list({ contractStatuses: [CONTRACT_STATUS.ACTIVE] })]}
                         queryFn={fetchUsers}
                         minSearchLength={0}
                         pageSize={50}

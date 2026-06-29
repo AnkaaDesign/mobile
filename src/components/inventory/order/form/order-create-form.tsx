@@ -21,7 +21,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations, useCanViewPrices } from "@/hooks";
 import { getUsers } from "@/api-client";
 import { useMultiStepForm } from "@/hooks";
-import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, SECTOR_PRIVILEGES } from "@/constants";
+import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, SECTOR_PRIVILEGES, CONTRACT_STATUS } from "@/constants";
 import { BoletoPaymentFields } from "./boleto-payment-fields";
 import { formatCurrency, formatQuantity, formatPixKey } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
@@ -880,7 +880,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                             skip: (page - 1) * pageSize,
                             includeSectorPrivileges: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
                             where: {
-                              isActive: true,
+                              currentContractStatus: CONTRACT_STATUS.ACTIVE,
                               ...(searchTerm ? {
                                 OR: [
                                   { name: { contains: searchTerm, mode: "insensitive" } },

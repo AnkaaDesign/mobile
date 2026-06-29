@@ -24,7 +24,7 @@ import { warningCreateSchema, warningUpdateSchema } from "@/schemas/warning";
 import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/warning";
 import type { Warning } from "@/types";
 import { useWarningMutations } from "@/hooks/useWarning";
-import { WARNING_SEVERITY, WARNING_CATEGORY } from "@/constants";
+import { WARNING_SEVERITY, WARNING_CATEGORY, CONTRACT_STATUS } from "@/constants";
 import { getUsers, getUserById } from "@/api-client";
 
 interface WarningFormProps {
@@ -113,7 +113,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
     (searchTerm: string, page: number, excludeIds: string[] = []) => {
       const pageSize = 50;
       const validExcludeIds = excludeIds.filter((id) => id && id.trim() !== "");
-      const where: any = { isActive: true };
+      const where: any = { currentContractStatus: CONTRACT_STATUS.ACTIVE };
       if (validExcludeIds.length > 0) {
         where.id = { notIn: validExcludeIds };
       }

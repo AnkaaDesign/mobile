@@ -26,6 +26,7 @@ import {
   SECTOR_PRIVILEGES,
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
+  CONTRACT_STATUS,
 } from "@/constants";
 import { BoletoPaymentFields } from "./boleto-payment-fields";
 import { formatCurrency, formatQuantity, formatPixKey, MANUAL_ORDER_STATUSES, isValidOrderStatusTransition } from "@/utils";
@@ -1059,7 +1060,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                             skip: (page - 1) * pageSize,
                             includeSectorPrivileges: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
                             where: {
-                              isActive: true,
+                              currentContractStatus: CONTRACT_STATUS.ACTIVE,
                               ...(searchTerm ? {
                                 OR: [
                                   { name: { contains: searchTerm, mode: "insensitive" } },

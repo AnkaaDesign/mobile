@@ -20,6 +20,7 @@ import {
   ITEM_SELECT_MINIMAL,
   ITEM_SELECT_COMBOBOX,
 } from '@/api-client/select-patterns';
+import { CONTRACT_STATUS } from '@/constants';
 
 // ============================================
 // USER HOOKS FOR FORMS
@@ -95,7 +96,7 @@ export function useActiveUsersMinimal(options?: {
   const { where, ...rest } = options || {};
   return useUsersMinimal({
     ...rest,
-    where: { ...where, isActive: true, currentContractStatus: { not: 'TERMINATED' } },
+    where: { ...where, currentContractStatus: CONTRACT_STATUS.ACTIVE },
   });
 }
 

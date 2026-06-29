@@ -1,5 +1,5 @@
 // HR Requests widget — surfaces the same Secullum time-adjustment / justified-
-// absence approval queue that lives at /departamento-pessoal/requisicoes-ponto.
+// absence approval queue that lives at /departamento-pessoal/requisicoes.
 // Mobile counterpart to `web/src/dashboard/widgets/hr-requests-table.tsx`
 // (1318 lines), built as a card list (NOT a tabular grid) per spec §6.5:
 //   • In-tile: compact list of request cards (one per Secullum request).
@@ -436,7 +436,7 @@ function PersonnelDepartmentRequestsTableRender({
     <WidgetCard
       title={config.title || "Requisições de RH"}
       icon={<HeaderIcon size={16} color={accent.hex} />}
-      viewAllHref="/(tabs)/departamento-pessoal/requisicoes-ponto/listar"
+      viewAllHref="/(tabs)/departamento-pessoal/requisicoes/listar"
       showHeader={config.display.showHeader ?? true}
       density={density}
       bodyPadded={false}

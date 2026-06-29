@@ -518,7 +518,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "controle-ponto-edicao", title: "Edição", icon: "edit", path: "/departamento-pessoal/controle-ponto/edicao" },
           { id: "controle-ponto-ausencias", title: "Ausências", icon: "timeOff", path: "/departamento-pessoal/controle-ponto/ausencias" },
           { id: "controle-ponto-fechamento", title: "Fechamento", icon: "checkCircle", path: "/departamento-pessoal/controle-ponto/fechamento" },
-          { id: "controle-ponto-requisicoes", title: "Requisições", icon: "clipboardList", path: "/departamento-pessoal/requisicoes-ponto/listar" },
+          { id: "controle-ponto-requisicoes", title: "Requisições", icon: "clipboardList", path: "/departamento-pessoal/requisicoes" },
         ],
       },
       {
@@ -532,7 +532,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       // { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/departamento-pessoal/folha-de-pagamento" }, // Temporarily hidden for testing
-      { id: "requisicoes", title: "Requisições", icon: "clipboardList", path: "/departamento-pessoal/requisicoes" },
+      // "Requisições" lives under Controle de Ponto (above) — matches the web nav.
 
       // ============================================================
       // DEPARTAMENTO PESSOAL (Área Andressa) — mirrors web departamento-pessoal,
@@ -550,7 +550,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         // also allows ACCOUNTING). Nav was ACCOUNTING-only, hiding it from HR/ADMIN.
         requiredPrivilege: [SECTOR_PRIVILEGES.ACCOUNTING, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          { id: "rh-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/ferias/cadastrar" },
+          // Vacations are not created from mobile — no "Cadastrar" entry.
           { id: "rh-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/ferias/detalhes/:id", isDynamic: true },
           { id: "rh-ferias-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/ferias/editar/:id", isDynamic: true },
         ],
@@ -579,7 +579,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "beach",
         path: "/departamento-pessoal/ferias/listar",
         children: [
-          { id: "pm-ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/departamento-pessoal/ferias/cadastrar" },
+          // Vacations are not created from mobile — no "Cadastrar" entry.
           { id: "pm-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/departamento-pessoal/ferias/detalhes/:id", isDynamic: true },
           { id: "pm-ferias-editar", title: "Editar", icon: "edit", path: "/departamento-pessoal/ferias/editar/:id", isDynamic: true },
         ],

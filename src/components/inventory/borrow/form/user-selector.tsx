@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getUsers } from "@/api-client";
+import { CONTRACT_STATUS } from "@/constants";
 import type { User } from "@/types";
 
 interface UserSelectorProps {
@@ -48,15 +49,14 @@ export function BorrowUserSelector({
   }, [initialUser?.id]);
 
   // Async query function for Combobox with pagination
-  // Filter: isActive: true includes all active users regardless of status
-  // (includes dismissed third-party workers who still have isActive: true)
+  // Filter: only users with an ACTIVE current vínculo.
   const queryFn = useCallback(async (searchTerm: string, page: number = 1) => {
     const pageSize = 20;
     const response = await getUsers({
       take: pageSize,
       skip: (page - 1) * pageSize,
       where: {
-        isActive: true,
+        currentContractStatus: CONTRACT_STATUS.ACTIVE,
         ...(searchTerm ? {
           OR: [
             { name: { contains: searchTerm, mode: "insensitive" } },
@@ -72,7 +72,6 @@ export function BorrowUserSelector({
         email: true,
         cpf: true,
         status: true,
-        isActive: true,
         position: {
           select: {
             id: true,

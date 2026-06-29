@@ -116,7 +116,7 @@ export function validateStage1(
   // Business rule validations
   if (context.selectedUser) {
     // Check if user is active (not dismissed)
-    if (context.selectedUser.currentContractStatus === CONTRACT_STATUS.TERMINATED || !context.selectedUser.isActive) {
+    if (context.selectedUser.currentContractStatus !== CONTRACT_STATUS.ACTIVE) {
       errors.push({
         field: "withdrawerId",
         message: "Usuário selecionado está inativo",

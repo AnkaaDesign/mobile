@@ -17,6 +17,7 @@ import {
   PPE_TYPE,
   routes,
   SECTOR_PRIVILEGES,
+  CONTRACT_STATUS,
 } from "@/constants";
 import { ppeDeliveryCreateSchema, type PpeDeliveryCreateFormData } from "@/schemas";
 import { mobileRoute } from "@/constants/routes.types";
@@ -62,7 +63,7 @@ function CreatePPEDeliveryScreenInner() {
       const response = await getUsers({
         take: pageSize,
         skip: (page - 1) * pageSize,
-        where: { isActive: true }, // EPI eligibility follows the account flag — includes terceirizado/dismissed-now-third-party
+        where: { currentContractStatus: CONTRACT_STATUS.ACTIVE }, // EPI eligibility follows the active current vínculo
         orderBy: { name: "asc" },
         include: { ppeSize: true },
         searchingFor: search || undefined,

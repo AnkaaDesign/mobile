@@ -43,7 +43,7 @@ export default function EmployeeDetailsScreen() {
       sector: true,
       ledSector: true,
       ppeSize: true,
-      _count: { select: { tasks: true, activities: true, borrows: true, changeLogs: true } },
+      _count: { select: { createdTasks: true, bonuses: true, activities: true, borrows: true, changeLogs: true } },
     },
     enabled: !!id,
   });

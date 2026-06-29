@@ -130,7 +130,6 @@ export function AdmissionNewUserForm({ onSuccess, onCancel }: AdmissionNewUserFo
       positionId: null,
       isSectorLeader: false,
       verified: false,
-      isActive: true,
       performanceLevel: 0,
       address: "",
       addressNumber: "",
@@ -712,17 +711,6 @@ export function AdmissionNewUserForm({ onSuccess, onCancel }: AdmissionNewUserFo
 
             {/* Controle de Acesso */}
             <FormCard title="Controle de Acesso" icon="IconShieldCheck">
-              <FormFieldGroup label="Ativo">
-                <Controller
-                  control={form.control}
-                  name="isActive"
-                  render={({ field: { onChange, value } }) => (
-                    <View style={styles.switchRow}>
-                      <Switch checked={Boolean(value)} onCheckedChange={onChange} disabled={isLoading} />
-                    </View>
-                  )}
-                />
-              </FormFieldGroup>
               <FormFieldGroup label="Verificado">
                 <Controller
                   control={form.control}

@@ -249,6 +249,10 @@ const ALL_ROUTES = [
   { name: "departamento-pessoal/feriados/listar", title: "Feriados" },
   { name: "departamento-pessoal/feriados/detalhes/[id]", title: "Detalhes do Feriado" },
   { name: "departamento-pessoal/feriados/editar/[id]", title: "Editar Feriado" },
+  { name: "departamento-pessoal/ferias/index", title: "Férias" },
+  { name: "departamento-pessoal/ferias/listar", title: "Férias" },
+  { name: "departamento-pessoal/ferias/detalhes/[id]", title: "Detalhes das Férias" },
+  { name: "departamento-pessoal/ferias/editar/[id]", title: "Editar Férias" },
   // { name: "departamento-pessoal/folha-de-pagamento/index", title: "Folha de Pagamento" }, // Temporarily hidden for testing
   // { name: "departamento-pessoal/folha-de-pagamento/[userId]", title: "Folha de Pagamento" }, // Temporarily hidden for testing
   // { name: "departamento-pessoal/folha-de-pagamento/listar", title: "Folhas de Pagamento" }, // Temporarily hidden for testing

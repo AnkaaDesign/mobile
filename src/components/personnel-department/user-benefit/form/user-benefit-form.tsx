@@ -24,7 +24,7 @@ import type { UserBenefitCreateFormData, UserBenefitUpdateFormData } from "@/sch
 import type { Benefit, UserBenefit, User } from "@/types";
 import { useUserBenefitMutations } from "@/hooks/useUserBenefit";
 import { getUsers, getBenefits } from "@/api-client";
-import { BENEFIT_KIND, BENEFIT_KIND_LABELS, BENEFIT_ENROLLMENT_STATUS } from "@/constants";
+import { BENEFIT_KIND, BENEFIT_KIND_LABELS, BENEFIT_ENROLLMENT_STATUS, CONTRACT_STATUS } from "@/constants";
 import { getKindDiscountCap, getKindDiscountHelper } from "../discount-caps";
 import { calculateBenefitSplit } from "@/utils/benefit-discount";
 import { getPositionMonthlySalary } from "@/utils/overtime-cost";
@@ -171,7 +171,7 @@ export function UserBenefitForm(props: UserBenefitFormProps) {
   const loadUserOptions = useCallback(
     async (searchTerm: string, page: number = 1) => {
       const pageSize = 50;
-      const where: any = { isActive: true };
+      const where: any = { currentContractStatus: CONTRACT_STATUS.ACTIVE };
       if (searchTerm && searchTerm.trim()) {
         where.name = { contains: searchTerm.trim(), mode: "insensitive" };
       }

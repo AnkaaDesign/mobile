@@ -405,16 +405,6 @@ export const userWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
-      isActive: z
-        .union([
-          z.boolean(),
-          z.object({
-            equals: z.boolean().optional(),
-            not: z.boolean().optional(),
-          }),
-        ])
-        .optional(),
-
       birth: z
         .union([
           z.date(),
@@ -592,10 +582,6 @@ const userFilters = {
   contractTypes: z.array(z.nativeEnum(CONTRACT_TYPE)).optional(),
   contractKinds: z.array(z.nativeEnum(CONTRACT_TYPE)).optional(),
   employeeTypes: z.array(z.nativeEnum(EMPLOYEE_TYPE)).optional(),
-  // isActive is THE employed signal (Exibir: Ativos/Demitidos). The '__all__'
-  // sentinel emitted by the single-select "Todos" option is stripped in the
-  // transform so it omits the filter entirely.
-  isActive: z.union([z.boolean(), z.literal("__all__")]).optional(),
   isVerified: z.boolean().optional(),
   hasPosition: z.boolean().optional(),
   hasSector: z.boolean().optional(),
@@ -680,16 +666,10 @@ const userTransform = (data: any) => {
     delete data.employeeTypes;
   }
 
-  // Handle isActive filter — THE canonical "currently employed" signal.
-  // The '__all__' sentinel (Exibir → "Todos") means "no filter": omit it.
-  if (data.isActive === "__all__") {
-    delete data.isActive;
-  } else if (typeof data.isActive === "boolean") {
-    // Mirror web: key off the null-safe User.isActive column so dismissed
-    // (isActive:false) users — including zero-contract users — are reachable.
-    andConditions.push({ isActive: data.isActive });
-    delete data.isActive;
-  }
+  // "Currently employed" is derived from contract situação — callers filter with
+  // `contractStatuses: [ACTIVE]` (active) / `[TERMINATED]` (dismissed), handled
+  // above. The old `isActive` convenience filter (and the redundant User.isActive
+  // column) were removed.
 
   // Handle isVerified filter
   if (typeof data.isVerified === "boolean") {
@@ -957,7 +937,6 @@ export const userCreateSchema = z
       .min(1, "CPF é obrigatório")
       .pipe(cpfSchema),
     verified: z.boolean().default(false),
-    isActive: z.boolean().default(true),
     performanceLevel: z.number().int().min(0).max(5).default(0),
     // Setor (sector) — required at create time. Drives the Secullum departamento
     // mapping and sector-scoped permissions/reports. userUpdateSchema keeps it
@@ -1047,7 +1026,6 @@ export const userUpdateSchema = z
     pis: pisSchema.nullable().optional(),
     cpf: cpfSchema.nullable().optional(),
     verified: z.boolean().optional(),
-    isActive: z.boolean().optional(),
     performanceLevel: z.number().int().min(0).max(5).optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
     password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres").nullable().optional(),

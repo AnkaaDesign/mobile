@@ -125,7 +125,7 @@ export const ROUTE_PRIVILEGE_OVERRIDES: Record<string, Priv> = {
   "/(tabs)/departamento-pessoal/bonus": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/calculos": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
   "/(tabs)/departamento-pessoal/controle-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
-  "/(tabs)/departamento-pessoal/requisicoes-ponto": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
+  "/(tabs)/departamento-pessoal/requisicoes": ["HUMAN_RESOURCES", "ADMIN", "ACCOUNTING"],
 
   // ---- Servidor: file-manager open to COMMERCIAL alongside ADMIN ----
   "/(tabs)/servidor/file-manager": ["ADMIN", "COMMERCIAL"],

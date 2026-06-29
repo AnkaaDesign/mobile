@@ -187,14 +187,12 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         format: 'date',
       },
     ],
+    // Mobile screens are narrow — default to the three essential columns
+    // (colaborador, período de gozo, situação). All other columns remain
+    // available via the column-visibility manager.
     defaultVisible: [
       'user.name',
-      'acquisitiveStart',
       'gozo',
-      'concessiveEnd',
-      'entitledDays',
-      'abonoPecuniarioDays',
-      'isDouble',
       'status',
     ],
     rowHeight: 72,
@@ -321,11 +319,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
   },
 
   actions: {
-    create: {
-      label: 'Cadastrar Férias',
-      route: '/departamento-pessoal/ferias/cadastrar',
-      canCreate: canManageVacations,
-    },
+    // No `create` action — vacations are not created from mobile (no FAB).
     bulk: [
       {
         key: 'delete',
@@ -347,6 +341,6 @@ export const vacationsListConfig: ListConfig<Vacation> = {
   emptyState: {
     icon: 'palmtree',
     title: 'Nenhum registro de férias',
-    description: 'Cadastre o período aquisitivo de férias de um colaborador',
+    description: 'Não há registros de férias para os filtros selecionados',
   },
 }

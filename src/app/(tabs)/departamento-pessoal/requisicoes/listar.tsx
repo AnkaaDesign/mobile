@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Header } from "@/components/ui/header";
 import { Textarea } from "@/components/ui/textarea";
 import {
   IconUser,
@@ -32,7 +31,6 @@ import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNav } from "@/contexts/nav";
 
 
 import { Skeleton } from "@/components/ui/skeleton";interface TimeAdjustmentRequest {
@@ -156,8 +154,6 @@ const getDeviceInfo = (type?: string) => {
 
 export default function RequisitionsListScreen() {
   const { colors } = useTheme();
-  const nav = useNav();
-  const goBack = () => nav.goBack();
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TimeAdjustmentRequest | null>(null);
@@ -260,13 +256,32 @@ export default function RequisitionsListScreen() {
   const handleApprove = useCallback(async () => {
     if (!selectedRequest) return;
 
+    // Secullum returns HTTP 400 on /Solicitacoes/Aceitar when any
+    // AlteracoesFonteDados entry has Motivo: null. The employee's own
+    // `Observacoes` (e.g. "tablet sem bateria") is the reason for the request,
+    // so we copy it into every entry's Motivo before sending. Falls back to a
+    // generic string if the request has no observation at all.
+    const motivo =
+      (selectedRequest.Observacoes && selectedRequest.Observacoes.trim()) ||
+      "Aprovado";
+    const alteracoes = (selectedRequest.AlteracoesFonteDados ?? []).map((c: any) => ({
+      ...c,
+      Motivo: c?.Motivo && String(c.Motivo).trim() !== "" ? c.Motivo : motivo,
+    }));
+
     try {
       const result = await approveMutation.mutateAsync({
         requestId: selectedRequest.Id.toString(),
         data: {
           Versao: selectedRequest.Versao,
-          AlteracoesFonteDados: selectedRequest.AlteracoesFonteDados,
-          TipoSolicitacao: selectedRequest.TipoSolicitacao || 0
+          AlteracoesFonteDados: alteracoes,
+          // Secullum's wire `TipoSolicitacao` mirrors the request's `Tipo`
+          // (0 = adjust markings, 2 = justify absence).
+          TipoSolicitacao: selectedRequest.Tipo ?? 0,
+          // Lets the server invalidate the Batidas day-cache so the day view
+          // refreshes immediately after approval.
+          FuncionarioId: selectedRequest.FuncionarioId,
+          Data: selectedRequest.Data,
         }
       });
 
@@ -298,8 +313,10 @@ export default function RequisitionsListScreen() {
         requestId: selectedRequest.Id.toString(),
         data: {
           Versao: selectedRequest.Versao,
-          MotivoDescarte: rejectReason,
-          TipoSolicitacao: selectedRequest.TipoSolicitacao || 0
+          // Secullum's /Solicitacoes/Descartar expects "Motivo" (request body),
+          // not "MotivoDescarte" (which is the response field name).
+          Motivo: rejectReason,
+          TipoSolicitacao: selectedRequest.Tipo ?? 0
         }
       });
 
@@ -632,13 +649,6 @@ export default function RequisitionsListScreen() {
   if (isTablet) {
     return (
       <ThemedView style={styles.container}>
-        <Header
-          title="Requisições de Ponto"
-          subtitle="Aprovar ou rejeitar requisições"
-          showBackButton
-          onBackPress={() => goBack()}
-        />
-
         <View style={styles.tabletContainer}>
           {/* Left Panel - List */}
           <View style={[styles.listPanel, { borderRightColor: colors.border }]}>
@@ -772,13 +782,6 @@ export default function RequisitionsListScreen() {
     <ThemedView style={styles.container}>
       {!showDetailView ? (
         <>
-          <Header
-            title="Requisições de Ponto"
-            subtitle="Aprovar ou rejeitar requisições"
-            showBackButton
-            onBackPress={() => goBack()}
-          />
-
           <View style={[styles.filtersContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
             <View style={styles.toggleContainer}>
               <Button

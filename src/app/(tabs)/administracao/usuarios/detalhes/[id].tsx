@@ -36,7 +36,7 @@ export default function UserDetailScreen() {
       sector: true,
       ledSector: true,
       ppeSize: true,
-      _count: { select: { tasks: true, createdTasks: true, activities: true, changeLogs: true } },
+      _count: { select: { createdTasks: true, activities: true, changeLogs: true } },
     },
     enabled: !!id,
   });

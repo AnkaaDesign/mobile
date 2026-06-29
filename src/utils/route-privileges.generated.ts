@@ -146,7 +146,7 @@ export const GENERATED_ROUTE_PRIVILEGES: Record<string, GeneratedPrivilege> = {
   "/(tabs)/departamento-pessoal/bonus": "HUMAN_RESOURCES",
   "/(tabs)/departamento-pessoal/calculos": "HUMAN_RESOURCES",
   "/(tabs)/departamento-pessoal/controle-ponto": "HUMAN_RESOURCES",
-  "/(tabs)/departamento-pessoal/requisicoes-ponto": "HUMAN_RESOURCES",
+  "/(tabs)/departamento-pessoal/requisicoes": "HUMAN_RESOURCES",
 
   // Financeiro
   "/(tabs)/financeiro": "FINANCIAL",

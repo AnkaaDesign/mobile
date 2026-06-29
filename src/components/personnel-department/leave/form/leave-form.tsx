@@ -24,7 +24,7 @@ import { leaveCreateSchema, leaveUpdateSchema } from "@/schemas/leave";
 import type { LeaveCreateFormData, LeaveUpdateFormData } from "@/schemas/leave";
 import type { Leave } from "@/types";
 import { useLeaveMutations } from "@/hooks/useLeave";
-import { LEAVE_STATUS, LEAVE_TYPE_LABELS, LEAVE_STATUS_LABELS, INSS_BENEFIT_SPECIES_LABELS } from "@/constants";
+import { LEAVE_STATUS, LEAVE_TYPE_LABELS, LEAVE_STATUS_LABELS, INSS_BENEFIT_SPECIES_LABELS, CONTRACT_STATUS } from "@/constants";
 import { getUsers } from "@/api-client";
 
 interface LeaveFormProps {
@@ -87,7 +87,7 @@ export function LeaveForm({ mode, leave, onSuccess, onCancel }: LeaveFormProps) 
   const buildUserQuery = useCallback(
     (searchTerm: string, page: number) => {
       const pageSize = 50;
-      const where: any = { isActive: true };
+      const where: any = { currentContractStatus: CONTRACT_STATUS.ACTIVE };
       if (searchTerm && searchTerm.trim()) {
         where.OR = [
           { name: { contains: searchTerm.trim(), mode: "insensitive" } },

@@ -17,8 +17,6 @@ import { useScreenReady } from "@/hooks/use-screen-ready";
 interface DayRow {
   userId: string;
   userName: string;
-  // Only the sector is shown under the name on the day view — never the position.
-  sectorName: string | null;
   entry1: string;
   exit1: string;
   entry2: string;
@@ -59,7 +57,6 @@ export default function TimeEntriesDayScreen() {
       return {
         userId: item.user?.id ?? "",
         userName: item.user?.name ?? "Sem nome",
-        sectorName: item.user?.sectorName ?? null,
         entry1: dash(e.Entrada1 ?? e.entry1),
         exit1: dash(e.Saida1 ?? e.exit1),
         entry2: dash(e.Entrada2 ?? e.entry2),
@@ -71,9 +68,7 @@ export default function TimeEntriesDayScreen() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      mapped = mapped.filter(
-        (r) => r.userName.toLowerCase().includes(q) || (r.sectorName ?? "").toLowerCase().includes(q),
-      );
+      mapped = mapped.filter((r) => r.userName.toLowerCase().includes(q));
     }
     return mapped;
   }, [apiResponse, searchQuery]);
@@ -111,11 +106,6 @@ export default function TimeEntriesDayScreen() {
             <ThemedText style={styles.userName} numberOfLines={1}>
               {item.userName}
             </ThemedText>
-            {!!item.sectorName && (
-              <ThemedText style={[styles.sectorName, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {item.sectorName}
-              </ThemedText>
-            )}
           </View>
           {!item.hasEntry && (
             <Badge variant="outline">Sem registro</Badge>
@@ -182,7 +172,7 @@ export default function TimeEntriesDayScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Buscar por colaborador ou setor..."
+          placeholder="Buscar por colaborador..."
         />
       </View>
 
@@ -237,7 +227,6 @@ const styles = StyleSheet.create({
   rowHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   rowHeaderLeft: { flex: 1, gap: 2 },
   userName: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-  sectorName: { fontSize: fontSize.xs },
   timeRow: { flexDirection: "row", justifyContent: "space-between" },
   timeSlot: { alignItems: "center", flex: 1, gap: 2 },
   timeLabel: { fontSize: 10, fontWeight: fontWeight.medium },

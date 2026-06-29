@@ -35,7 +35,6 @@ export const USER_SELECT_COMBOBOX = {
   email: true,
   currentContractType: true,
   currentContractStatus: true,
-  isActive: true,
 };
 
 /**
@@ -49,7 +48,6 @@ export const USER_SELECT_TABLE = {
   phone: true,
   currentContractType: true,
   currentContractStatus: true,
-  isActive: true,
   position: {
     select: {
       id: true,

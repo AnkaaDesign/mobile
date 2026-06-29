@@ -151,12 +151,6 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         placeholder: 'Selecione os tipos de contrato',
       },
       {
-        key: 'isActive',
-        label: 'Apenas Ativos',
-        type: 'toggle',
-        placeholder: 'Apenas ativos',
-      },
-      {
         key: 'positionIds',
         label: 'Cargos',
         type: 'select',

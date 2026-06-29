@@ -19,7 +19,7 @@ const TABS: TimeClockTab[] = [
   { label: "Edição", route: "/departamento-pessoal/controle-ponto/edicao", hrOnly: true },
   { label: "Ausências", route: "/departamento-pessoal/controle-ponto/ausencias" },
   { label: "Fechamento", route: "/departamento-pessoal/controle-ponto/fechamento", hrOnly: true },
-  { label: "Requisições", route: "/departamento-pessoal/requisicoes-ponto/listar", hrOnly: true },
+  { label: "Requisições", route: "/departamento-pessoal/requisicoes/listar", hrOnly: true },
 ];
 
 /**

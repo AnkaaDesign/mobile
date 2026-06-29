@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { useUsers, useSectors, usePositions } from '@/hooks';
-import { EMPLOYEE_TYPE } from '@/constants';
+import { EMPLOYEE_TYPE, CONTRACT_STATUS } from '@/constants';
 
 interface PayrollFilterDrawerContentProps {
   filters: PayrollFiltersData;
@@ -40,7 +40,7 @@ export function PayrollFilterDrawerContent({
     orderBy: { name: 'asc' },
     include: { position: true, sector: true },
     where: {
-      isActive: true,
+      currentContractStatus: CONTRACT_STATUS.ACTIVE,
       currentEmployeeType: EMPLOYEE_TYPE.CLT, // Folha is CLT-only — exclude terceirizado/PJ/autônomo/estagiário
       payrollNumber: { not: null },
       secullumEmployeeId: { not: null },

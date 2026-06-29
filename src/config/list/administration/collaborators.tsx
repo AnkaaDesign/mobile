@@ -27,7 +27,6 @@ export const collaboratorsListConfig: ListConfig<User> = {
       cpf: true,
       pis: true,
       status: true,
-      isActive: true,
       avatarId: true,
       payrollNumber: true,
       verified: true,
@@ -376,36 +375,27 @@ export const collaboratorsListConfig: ListConfig<User> = {
   },
 
   filters: {
-    // Default to active-only (matches useUsersInfiniteMobile + web behavior).
+    // Default to active-only — "currently employed" === current vínculo situação ACTIVE
+    // (the redundant User.isActive column was removed).
     defaultValues: {
-      isActive: true,
+      contractStatuses: CONTRACT_STATUS.ACTIVE,
     },
     fields: [
       {
-        // "Exibir": Ativos (isActive:true) | Demitidos (isActive:false) | Todos (omit).
-        // The '__all__' sentinel is stripped by the user schema transform → omits isActive.
-        key: 'isActive',
+        // "Exibir" → contractStatuses (situação, API convenience filter). Ativos = ACTIVE,
+        // Desligados = TERMINATED, Todos = '__all__' sentinel (resolved to "no filter" by
+        // useUsersInfiniteMobile). Replaces the old User.isActive single-select and folds in
+        // the former separate "Situação" field.
+        key: 'contractStatuses',
         label: 'Exibir',
         type: 'select',
         multiple: false,
         options: [
-          { label: 'Ativos', value: true },
-          { label: 'Desligados', value: false },
+          { label: 'Ativos', value: CONTRACT_STATUS.ACTIVE },
+          { label: 'Desligados', value: CONTRACT_STATUS.TERMINATED },
           { label: 'Todos', value: '__all__' },
         ],
         placeholder: 'Ativos',
-      },
-      {
-        // Situação — maps to currentContractStatus (API param: contractStatuses).
-        key: 'contractStatuses',
-        label: 'Situação',
-        type: 'select',
-        multiple: true,
-        options: Object.values(CONTRACT_STATUS).map((status) => ({
-          label: CONTRACT_STATUS_LABELS[status],
-          value: status,
-        })),
-        placeholder: 'Selecione as situações',
       },
       {
         // Modalidade — maps to currentContractType (API param: contractTypes).

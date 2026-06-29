@@ -25,7 +25,7 @@ import type { Vacation } from "@/types";
 import { useVacationMutations, useVacationBatchMutations } from "@/hooks/useVacation";
 import { getUsers } from "@/api-client";
 import { entitledDaysForAbsences } from "@/components/personnel-department/vacation/vacation-utils";
-import { PAYROLL_EMPLOYEE_TYPES } from "@/constants/enums";
+import { PAYROLL_EMPLOYEE_TYPES, CONTRACT_STATUS } from "@/constants/enums";
 
 // Sentinel value for the "Coletiva / Todos" picker option (selects every
 // eligible active CLT collaborator at submit time).
@@ -111,7 +111,7 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
   const buildUserQuery = useCallback((searchTerm: string, page: number) => {
     const pageSize = 50;
     const where: any = {
-      status: { not: "DISMISSED" },
+      currentContractStatus: CONTRACT_STATUS.ACTIVE,
       currentEmployeeType: { in: [...PAYROLL_EMPLOYEE_TYPES] },
     };
     if (searchTerm && searchTerm.trim()) {

@@ -125,7 +125,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             positionId: null,
             isSectorLeader: false,
             verified: false,
-            isActive: true,
             performanceLevel: 0,
             address: "",
             addressNumber: "",
@@ -157,7 +156,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             positionId: user?.positionId || null,
             isSectorLeader: Boolean(user?.ledSector?.id),
             verified: user?.verified || false,
-            isActive: user?.isActive ?? true,
             performanceLevel: user?.performanceLevel || 0,
             address: user?.address || "",
             addressNumber: user?.addressNumber || "",
@@ -638,25 +636,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             <Controller
               control={form.control}
               name="verified"
-              render={({ field: { onChange, value } }) => (
-                <View style={styles.switchRow}>
-                  <Switch
-                    checked={Boolean(value)}
-                    onCheckedChange={onChange}
-                    disabled={isLoading}
-                  />
-                </View>
-              )}
-            />
-          </FormFieldGroup>
-
-          {/* Active Toggle */}
-          <FormFieldGroup
-            label="Ativo"
-          >
-            <Controller
-              control={form.control}
-              name="isActive"
               render={({ field: { onChange, value } }) => (
                 <View style={styles.switchRow}>
                   <Switch

@@ -1,15 +1,14 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { IconChevronLeft, IconChevronRight, IconList } from "@tabler/icons-react-native";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
-import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { useTheme } from "@/lib/theme";
 import { useSecullumTimeEntries } from "@/hooks/secullum";
 import { useUsers } from "@/hooks/useUser";
 import { getBonusPeriod } from "@/utils";
-import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
+import { CalculationsTable } from "@/components/personal/calculations";
 import { CONTRACT_STATUS } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,16 +27,15 @@ const COLUMN_DEFINITIONS = [
   { key: "source", label: "Origem" },
 ];
 
-const DEFAULT_VISIBLE_COLUMNS = [
-  "date", "entry1", "exit1", "entry2", "exit2", "totalHours"
-];
+// Every column is always visible — the table scrolls horizontally, so there is
+// no per-column toggle here (mirrors the personal "Meus Pontos" mirror view).
+const ALL_VISIBLE_COLUMNS = new Set(COLUMN_DEFINITIONS.map((c) => c.key));
 
 export default function TimeEntriesCollaboratorScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
-  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
@@ -45,11 +43,6 @@ export default function TimeEntriesCollaboratorScreen() {
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['secullum', 'time-entries'] });
   }, []);
-
-  // Visible columns state
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    () => new Set(DEFAULT_VISIBLE_COLUMNS)
-  );
 
   // Fetch users for selector
   const { data: usersData, isLoading: usersLoading } = useUsers({
@@ -180,10 +173,6 @@ export default function TimeEntriesCollaboratorScreen() {
     });
   }, []);
 
-  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
-    setVisibleColumns(newColumns);
-  }, []);
-
   // Handle API errors
   if (error) {
     const errorMessage = (error as any)?.response?.data?.message
@@ -216,7 +205,7 @@ export default function TimeEntriesCollaboratorScreen() {
             disabled={usersLoading}
           />
 
-          {/* Month Navigator + Column Button */}
+          {/* Month Navigator */}
           <View style={styles.controlsRow}>
             <View style={[styles.monthSelector, { backgroundColor: colors.input, borderColor: colors.border }]}>
               <TouchableOpacity
@@ -242,40 +231,19 @@ export default function TimeEntriesCollaboratorScreen() {
                 <IconChevronRight size={20} color={colors.foreground} />
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={[styles.columnButton, { backgroundColor: colors.input, borderColor: colors.border }]}
-              onPress={() => setIsColumnPanelOpen(true)}
-            >
-              <IconList size={20} color={colors.foreground} />
-              <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
-                <ThemedText style={styles.columnBadgeText}>{visibleColumns.size}</ThemedText>
-              </View>
-            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Table */}
+        {/* Table — all columns always visible */}
         <CalculationsTable
           data={timeEntries}
           columns={COLUMN_DEFINITIONS}
-          visibleColumns={visibleColumns}
+          visibleColumns={ALL_VISIBLE_COLUMNS}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           loading={isLoading && !refreshing}
         />
       </ThemedView>
-
-      {/* Column Visibility Panel */}
-      <SlideInPanel isOpen={isColumnPanelOpen} onClose={() => setIsColumnPanelOpen(false)}>
-        <CalculationsColumnDrawer
-          columns={COLUMN_DEFINITIONS}
-          visibleColumns={visibleColumns}
-          onVisibilityChange={handleColumnsChange}
-          onClose={() => setIsColumnPanelOpen(false)}
-          defaultColumns={DEFAULT_VISIBLE_COLUMNS}
-        />
-      </SlideInPanel>
     </>
   );
 }
@@ -325,30 +293,5 @@ const styles = StyleSheet.create({
   periodLabel: {
     fontSize: 11,
     fontWeight: "500",
-  },
-  columnButton: {
-    width: 56,
-    minHeight: 56,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  columnBadge: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  columnBadgeText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "700",
   },
 });

@@ -17,7 +17,7 @@ import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { mobileRoute } from "@/constants/routes.types";
-import { routes, LEAVE_TYPE, LEAVE_TYPE_LABELS, WORK_ACCIDENT_REPORT_TYPE_LABELS } from "@/constants";
+import { routes, LEAVE_TYPE, LEAVE_TYPE_LABELS, WORK_ACCIDENT_REPORT_TYPE_LABELS, CONTRACT_STATUS } from "@/constants";
 import { useNav } from "@/contexts/nav";
 
 import {
@@ -87,7 +87,7 @@ export function WorkAccidentForm({ mode, workAccident, onSuccess, onCancel }: Wo
   // Async collaborator loader (create mode only). Mirrors warning-form.
   const buildUserQuery = useCallback((searchTerm: string, page: number) => {
     const pageSize = 50;
-    const where: any = { isActive: true };
+    const where: any = { currentContractStatus: CONTRACT_STATUS.ACTIVE };
     if (searchTerm && searchTerm.trim()) {
       where.OR = [
         { name: { contains: searchTerm.trim(), mode: "insensitive" } },
