@@ -95,17 +95,32 @@ export function ConfigureWidgetModal({
   const open = !!instance && !!def;
 
   // ModalBody hosts the StandardModal itself so the header icon can reflect
-  // the *live* draft accent (which lives in ModalBody's state). It is keyed
-  // by instanceId and only mounted while open, so opening the modal for a
-  // different widget remounts it with fresh draft state — the spec §4.1
-  // remount pattern, preserved.
-  if (!open || !instance || !def) return null;
+  // the *live* draft accent (which lives in ModalBody's state). To let the
+  // native sheet play its slide-OUT animation on close, ModalBody must stay
+  // mounted while `instance` clears to null — so we latch the last open
+  // instance/def and drive visibility with `open` (StandardModal visible={open}).
+  // A mount `generation`, bumped on each open, preserves the spec §4.1 fresh-
+  // draft remount semantics (reopening a widget shows its saved config, not a
+  // stale draft) without a setState-in-effect the React Compiler would flag.
+  const latched = useRef<{
+    instance: WidgetInstance;
+    def: NonNullable<ReturnType<typeof widgetRegistry.get>>;
+  } | null>(null);
+  const generation = useRef(0);
+  const wasOpen = useRef(false);
+  if (open && !wasOpen.current) generation.current += 1;
+  wasOpen.current = open;
+  if (open && instance && def) latched.current = { instance, def };
+
+  const active = latched.current;
+  if (!active) return null;
 
   return (
     <ModalBody
-      key={instance.instanceId}
-      instance={instance}
-      def={def}
+      key={`${active.instance.instanceId}:${generation.current}`}
+      open={open}
+      instance={active.instance}
+      def={active.def}
       onClose={onClose}
       onApplyConfig={onApplyConfig}
       onApplySize={onApplySize}
@@ -115,6 +130,8 @@ export function ConfigureWidgetModal({
 }
 
 interface ModalBodyProps {
+  /** Drives StandardModal visibility so it can animate out before unmounting. */
+  open: boolean;
   instance: WidgetInstance;
   def: NonNullable<ReturnType<typeof widgetRegistry.get>>;
   onClose: () => void;
@@ -124,6 +141,7 @@ interface ModalBodyProps {
 }
 
 function ModalBody({
+  open,
   instance,
   def,
   onClose,
@@ -320,7 +338,7 @@ function ModalBody({
 
   return (
     <StandardModal
-      visible
+      visible={open}
       onClose={onClose}
       title={`Configurar: ${def.name}`}
       subtitle={def.description}

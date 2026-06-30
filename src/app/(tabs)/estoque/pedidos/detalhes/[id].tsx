@@ -137,6 +137,7 @@ export default function OrderDetailScreen() {
       description: order.description || undefined,
       supplierName: order.supplier?.fantasyName || order.supplier?.corporateName || undefined,
       orderDate: order.createdAt,
+      totalOverride: order.totalOverride ?? null,
       notes: order.notes,
       items,
     };

@@ -119,6 +119,9 @@ export interface Order extends BaseEntity {
   forecast: Date | null;
   freight: number;
   discount: number;
+  // Manual grand-total override (Valor Total). null/absent = use the computed total
+  // (Σ items + ICMS/IPI − discount% + freight). Set on web; mobile round-trips it.
+  totalOverride?: number | null;
   status: ORDER_STATUS;
   statusOrder: number; // Status numeric order for sorting: 1=Created, 2=PartiallyFulfilled, 3=Fulfilled, 4=Overdue, 5=PartiallyReceived, 6=Received, 7=Cancelled
   // Contas a Pagar (accounting) payment tracking. Backed by Prisma @default columns,

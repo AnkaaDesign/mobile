@@ -3,7 +3,7 @@ import { ExportButton } from '@/components/ui/export-button';
 import type { ExportFormat, ExportColumn } from '@/lib/export-utils';
 import { exportData } from '@/lib/export-utils';
 import type { Order } from '@/types';
-import { formatCurrency, formatDate, formatDateTime } from '@/utils';
+import { formatCurrency, formatDate, formatDateTime, resolveOrderTotal } from '@/utils';
 import { ORDER_STATUS_LABELS } from '@/constants';
 import { useCanViewPrices } from '@/hooks';
 
@@ -58,16 +58,17 @@ export const OrderExport: React.FC<OrderExportProps> = ({ orders, disabled = fal
             key: 'total',
             label: 'VALOR TOTAL',
             getValue: (order: Order) => {
+              let computed = 0;
               if (order.items && order.items.length > 0) {
-                const total = order.items.reduce((sum, item) => {
+                computed = order.items.reduce((sum, item) => {
                   const subtotal = item.orderedQuantity * item.price;
                   const icmsAmount = subtotal * (item.icms / 100);
                   const ipiAmount = subtotal * (item.ipi / 100);
                   return sum + subtotal + icmsAmount + ipiAmount;
                 }, 0);
-                return total;
               }
-              return 0;
+              // A manual override (Valor Total) wins over the computed total.
+              return resolveOrderTotal(order, computed);
             },
             format: (value: unknown) => formatCurrency(value as number),
           } as ExportColumn<Order>]

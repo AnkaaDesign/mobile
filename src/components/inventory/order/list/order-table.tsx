@@ -11,7 +11,7 @@ import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderTableRowSwipe } from "./order-table-row-swipe";
 import { OrderStatusBadge } from "./order-status-badge";
-import { formatCurrency, formatDate } from "@/utils";
+import { formatCurrency, formatDate, resolveOrderTotal } from "@/utils";
 import { formatOrderNumber } from "@/utils/order-code";
 import { useCanViewPrices } from "@/hooks";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
@@ -160,7 +160,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (order: Order) => {
-      const total = order.items?.reduce((sum, item) => {
+      const computed = order.items?.reduce((sum, item) => {
         const quantity = item.orderedQuantity || 0;
         const price = item.price || 0;
         const icms = item.icms || 0;
@@ -169,6 +169,8 @@ export const createColumnDefinitions = (): TableColumn[] => [
         const itemTotal = subtotal + (subtotal * icms / 100) + (subtotal * ipi / 100);
         return sum + itemTotal;
       }, 0) || 0;
+      // A manual override (Valor Total) wins over the computed line-item total.
+      const total = resolveOrderTotal(order, computed);
       return (
         <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
           {formatCurrency(total)}

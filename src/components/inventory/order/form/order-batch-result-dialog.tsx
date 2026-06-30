@@ -171,7 +171,8 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
   return (
     <StandardModal
       visible={open}
-      onClose={handleConfirm}
+      scroll={false}
+      onClose={() => onOpenChange(false)}
       title="Resultado da Operação em Lote"
       subtitle="Resumo da criação de pedidos"
       icon={HeaderIcon}

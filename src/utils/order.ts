@@ -126,11 +126,29 @@ export function calculateOrderItemTotal(item: OrderItem): number {
  * Calculate order total value
  */
 export function calculateOrderTotal(order: Order): number {
+  // A manual grand-total override (Valor Total) always wins when set.
+  if (order.totalOverride != null) {
+    return Math.max(0, Math.round(order.totalOverride * 100) / 100);
+  }
   if (!order.items || order.items.length === 0) return 0;
 
   return order.items.reduce((total, item) => {
     return total + calculateOrderItemTotal(item);
   }, 0);
+}
+
+/**
+ * Resolve the order total to DISPLAY: the manual grand-total override
+ * (`totalOverride`) when set, otherwise the caller's already-computed total.
+ * Centralizes the override precedence so every surface (detail, summary, table,
+ * export, PDF) honors a web/API-set Valor Total. Mirrors the API's
+ * computeOrderPayableTotal override branch.
+ */
+export function resolveOrderTotal(order: Order, computedTotal: number): number {
+  if (order.totalOverride != null) {
+    return Math.max(0, Math.round(order.totalOverride * 100) / 100);
+  }
+  return computedTotal;
 }
 
 /**

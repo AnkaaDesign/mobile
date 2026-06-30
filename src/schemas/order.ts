@@ -1392,6 +1392,13 @@ export const orderCreateSchema = z
       .transform((v) => Math.round(v * 100) / 100)
       .default(0)
       .optional(),
+    // Manual grand-total override (Valor Total). null = use the computed total.
+    totalOverride: z
+      .number()
+      .min(0, "Valor total deve ser maior ou igual a 0")
+      .transform((v) => Math.round(v * 100) / 100)
+      .nullable()
+      .optional(),
     // Payment fields
     paymentMethod: z
       .enum(Object.values(PAYMENT_METHOD) as [string, ...string[]], {
@@ -1493,6 +1500,13 @@ export const orderUpdateSchema = z
       .min(0, "Desconto deve ser maior ou igual a 0")
       .max(100, "Desconto deve ser menor ou igual a 100")
       .transform((v) => Math.round(v * 100) / 100)
+      .optional(),
+    // Manual grand-total override (Valor Total). null = use the computed total.
+    totalOverride: z
+      .number()
+      .min(0, "Valor total deve ser maior ou igual a 0")
+      .transform((v) => Math.round(v * 100) / 100)
+      .nullable()
       .optional(),
     // Payment fields
     paymentMethod: z

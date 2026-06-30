@@ -43,7 +43,7 @@ export function FinishLeaveDialog({ leave, open, onOpenChange, onFinished }: Fin
   return (
     <StandardModal
       visible={open}
-      onClose={() => onOpenChange(false)}
+      onClose={() => !finishLeave.isPending && onOpenChange(false)}
       title="Finalizar Afastamento"
       subtitle={`Informe a data de retorno efetiva${leave?.user?.name ? ` do colaborador "${leave.user.name}"` : ""}. O afastamento será marcado como concluído.`}
       icon={IconCalendarCheck}

@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatCurrency, formatQuantity } from "@/utils";
+import { formatCurrency, formatQuantity, resolveOrderTotal } from "@/utils";
 import type { Order } from '../../../../types';
 import { IconCoin } from "@tabler/icons-react-native";
 import { useCanViewPrices } from "@/hooks";
@@ -32,7 +32,8 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
       return sum + (item.orderedQuantity || 0) * (item.price || 0);
     }, 0) || 0;
   const discountAmount = goodsSubtotal * ((order.discount || 0) / 100);
-  const total = subtotal + (order.freight || 0) - discountAmount;
+  // The breakdown rows show computed values; the Total honors a manual override.
+  const total = resolveOrderTotal(order, subtotal + (order.freight || 0) - discountAmount);
 
   if (!canViewPrices) return null;
 

@@ -253,7 +253,8 @@ export function BatchOperationResultDialog({
   return (
     <StandardModal
       visible={open}
-      onClose={handleConfirm}
+      scroll={false}
+      onClose={() => onOpenChange(false)}
       title={title}
       subtitle={description}
       icon={HeaderIcon}

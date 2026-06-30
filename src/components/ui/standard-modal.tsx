@@ -160,7 +160,7 @@ export function StandardModal({
       >
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           {/* Drag indicator */}
           <View style={styles.dragIndicatorContainer}>

@@ -46,6 +46,8 @@ export interface OrderPdfData {
   items: OrderPdfLineItem[];
   freight?: number;
   discount?: number;
+  /** Manual grand-total override (Valor Total). null/absent = use the computed total. */
+  totalOverride?: number | null;
   notes?: string | null;
   /** When false, prices/taxes/totals are hidden (the supplier "budget request" version). */
   includePricing?: boolean;
@@ -98,7 +100,10 @@ export function buildOrderPdfHtml(data: OrderPdfData): string {
   const discountPercent = Number(data.discount) || 0;
   const discountAmount = discountPercent > 0 ? goodsSubtotal * (discountPercent / 100) : 0;
   const freight = Number(data.freight) || 0;
-  const grandTotal = goodsSubtotal + taxTotal - discountAmount + freight;
+  const computedGrandTotal = goodsSubtotal + taxTotal - discountAmount + freight;
+  // A manual override (Valor Total) wins over the computed grand total.
+  const grandTotal =
+    data.totalOverride != null ? Math.max(0, Math.round(data.totalOverride * 100) / 100) : computedGrandTotal;
 
   const orderDate = toDate(data.orderDate);
   const forecastDate = toDate(data.forecastDate);

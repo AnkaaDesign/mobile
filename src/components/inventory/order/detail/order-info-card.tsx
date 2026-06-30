@@ -7,7 +7,7 @@ import { OrderStatusBadge } from "../list/order-status-badge";
 import { DetailCard, DetailField, DetailPhoneField, DetailSection } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey } from "@/utils";
+import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey, resolveOrderTotal } from "@/utils";
 import { formatOrderNumber } from "@/utils/order-code";
 import type { Order } from "../../../../types";
 import { PAYMENT_METHOD_LABELS, ORDER_INSTALLMENT_STATUS_LABELS, ORDER_INSTALLMENT_STATUS, SECTOR_PRIVILEGES, getBadgeVariant } from "@/constants";
@@ -54,7 +54,7 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
   // items grossed up by ICMS/IPI, minus discount% on the pre-tax goods subtotal,
   // plus freight, rounded to centavos.
   const orderTotal = useMemo(() => {
-    if (!order?.items) return 0;
+    if (!order?.items) return resolveOrderTotal(order, 0);
     let goodsSubtotal = 0;
     let itemsTotal = 0;
     for (const item of order.items) {
@@ -65,8 +65,9 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
     const discount = order.discount || 0;
     const discountAmount = discount > 0 ? goodsSubtotal * (discount / 100) : 0;
     const total = itemsTotal - discountAmount + (order.freight || 0);
-    return Math.max(0, Math.round(total * 100) / 100);
-  }, [order?.items, order?.discount, order?.freight]);
+    // A web/API-set manual override (Valor Total) wins over the computed total.
+    return resolveOrderTotal(order, Math.max(0, Math.round(total * 100) / 100));
+  }, [order]);
 
   const handleEmailPress = () => {
     if (order.supplier?.email) {

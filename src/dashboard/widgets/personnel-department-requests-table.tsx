@@ -503,6 +503,10 @@ function PersonnelDepartmentRequestsTableRender({
         onClose={() => setOpenRequest(null)}
         onApprove={onApprove}
         onReject={(r) => {
+          // Close the detail sheet first — two opaque pageSheets stacked on iOS
+          // can fail to present (blocking rejection). The request reference is
+          // held in `rejectTarget`, so closing the detail sheet is safe.
+          setOpenRequest(null);
           setRejectTarget(r);
           setRejectReason("");
         }}
