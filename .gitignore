@@ -72,6 +72,8 @@ android/app/ankaa-release.jks
 credentials.json
 credentials/keystore.properties
 credentials/*.env
+# base64 text backup of the release keystore (same secret as the .keystore binary)
+credentials/*.b64
 !credentials/README.md
 !credentials/keystore.properties.example
 android/gradle/wrapper/gradle-wrapper.jar
