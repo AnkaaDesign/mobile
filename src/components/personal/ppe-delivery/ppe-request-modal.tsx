@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { View, ScrollView, Modal, ActivityIndicator } from "react-native";
+import { View } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { IconShieldCheck } from "@tabler/icons-react-native";
 import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -224,20 +225,17 @@ export function PpeRequestModal({
   const queryKey = useMemo(() => ["ppe-items", "modal", userPpeSizeData?.id ?? null], [userPpeSizeData?.id]);
 
   return (
-    <Modal
+    <StandardModal
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      title="Solicitar EPI"
+      icon={IconShieldCheck}
+      actions={[
+        { label: "Cancelar", variant: "outline", onPress: handleClose, disabled: isLoading },
+        { label: "Solicitar EPI", onPress: () => form.handleSubmit(handleSubmit)(), disabled: isLoading, loading: isLoading },
+      ]}
     >
-      <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-background rounded-t-3xl max-h-[90%]">
-          <View className="p-4 border-b border-border">
-            <Text className="text-xl font-semibold">Solicitar EPI</Text>
-          </View>
-
-          <ScrollView className="flex-1 p-4">
-            <View className="gap-4">
+      <View className="gap-4">
               {/* Item Selection - Async with infinite scroll */}
               <Controller
                 control={form.control}
@@ -371,32 +369,6 @@ export function PpeRequestModal({
                 </View>
               )}
             </View>
-          </ScrollView>
-
-          <View className="p-4 border-t border-border gap-2">
-            <Button
-              onPress={() => form.handleSubmit(handleSubmit)()}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <View className="flex-row items-center gap-2">
-                  <ActivityIndicator size="small" color="#fff" />
-                  <Text>Enviando...</Text>
-                </View>
-              ) : (
-                <Text>Solicitar EPI</Text>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onPress={handleClose}
-              disabled={isLoading}
-            >
-              <Text>Cancelar</Text>
-            </Button>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    </StandardModal>
   );
 }

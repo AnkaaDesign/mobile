@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { useTheme } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
-import { Sheet } from '@/components/ui/sheet';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { Badge, getBadgeVariantFromStatus } from '@/components/ui/badge';
 import { CustomerLogoDisplay } from '@/components/ui/customer-logo-display';
 import { FilePreviewModal } from '@/components/file';
@@ -148,15 +148,14 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
   }, [productionSOs]);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[60, 85]}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]} numberOfLines={2}>
-            {task?.name || 'Detalhes da Tarefa'}
-          </Text>
-        </View>
-
+    <>
+      <StandardModal
+        visible={open}
+        onClose={() => onOpenChange(false)}
+        title={task?.name || 'Detalhes da Tarefa'}
+        padded={false}
+        bodyStyle={styles.body}
+      >
         {isLoading ? (
           <View style={styles.loadingContainer}>
             {[0, 1, 2, 3, 4].map((i) => (
@@ -167,11 +166,7 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
             ))}
           </View>
         ) : task ? (
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.scrollContent}>
             {/* Customer */}
             {task.customer && (
               <View style={[styles.row, { backgroundColor: colors.muted }]}>
@@ -481,13 +476,13 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
                 </View>
               </View>
             )}
-          </ScrollView>
+          </View>
         ) : (
           <View style={styles.emptyContainer}>
             <Text style={{ color: colors.mutedForeground }}>Tarefa não encontrada</Text>
           </View>
         )}
-      </View>
+      </StandardModal>
 
       {/* File Preview Modal */}
       <FilePreviewModal
@@ -496,22 +491,13 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
         visible={filePreview.isVisible}
         onClose={filePreview.closePreview}
       />
-    </Sheet>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  body: {
+    flexGrow: 1,
   },
   loadingContainer: {
     padding: 16,
@@ -520,9 +506,6 @@ const styles = StyleSheet.create({
   skeletonRow: {
     height: 44,
     borderRadius: 10,
-  },
-  scrollView: {
-    flex: 1,
   },
   scrollContent: {
     padding: 12,

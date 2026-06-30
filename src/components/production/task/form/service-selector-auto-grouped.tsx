@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Modal, Pressable, TextInput, Text as RNText } from "react-native";
+import { View, StyleSheet, TouchableOpacity, TextInput, Text as RNText } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { useTheme } from "@/lib/theme";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, CONTRACT_STATUS, SECTOR_PRIVILEGES } from "@/constants/enums";
 import { SERVICE_ORDER_TYPE_LABELS, SERVICE_ORDER_STATUS_LABELS } from "@/constants/enum-labels";
@@ -929,59 +930,38 @@ function ServiceRow({
       </View>
 
       {/* Observation Modal */}
-      <Modal
+      <StandardModal
         visible={observationModal.visible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setObservationModal({ visible: false, text: service.observation || '' })}
+        onClose={() => setObservationModal({ visible: false, text: service.observation || '' })}
+        title="Observação"
+        icon={IconNote}
+        iconColor={colors.mutedForeground}
+        actions={[
+          {
+            label: "Cancelar",
+            variant: "outline",
+            onPress: () => setObservationModal({ visible: false, text: service.observation || '' }),
+          },
+          { label: "Salvar", variant: "default", onPress: handleSaveObservation },
+        ]}
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setObservationModal({ visible: false, text: service.observation || '' })}
-        >
-          <Pressable
-            style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.modalHeader}>
-              <IconNote size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
-                Observação
-              </ThemedText>
-            </View>
-            <TextInput
-              value={observationModal.text}
-              onChangeText={(text) => setObservationModal({ ...observationModal, text })}
-              placeholder="Adicione uma observação (use para justificar reprovações ou adicionar notas)"
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              numberOfLines={4}
-              style={[
-                styles.modalTextInput,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  color: colors.foreground,
-                },
-              ]}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalCancelButton, { borderColor: colors.border }]}
-                onPress={() => setObservationModal({ visible: false, text: service.observation || '' })}
-              >
-                <ThemedText style={{ color: colors.foreground }}>Cancelar</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSaveButton, { backgroundColor: colors.primary }]}
-                onPress={handleSaveObservation}
-              >
-                <RNText style={styles.modalSaveButtonText}>Salvar</RNText>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <TextInput
+          value={observationModal.text}
+          onChangeText={(text) => setObservationModal({ ...observationModal, text })}
+          placeholder="Adicione uma observação (use para justificar reprovações ou adicionar notas)"
+          placeholderTextColor={colors.mutedForeground}
+          multiline
+          numberOfLines={4}
+          style={[
+            styles.modalTextInput,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+              color: colors.foreground,
+            },
+          ]}
+        />
+      </StandardModal>
     </View>
   );
 }
@@ -1119,35 +1099,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  modalTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '600',
-  },
   modalTextInput: {
     fontSize: fontSize.sm,
     borderWidth: 1,
@@ -1157,27 +1108,6 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
     marginBottom: spacing.md,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'flex-end',
-  },
-  modalCancelButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  modalSaveButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 8,
-  },
-  modalSaveButtonText: {
-    color: '#ffffff',
-    fontSize: fontSize.sm,
-    fontWeight: '600',
   },
 });
 

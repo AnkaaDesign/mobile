@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
-import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { ThemedText } from '@/components/ui/themed-text';
 import {
   IconH1, IconH2, IconH3, IconTextSize, IconPhoto, IconClick,
@@ -50,115 +50,95 @@ export function BlockTypeSelector({ open, onClose, onSelect, excludeTypes, onSim
   };
 
   return (
-    <Sheet open={open} onOpenChange={onClose} snapPoints={[88]}>
-      <SheetContent style={styles.sheetContent}>
-        <SheetHeader style={{ borderBottomColor: colors.border }}>
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Adicionar bloco
+    <StandardModal
+      visible={open}
+      onClose={onClose}
+      title="Adicionar bloco"
+      subtitle="Escolha um tipo de bloco para inserir na mensagem"
+      padded={false}
+      bodyStyle={styles.scrollContent}
+    >
+      {onSimple && (
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
+            Rápido
           </ThemedText>
-          <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Escolha um tipo de bloco para inserir na mensagem
-          </ThemedText>
-        </SheetHeader>
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {onSimple && (
-            <View style={styles.section}>
-              <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
-                Rápido
-              </ThemedText>
-              <View style={[styles.sectionCard, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
-                <TouchableOpacity
-                  style={styles.row}
-                  onPress={() => { onSimple(); onClose(); }}
-                  activeOpacity={0.6}
-                >
-                  <View style={[styles.rowIcon, { backgroundColor: colors.card }]}>
-                    <IconClipboardText size={20} color={colors.primary} />
-                  </View>
-                  <View style={styles.rowText}>
-                    <ThemedText style={[styles.rowLabel, { color: colors.foreground }]}>
-                      Simples
-                    </ThemedText>
-                    <ThemedText style={[styles.rowDesc, { color: colors.mutedForeground }]}>
-                      Colar texto formatado — logo e rodapé automáticos
-                    </ThemedText>
-                  </View>
-                  <IconChevronRight size={18} color={colors.mutedForeground} />
-                </TouchableOpacity>
+          <View style={[styles.sectionCard, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => { onSimple(); onClose(); }}
+              activeOpacity={0.6}
+            >
+              <View style={[styles.rowIcon, { backgroundColor: colors.card }]}>
+                <IconClipboardText size={20} color={colors.primary} />
               </View>
-            </View>
-          )}
-
-          {CATEGORIES.map((category) => {
-            const types = category.types.filter(
-              (t) => !excludeTypes?.includes(t) && configByType[t]
-            );
-            if (types.length === 0) return null;
-
-            return (
-              <View key={category.title} style={styles.section}>
-                <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
-                  {category.title}
+              <View style={styles.rowText}>
+                <ThemedText style={[styles.rowLabel, { color: colors.foreground }]}>
+                  Simples
                 </ThemedText>
-
-                <View style={[styles.sectionCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-                  {types.map((type, idx) => {
-                    const item = configByType[type];
-                    const IconComp = ICON_MAP[item.iconName];
-                    return (
-                      <TouchableOpacity
-                        key={type}
-                        style={[
-                          styles.row,
-                          idx !== types.length - 1 && {
-                            borderBottomWidth: StyleSheet.hairlineWidth,
-                            borderBottomColor: colors.border,
-                          },
-                        ]}
-                        onPress={() => handleSelect(type)}
-                        activeOpacity={0.6}
-                      >
-                        <View style={[styles.rowIcon, { backgroundColor: colors.card }]}>
-                          {IconComp && <IconComp size={20} color={colors.primary} />}
-                        </View>
-                        <View style={styles.rowText}>
-                          <ThemedText style={[styles.rowLabel, { color: colors.foreground }]}>
-                            {item.label}
-                          </ThemedText>
-                          <ThemedText style={[styles.rowDesc, { color: colors.mutedForeground }]}>
-                            {item.description}
-                          </ThemedText>
-                        </View>
-                        <IconChevronRight size={18} color={colors.mutedForeground} />
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                <ThemedText style={[styles.rowDesc, { color: colors.mutedForeground }]}>
+                  Colar texto formatado — logo e rodapé automáticos
+                </ThemedText>
               </View>
-            );
-          })}
-        </ScrollView>
-      </SheetContent>
-    </Sheet>
+              <IconChevronRight size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {CATEGORIES.map((category) => {
+        const types = category.types.filter(
+          (t) => !excludeTypes?.includes(t) && configByType[t]
+        );
+        if (types.length === 0) return null;
+
+        return (
+          <View key={category.title} style={styles.section}>
+            <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
+              {category.title}
+            </ThemedText>
+
+            <View style={[styles.sectionCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              {types.map((type, idx) => {
+                const item = configByType[type];
+                const IconComp = ICON_MAP[item.iconName];
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.row,
+                      idx !== types.length - 1 && {
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: colors.border,
+                      },
+                    ]}
+                    onPress={() => handleSelect(type)}
+                    activeOpacity={0.6}
+                  >
+                    <View style={[styles.rowIcon, { backgroundColor: colors.card }]}>
+                      {IconComp && <IconComp size={20} color={colors.primary} />}
+                    </View>
+                    <View style={styles.rowText}>
+                      <ThemedText style={[styles.rowLabel, { color: colors.foreground }]}>
+                        {item.label}
+                      </ThemedText>
+                      <ThemedText style={[styles.rowDesc, { color: colors.mutedForeground }]}>
+                        {item.description}
+                      </ThemedText>
+                    </View>
+                    <IconChevronRight size={18} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })}
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  sheetContent: {
-    paddingHorizontal: 0,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  subtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,

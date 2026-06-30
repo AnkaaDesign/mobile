@@ -1,16 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
-import { Button } from "@/components/ui/button";
-import { Sheet } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useItemBrands, useItemCategories, useSuppliers } from "@/hooks";
-import { IconFilter, IconX } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import type { ItemGetManyFormData } from "@/schemas";
 
 interface ActivityFormFiltersProps {
@@ -249,180 +248,123 @@ export function ActivityFormFilters({
   );
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerContent}>
-            <IconFilter size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.headerTitle}>Filtros de Seleção de Itens</ThemedText>
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" style={styles.headerBadge}>
-                <ThemedText style={styles.badgeText}>{activeFilterCount}</ThemedText>
-              </Badge>
-            )}
-          </View>
-          <ThemedText style={[styles.headerDescription, { color: colors.mutedForeground }]}>
-            Configure filtros para refinar a seleção de itens disponíveis
-          </ThemedText>
-        </View>
-
-        {/* Content */}
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Basic Filters */}
-          <View style={styles.section}>
-            <Label style={styles.sectionLabel}>Opções de Exibição</Label>
-            <View style={styles.switchRow}>
-              <Label style={styles.switchLabel}>Mostrar também desativados</Label>
-              <Switch
-                checked={localState.showInactive ?? false}
-                onCheckedChange={(checked) =>
-                  setLocalState((prev) => ({ ...prev, showInactive: checked }))
-                }
-              />
-            </View>
-          </View>
-
-          {/* Entity Filters */}
-          <View style={styles.section}>
-            <Label style={styles.sectionLabel}>Categorias e Marcas</Label>
-
-            {/* Categories */}
-            <View style={styles.fieldGroup}>
-              <Label>Categorias</Label>
-              <Combobox
-                mode="multiple"
-                options={categoryOptions}
-                value={localState.categoryIds || []}
-                onValueChange={(ids) =>
-                  setLocalState((prev) => ({ ...prev, categoryIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
-                }
-                placeholder="Selecione categorias..."
-                emptyText="Nenhuma categoria encontrada"
-                searchPlaceholder="Buscar categorias..."
-                disabled={loadingCategories}
-              />
-              {(localState.categoryIds?.length || 0) > 0 && (
-                <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
-                  {localState.categoryIds?.length} categoria
-                  {(localState.categoryIds?.length || 0) !== 1 ? "s" : ""} selecionada
-                  {(localState.categoryIds?.length || 0) !== 1 ? "s" : ""}
-                </ThemedText>
-              )}
-            </View>
-
-            {/* Brands */}
-            <View style={styles.fieldGroup}>
-              <Label>Marcas</Label>
-              <Combobox
-                mode="multiple"
-                options={brandOptions}
-                value={localState.brandIds || []}
-                onValueChange={(ids) =>
-                  setLocalState((prev) => ({ ...prev, brandIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
-                }
-                placeholder="Selecione marcas..."
-                emptyText="Nenhuma marca encontrada"
-                searchPlaceholder="Buscar marcas..."
-                disabled={loadingBrands}
-              />
-              {(localState.brandIds?.length || 0) > 0 && (
-                <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
-                  {localState.brandIds?.length} marca
-                  {(localState.brandIds?.length || 0) !== 1 ? "s" : ""} selecionada
-                  {(localState.brandIds?.length || 0) !== 1 ? "s" : ""}
-                </ThemedText>
-              )}
-            </View>
-
-            {/* Suppliers */}
-            <View style={styles.fieldGroup}>
-              <Label>Fornecedores</Label>
-              <Combobox
-                mode="multiple"
-                options={supplierOptions}
-                value={localState.supplierIds || []}
-                onValueChange={(ids) =>
-                  setLocalState((prev) => ({ ...prev, supplierIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
-                }
-                placeholder="Selecione fornecedores..."
-                emptyText="Nenhum fornecedor encontrado"
-                searchPlaceholder="Buscar fornecedores..."
-                disabled={loadingSuppliers}
-              />
-              {(localState.supplierIds?.length || 0) > 0 && (
-                <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
-                  {localState.supplierIds?.length} fornecedor
-                  {(localState.supplierIds?.length || 0) !== 1 ? "es" : ""} selecionado
-                  {(localState.supplierIds?.length || 0) !== 1 ? "s" : ""}
-                </ThemedText>
-              )}
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Footer */}
-        <View style={[styles.footer, { borderTopColor: colors.border }]}>
-          <Button variant="outline" onPress={handleReset} style={styles.footerButton}>
-            <IconX size={16} color={colors.mutedForeground} />
-            <ThemedText style={styles.footerButtonText}>Limpar todos</ThemedText>
-          </Button>
-          <Button onPress={handleApply} style={styles.footerButton}>
-            <ThemedText style={[styles.footerButtonText, { color: colors.primaryForeground }]}>
-              Aplicar filtros
-            </ThemedText>
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" style={styles.applyBadge}>
-                <ThemedText style={styles.badgeText}>{activeFilterCount}</ThemedText>
-              </Badge>
-            )}
-          </Button>
+    <StandardModal
+      visible={open}
+      onClose={() => onOpenChange(false)}
+      title="Filtros de Seleção de Itens"
+      subtitle="Configure filtros para refinar a seleção de itens disponíveis"
+      icon={IconFilter}
+      iconColor={colors.mutedForeground}
+      headerRight={
+        activeFilterCount > 0 ? (
+          <Badge variant="secondary">
+            <ThemedText style={styles.badgeText}>{activeFilterCount}</ThemedText>
+          </Badge>
+        ) : undefined
+      }
+      actions={[
+        { label: "Limpar todos", variant: "outline", onPress: handleReset },
+        { label: "Aplicar filtros", onPress: handleApply },
+      ]}
+    >
+      {/* Basic Filters */}
+      <View style={styles.section}>
+        <Label style={styles.sectionLabel}>Opções de Exibição</Label>
+        <View style={styles.switchRow}>
+          <Label style={styles.switchLabel}>Mostrar também desativados</Label>
+          <Switch
+            checked={localState.showInactive ?? false}
+            onCheckedChange={(checked) =>
+              setLocalState((prev) => ({ ...prev, showInactive: checked }))
+            }
+          />
         </View>
       </View>
-    </Sheet>
+
+      {/* Entity Filters */}
+      <View style={styles.section}>
+        <Label style={styles.sectionLabel}>Categorias e Marcas</Label>
+
+        {/* Categories */}
+        <View style={styles.fieldGroup}>
+          <Label>Categorias</Label>
+          <Combobox
+            mode="multiple"
+            options={categoryOptions}
+            value={localState.categoryIds || []}
+            onValueChange={(ids) =>
+              setLocalState((prev) => ({ ...prev, categoryIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
+            }
+            placeholder="Selecione categorias..."
+            emptyText="Nenhuma categoria encontrada"
+            searchPlaceholder="Buscar categorias..."
+            disabled={loadingCategories}
+          />
+          {(localState.categoryIds?.length || 0) > 0 && (
+            <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
+              {localState.categoryIds?.length} categoria
+              {(localState.categoryIds?.length || 0) !== 1 ? "s" : ""} selecionada
+              {(localState.categoryIds?.length || 0) !== 1 ? "s" : ""}
+            </ThemedText>
+          )}
+        </View>
+
+        {/* Brands */}
+        <View style={styles.fieldGroup}>
+          <Label>Marcas</Label>
+          <Combobox
+            mode="multiple"
+            options={brandOptions}
+            value={localState.brandIds || []}
+            onValueChange={(ids) =>
+              setLocalState((prev) => ({ ...prev, brandIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
+            }
+            placeholder="Selecione marcas..."
+            emptyText="Nenhuma marca encontrada"
+            searchPlaceholder="Buscar marcas..."
+            disabled={loadingBrands}
+          />
+          {(localState.brandIds?.length || 0) > 0 && (
+            <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
+              {localState.brandIds?.length} marca
+              {(localState.brandIds?.length || 0) !== 1 ? "s" : ""} selecionada
+              {(localState.brandIds?.length || 0) !== 1 ? "s" : ""}
+            </ThemedText>
+          )}
+        </View>
+
+        {/* Suppliers */}
+        <View style={styles.fieldGroup}>
+          <Label>Fornecedores</Label>
+          <Combobox
+            mode="multiple"
+            options={supplierOptions}
+            value={localState.supplierIds || []}
+            onValueChange={(ids) =>
+              setLocalState((prev) => ({ ...prev, supplierIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
+            }
+            placeholder="Selecione fornecedores..."
+            emptyText="Nenhum fornecedor encontrado"
+            searchPlaceholder="Buscar fornecedores..."
+            disabled={loadingSuppliers}
+          />
+          {(localState.supplierIds?.length || 0) > 0 && (
+            <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
+              {localState.supplierIds?.length} fornecedor
+              {(localState.supplierIds?.length || 0) !== 1 ? "es" : ""} selecionado
+              {(localState.supplierIds?.length || 0) !== 1 ? "s" : ""}
+            </ThemedText>
+          )}
+        </View>
+      </View>
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxHeight: "80%",
-  },
-  header: {
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    flex: 1,
-  },
-  headerBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
   badgeText: {
     fontSize: fontSize.xs,
     fontWeight: "600",
-  },
-  headerDescription: {
-    fontSize: fontSize.sm,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: spacing.lg,
   },
   section: {
     marginBottom: spacing.lg,
@@ -448,22 +390,6 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderTopWidth: 1,
-  },
-  footerButton: {
-    flex: 1,
-  },
-  footerButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
-  applyBadge: {
-    marginLeft: spacing.sm,
   },
 });
 

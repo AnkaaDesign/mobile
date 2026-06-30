@@ -80,7 +80,7 @@ export default function FechamentoListScreen() {
               <IconChevronRight size={20} color={colors.mutedForeground} />
             </View>
 
-            <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
+            <View style={styles.statsRow}>
               <StatChip label="Cartões" value={item.NumeroCartoes ?? 0} tone="neutral" colors={colors} />
               <StatChip label="Aprovados" value={item.Aprovados ?? 0} tone="success" colors={colors} />
               <StatChip label="Rejeitados" value={item.Rejeitados ?? 0} tone="danger" colors={colors} />
@@ -152,5 +152,5 @@ const styles = StyleSheet.create({
   rowHeaderLeft: { flex: 1, gap: 2 },
   descricao: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   period: { fontSize: fontSize.xs },
-  statsRow: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing.sm },
+  statsRow: { flexDirection: "row", gap: spacing.xs },
 });

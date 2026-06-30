@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
-import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { IconClipboardText, IconTrash } from '@tabler/icons-react-native';
@@ -38,6 +39,7 @@ function summarize(blocks: ContentBlock[]): string {
 
 export function SimplePasteDialog({ open, onClose, onInsert }: SimplePasteDialogProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,55 +91,14 @@ export function SimplePasteDialog({ open, onClose, onInsert }: SimplePasteDialog
   }, [blocks, onInsert, reset, onClose]);
 
   return (
-    <Sheet open={open} onOpenChange={(o) => !o && handleClose()} snapPoints={[80]}>
-      <SheetContent style={styles.sheetContent}>
-        <SheetHeader style={{ borderBottomColor: colors.border }}>
-          <View style={styles.titleRow}>
-            <IconClipboardText size={20} color={colors.primary} />
-            <ThemedText style={[styles.title, { color: colors.foreground }]}>
-              Colar conteúdo formatado
-            </ThemedText>
-          </View>
-          <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Cole um texto já formatado. Negrito, itálico, listas e o espaçamento serão preservados.
-            O logo no topo e o rodapé serão adicionados automaticamente.
-          </ThemedText>
-        </SheetHeader>
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <Button
-            variant="default"
-            onPress={handlePaste}
-            disabled={loading}
-            icon={loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconClipboardText size={18} color="#FFFFFF" />}
-          >
-            {loading ? 'Lendo...' : 'Colar da área de transferência'}
-          </Button>
-
-          {error && (
-            <ThemedText style={[styles.error, { color: colors.destructive }]}>{error}</ThemedText>
-          )}
-
-          {blocks.length > 0 && (
-            <>
-              <ThemedText style={[styles.summary, { color: colors.mutedForeground }]}>
-                Detectado: {summarize(blocks)}
-              </ThemedText>
-              <View style={[styles.previewBox, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-                <ScrollView nestedScrollEnabled style={styles.previewScroll}>
-                  <ThemedText style={[styles.previewText, { color: colors.foreground }]}>
-                    {preview}
-                  </ThemedText>
-                </ScrollView>
-              </View>
-            </>
-          )}
-        </ScrollView>
-
-        <View style={[styles.footer, { borderTopColor: colors.border }]}>
+    <StandardModal
+      visible={open}
+      onClose={handleClose}
+      title="Colar conteúdo formatado"
+      subtitle="Cole um texto já formatado. Negrito, itálico, listas e o espaçamento serão preservados. O logo no topo e o rodapé serão adicionados automaticamente."
+      icon={IconClipboardText}
+      footer={
+        <View style={[styles.footer, { borderTopColor: colors.border, paddingBottom: insets.bottom + spacing.md }]}>
           {blocks.length > 0 && (
             <Button
               variant="ghost"
@@ -155,35 +116,40 @@ export function SimplePasteDialog({ open, onClose, onInsert }: SimplePasteDialog
             Inserir
           </Button>
         </View>
-      </SheetContent>
-    </Sheet>
+      }
+    >
+      <Button
+        variant="default"
+        onPress={handlePaste}
+        disabled={loading}
+        icon={loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconClipboardText size={18} color="#FFFFFF" />}
+      >
+        {loading ? 'Lendo...' : 'Colar da área de transferência'}
+      </Button>
+
+      {error && (
+        <ThemedText style={[styles.error, { color: colors.destructive }]}>{error}</ThemedText>
+      )}
+
+      {blocks.length > 0 && (
+        <>
+          <ThemedText style={[styles.summary, { color: colors.mutedForeground }]}>
+            Detectado: {summarize(blocks)}
+          </ThemedText>
+          <View style={[styles.previewBox, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+            <ScrollView nestedScrollEnabled style={styles.previewScroll}>
+              <ThemedText style={[styles.previewText, { color: colors.foreground }]}>
+                {preview}
+              </ThemedText>
+            </ScrollView>
+          </View>
+        </>
+      )}
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  sheetContent: {
-    paddingHorizontal: 0,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  subtitle: {
-    fontSize: 13,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
-  },
   error: {
     fontSize: 13,
   },

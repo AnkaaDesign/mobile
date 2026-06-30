@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Modal, View, ScrollView, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from "react-native";
-import { IconX, IconClock } from "@tabler/icons-react-native";
+import { useEffect, useState } from "react";
+import { View, TextInput, StyleSheet, Alert } from "react-native";
+import { IconClock } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { useSecullumUpdateTimeEntryFull } from "@/hooks/secullum";
 
@@ -80,96 +80,62 @@ export function EditTimeEntryModal({ visible, onClose, entry, subtitle, onSaved 
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconClock size={20} color={colors.primary} />
-              <View>
-                <ThemedText style={[styles.title, { color: colors.foreground }]}>Editar Registro</ThemedText>
-                {!!subtitle && <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>{subtitle}</ThemedText>}
-              </View>
-            </View>
-            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeBtn}>
-              <IconX size={20} color={colors.mutedForeground} />
-            </TouchableOpacity>
+    <StandardModal
+      visible={visible}
+      onClose={onClose}
+      title="Editar Registro"
+      subtitle={subtitle}
+      icon={IconClock}
+      actions={[
+        { label: "Cancelar", variant: "outline", onPress: onClose, disabled: updateMutation.isPending },
+        { label: "Salvar", onPress: handleSave, loading: updateMutation.isPending },
+      ]}
+    >
+      {PAIRS.map(({ entry: e, exit: s }, idx) => (
+        <View key={e} style={styles.pairRow}>
+          <View style={styles.pairField}>
+            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{`Entrada ${idx + 1}`}</ThemedText>
+            <TextInput
+              value={fields[e] ?? ""}
+              onChangeText={(v) => setField(e, v)}
+              placeholder="--:--"
+              placeholderTextColor={colors.mutedForeground}
+              keyboardType="number-pad"
+              maxLength={5}
+              style={[styles.timeInput, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
+            />
           </View>
-
-          <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-            {PAIRS.map(({ entry: e, exit: s }, idx) => (
-              <View key={e} style={styles.pairRow}>
-                <View style={styles.pairField}>
-                  <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{`Entrada ${idx + 1}`}</ThemedText>
-                  <TextInput
-                    value={fields[e] ?? ""}
-                    onChangeText={(v) => setField(e, v)}
-                    placeholder="--:--"
-                    placeholderTextColor={colors.mutedForeground}
-                    keyboardType="number-pad"
-                    maxLength={5}
-                    style={[styles.timeInput, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
-                  />
-                </View>
-                <View style={styles.pairField}>
-                  <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{`Saída ${idx + 1}`}</ThemedText>
-                  <TextInput
-                    value={fields[s] ?? ""}
-                    onChangeText={(v) => setField(s, v)}
-                    placeholder="--:--"
-                    placeholderTextColor={colors.mutedForeground}
-                    keyboardType="number-pad"
-                    maxLength={5}
-                    style={[styles.timeInput, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
-                  />
-                </View>
-              </View>
-            ))}
-
-            <View style={styles.reasonField}>
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Justificativa (opcional)</ThemedText>
-              <TextInput
-                value={reason}
-                onChangeText={setReason}
-                placeholder="Motivo da alteração"
-                placeholderTextColor={colors.mutedForeground}
-                multiline
-                style={[styles.reasonInput, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
-              />
-            </View>
-          </ScrollView>
-
-          {/* Footer actions */}
-          <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-            <Button variant="outline" onPress={onClose} style={styles.footerBtn} disabled={updateMutation.isPending}>
-              Cancelar
-            </Button>
-            <Button variant="default" onPress={handleSave} style={styles.footerBtn} loading={updateMutation.isPending}>
-              Salvar
-            </Button>
+          <View style={styles.pairField}>
+            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{`Saída ${idx + 1}`}</ThemedText>
+            <TextInput
+              value={fields[s] ?? ""}
+              onChangeText={(v) => setField(s, v)}
+              placeholder="--:--"
+              placeholderTextColor={colors.mutedForeground}
+              keyboardType="number-pad"
+              maxLength={5}
+              style={[styles.timeInput, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
+            />
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      ))}
+
+      <View style={styles.reasonField}>
+        <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Justificativa (opcional)</ThemedText>
+        <TextInput
+          value={reason}
+          onChangeText={setReason}
+          placeholder="Motivo da alteração"
+          placeholderTextColor={colors.mutedForeground}
+          multiline
+          style={[styles.reasonInput, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
+        />
+      </View>
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flex: 1 },
-  title: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold },
-  subtitle: { fontSize: fontSize.xs, marginTop: 1, textTransform: "capitalize" },
-  closeBtn: { padding: 4 },
-  body: { padding: spacing.lg, gap: spacing.md },
   pairRow: { flexDirection: "row", gap: spacing.md },
   pairField: { flex: 1, gap: 4 },
   fieldLabel: { fontSize: fontSize.xs, fontWeight: fontWeight.medium },
@@ -193,13 +159,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     textAlignVertical: "top",
   },
-  footer: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
-    borderTopWidth: 1,
-  },
-  footerBtn: { flex: 1 },
 });

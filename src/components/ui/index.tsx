@@ -80,6 +80,7 @@ export * from "./loading-screen";
 export { LoadingSpinner, PageLoadingSpinner, InlineLoadingSpinner, ButtonLoadingSpinner } from "./loading-spinner";
 export * from "./logo";
 export * from "./modal";
+export * from "./standard-modal";
 export * from "./number-input";
 export * from "./progress-with-markers";
 export * from "./sheet";

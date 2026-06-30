@@ -1,20 +1,19 @@
 import { useState } from "react";
-import { View, StyleSheet, Modal, ScrollView, Alert } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ThemedText,
   Card,
-  Button,
   Textarea,
   Label,
   Combobox,
+  StandardModal,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { IconLoader, IconX, IconPackageImport, IconCheck } from "@tabler/icons-react-native";
+import { IconPackageImport } from "@tabler/icons-react-native";
 import { formatDate, formatQuantity } from "@/utils";
 import type { Borrow } from "@/types";
 
@@ -107,236 +106,143 @@ export function ReturnFormDialog({ open, onOpenChange, borrow, onSubmit }: Retur
   }));
 
   return (
-    <Modal
+    <StandardModal
       visible={open}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      title="Registrar Devolução"
+      subtitle="Registre os detalhes da devolução do item emprestado"
+      icon={IconPackageImport}
+      actions={[
+        { label: "Cancelar", variant: "outline", onPress: handleClose, disabled: isSubmitting },
+        {
+          label: "Confirmar Devolução",
+          onPress: form.handleSubmit(handleSubmit),
+          disabled: isSubmitting,
+          loading: isSubmitting,
+        },
+      ]}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerContent}>
-              <IconPackageImport size={24} color={colors.foreground} />
-              <View style={styles.headerText}>
-                <ThemedText style={styles.title}>Registrar Devolução</ThemedText>
-                <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-                  Registre os detalhes da devolução do item emprestado
-                </ThemedText>
-              </View>
-            </View>
-            <Button
-              variant="ghost"
-              onPress={handleClose}
-              disabled={isSubmitting}
-              style={styles.closeButton}
-            >
-              <IconX size={24} color={colors.foreground} />
-            </Button>
+      {/* Item Information */}
+      <Card>
+        <View style={styles.infoContent}>
+          <View style={styles.infoRow}>
+            <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
+              Item:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {borrow.item?.name}
+            </ThemedText>
           </View>
 
-          {/* Content */}
-          <ScrollView
-            style={styles.content}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Item Information */}
-            <Card style={styles.infoCard}>
-              <View style={styles.infoContent}>
-                <View style={styles.infoRow}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Item:
-                  </ThemedText>
-                  <ThemedText style={styles.infoValue}>
-                    {borrow.item?.name}
-                  </ThemedText>
-                </View>
+          {borrow.item?.barcode && (
+            <View style={styles.infoRow}>
+              <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
+                Código:
+              </ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {borrow.item.barcode}
+              </ThemedText>
+            </View>
+          )}
 
-                {borrow.item?.barcode && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                      Código:
-                    </ThemedText>
-                    <ThemedText style={styles.infoValue}>
-                      {borrow.item.barcode}
-                    </ThemedText>
-                  </View>
-                )}
+          <View style={styles.infoRow}>
+            <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
+              Quantidade:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {formatQuantity(borrow.quantity)}
+            </ThemedText>
+          </View>
 
-                <View style={styles.infoRow}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Quantidade:
-                  </ThemedText>
-                  <ThemedText style={styles.infoValue}>
-                    {formatQuantity(borrow.quantity)}
-                  </ThemedText>
-                </View>
+          <View style={styles.infoRow}>
+            <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
+              Emprestado para:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {borrow.user?.name}
+            </ThemedText>
+          </View>
 
-                <View style={styles.infoRow}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Emprestado para:
-                  </ThemedText>
-                  <ThemedText style={styles.infoValue}>
-                    {borrow.user?.name}
-                  </ThemedText>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Data do empréstimo:
-                  </ThemedText>
-                  <ThemedText style={styles.infoValue}>
-                    {formatDate(borrow.createdAt)}
-                  </ThemedText>
-                </View>
-              </View>
-            </Card>
-
-            {/* Form */}
-            <Card style={styles.formCard}>
-              <View style={styles.formContent}>
-                {/* Condition Select */}
-                <View style={styles.fieldGroup}>
-                  <Label>Condição do Item *</Label>
-                  <Controller
-                    control={form.control}
-                    name="condition"
-                    render={({ field: { onChange, value }, fieldState: { error } }) => (
-                      <View>
-                        <Combobox
-                          value={value}
-                          onValueChange={onChange}
-                          options={conditionOptions}
-                          placeholder="Selecione a condição"
-                          emptyText="Nenhuma condição disponível"
-                          disabled={isSubmitting}
-                          searchable={false}
-                          clearable={false}
-                        />
-                        {error && (
-                          <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-                            {error.message}
-                          </ThemedText>
-                        )}
-                      </View>
-                    )}
-                  />
-                  <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
-                    Informe a condição em que o item está sendo devolvido
-                  </ThemedText>
-                </View>
-
-                {/* Notes Textarea */}
-                <View style={styles.fieldGroup}>
-                  <Label>Observações (opcional)</Label>
-                  <Controller
-                    control={form.control}
-                    name="notes"
-                    render={({ field: { onChange, value }, fieldState: { error } }) => (
-                      <View>
-                        <Textarea
-                          value={value || ""}
-                          onChangeText={onChange}
-                          placeholder="Adicione observações sobre a devolução..."
-                          editable={!isSubmitting}
-                          maxLength={500}
-                          numberOfLines={4}
-                        />
-                        {error && (
-                          <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-                            {error.message}
-                          </ThemedText>
-                        )}
-                      </View>
-                    )}
-                  />
-                  <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
-                    Registre qualquer observação relevante sobre o estado do item ou a devolução
-                  </ThemedText>
-                </View>
-              </View>
-            </Card>
-          </ScrollView>
-
-          {/* Footer Actions */}
-          <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-            <Button
-              variant="outline"
-              onPress={handleClose}
-              disabled={isSubmitting}
-              style={styles.footerButton}
-            >
-              <ThemedText>Cancelar</ThemedText>
-            </Button>
-
-            <Button
-              variant="default"
-              onPress={form.handleSubmit(handleSubmit)}
-              disabled={isSubmitting}
-              style={styles.footerButton}
-            >
-              {isSubmitting ? (
-                <>
-                  <IconLoader size={20} color="white" />
-                  <ThemedText style={{ color: "white" }}>Processando...</ThemedText>
-                </>
-              ) : (
-                <>
-                  <IconCheck size={20} />
-                  <ThemedText style={{ color: "white" }}>Confirmar Devolução</ThemedText>
-                </>
-              )}
-            </Button>
+          <View style={styles.infoRow}>
+            <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
+              Data do empréstimo:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {formatDate(borrow.createdAt)}
+            </ThemedText>
           </View>
         </View>
-      </SafeAreaView>
-    </Modal>
+      </Card>
+
+      {/* Form */}
+      <Card>
+        <View style={styles.formContent}>
+          {/* Condition Select */}
+          <View style={styles.fieldGroup}>
+            <Label>Condição do Item *</Label>
+            <Controller
+              control={form.control}
+              name="condition"
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <View>
+                  <Combobox
+                    value={value}
+                    onValueChange={onChange}
+                    options={conditionOptions}
+                    placeholder="Selecione a condição"
+                    emptyText="Nenhuma condição disponível"
+                    disabled={isSubmitting}
+                    searchable={false}
+                    clearable={false}
+                  />
+                  {error && (
+                    <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
+                      {error.message}
+                    </ThemedText>
+                  )}
+                </View>
+              )}
+            />
+            <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
+              Informe a condição em que o item está sendo devolvido
+            </ThemedText>
+          </View>
+
+          {/* Notes Textarea */}
+          <View style={styles.fieldGroup}>
+            <Label>Observações (opcional)</Label>
+            <Controller
+              control={form.control}
+              name="notes"
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <View>
+                  <Textarea
+                    value={value || ""}
+                    onChangeText={onChange}
+                    placeholder="Adicione observações sobre a devolução..."
+                    editable={!isSubmitting}
+                    maxLength={500}
+                    numberOfLines={4}
+                  />
+                  {error && (
+                    <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
+                      {error.message}
+                    </ThemedText>
+                  )}
+                </View>
+              )}
+            />
+            <ThemedText style={[styles.helpText, { color: colors.mutedForeground }]}>
+              Registre qualquer observação relevante sobre o estado do item ou a devolução
+            </ThemedText>
+          </View>
+        </View>
+      </Card>
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  headerText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: fontSize.sm,
-  },
-  closeButton: {
-    padding: spacing.sm,
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl * 2,
-  },
-  infoCard: {
-    marginBottom: spacing.lg,
-  },
   infoContent: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -355,9 +261,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "right",
   },
-  formCard: {
-    marginBottom: spacing.lg,
-  },
   formContent: {
     padding: spacing.lg,
     gap: spacing.lg,
@@ -373,18 +276,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
     lineHeight: fontSize.xs * 1.5,
-  },
-  footer: {
-    flexDirection: "row",
-    padding: spacing.lg,
-    gap: spacing.md,
-    borderTopWidth: 1,
-  },
-  footerButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
   },
 });

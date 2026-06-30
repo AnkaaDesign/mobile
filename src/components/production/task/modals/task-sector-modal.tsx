@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Modal, ModalContent, ModalHeader, ModalFooter } from "@/components/ui/modal";
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useSectors } from "@/hooks/useSector";
@@ -48,108 +47,79 @@ export const TaskSectorModal: React.FC<TaskSectorModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} animationType="slide">
-      <ModalContent style={styles.modalContent}>
-        <ModalHeader>
-          <ThemedText style={styles.title}>Definir Setor</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Selecione o setor de produção para esta tarefa
-          </ThemedText>
-        </ModalHeader>
-
-        <View style={styles.content}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <ThemedText style={styles.loadingText}>Carregando setores...</ThemedText>
-            </View>
-          ) : sectors.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <ThemedText style={styles.emptyText}>Nenhum setor disponível</ThemedText>
-            </View>
-          ) : (
-            <ScrollView style={styles.sectorList} showsVerticalScrollIndicator={false}>
-              {sectors.map((sector: Sector) => {
-                const isSelected = selectedSectorId === sector.id;
-                return (
-                  <TouchableOpacity
-                    key={sector.id}
-                    style={[
-                      styles.sectorItem,
-                      {
-                        backgroundColor: isSelected
-                          ? colors.primary + "20"
-                          : colors.card,
-                        borderColor: isSelected ? colors.primary : colors.border,
-                      },
-                    ]}
-                    onPress={() => handleSectorPress(sector.id)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.sectorItemContent}>
-                      <ThemedText
-                        style={[
-                          styles.sectorName,
-                          isSelected && { fontWeight: fontWeight.semibold },
-                        ]}
-                      >
-                        {sector.name}
-                      </ThemedText>
-                    </View>
-                    {isSelected && (
-                      <View
-                        style={[styles.checkmark, { backgroundColor: colors.primary }]}
-                      >
-                        <ThemedText style={styles.checkmarkText}>✓</ThemedText>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
+    <StandardModal
+      visible={visible}
+      onClose={onClose}
+      title="Definir Setor"
+      subtitle="Selecione o setor de produção para esta tarefa"
+      bodyStyle={styles.body}
+      actions={[
+        { label: "Cancelar", variant: "outline", onPress: onClose, disabled: loading },
+        {
+          label: "Confirmar",
+          onPress: handleConfirm,
+          disabled: !selectedSectorId || loading,
+          loading,
+        },
+      ]}
+    >
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando setores...</ThemedText>
         </View>
-
-        <ModalFooter>
-          <Button
-            variant="outline"
-            onPress={onClose}
-            disabled={loading}
-            style={styles.button}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onPress={handleConfirm}
-            disabled={!selectedSectorId || loading}
-            loading={loading}
-            style={styles.button}
-          >
-            Confirmar
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+      ) : sectors.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <ThemedText style={styles.emptyText}>Nenhum setor disponível</ThemedText>
+        </View>
+      ) : (
+        <View>
+          {sectors.map((sector: Sector) => {
+            const isSelected = selectedSectorId === sector.id;
+            return (
+              <TouchableOpacity
+                key={sector.id}
+                style={[
+                  styles.sectorItem,
+                  {
+                    backgroundColor: isSelected
+                      ? colors.primary + "20"
+                      : colors.card,
+                    borderColor: isSelected ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => handleSectorPress(sector.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.sectorItemContent}>
+                  <ThemedText
+                    style={[
+                      styles.sectorName,
+                      isSelected && { fontWeight: fontWeight.semibold },
+                    ]}
+                  >
+                    {sector.name}
+                  </ThemedText>
+                </View>
+                {isSelected && (
+                  <View
+                    style={[styles.checkmark, { backgroundColor: colors.primary }]}
+                  >
+                    <ThemedText style={styles.checkmarkText}>✓</ThemedText>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+    </StandardModal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalContent: {
-    maxHeight: "80%",
-    minHeight: 400,
-  },
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-  },
-  content: {
-    flex: 1,
-    minHeight: 300,
+  body: {
+    flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -169,9 +139,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: fontSize.sm,
     opacity: 0.7,
-  },
-  sectorList: {
-    flex: 1,
   },
   sectorItem: {
     flexDirection: "row",
@@ -202,8 +169,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
-  },
-  button: {
-    minWidth: 100,
   },
 });

@@ -1,15 +1,7 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { IconCheck, IconX, IconAlertTriangle } from '@tabler/icons-react-native';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useTheme } from '@/lib/theme';
 import { spacing, fontSize, fontWeight, borderRadius } from '@/constants/design-system';
@@ -161,6 +153,10 @@ export function BatchOperationResultDialog({
     onOpenChange(false);
   };
 
+  // Status icon for the StandardModal header (semantic body colors preserved).
+  const HeaderIcon = success ? IconCheck : failedCount > 0 && successCount > 0 ? IconAlertTriangle : IconX;
+  const headerIconColor = success ? '#22c55e' : failedCount > 0 && successCount > 0 ? '#f59e0b' : '#ef4444';
+
   const styles = StyleSheet.create({
     container: {
       gap: spacing.md,
@@ -255,14 +251,16 @@ export function BatchOperationResultDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-
-        <View style={styles.container}>
+    <StandardModal
+      visible={open}
+      onClose={handleConfirm}
+      title={title}
+      subtitle={description}
+      icon={HeaderIcon}
+      iconColor={headerIconColor}
+      actions={[{ label: confirmText, variant: 'default', onPress: handleConfirm }]}
+    >
+      <View style={styles.container}>
           {/* Summary Card */}
           <View style={getSummaryCardStyle()}>
             <View style={styles.summaryRow}>
@@ -309,13 +307,6 @@ export function BatchOperationResultDialog({
             </View>
           )}
         </View>
-
-        <DialogFooter>
-          <Button variant="default" onPress={handleConfirm}>
-            <ThemedText style={{ color: '#ffffff' }}>{confirmText}</ThemedText>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </StandardModal>
   );
 }

@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert, Linking } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { useRegenerateBoleto, useCancelBoleto, useMarkBoletoPaid } from "@/hooks/useInvoice";
 import { getCurrentApiUrl, uploadSingleFile } from "@/api-client";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Modal, ModalContent, ModalHeader, ModalFooter } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { Textarea } from "@/components/ui/textarea";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import {
@@ -281,96 +280,83 @@ export function BoletoActions({ installmentId, bankSlip, installmentStatus }: Bo
       )}
 
       {/* Mark as Paid Modal — payment method + optional receipts + observations */}
-      <Modal
+      <StandardModal
         visible={showMarkPaidModal}
         onClose={closeMarkPaidModal}
-        animationType="slide"
+        title="Marcar como Pago"
+        subtitle="O boleto sera cancelado no banco e a parcela sera marcada como paga."
+        icon={IconCurrencyReal}
+        actions={[
+          { label: "Cancelar", variant: "outline", onPress: closeMarkPaidModal, disabled: isProcessing },
+          {
+            label: isProcessing ? "Processando..." : "Confirmar Pagamento",
+            onPress: handleConfirmMarkPaid,
+            disabled: isProcessing || !paymentMethod,
+            loading: isProcessing,
+          },
+        ]}
       >
-        <ModalContent>
-          <ModalHeader>
-            <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
-              Marcar como Pago
-            </ThemedText>
-            <ThemedText style={[styles.modalDescription, { color: colors.mutedForeground }]}>
-              O boleto sera cancelado no banco e a parcela sera marcada como paga.
-            </ThemedText>
-          </ModalHeader>
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Payment method */}
-            <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
-              Metodo de Pagamento
-            </ThemedText>
-            <View style={styles.methodRow}>
-              {PAYMENT_METHODS.map((method) => {
-                const selected = paymentMethod === method.key;
-                return (
-                  <TouchableOpacity
-                    key={method.key}
-                    onPress={() => setPaymentMethod(method.key)}
-                    activeOpacity={0.7}
+        <View>
+          {/* Payment method */}
+          <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+            Metodo de Pagamento
+          </ThemedText>
+          <View style={styles.methodRow}>
+            {PAYMENT_METHODS.map((method) => {
+              const selected = paymentMethod === method.key;
+              return (
+                <TouchableOpacity
+                  key={method.key}
+                  onPress={() => setPaymentMethod(method.key)}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.methodChip,
+                    {
+                      backgroundColor: selected ? colors.primary : colors.muted,
+                      borderColor: selected ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <ThemedText
                     style={[
-                      styles.methodChip,
-                      {
-                        backgroundColor: selected ? colors.primary : colors.muted,
-                        borderColor: selected ? colors.primary : colors.border,
-                      },
+                      styles.methodChipText,
+                      { color: selected ? colors.primaryForeground : colors.foreground },
                     ]}
                   >
-                    <ThemedText
-                      style={[
-                        styles.methodChipText,
-                        { color: selected ? colors.primaryForeground : colors.foreground },
-                      ]}
-                    >
-                      {method.label}
-                    </ThemedText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                    {method.label}
+                  </ThemedText>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-            {/* Receipts */}
-            <View style={styles.fieldSpacing}>
-              <FilePicker
-                label="Comprovantes (opcional)"
-                value={receiptItems}
-                onChange={setReceiptItems}
-                maxFiles={RECEIPT_MAX_FILES}
-                acceptedFileTypes={RECEIPT_ACCEPTED_TYPES}
-                showVideoCamera={false}
-                placeholder="Adicionar comprovantes (PDF ou imagens)"
-              />
-            </View>
+          {/* Receipts */}
+          <View style={styles.fieldSpacing}>
+            <FilePicker
+              label="Comprovantes (opcional)"
+              value={receiptItems}
+              onChange={setReceiptItems}
+              maxFiles={RECEIPT_MAX_FILES}
+              acceptedFileTypes={RECEIPT_ACCEPTED_TYPES}
+              showVideoCamera={false}
+              placeholder="Adicionar comprovantes (PDF ou imagens)"
+            />
+          </View>
 
-            {/* Observations */}
-            <View style={styles.fieldSpacing}>
-              <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
-                Observacoes (opcional)
-              </ThemedText>
-              <Textarea
-                value={observations}
-                onChangeText={setObservations}
-                placeholder="Detalhes adicionais sobre o pagamento..."
-                numberOfLines={3}
-              />
-            </View>
-          </ScrollView>
-
-          <ModalFooter>
-            <Button variant="outline" onPress={closeMarkPaidModal} disabled={isProcessing}>
-              Cancelar
-            </Button>
-            <Button
-              onPress={handleConfirmMarkPaid}
-              disabled={isProcessing || !paymentMethod}
-              loading={isProcessing}
-            >
-              {isProcessing ? "Processando..." : "Confirmar Pagamento"}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          {/* Observations */}
+          <View style={styles.fieldSpacing}>
+            <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+              Observacoes (opcional)
+            </ThemedText>
+            <Textarea
+              value={observations}
+              onChangeText={setObservations}
+              placeholder="Detalhes adicionais sobre o pagamento..."
+              numberOfLines={3}
+            />
+          </View>
+        </View>
+      </StandardModal>
     </View>
   );
 }
@@ -391,14 +377,6 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  modalTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  modalDescription: {
-    fontSize: fontSize.sm,
-    marginTop: spacing.xs,
   },
   fieldLabel: {
     fontSize: fontSize.sm,

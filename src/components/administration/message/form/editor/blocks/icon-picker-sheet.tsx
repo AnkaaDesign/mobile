@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
-import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { ThemedText } from '@/components/ui/themed-text';
 import {
   IconCheck, IconX, IconUser, IconUsers, IconStar, IconHeart,
@@ -98,67 +98,68 @@ export function IconPickerSheet({ open, onClose, onSelect, selectedIcon }: IconP
   };
 
   return (
-    <Sheet open={open} onOpenChange={onClose} snapPoints={[85]}>
-      <SheetContent>
-        <SheetHeader>
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>Selecionar Ícone</ThemedText>
-        </SheetHeader>
-
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={[styles.searchInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar ícone..."
-            placeholderTextColor={colors.mutedForeground}
-            autoCapitalize="none"
-          />
-        </View>
-
-        <FlatList
-          data={filteredIcons}
-          numColumns={6}
-          keyExtractor={(item) => item}
-          contentContainerStyle={styles.grid}
-          renderItem={({ item }) => {
-            const IconComp = ICON_MAP[item];
-            const isSelected = item === selectedIcon;
-            return (
-              <TouchableOpacity
-                style={[
-                  styles.iconCell,
-                  isSelected && { backgroundColor: colors.primary + '20', borderColor: colors.primary, borderWidth: 1 },
-                ]}
-                onPress={() => handleSelect(item)}
-              >
-                <IconComp size={22} color={isSelected ? colors.primary : colors.foreground} />
-                <ThemedText
-                  style={[styles.iconLabel, { color: colors.mutedForeground }]}
-                  numberOfLines={1}
-                >
-                  {item.replace('Icon', '')}
-                </ThemedText>
-              </TouchableOpacity>
-            );
-          }}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <ThemedText style={{ color: colors.mutedForeground }}>Nenhum ícone encontrado</ThemedText>
-            </View>
-          }
+    <StandardModal
+      visible={open}
+      onClose={onClose}
+      title="Selecionar Ícone"
+      scroll={false}
+      padded={false}
+    >
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={[styles.searchInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Buscar ícone..."
+          placeholderTextColor={colors.mutedForeground}
+          autoCapitalize="none"
         />
-      </SheetContent>
-    </Sheet>
+      </View>
+
+      <FlatList
+        data={filteredIcons}
+        numColumns={6}
+        keyExtractor={(item) => item}
+        style={styles.list}
+        contentContainerStyle={styles.grid}
+        renderItem={({ item }) => {
+          const IconComp = ICON_MAP[item];
+          const isSelected = item === selectedIcon;
+          return (
+            <TouchableOpacity
+              style={[
+                styles.iconCell,
+                isSelected && { backgroundColor: colors.primary + '20', borderColor: colors.primary, borderWidth: 1 },
+              ]}
+              onPress={() => handleSelect(item)}
+            >
+              <IconComp size={22} color={isSelected ? colors.primary : colors.foreground} />
+              <ThemedText
+                style={[styles.iconLabel, { color: colors.mutedForeground }]}
+                numberOfLines={1}
+              >
+                {item.replace('Icon', '')}
+              </ThemedText>
+            </TouchableOpacity>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <ThemedText style={{ color: colors.mutedForeground }}>Nenhum ícone encontrado</ThemedText>
+          </View>
+        }
+      />
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
+  list: {
+    flex: 1,
   },
   searchContainer: {
     paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
   searchInput: {

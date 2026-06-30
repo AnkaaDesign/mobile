@@ -1,14 +1,15 @@
 // Mobile widget configuration modal — opens from a tile's gear button or
 // body-tap in edit mode. Mirrors web's
-// `web/src/dashboard/components/configure-widget-modal.tsx` flow (sticky
-// header → scrollable body of cards → sticky footer) but rendered as a
-// bottom Sheet to fit phone ergonomics.
+// `web/src/dashboard/components/configure-widget-modal.tsx` flow (header →
+// scrollable body → sticky footer), now hosted by the canonical
+// StandardModal (native pageSheet) instead of a hand-rolled bottom Sheet.
 //
 // Layout (top → bottom) — see spec §4 for the canonical contract:
-//   1. Sticky header   — 20×20 accent-tinted icon square, stacked title
-//                        ("Configurar: <name>", 18/600, letterSpacing -0.2)
-//                        + description (13/400, lineHeight 18). Close (X)
-//                        right-aligned (36×36, IconX 20px). Spec §4.2.
+//   1. Header          — StandardModal's standardized header: the leading
+//                        icon reflects the live draft accent (folding the old
+//                        20×20 accent tile into the canonical bare icon),
+//                        title ("Configurar: <name>") + description as the
+//                        subtitle, rounded close button. Spec §4.2.
 //   2. Scrollable body — three `ConfigCard`s in this order (spec §4.3):
 //                          • Tamanho                    — SizeSelector
 //                          • Configurações do widget    — ConfigComponent
@@ -30,23 +31,18 @@
 //   THIS PATTERN MUST NOT BE REFACTORED OUT — see spec §4.1.
 //
 // Notes:
-//   - The Sheet primitive renders the drag-indicator pill above this body
-//     (default `dragIndicator={true}`), so we MUST NOT add a second one
-//     here — that would produce two visible grab handles.
-//   - The Sheet expects integer percentages, NOT decimals — so
-//     `snapPoints={[90]}` (not [0.9]).
-//   - Destructive confirm uses the shared AlertDialog primitive
-//     (`@/components/ui/alert-dialog`) — its native Content path renders
-//     via `react-native`'s Modal so it layers above the Sheet correctly.
+//   - StandardModal renders the drag-indicator pill + header + footer + the
+//     KeyboardAvoidingView, so this body MUST NOT add its own. The footer is
+//     handed to StandardModal via its `footer` slot.
+//   - StandardModal is hosted INSIDE ModalBody (not the outer component) so
+//     its header icon/iconColor can track the live draft accent, which lives
+//     in ModalBody state.
 
 import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
-  Platform,
-  KeyboardAvoidingView,
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -54,13 +50,12 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import {
-  IconX,
   IconRestore,
   IconSparkles,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
-import { Sheet } from "@/components/ui/sheet";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { borderRadius, spacing } from "@/constants/design-system";
 import { lightImpactHaptic } from "@/utils/haptics";
 import { widgetRegistry } from "../registry";
@@ -99,27 +94,23 @@ export function ConfigureWidgetModal({
   const def = instance ? widgetRegistry.get(instance.widgetId) : undefined;
   const open = !!instance && !!def;
 
+  // ModalBody hosts the StandardModal itself so the header icon can reflect
+  // the *live* draft accent (which lives in ModalBody's state). It is keyed
+  // by instanceId and only mounted while open, so opening the modal for a
+  // different widget remounts it with fresh draft state — the spec §4.1
+  // remount pattern, preserved.
+  if (!open || !instance || !def) return null;
+
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      snapPoints={[90]}
-      backdropOpacity={0.45}
-    >
-      {open && instance && def && (
-        <ModalBody
-          key={instance.instanceId}
-          instance={instance}
-          def={def}
-          onClose={onClose}
-          onApplyConfig={onApplyConfig}
-          onApplySize={onApplySize}
-          onRemove={onRemove}
-        />
-      )}
-    </Sheet>
+    <ModalBody
+      key={instance.instanceId}
+      instance={instance}
+      def={def}
+      onClose={onClose}
+      onApplyConfig={onApplyConfig}
+      onApplySize={onApplySize}
+      onRemove={onRemove}
+    />
   );
 }
 
@@ -217,127 +208,137 @@ function ModalBody({
     restoreTimer.current = setTimeout(() => setShowRestoreBanner(false), 2200);
   };
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+  // Sticky footer — right-aligned compact buttons mirroring web's
+  // DialogFooter (Cancelar ghost + Aplicar primary). Restaurar sits on the
+  // left so the utility action is opposite the primary action — a classic
+  // dialog footer pattern. Passed to StandardModal via its `footer` slot.
+  const footer = (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.sm,
+        paddingHorizontal: spacing.md,
+        paddingTop: 10,
+        // Respect the home-indicator inset on iOS — without this the
+        // Cancelar / Aplicar buttons touch the bottom of the sheet
+        // (and on phones with a home indicator they sit awkwardly on top
+        // of it). Adds the OS-reported bottom inset plus 12px breathing
+        // room above it.
+        paddingBottom: Math.max(spacing.md, insets.bottom + 12),
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        backgroundColor: colors.card,
+      }}
     >
-      {/* Sticky header — spec §4.2:
-          paddingH 16, paddingTop 8, paddingBottom 14, border-bottom 1.
-          Left: 20×20 accent-tinted square prepended to the title block.
-          Title 18/600 letterSpacing -0.2, description 13/400 lineHeight 18.
-          Right: 36×36 round close X. */}
-      <View
-        style={{
-          paddingHorizontal: spacing.md,
-          paddingTop: 8,
-          paddingBottom: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-          flexDirection: "row",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 12,
-        }}
+      <Pressable
+        onPress={handleRestore}
+        accessibilityLabel="Restaurar padrões"
+        accessibilityRole="button"
+        hitSlop={6}
+        style={({ pressed }) => ({
+          width: 40,
+          height: 40,
+          borderRadius: borderRadius.md,
+          backgroundColor: pressed ? colors.muted : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+        })}
       >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View
-            style={{
+        <IconRestore size={18} color={colors.mutedForeground} />
+      </Pressable>
+      {/* Right-aligned action group — Cancelar ghost + Aplicar primary. */}
+      <View style={{ flex: 1 }} />
+      <Pressable
+        onPress={onClose}
+        accessibilityLabel="Cancelar"
+        accessibilityRole="button"
+        hitSlop={6}
+        style={({ pressed }) => ({
+          height: 40,
+          paddingHorizontal: 16,
+          borderRadius: borderRadius.md,
+          backgroundColor: pressed ? colors.muted : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+        })}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "500",
+            color: colors.foreground,
+          }}
+        >
+          Cancelar
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={handleApply}
+        onPressIn={() => {
+          applyScale.value = withTiming(0.97, { duration: 90 });
+        }}
+        onPressOut={() => {
+          applyScale.value = withTiming(1, { duration: 140 });
+        }}
+        accessibilityLabel="Aplicar"
+        accessibilityRole="button"
+      >
+        <Animated.View
+          style={[
+            {
+              height: 40,
+              paddingHorizontal: 20,
+              borderRadius: borderRadius.md,
+              backgroundColor: colors.primary,
               flexDirection: "row",
               alignItems: "center",
-              gap: 8,
+              justifyContent: "center",
+              gap: 6,
+              shadowColor: colors.primary,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.2,
+              shadowRadius: 3,
+              elevation: 2,
+            },
+            applyAnim,
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: colors.primaryForeground,
             }}
           >
-            {/* 20×20 accent-tinted icon square. Bg is the accent hex at
-                low alpha; icon renders at full accent color. When the widget
-                has no accent, falls back to def.icon over a neutral muted bg.
-                Per spec §4.2 NEW REQUIRED: this prefix establishes the
-                widget's identity in the header. */}
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 4,
-                backgroundColor: hasAccent
-                  ? withAlpha(accent.hex, isDark ? 0.18 : 0.14)
-                  : colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              {hasAccent ? (
-                <accent.Icon size={14} color={accent.hex} />
-              ) : (
-                <HeaderIconFallback size={14} color={colors.foreground} />
-              )}
-            </View>
-            <Text
-              numberOfLines={1}
-              style={{
-                flex: 1,
-                fontSize: 18,
-                fontWeight: "600",
-                color: colors.foreground,
-                letterSpacing: -0.2,
-              }}
-            >
-              Configurar: {def.name}
-            </Text>
-          </View>
-          {def.description && (
-            <Text
-              numberOfLines={2}
-              style={{
-                fontSize: 13,
-                fontWeight: "400",
-                color: colors.mutedForeground,
-                marginTop: 4,
-                lineHeight: 18,
-              }}
-            >
-              {def.description}
-            </Text>
-          )}
-        </View>
-        <Pressable
-          onPress={onClose}
-          hitSlop={12}
-          accessibilityLabel="Fechar"
-          accessibilityRole="button"
-          style={({ pressed }) => ({
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: pressed ? colors.muted : "transparent",
-            flexShrink: 0,
-          })}
-        >
-          <IconX size={20} color={colors.mutedForeground} />
-        </Pressable>
-      </View>
+            Aplicar
+          </Text>
+        </Animated.View>
+      </Pressable>
+    </View>
+  );
 
-      {/* Scrollable body — flat content (no card wrappers). Matches web's
-          configure modal layout: header, body content direct under a Title
-          input, then the widget's own Tabs (rendered by Custom or
-          DynamicFormField), then a thin error band, then the footer.
-          The Tamanho / Configurações / Ações wrapper cards were removed
-          per user request — they added visual noise without clarifying
-          the form. The destructive "Remover widget" action lives on the
-          per-tile overflow sheet now, not inside this modal. */}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          paddingHorizontal: spacing.md,
-          paddingTop: 14,
-          paddingBottom: spacing.lg,
-          gap: 14,
-        }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+  return (
+    <StandardModal
+      visible
+      onClose={onClose}
+      title={`Configurar: ${def.name}`}
+      subtitle={def.description}
+      // Header icon reflects the *live* draft accent (full accent color),
+      // falling back to the registry icon over the foreground color when the
+      // widget has no accent. The old 20×20 accent tile is folded into the
+      // canonical bare-icon header.
+      icon={hasAccent ? accent.Icon : HeaderIconFallback}
+      iconColor={hasAccent ? accent.hex : colors.foreground}
+      padded={false}
+      bodyStyle={{
+        paddingHorizontal: spacing.md,
+        paddingTop: 14,
+        paddingBottom: spacing.lg,
+        gap: 14,
+      }}
+      footer={footer}
+    >
         {showRestoreBanner && (
           <View
             style={{
@@ -400,119 +401,7 @@ function ModalBody({
             <Text style={{ fontSize: 12, color: "#ef4444" }}>{error}</Text>
           </View>
         )}
-      </ScrollView>
-
-      {/* Sticky footer — right-aligned compact buttons mirroring web's
-          DialogFooter (Cancelar ghost + Aplicar primary). The previous
-          flex:1 stretched layout made the buttons look like generic OK/
-          Cancel rather than a polished form action row. Restaurar moved
-          to the left so the destructive/utility action sits opposite the
-          primary action — a classic dialog footer pattern. */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: spacing.sm,
-          paddingHorizontal: spacing.md,
-          paddingTop: 10,
-          // Respect the home-indicator inset on iOS — without this the
-          // Cancelar / Aplicar buttons touch the bottom of the sheet
-          // (and on phones with a home indicator they sit awkwardly on top
-          // of it). Adds the OS-reported bottom inset plus 12px breathing
-          // room above it.
-          paddingBottom: Math.max(spacing.md, insets.bottom + 12),
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          backgroundColor: colors.card,
-        }}
-      >
-        <Pressable
-          onPress={handleRestore}
-          accessibilityLabel="Restaurar padrões"
-          accessibilityRole="button"
-          hitSlop={6}
-          style={({ pressed }) => ({
-            width: 40,
-            height: 40,
-            borderRadius: borderRadius.md,
-            backgroundColor: pressed ? colors.muted : "transparent",
-            alignItems: "center",
-            justifyContent: "center",
-          })}
-        >
-          <IconRestore size={18} color={colors.mutedForeground} />
-        </Pressable>
-        {/* Right-aligned action group — Cancelar ghost + Aplicar primary. */}
-        <View style={{ flex: 1 }} />
-        <Pressable
-          onPress={onClose}
-          accessibilityLabel="Cancelar"
-          accessibilityRole="button"
-          hitSlop={6}
-          style={({ pressed }) => ({
-            height: 40,
-            paddingHorizontal: 16,
-            borderRadius: borderRadius.md,
-            backgroundColor: pressed ? colors.muted : "transparent",
-            alignItems: "center",
-            justifyContent: "center",
-          })}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "500",
-              color: colors.foreground,
-            }}
-          >
-            Cancelar
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={handleApply}
-          onPressIn={() => {
-            applyScale.value = withTiming(0.97, { duration: 90 });
-          }}
-          onPressOut={() => {
-            applyScale.value = withTiming(1, { duration: 140 });
-          }}
-          accessibilityLabel="Aplicar"
-          accessibilityRole="button"
-        >
-          <Animated.View
-            style={[
-              {
-                height: 40,
-                paddingHorizontal: 20,
-                borderRadius: borderRadius.md,
-                backgroundColor: colors.primary,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                shadowColor: colors.primary,
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.2,
-                shadowRadius: 3,
-                elevation: 2,
-              },
-              applyAnim,
-            ]}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: colors.primaryForeground,
-              }}
-            >
-              Aplicar
-            </Text>
-          </Animated.View>
-        </Pressable>
-      </View>
-
-    </KeyboardAvoidingView>
+    </StandardModal>
   );
 }
 

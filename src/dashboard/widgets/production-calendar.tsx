@@ -7,9 +7,10 @@
 // Mirror of `web/src/dashboard/widgets/production-calendar.tsx` but adapted
 // for React Native:
 //   - 4 parallel useTasks calls keyed by date range, just like web.
-//   - Tap a day opens a bottom sheet listing the events; tap an event there
-//     pushes to the task detail (web uses TruckDetailModal — mobile reuses
-//     the existing `routes.production.schedule.details(id)` route).
+//   - Tap a day opens the canonical StandardModal listing the events; tap an
+//     event there pushes to the task detail (web uses TruckDetailModal —
+//     mobile reuses the existing `routes.production.schedule.details(id)`
+//     route).
 //   - Legend tiles below the grid are tappable to toggle visibility per
 //     event type (mirrors web's StatsRow tiles).
 //
@@ -35,7 +36,7 @@ import { TASK_STATUS_LABELS } from "@/constants/enum-labels";
 import { useTasks } from "@/hooks/useTask";
 import { routes } from "@/constants/routes";
 import { Combobox } from "@/components/ui/combobox";
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { lightImpactHaptic } from "@/utils/haptics";
 
@@ -680,33 +681,18 @@ function DayDetailSheet({
   const sorted = events.slice().sort((a, b) => order[a.type] - order[b.type]);
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={onOpenChange}
-      snapPoints={[60]}
-      backdropOpacity={0.45}
+    <StandardModal
+      visible={open}
+      onClose={() => onOpenChange(false)}
+      title={date ? formatDayLabel(date) : ""}
+      subtitle={
+        sorted.length === 0
+          ? "Nenhum evento neste dia."
+          : `${sorted.length} evento${sorted.length === 1 ? "" : "s"}`
+      }
+      padded={false}
+      bodyStyle={{ paddingHorizontal: 16 }}
     >
-      <SheetContent>
-        <SheetHeader>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: colors.foreground,
-            }}
-          >
-            {date ? formatDayLabel(date) : ""}
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
-            {sorted.length === 0
-              ? "Nenhum evento neste dia."
-              : `${sorted.length} evento${sorted.length === 1 ? "" : "s"}`}
-          </Text>
-        </SheetHeader>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-        >
           {sorted.map((ev, i) => {
             const isOverdueTerm =
               ev.type === "term" &&
@@ -786,9 +772,7 @@ function DayDetailSheet({
               </View>
             );
           })}
-        </ScrollView>
-      </SheetContent>
-    </Sheet>
+    </StandardModal>
   );
 }
 

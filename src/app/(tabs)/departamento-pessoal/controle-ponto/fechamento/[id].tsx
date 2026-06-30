@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl } from "react-native";
+import { useMemo, useState } from "react";
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconThumbUp, IconThumbDown, IconHelpCircle } from "@tabler/icons-react-native";
@@ -49,6 +49,54 @@ const formatResponse = (dataResposta: string | null) => {
   }
 };
 
+/**
+ * One employee row in a fechamento. Rejected items are tappable: tapping reveals
+ * the rejection reason (the employee's `Resposta` motivo) inline.
+ */
+function AssinaturaItemCard({ item, colors }: { item: SecullumAssinaturaItem; colors: any }) {
+  const [expanded, setExpanded] = useState(false);
+  const isRejected = item.Status === ASSINATURA_ITEM_STATUS.REJEITADO;
+  const reason = (item.Resposta ?? "").trim();
+
+  const card = (
+    <Card style={styles.itemCard}>
+      <View style={styles.itemHeader}>
+        <ThemedText style={styles.funcionario} numberOfLines={1}>
+          {item.Funcionario || "Sem nome"}
+        </ThemedText>
+        <Badge variant={statusVariant(item.Status)}>
+          <View style={styles.badgeRow}>
+            <StatusIcon status={item.Status} color={badgeFg(item.Status, colors)} />
+            <ThemedText style={[styles.badgeLabel, { color: badgeFg(item.Status, colors) }]}>
+              {statusLabel(item.Status)}
+            </ThemedText>
+          </View>
+        </Badge>
+      </View>
+      <View style={styles.itemRow}>
+        <ThemedText style={[styles.itemLabel, { color: colors.mutedForeground }]}>Data da resposta:</ThemedText>
+        <ThemedText style={styles.itemValue}>{formatResponse(item.DataResposta)}</ThemedText>
+      </View>
+      {isRejected &&
+        (expanded ? (
+          <View style={[styles.reasonBox, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+            <ThemedText style={[styles.reasonLabel, { color: colors.mutedForeground }]}>Motivo da rejeição</ThemedText>
+            <ThemedText style={styles.reasonText}>{reason || "Nenhum motivo informado."}</ThemedText>
+          </View>
+        ) : (
+          <ThemedText style={[styles.reasonHint, { color: colors.mutedForeground }]}>Toque para ver o motivo</ThemedText>
+        ))}
+    </Card>
+  );
+
+  if (!isRejected) return card;
+  return (
+    <TouchableOpacity activeOpacity={0.7} onPress={() => setExpanded((e) => !e)}>
+      {card}
+    </TouchableOpacity>
+  );
+}
+
 export default function FechamentoDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const numericId = Number(id);
@@ -89,25 +137,7 @@ export default function FechamentoDetailScreen() {
   }
 
   const renderItem = ({ item }: { item: SecullumAssinaturaItem }) => (
-    <Card style={styles.itemCard}>
-      <View style={styles.itemHeader}>
-        <ThemedText style={styles.funcionario} numberOfLines={1}>
-          {item.Funcionario || "Sem nome"}
-        </ThemedText>
-        <Badge variant={statusVariant(item.Status)}>
-          <View style={styles.badgeRow}>
-            <StatusIcon status={item.Status} color={badgeFg(item.Status, colors)} />
-            <ThemedText style={[styles.badgeLabel, { color: badgeFg(item.Status, colors) }]}>
-              {statusLabel(item.Status)}
-            </ThemedText>
-          </View>
-        </Badge>
-      </View>
-      <View style={styles.itemRow}>
-        <ThemedText style={[styles.itemLabel, { color: colors.mutedForeground }]}>Data da resposta:</ThemedText>
-        <ThemedText style={styles.itemValue}>{formatResponse(item.DataResposta)}</ThemedText>
-      </View>
-    </Card>
+    <AssinaturaItemCard item={item} colors={colors} />
   );
 
   return (
@@ -149,7 +179,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { padding: spacing.sm, gap: spacing.sm },
   summaryCard: { padding: spacing.md, marginBottom: spacing.sm },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between" },
+  summaryRow: { flexDirection: "row", gap: spacing.xs },
   summaryStat: { alignItems: "center", gap: 4, flex: 1 },
   summaryLabel: { fontSize: 10, fontWeight: fontWeight.medium },
   summaryValue: { fontSize: fontSize.base, fontWeight: fontWeight.bold },
@@ -161,4 +191,8 @@ const styles = StyleSheet.create({
   itemRow: { flexDirection: "row", gap: spacing.sm, alignItems: "center" },
   itemLabel: { fontSize: fontSize.xs, fontWeight: fontWeight.medium },
   itemValue: { fontSize: fontSize.sm },
+  reasonHint: { fontSize: fontSize.xs, fontStyle: "italic" },
+  reasonBox: { borderRadius: 8, borderWidth: 1, padding: spacing.sm, gap: 2 },
+  reasonLabel: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, textTransform: "uppercase", letterSpacing: 0.3 },
+  reasonText: { fontSize: fontSize.sm, lineHeight: 20 },
 });

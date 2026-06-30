@@ -5,6 +5,7 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
   Alert,
 } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -17,10 +18,10 @@ import {
   IconHourglass,
   IconMaximize,
   IconFileText,
+  IconCheck,
 } from "@tabler/icons-react-native";
-import { ThemedView, ThemedText, ErrorScreen, Button, Chip } from "@/components/ui";
+import { ThemedView, ThemedText, ErrorScreen, Button, StandardModal } from "@/components/ui";
 import { Textarea } from "@/components/ui";
-import { Modal, ModalContent } from "@/components/ui/modal";
 import { useTheme } from "@/lib/theme";
 import {
   useMyAssinaturaDetail,
@@ -55,7 +56,7 @@ function fmtDateTime(iso?: string): string {
   return time ? `${date} ${time}` : date;
 }
 
-/** The ten Secullum punch slots, in the order they appear on the cartão-ponto. */
+/** The Secullum punch slots shown on the cartão-ponto (three entrada/saída pairs). */
 const SLOTS = [
   { key: "entrada1", label: "Entrada 1" },
   { key: "saida1", label: "Saída 1" },
@@ -63,10 +64,6 @@ const SLOTS = [
   { key: "saida2", label: "Saída 2" },
   { key: "entrada3", label: "Entrada 3" },
   { key: "saida3", label: "Saída 3" },
-  { key: "entrada4", label: "Entrada 4" },
-  { key: "saida4", label: "Saída 4" },
-  { key: "entrada5", label: "Entrada 5" },
-  { key: "saida5", label: "Saída 5" },
 ] as const;
 
 type SlotKey = (typeof SLOTS)[number]["key"];
@@ -361,92 +358,109 @@ export default function AssinaturaDetailScreen() {
       </ThemedView>
 
       {/* Reject modal */}
-      <Modal visible={rejectOpen} onClose={() => setRejectOpen(false)} animationType="fade">
-        <ModalContent>
-          <View style={styles.modalHeader}>
-            <IconThumbDown size={22} color={colors.destructive} />
-            <ThemedText style={styles.modalTitle}>Reprovar Apuração</ThemedText>
-          </View>
+      <StandardModal
+        visible={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+        title="Reprovar Apuração"
+        subtitle={`${apuracao.descricao} · ${period}`}
+        icon={IconThumbDown}
+        iconColor={colors.destructive}
+        padded={false}
+        bodyStyle={styles.rejectBody}
+        actions={[
+          {
+            label: "Cancelar",
+            variant: "secondary",
+            onPress: () => setRejectOpen(false),
+            disabled: rejectMutation.isPending,
+          },
+          {
+            label: "Reprovar",
+            variant: "destructive",
+            onPress: handleReject,
+            loading: rejectMutation.isPending,
+          },
+        ]}
+      >
+        {/* Batidas com erro — builds a detailed motivo from the selected days/slots */}
+        {periodDays.length > 0 && (
+          <>
+            <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>
+              Batidas com erro {selectedCount > 0 ? `(${selectedCount})` : "(opcional)"}
+            </ThemedText>
+            <ThemedText style={[styles.pickerHint, { color: colors.mutedForeground }]}>
+              Toque em um dia e marque as batidas incorretas.
+            </ThemedText>
+            <View style={styles.dayGrid}>
+              {periodDays.map((ymd) => {
+                const count = slotSelections[ymd]?.length ?? 0;
+                const isExpanded = expandedDay === ymd;
+                const fg = isExpanded
+                  ? colors.primaryForeground
+                  : count > 0
+                    ? colors.destructive
+                    : colors.foreground;
+                return (
+                  <TouchableOpacity
+                    key={ymd}
+                    activeOpacity={0.7}
+                    onPress={() => setExpandedDay(isExpanded ? null : ymd)}
+                    style={[
+                      styles.dayCell,
+                      {
+                        backgroundColor: isExpanded
+                          ? colors.primary
+                          : count > 0
+                            ? `${colors.destructive}1f`
+                            : colors.muted,
+                        borderColor: isExpanded
+                          ? colors.primary
+                          : count > 0
+                            ? colors.destructive
+                            : colors.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText style={[styles.dayCellNum, { color: fg }]}>{ymd.slice(8, 10)}</ThemedText>
+                    {count > 0 && (
+                      <View
+                        style={[
+                          styles.dayCellBadge,
+                          { backgroundColor: isExpanded ? colors.primaryForeground : colors.destructive },
+                        ]}
+                      >
+                        <ThemedText
+                          style={[styles.dayCellBadgeText, { color: isExpanded ? colors.primary : "#fff" }]}
+                        >
+                          {count}
+                        </ThemedText>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-          <ThemedText style={[styles.modalSubtitle, { color: colors.mutedForeground }]} numberOfLines={2}>
-            {apuracao.descricao} · {period}
-          </ThemedText>
-
-          <ScrollView
-            style={styles.modalScroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Batidas com erro — builds a detailed motivo from the selected days/slots */}
-            {periodDays.length > 0 && (
-              <>
-                <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>
-                  Batidas com erro {selectedCount > 0 ? `(${selectedCount})` : "(opcional)"}
-                </ThemedText>
-                <ThemedText style={[styles.pickerHint, { color: colors.mutedForeground }]}>
-                  Toque em um dia e marque as batidas incorretas.
-                </ThemedText>
-                <View style={styles.dayGrid}>
-                  {periodDays.map((ymd) => {
-                    const count = slotSelections[ymd]?.length ?? 0;
-                    const isExpanded = expandedDay === ymd;
-                    const variant = isExpanded ? "primary" : count > 0 ? "destructive" : "outline";
-                    return (
-                      <Chip
-                        key={ymd}
-                        size="sm"
-                        variant={variant}
-                        removable={false}
-                        onPress={() => setExpandedDay(isExpanded ? null : ymd)}
-                        label={count > 0 ? `${ymd.slice(8, 10)} (${count})` : ymd.slice(8, 10)}
-                      />
-                    );
-                  })}
-                </View>
-
-                {expandedDay && (
-                  <DaySlotsPicker
-                    date={expandedDay}
-                    selected={slotSelections[expandedDay] ?? []}
-                    onToggle={(slot) => toggleSlot(expandedDay, slot)}
-                    colors={colors}
-                  />
-                )}
-              </>
+            {expandedDay && (
+              <DaySlotsPicker
+                date={expandedDay}
+                selected={slotSelections[expandedDay] ?? []}
+                onToggle={(slot) => toggleSlot(expandedDay, slot)}
+                colors={colors}
+              />
             )}
+          </>
+        )}
 
-            <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>Motivo</ThemedText>
-            <Textarea
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              placeholder="Observações adicionais (opcional)"
-              numberOfLines={4}
-              editable={!rejectMutation.isPending}
-            />
-          </ScrollView>
-
-          <View style={styles.modalActions}>
-            <View style={{ flex: 1 }}>
-              <Button
-                variant="secondary"
-                onPress={() => setRejectOpen(false)}
-                disabled={rejectMutation.isPending}
-              >
-                Cancelar
-              </Button>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                variant="destructive"
-                onPress={handleReject}
-                loading={rejectMutation.isPending}
-              >
-                Reprovar
-              </Button>
-            </View>
-          </View>
-        </ModalContent>
-      </Modal>
+        <ThemedText style={[styles.motivoFieldLabel, { color: colors.primary }]}>Motivo</ThemedText>
+        <Textarea
+          value={rejectReason}
+          onChangeText={setRejectReason}
+          placeholder="Observações adicionais (opcional)"
+          numberOfLines={4}
+          editable={!rejectMutation.isPending}
+        />
+      </StandardModal>
     </>
   );
 }
@@ -482,7 +496,15 @@ function DaySlotsPicker({
   date: string;
   selected: SlotKey[];
   onToggle: (slot: SlotKey) => void;
-  colors: { card: string; border: string; mutedForeground: string; primary: string };
+  colors: {
+    card: string;
+    border: string;
+    muted: string;
+    foreground: string;
+    mutedForeground: string;
+    primary: string;
+    destructive: string;
+  };
 }) {
   const { data, isLoading } = useMyBatidasForDate(date);
   const batidas = (data?.data?.success ? data.data.data : undefined) as DayBatidas | undefined;
@@ -499,14 +521,28 @@ function DaySlotsPicker({
             const time = raw ? String(raw).slice(0, 5) : "—";
             const isSel = selected.includes(s.key);
             return (
-              <Chip
+              <TouchableOpacity
                 key={s.key}
-                size="sm"
-                variant={isSel ? "destructive" : "outline"}
-                removable={false}
+                activeOpacity={0.7}
                 onPress={() => onToggle(s.key)}
-                label={`${SLOT_LABEL[s.key]} · ${time}`}
-              />
+                style={[
+                  styles.slotCell,
+                  {
+                    backgroundColor: isSel ? `${colors.destructive}1f` : colors.muted,
+                    borderColor: isSel ? colors.destructive : colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.slotCellHeader}>
+                  <ThemedText style={[styles.slotCellLabel, { color: colors.mutedForeground }]}>
+                    {SLOT_LABEL[s.key]}
+                  </ThemedText>
+                  {isSel && <IconCheck size={13} color={colors.destructive} />}
+                </View>
+                <ThemedText style={[styles.slotCellTime, { color: isSel ? colors.destructive : colors.foreground }]}>
+                  {time}
+                </ThemedText>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -551,15 +587,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   actions: { flexDirection: "row", gap: 10, marginTop: 4 },
-  modalHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  modalTitle: { fontSize: 18, fontWeight: "700" },
-  modalSubtitle: { fontSize: 13, fontWeight: "500", marginBottom: 16, lineHeight: 18 },
+  rejectBody: { paddingHorizontal: 16, paddingBottom: 16 },
   motivoFieldLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6, marginTop: 12 },
-  modalScroll: { maxHeight: 380 },
   pickerHint: { fontSize: 12, marginBottom: 8, marginTop: -2 },
   dayGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  dayCell: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayCellNum: { fontSize: 12, fontWeight: "700" },
+  dayCellBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 13,
+    height: 13,
+    borderRadius: 7,
+    paddingHorizontal: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayCellBadgeText: { fontSize: 9, fontWeight: "700" },
   daySlotsCard: { borderRadius: 10, borderWidth: 1, padding: 10, marginTop: 10, gap: 8 },
   daySlotsTitle: { fontSize: 13, fontWeight: "700" },
   slotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  modalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
+  slotCell: {
+    flexGrow: 1,
+    flexBasis: "47%",
+    maxWidth: "48%",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    gap: 1,
+  },
+  slotCellHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 4 },
+  slotCellLabel: { fontSize: 10, fontWeight: "500" },
+  slotCellTime: { fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
 });

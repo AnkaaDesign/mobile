@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { ThemedText } from '@/components/ui/themed-text';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { IconSwitch } from '@tabler/icons-react-native';
 import { getCurrentApiUrl } from '@/api-client/axiosClient';
 import type { CompanyAssetBlock, ImageSizePreset } from '../types';
@@ -100,59 +101,53 @@ export function CompanyAssetBlockEditor({ block, onUpdate, disabled }: CompanyAs
       </View>
 
       {/* Asset Picker Modal */}
-      <Modal visible={showPicker} transparent animationType="fade" onRequestClose={() => setShowPicker(false)}>
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowPicker(false)}
-        >
-          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
-              Selecionar Ativo da Empresa
-            </ThemedText>
-            <FlatList
-              data={ASSETS}
-              keyExtractor={(item) => item.key}
-              numColumns={2}
-              columnWrapperStyle={styles.assetGrid}
-              renderItem={({ item: asset }) => {
-                const isSelected = block.asset === asset.key;
-                const assetUri = `${baseUrl}${asset.path}`;
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.assetItem,
-                      { borderColor: isSelected ? colors.primary : colors.border },
-                      isSelected && { backgroundColor: colors.primary + '10' },
-                    ]}
-                    onPress={() => {
-                      onUpdate({ asset: asset.key, size: asset.defaultSize });
-                      setShowPicker(false);
-                    }}
-                  >
-                    <Image
-                      source={{ uri: assetUri }}
-                      style={styles.assetImage}
-                      resizeMode="contain"
-                    />
-                    <ThemedText
-                      style={[
-                        styles.assetLabel,
-                        { color: isSelected ? colors.primary : colors.foreground },
-                      ]}
-                    >
-                      {asset.label}
-                    </ThemedText>
-                    <ThemedText style={[styles.assetDescription, { color: colors.mutedForeground }]}>
-                      {asset.description}
-                    </ThemedText>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <StandardModal
+        visible={showPicker}
+        onClose={() => setShowPicker(false)}
+        title="Selecionar Ativo da Empresa"
+        scroll={false}
+      >
+        <FlatList
+          data={ASSETS}
+          keyExtractor={(item) => item.key}
+          numColumns={2}
+          columnWrapperStyle={styles.assetGrid}
+          renderItem={({ item: asset }) => {
+            const isSelected = block.asset === asset.key;
+            const assetUri = `${baseUrl}${asset.path}`;
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.assetItem,
+                  { borderColor: isSelected ? colors.primary : colors.border },
+                  isSelected && { backgroundColor: colors.primary + '10' },
+                ]}
+                onPress={() => {
+                  onUpdate({ asset: asset.key, size: asset.defaultSize });
+                  setShowPicker(false);
+                }}
+              >
+                <Image
+                  source={{ uri: assetUri }}
+                  style={styles.assetImage}
+                  resizeMode="contain"
+                />
+                <ThemedText
+                  style={[
+                    styles.assetLabel,
+                    { color: isSelected ? colors.primary : colors.foreground },
+                  ]}
+                >
+                  {asset.label}
+                </ThemedText>
+                <ThemedText style={[styles.assetDescription, { color: colors.mutedForeground }]}>
+                  {asset.description}
+                </ThemedText>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </StandardModal>
     </View>
   );
 }
@@ -197,26 +192,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
   },
   assetGrid: {
     gap: spacing.sm,

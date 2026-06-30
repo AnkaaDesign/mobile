@@ -17,9 +17,9 @@
 //   with real imports the moment they land.
 //
 // Mobile-specific divergences from web:
-//   • No tooltip primitive on RN — tap a day cell opens a bottom Sheet with
-//     the full absence/holiday list (matches spec §6.8 "tap a day → detail
-//     Sheet").
+//   • No tooltip primitive on RN — tap a day cell opens the canonical
+//     StandardModal with the full absence/holiday list (matches spec §6.8
+//     "tap a day → detail Sheet").
 //   • Inline filters (Colaborador / Setor) are surfaced inside the Sheet's
 //     own picker row above the calendar grid when `display.showFilters` is on.
 //     The header strip is reserved for period navigation + refresh because
@@ -35,7 +35,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   IconCalendar,
-  IconX,
   IconBeach,
   IconUserOff,
   IconUserExclamation,
@@ -55,7 +54,7 @@ import {
 import { useUsers } from "@/hooks/useUser";
 import { useSectors } from "@/hooks/useSector";
 import { Combobox } from "@/components/ui/combobox";
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { lightImpactHaptic } from "@/utils/haptics";
 
@@ -692,69 +691,12 @@ function DayDetailSheet({
   const open = day != null;
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      snapPoints={[60]}
-      backdropOpacity={0.45}
+    <StandardModal
+      visible={open}
+      onClose={onClose}
+      title={day ? format(day, "EEEE, dd 'de' MMMM", { locale: ptBR }) : ""}
+      bodyStyle={{ gap: 8 }}
     >
-      <SheetHeader>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: colors.foreground,
-              flex: 1,
-            }}
-            numberOfLines={1}
-          >
-            {day
-              ? format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })
-              : ""}
-          </Text>
-          {/* Outer-View chrome pattern: width/height/radius live on the
-           *  View, Pressable owns only the tap surface so iOS-style-function
-           *  layout bugs are sidestepped. */}
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              overflow: "hidden",
-            }}
-          >
-            <Pressable
-              onPress={onClose}
-              hitSlop={8}
-              accessibilityLabel="Fechar"
-              accessibilityRole="button"
-              android_ripple={{ color: "rgba(0,0,0,0.08)" }}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <IconX size={18} color={colors.mutedForeground} />
-            </Pressable>
-          </View>
-        </View>
-      </SheetHeader>
-      <SheetContent>
-        <ScrollView
-          contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
-          keyboardShouldPersistTaps="handled"
-        >
           {holidays.length === 0 && absences.length === 0 ? (
             <Text
               style={{
@@ -861,9 +803,7 @@ function DayDetailSheet({
               })}
             </>
           )}
-        </ScrollView>
-      </SheetContent>
-    </Sheet>
+    </StandardModal>
   );
 }
 

@@ -1,18 +1,10 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { IconAlertTriangle, IconTrash, IconCheck } from '@tabler/icons-react-native';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useTheme } from '@/lib/theme';
-import { spacing, borderRadius } from '@/constants/design-system';
+import { fontSize, lineHeight } from '@/constants/design-system';
 
 export type ConfirmationVariant = 'default' | 'destructive' | 'warning' | 'success';
 
@@ -43,12 +35,19 @@ export interface ConfirmationDialogProps {
   showIcon?: boolean;
 }
 
+// StandardModal's header icon accepts optional size/color (Tabler-style). The
+// public `icon` prop above keeps its stricter required-prop signature for
+// backwards compatibility, so we widen at the call site.
+type HeaderIcon = React.ComponentType<{ size?: number; color?: string }>;
+
 /**
  * ConfirmationDialog Component
  *
  * A reusable confirmation dialog for actions that require user confirmation.
  * Supports multiple variants (default, destructive, warning, success) with
  * appropriate styling and icons.
+ *
+ * Standardized onto the canonical StandardModal (bonus-modal rules).
  *
  * @example
  * ```tsx
@@ -109,99 +108,61 @@ export function ConfirmationDialog({
         return {
           icon: icon || IconTrash,
           iconColor: colors.destructive,
-          iconBg: colors.destructive + '20',
           confirmVariant: 'destructive' as const,
         };
       case 'warning':
         return {
           icon: icon || IconAlertTriangle,
           iconColor: '#f59e0b', // amber-500
-          iconBg: '#fef3c7', // amber-100
           confirmVariant: 'default' as const,
         };
       case 'success':
         return {
           icon: icon || IconCheck,
           iconColor: '#10b981', // emerald-500
-          iconBg: '#d1fae5', // emerald-100
           confirmVariant: 'default' as const,
         };
       default:
         return {
           icon: icon || IconAlertTriangle,
           iconColor: colors.primary,
-          iconBg: colors.primary + '20',
           confirmVariant: 'default' as const,
         };
     }
   };
 
   const config = getVariantConfig();
-  const IconComponent = config.icon;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={true}>
-        <DialogHeader>
-          {showIcon && (
-            <View
-              style={[
-                styles.iconContainer,
-                { backgroundColor: config.iconBg },
-              ]}
-            >
-              <IconComponent size={24} color={config.iconColor} />
-            </View>
-          )}
-          <DialogTitle>{title}</DialogTitle>
-          {description && (
-            <DialogDescription>{description}</DialogDescription>
-          )}
-        </DialogHeader>
-
-        <DialogFooter style={styles.footer}>
-          <Button
-            variant="outline"
-            onPress={handleCancel}
-            disabled={loading}
-            style={styles.button}
-          >
-            <ThemedText>{cancelText}</ThemedText>
-          </Button>
-          <Button
-            variant={config.confirmVariant}
-            onPress={handleConfirm}
-            disabled={loading}
-            loading={loading}
-            style={styles.button}
-          >
-            <ThemedText
-              style={{
-                color: variant === 'destructive' ? '#ffffff' : colors.foreground,
-              }}
-            >
-              {confirmText}
-            </ThemedText>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <StandardModal
+      visible={open}
+      onClose={() => onOpenChange(false)}
+      title={title}
+      icon={showIcon ? (config.icon as HeaderIcon) : undefined}
+      iconColor={config.iconColor}
+      actions={[
+        { label: cancelText, variant: 'outline', onPress: handleCancel, disabled: loading },
+        {
+          label: confirmText,
+          variant: config.confirmVariant,
+          onPress: handleConfirm,
+          disabled: loading,
+          loading,
+        },
+      ]}
+    >
+      {description ? (
+        <ThemedText style={[styles.description, { color: colors.mutedForeground }]}>
+          {description}
+        </ThemedText>
+      ) : null}
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  footer: {
-    marginTop: spacing.lg,
-  },
-  button: {
-    flex: 1,
+  description: {
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
   },
 });

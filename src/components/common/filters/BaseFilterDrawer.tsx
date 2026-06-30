@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Drawer, DrawerHeader, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
+import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,9 @@ import { FilterSection } from './FilterSection';
  *
  * This component replaces all the inconsistent Modal/Drawer filter
  * implementations across the app with a single, standardized pattern.
+ *
+ * Standardized onto the canonical StandardModal (bonus-modal rules). The public
+ * prop API is unchanged.
  *
  * @example
  * ```tsx
@@ -134,6 +138,7 @@ export function BaseFilterDrawer({
   clearButtonText = 'Limpar',
 }: BaseFilterDrawerProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const handleApply = () => {
     onApply?.();
@@ -149,41 +154,16 @@ export function BaseFilterDrawer({
   };
 
   const styles = StyleSheet.create({
-    headerContainer: {
-      gap: spacing.sm,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      flex: 1,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.foreground,
-    },
-    description: {
-      fontSize: 14,
-      color: colors.mutedForeground,
-      lineHeight: 20,
-    },
-    closeButton: {
-      padding: 4,
-    },
-    contentContainer: {
+    sections: {
       gap: spacing.md,
     },
-    scrollContent: {
-      paddingBottom: spacing.xl,
-    },
-    footerActions: {
+    footer: {
       gap: spacing.sm,
+      paddingHorizontal: 20,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: `${colors.mutedForeground}20`,
+      paddingBottom: insets.bottom + spacing.md,
     },
     actionRow: {
       flexDirection: 'row',
@@ -201,125 +181,91 @@ export function BaseFilterDrawer({
     },
   });
 
-  return (
-    <Drawer
-      open={open}
-      onOpenChange={onOpenChange}
-      side="right"
-      width="90%"
-      closeOnBackdropPress={true}
-      closeOnSwipe={true}
-    >
-      <DrawerHeader>
-        <View style={styles.headerContainer}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <IconFilter size={24} color={colors.foreground} />
-              <Text style={styles.title}>{title}</Text>
-              {activeFiltersCount > 0 && (
-                <Badge variant="secondary">
-                  <Text style={{ fontSize: 12, fontWeight: '600' }}>
-                    {activeFiltersCount}
-                  </Text>
-                </Badge>
-              )}
-            </View>
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={handleClose}
-              style={styles.closeButton}
-            >
-              <IconX size={20} color={colors.mutedForeground} />
-            </Button>
-          </View>
-          {description && (
-            <Text style={styles.description}>{description}</Text>
-          )}
-        </View>
-      </DrawerHeader>
+  const headerRight =
+    activeFiltersCount > 0 ? (
+      <Badge variant="secondary">
+        <Text style={{ fontSize: 12, fontWeight: '600' }}>{activeFiltersCount}</Text>
+      </Badge>
+    ) : undefined;
 
-      <DrawerContent>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View style={styles.contentContainer}>
-            {sections.map((section, index) => (
-              <React.Fragment key={section.id}>
-                <FilterSection
-                  title={section.title}
-                  description={section.description}
-                  defaultOpen={section.defaultOpen}
-                  badge={section.badge}
-                >
-                  {section.content}
-                </FilterSection>
-                {index < sections.length - 1 && <Separator />}
-              </React.Fragment>
-            ))}
-          </View>
-        </ScrollView>
-      </DrawerContent>
+  const hasPresetRow = showPresets && (onSavePreset || onLoadPreset);
 
-      {showActions && (
-        <DrawerFooter>
-          <View style={styles.footerActions}>
-            <View style={styles.actionRow}>
-              {onClear && (
-                <Button
-                  variant="outline"
-                  onPress={handleClear}
-                  style={styles.actionButton}
-                >
-                  <IconX size={18} color={colors.foreground} />
-                  <Text style={{ marginLeft: spacing.xs }}>{clearButtonText}</Text>
-                </Button>
-              )}
-              {onApply && (
-                <Button
-                  variant="default"
-                  onPress={handleApply}
-                  style={styles.actionButton}
-                >
-                  <IconCheck size={18} color={colors.background} />
-                  <Text style={{ marginLeft: spacing.xs, color: colors.background }}>
-                    {applyButtonText}
-                  </Text>
-                </Button>
-              )}
-            </View>
-
-            {showPresets && (onSavePreset || onLoadPreset) && (
-              <View style={styles.presetRow}>
-                {onSavePreset && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={onSavePreset}
-                    style={styles.presetButton}
-                  >
-                    <IconDeviceFloppy size={16} color={colors.foreground} />
-                    <Text style={{ marginLeft: spacing.xs, fontSize: 13 }}>
-                      Salvar preset
-                    </Text>
-                  </Button>
-                )}
-                {onLoadPreset && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={onLoadPreset}
-                    style={styles.presetButton}
-                  >
-                    <Text style={{ fontSize: 13 }}>Carregar preset</Text>
-                  </Button>
-                )}
-              </View>
+  const footer =
+    showActions || hasPresetRow ? (
+      <View style={styles.footer}>
+        {showActions && (
+          <View style={styles.actionRow}>
+            {onClear && (
+              <Button variant="outline" onPress={handleClear} style={styles.actionButton}>
+                <IconX size={18} color={colors.foreground} />
+                <Text style={{ marginLeft: spacing.xs }}>{clearButtonText}</Text>
+              </Button>
+            )}
+            {onApply && (
+              <Button variant="default" onPress={handleApply} style={styles.actionButton}>
+                <IconCheck size={18} color={colors.background} />
+                <Text style={{ marginLeft: spacing.xs, color: colors.background }}>
+                  {applyButtonText}
+                </Text>
+              </Button>
             )}
           </View>
-        </DrawerFooter>
-      )}
-    </Drawer>
+        )}
+
+        {hasPresetRow && (
+          <View style={styles.presetRow}>
+            {onSavePreset && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={onSavePreset}
+                style={styles.presetButton}
+              >
+                <IconDeviceFloppy size={16} color={colors.foreground} />
+                <Text style={{ marginLeft: spacing.xs, fontSize: 13 }}>Salvar preset</Text>
+              </Button>
+            )}
+            {onLoadPreset && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={onLoadPreset}
+                style={styles.presetButton}
+              >
+                <Text style={{ fontSize: 13 }}>Carregar preset</Text>
+              </Button>
+            )}
+          </View>
+        )}
+      </View>
+    ) : undefined;
+
+  return (
+    <StandardModal
+      visible={open}
+      onClose={handleClose}
+      title={title}
+      subtitle={description}
+      icon={IconFilter}
+      iconColor={colors.foreground}
+      headerRight={headerRight}
+      footer={footer}
+    >
+      <View style={styles.sections}>
+        {sections.map((section, index) => (
+          <React.Fragment key={section.id}>
+            <FilterSection
+              title={section.title}
+              description={section.description}
+              defaultOpen={section.defaultOpen}
+              badge={section.badge}
+            >
+              {section.content}
+            </FilterSection>
+            {index < sections.length - 1 && <Separator />}
+          </React.Fragment>
+        ))}
+      </View>
+    </StandardModal>
   );
 }

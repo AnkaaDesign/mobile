@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Pressable, Keyboard, Alert } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { ThemedText } from "@/components/ui";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { Text } from "@/components/ui/text";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { useTheme } from "@/lib/theme";
 import { fontSize, fontWeight } from "@/constants/design-system";
-import { formSpacing, formLayout } from "@/constants/form-styles";
 import {
   CUT_REQUEST_REASON,
   CUT_ORIGIN,
@@ -19,11 +17,7 @@ import {
 } from "@/constants";
 import { useCutBatchMutations } from "@/hooks";
 import type { Cut } from "@/types";
-import {
-  IconCut,
-  IconX,
-  IconCheck,
-} from "@tabler/icons-react-native";
+import { IconCut } from "@tabler/icons-react-native";
 
 const requestSchema = z.object({
   quantity: z.coerce
@@ -156,189 +150,105 @@ export function CutRequestModal({
   );
 
   return (
-    <Modal
+    <StandardModal
       visible={visible}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      title="Solicitar Recorte"
+      icon={IconCut}
+      actions={[
+        { label: "Cancelar", variant: "outline", onPress: handleClose, disabled: isSubmitting },
+        {
+          label: isSubmitting ? "Solicitando..." : "Solicitar",
+          variant: "default",
+          onPress: handleSubmit(onSubmit),
+          disabled: !isValid || isSubmitting || !cutItem,
+          loading: isSubmitting,
+        },
+      ]}
     >
-      <Pressable style={styles.overlay} onPress={handleClose}>
-        <Pressable style={[styles.modal, { backgroundColor: colors.background }]} onPress={() => Keyboard.dismiss()}>
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerContent}>
-              <IconCut size={20} color={colors.primary} />
-              <ThemedText style={styles.headerTitle}>Solicitar Recorte</ThemedText>
-            </View>
-            <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: colors.muted }]}
-              onPress={handleClose}
-              disabled={isSubmitting}
-            >
-              <IconX size={18} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
+      {/* File name */}
+      {fileName ? (
+        <ThemedText style={[styles.fileName, { color: colors.mutedForeground }]} numberOfLines={1}>
+          {fileName}
+        </ThemedText>
+      ) : null}
 
-          {/* Content */}
-          <View style={styles.content}>
-            {/* File name */}
-            {fileName ? (
-              <ThemedText style={[styles.fileName, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {fileName}
-              </ThemedText>
-            ) : null}
+      {/* Current cut info */}
+      {cutItem && (
+        <View style={[styles.currentInfo, { backgroundColor: colors.muted }]}>
+          <ThemedText style={[styles.currentInfoLabel, { color: colors.mutedForeground }]}>
+            Tipo:
+          </ThemedText>
+          <ThemedText style={styles.currentInfoValue}>
+            {CUT_TYPE_LABELS[cutItem.type]}
+          </ThemedText>
+        </View>
+      )}
 
-            {/* Current cut info */}
-            {cutItem && (
-              <View style={[styles.currentInfo, { backgroundColor: colors.muted }]}>
-                <ThemedText style={[styles.currentInfoLabel, { color: colors.mutedForeground }]}>
-                  Tipo:
-                </ThemedText>
-                <ThemedText style={styles.currentInfoValue}>
-                  {CUT_TYPE_LABELS[cutItem.type]}
-                </ThemedText>
-              </View>
+      {/* Reason and Quantity Row */}
+      <View style={styles.formRow}>
+        {/* Reason Field - 2/3 width */}
+        <View style={styles.reasonField}>
+          <ThemedText style={styles.label}>Motivo</ThemedText>
+          <Controller
+            control={control}
+            name="reason"
+            render={({ field: { onChange, value } }) => (
+              <Combobox
+                options={reasonOptions}
+                value={value}
+                onValueChange={onChange}
+                placeholder="Selecione o motivo"
+                searchable={false}
+                clearable={false}
+              />
             )}
+          />
+          {errors.reason && (
+            <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
+              {errors.reason.message}
+            </ThemedText>
+          )}
+        </View>
 
-            {/* Reason and Quantity Row */}
-            <View style={styles.formRow}>
-              {/* Reason Field - 2/3 width */}
-              <View style={styles.reasonField}>
-                <ThemedText style={styles.label}>Motivo</ThemedText>
-                <Controller
-                  control={control}
-                  name="reason"
-                  render={({ field: { onChange, value } }) => (
-                    <Combobox
-                      options={reasonOptions}
-                      value={value}
-                      onValueChange={onChange}
-                      placeholder="Selecione o motivo"
-                      searchable={false}
-                      clearable={false}
-                    />
-                  )}
-                />
-                {errors.reason && (
-                  <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-                    {errors.reason.message}
-                  </ThemedText>
-                )}
-              </View>
-
-              {/* Quantity Field - 1/3 width */}
-              <View style={styles.quantityField}>
-                <ThemedText style={styles.label}>Qnt</ThemedText>
-                <Controller
-                  control={control}
-                  name="quantity"
-                  render={({ field: { onChange, value } }) => (
-                    <Input
-                      value={value?.toString() || ""}
-                      onChangeText={(text) => {
-                        const num = parseInt(text) || 1;
-                        onChange(num);
-                      }}
-                      keyboardType="numeric"
-                      placeholder="1"
-                      error={!!errors.quantity?.message}
-                    />
-                  )}
-                />
-              </View>
-            </View>
-
-            {/* Summary - only show when quantity > 1 */}
-            {quantity > 1 && (
-              <View style={[styles.summary, { backgroundColor: colors.muted }]}>
-                <ThemedText style={styles.summaryText}>
-                  Serão criados {quantity} novos cortes
-                </ThemedText>
-                <ThemedText style={[styles.summarySubtext, { color: colors.mutedForeground }]}>
-                  Motivo: {CUT_REQUEST_REASON_LABELS[reason]}
-                </ThemedText>
-              </View>
+        {/* Quantity Field - 1/3 width */}
+        <View style={styles.quantityField}>
+          <ThemedText style={styles.label}>Qnt</ThemedText>
+          <Controller
+            control={control}
+            name="quantity"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                value={value?.toString() || ""}
+                onChangeText={(text) => {
+                  const num = parseInt(text) || 1;
+                  onChange(num);
+                }}
+                keyboardType="numeric"
+                placeholder="1"
+                error={!!errors.quantity?.message}
+              />
             )}
-          </View>
+          />
+        </View>
+      </View>
 
-          {/* Footer */}
-          <View style={[styles.footer, { borderTopColor: colors.border }]}>
-            <View style={styles.buttonWrapper}>
-              <Button
-                variant="outline"
-                onPress={handleClose}
-                disabled={isSubmitting}
-              >
-                <IconX size={18} color={colors.mutedForeground} />
-                <Text style={styles.buttonText}>Cancelar</Text>
-              </Button>
-            </View>
-
-            <View style={styles.buttonWrapper}>
-              <Button
-                variant="default"
-                onPress={handleSubmit(onSubmit)}
-                disabled={!isValid || isSubmitting || !cutItem}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color={colors.primaryForeground} />
-                ) : (
-                  <IconCheck size={18} color={colors.primaryForeground} />
-                )}
-                <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-                  {isSubmitting ? "Solicitando..." : "Solicitar"}
-                </Text>
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      {/* Summary - only show when quantity > 1 */}
+      {quantity > 1 && (
+        <View style={[styles.summary, { backgroundColor: colors.muted }]}>
+          <ThemedText style={styles.summaryText}>
+            Serão criados {quantity} novos cortes
+          </ThemedText>
+          <ThemedText style={[styles.summarySubtext, { color: colors.mutedForeground }]}>
+            Motivo: {CUT_REQUEST_REASON_LABELS[reason]}
+          </ThemedText>
+        </View>
+      )}
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  modal: {
-    width: "100%",
-    maxWidth: 400,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  content: {
-    padding: 16,
-    gap: 12,
-  },
   fileName: {
     fontSize: fontSize.sm,
     textAlign: "center",
@@ -388,18 +298,5 @@ const styles = StyleSheet.create({
   },
   summarySubtext: {
     fontSize: fontSize.xs,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: formSpacing.rowGap,
-    padding: formSpacing.actionBarPadding,
-    borderTopWidth: formLayout.borderWidth,
-  },
-  buttonWrapper: {
-    flex: 1,
-  },
-  buttonText: {
-    fontSize: 15,
-    fontWeight: "600",
   },
 });

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { Modal, ModalContent, ModalHeader, ModalFooter } from "@/components/ui/modal";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -84,120 +83,84 @@ export const TaskStatusModal: React.FC<TaskStatusModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} animationType="slide">
-      <ModalContent style={styles.modalContent}>
-        <ModalHeader>
-          <ThemedText style={styles.title}>Definir Status</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Selecione o novo status para esta tarefa
-          </ThemedText>
-        </ModalHeader>
+    <StandardModal
+      visible={visible}
+      onClose={onClose}
+      title="Definir Status"
+      subtitle="Selecione o novo status para esta tarefa"
+      actions={[
+        { label: "Cancelar", variant: "outline", onPress: onClose, disabled: loading },
+        {
+          label: "Confirmar",
+          onPress: handleConfirm,
+          disabled: !selectedStatus || selectedStatus === currentStatus || loading,
+          loading,
+        },
+      ]}
+    >
+      <View>
+        {STATUS_OPTIONS.map((option) => {
+          const isSelected = selectedStatus === option.value;
+          const isCurrent = currentStatus === option.value;
 
-        <View style={styles.content}>
-          <ScrollView style={styles.statusList} showsVerticalScrollIndicator={false}>
-            {STATUS_OPTIONS.map((option) => {
-              const isSelected = selectedStatus === option.value;
-              const isCurrent = currentStatus === option.value;
-
-              return (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.statusItem,
-                    {
-                      backgroundColor: isSelected
-                        ? colors.primary + "20"
-                        : colors.card,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ]}
-                  onPress={() => handleStatusPress(option.value)}
-                  activeOpacity={0.7}
+          return (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.statusItem,
+                {
+                  backgroundColor: isSelected
+                    ? colors.primary + "20"
+                    : colors.card,
+                  borderColor: isSelected ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => handleStatusPress(option.value)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.statusItemLeft}>
+                <View
+                  style={[styles.iconContainer, { backgroundColor: option.color }]}
                 >
-                  <View style={styles.statusItemLeft}>
-                    <View
-                      style={[styles.iconContainer, { backgroundColor: option.color }]}
+                  {option.icon}
+                </View>
+                <View style={styles.statusInfo}>
+                  <View style={styles.statusLabelContainer}>
+                    <ThemedText
+                      style={[
+                        styles.statusLabel,
+                        isSelected && { fontWeight: fontWeight.semibold },
+                      ]}
                     >
-                      {option.icon}
-                    </View>
-                    <View style={styles.statusInfo}>
-                      <View style={styles.statusLabelContainer}>
-                        <ThemedText
-                          style={[
-                            styles.statusLabel,
-                            isSelected && { fontWeight: fontWeight.semibold },
-                          ]}
-                        >
-                          {option.label}
-                        </ThemedText>
-                        {isCurrent && (
-                          <Badge variant="secondary" size="sm">
-                            <ThemedText style={styles.badgeText}>Atual</ThemedText>
-                          </Badge>
-                        )}
-                      </View>
-                      <ThemedText style={styles.statusDescription}>
-                        {option.description}
-                      </ThemedText>
-                    </View>
+                      {option.label}
+                    </ThemedText>
+                    {isCurrent && (
+                      <Badge variant="secondary" size="sm">
+                        <ThemedText style={styles.badgeText}>Atual</ThemedText>
+                      </Badge>
+                    )}
                   </View>
-                  {isSelected && (
-                    <View
-                      style={[styles.checkmark, { backgroundColor: colors.primary }]}
-                    >
-                      <ThemedText style={styles.checkmarkText}>✓</ThemedText>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        <ModalFooter>
-          <Button
-            variant="outline"
-            onPress={onClose}
-            disabled={loading}
-            style={styles.button}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onPress={handleConfirm}
-            disabled={!selectedStatus || selectedStatus === currentStatus || loading}
-            loading={loading}
-            style={styles.button}
-          >
-            Confirmar
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+                  <ThemedText style={styles.statusDescription}>
+                    {option.description}
+                  </ThemedText>
+                </View>
+              </View>
+              {isSelected && (
+                <View
+                  style={[styles.checkmark, { backgroundColor: colors.primary }]}
+                >
+                  <ThemedText style={styles.checkmarkText}>✓</ThemedText>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </StandardModal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalContent: {
-    maxHeight: "85%",
-    minHeight: 500,
-  },
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-  },
-  content: {
-    flex: 1,
-    minHeight: 400,
-  },
-  statusList: {
-    flex: 1,
-  },
   statusItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -251,8 +214,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
-  },
-  button: {
-    minWidth: 100,
   },
 });

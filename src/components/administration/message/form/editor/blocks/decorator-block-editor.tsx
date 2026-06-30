@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Image, Modal, TouchableOpacity, ScrollView, StyleSheet, Text, type ImageSourcePropType } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, Text, type ImageSourcePropType } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { borderRadius, spacing, fontSize } from '@/constants/design-system';
 import { ThemedText } from '@/components/ui/themed-text';
+import { StandardModal } from '@/components/ui/standard-modal';
 import type { DecoratorBlock, DecoratorVariant } from '../types';
 
 interface DecoratorBlockEditorProps {
@@ -78,63 +79,44 @@ export function DecoratorBlockEditor({ block, onUpdate, disabled }: DecoratorBlo
       </TouchableOpacity>
 
       {/* Picker Modal */}
-      <Modal
+      <StandardModal
         visible={showModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowModal(false)}
+        onClose={() => setShowModal(false)}
+        title={`Selecionar ${groupLabel}`}
       >
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={() => setShowModal(false)}
-        >
-          <View
-            style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onStartShouldSetResponder={() => true}
-          >
-            <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
-              Selecionar {groupLabel}
-            </ThemedText>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {variants.map((v) => {
-                const isSelected = block.variant === v;
-                return (
-                  <TouchableOpacity
-                    key={v}
-                    style={[
-                      styles.option,
-                      {
-                        borderColor: isSelected ? colors.primary : colors.border,
-                        borderWidth: isSelected ? 2 : 1,
-                        marginBottom: spacing.sm,
-                      },
-                    ]}
-                    onPress={() => { onUpdate({ variant: v }); setShowModal(false); }}
-                  >
-                    <Image
-                      source={DECORATOR_IMAGES[v]}
-                      style={[styles.optionImage, { aspectRatio: VARIANT_ASPECTS[v] }]}
-                      resizeMode="contain"
-                    />
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        { color: isSelected ? colors.primary : colors.mutedForeground },
-                        isSelected && styles.optionLabelSelected,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {VARIANT_LABELS[v]}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        {variants.map((v) => {
+          const isSelected = block.variant === v;
+          return (
+            <TouchableOpacity
+              key={v}
+              style={[
+                styles.option,
+                {
+                  borderColor: isSelected ? colors.primary : colors.border,
+                  borderWidth: isSelected ? 2 : 1,
+                },
+              ]}
+              onPress={() => { onUpdate({ variant: v }); setShowModal(false); }}
+            >
+              <Image
+                source={DECORATOR_IMAGES[v]}
+                style={[styles.optionImage, { aspectRatio: VARIANT_ASPECTS[v] }]}
+                resizeMode="contain"
+              />
+              <Text
+                style={[
+                  styles.optionLabel,
+                  { color: isSelected ? colors.primary : colors.mutedForeground },
+                  isSelected && styles.optionLabelSelected,
+                ]}
+                numberOfLines={1}
+              >
+                {VARIANT_LABELS[v]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </StandardModal>
     </View>
   );
 }
@@ -157,29 +139,6 @@ const styles = StyleSheet.create({
   changeButtonText: {
     fontSize: fontSize.sm,
     fontWeight: '500',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 380,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  modalTitle: {
-    fontSize: fontSize.base,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  grid: {
-    gap: spacing.sm,
   },
   option: {
     flex: 1,

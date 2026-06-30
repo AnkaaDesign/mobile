@@ -1,10 +1,8 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { IconCheck, IconX, IconAlertTriangle } from '@tabler/icons-react-native';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { StandardModal } from '@/components/ui/standard-modal';
 import { ThemedText } from '@/components/ui/themed-text';
-import { ThemedView } from '@/components/ui/themed-view';
 import { useTheme } from '@/lib/theme';
 import { borderRadius, fontSize, fontWeight } from '@/constants/design-system';
 import type { BatchOperationResult } from '../form/order-form-utils-enhanced';
@@ -162,15 +160,25 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
     onOpenChange(false);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>Resultado da Operação em Lote</DialogTitle>
-          <DialogDescription>Resumo da criação de pedidos</DialogDescription>
-        </DialogHeader>
+  // Status icon for the StandardModal header.
+  const HeaderIcon = success ? IconCheck : failedCount > 0 && successCount > 0 ? IconAlertTriangle : IconX;
+  const headerIconColor = success
+    ? theme.colors.success
+    : failedCount > 0 && successCount > 0
+      ? theme.colors.warning
+      : theme.colors.error;
 
-        <View style={styles.container}>
+  return (
+    <StandardModal
+      visible={open}
+      onClose={handleConfirm}
+      title="Resultado da Operação em Lote"
+      subtitle="Resumo da criação de pedidos"
+      icon={HeaderIcon}
+      iconColor={headerIconColor}
+      actions={[{ label: 'Entendi', variant: 'default', onPress: handleConfirm }]}
+    >
+      <View style={styles.container}>
           {/* Summary Card */}
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
@@ -215,13 +223,6 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
             </View>
           )}
         </View>
-
-        <DialogFooter>
-          <Button variant="default" onPress={handleConfirm}>
-            <ThemedText style={{ color: '#ffffff' }}>Entendi</ThemedText>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </StandardModal>
   );
 };

@@ -544,7 +544,7 @@ export default function AjustarPontoScreen() {
       {/* Time picker — iOS spinner in a modal, Android native dialog. */}
       {activePickerSlot && Platform.OS === "ios" && (
         <Modal transparent animationType="fade" visible>
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { paddingBottom: insets.bottom + 8 }]}>
             <View
               style={[
                 styles.modalSheet,
@@ -607,7 +607,7 @@ export default function AjustarPontoScreen() {
       {/* Date picker */}
       {showDatePicker && Platform.OS === "ios" && (
         <Modal transparent animationType="fade" visible>
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { paddingBottom: insets.bottom + 8 }]}>
             <View
               style={[
                 styles.modalSheet,

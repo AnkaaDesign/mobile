@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { View, StyleSheet, Modal, TextInput, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TextInput } from "react-native";
 import { useFormContext, useWatch } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
 import { FormCard } from "@/components/ui/form-section";
 import { Combobox } from "@/components/ui/combobox";
-import { Button } from "@/components/ui/button";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { BudgetPreview } from "@/components/production/task/quote/budget-preview";
 import { InvoiceListCard } from "@/components/production/task/billing/invoice-list-card";
 import { useTheme } from "@/lib/theme";
@@ -110,6 +110,25 @@ export function StepReview({
       return;
     }
     setValue(statusFieldName, next as TASK_QUOTE_STATUS, { shouldDirty: true });
+  };
+
+  const closeRejectModal = () => {
+    setRejectModalOpen(false);
+    setPendingRejectStatus(null);
+    setRejectReason("");
+  };
+
+  const confirmReject = () => {
+    if (rejectReason.trim().length < 5 || !pendingRejectStatus) return;
+    setValue(
+      fieldPrefix ? `${fieldPrefix}statusReason` : "statusReason",
+      rejectReason.trim(),
+      { shouldDirty: true },
+    );
+    setValue(statusFieldName, pendingRejectStatus as TASK_QUOTE_STATUS, {
+      shouldDirty: true,
+    });
+    closeRejectModal();
   };
 
   // Watch all quote-related form values
@@ -260,81 +279,43 @@ export function StepReview({
           written to the form ("statusReason"). NOTE: the API does not currently
           accept a reason on the status-update path, so this is captured UI-side
           only until the backend supports it. */}
-      <Modal
-        transparent
-        animationType="fade"
+      <StandardModal
         visible={rejectModalOpen}
-        onRequestClose={() => setRejectModalOpen(false)}
+        onClose={closeRejectModal}
+        title="Rejeitar Orçamento"
+        subtitle="Informe o motivo da rejeição. O status do orçamento voltará para Pendente."
+        actions={[
+          { label: "Voltar", variant: "outline", onPress: closeRejectModal },
+          {
+            label: "Confirmar Rejeição",
+            variant: "destructive",
+            disabled: rejectReason.trim().length < 5,
+            onPress: confirmReject,
+          },
+        ]}
       >
-        <View style={styles.modalOverlay}>
-          <View
+        <View style={styles.rejectField}>
+          <ThemedText style={[styles.modalLabel, { color: colors.foreground }]}>
+            Motivo da rejeição *
+          </ThemedText>
+          <TextInput
+            value={rejectReason}
+            onChangeText={setRejectReason}
+            placeholder="Descreva o motivo (mínimo 5 caracteres)..."
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            numberOfLines={4}
             style={[
-              styles.modalContent,
-              { backgroundColor: colors.popover, borderColor: colors.border },
+              styles.modalTextArea,
+              {
+                backgroundColor: colors.input,
+                borderColor: colors.border,
+                color: colors.foreground,
+              },
             ]}
-          >
-            <ThemedText style={styles.modalTitle}>Rejeitar Orçamento</ThemedText>
-            <ThemedText style={[styles.modalDescription, { color: colors.mutedForeground }]}>
-              Informe o motivo da rejeição. O status do orçamento voltará para Pendente.
-            </ThemedText>
-            <ThemedText style={[styles.modalLabel, { color: colors.foreground }]}>
-              Motivo da rejeição *
-            </ThemedText>
-            <TextInput
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              placeholder="Descreva o motivo (mínimo 5 caracteres)..."
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              numberOfLines={4}
-              style={[
-                styles.modalTextArea,
-                {
-                  backgroundColor: colors.input,
-                  borderColor: colors.border,
-                  color: colors.foreground,
-                },
-              ]}
-            />
-            <View style={styles.modalButtons}>
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={() => {
-                  setRejectModalOpen(false);
-                  setPendingRejectStatus(null);
-                  setRejectReason("");
-                }}
-              >
-                Voltar
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={rejectReason.trim().length < 5}
-                onPress={() => {
-                  if (rejectReason.trim().length < 5 || !pendingRejectStatus) return;
-                  setValue(
-                    fieldPrefix ? `${fieldPrefix}statusReason` : "statusReason",
-                    rejectReason.trim(),
-                    { shouldDirty: true },
-                  );
-                  setValue(
-                    statusFieldName,
-                    pendingRejectStatus as TASK_QUOTE_STATUS,
-                    { shouldDirty: true },
-                  );
-                  setRejectModalOpen(false);
-                  setPendingRejectStatus(null);
-                  setRejectReason("");
-                }}
-              >
-                Confirmar Rejeição
-              </Button>
-            </View>
-          </View>
+          />
         </View>
-      </Modal>
+      </StandardModal>
     </View>
   );
 }
@@ -360,28 +341,8 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
   // Reject-reason modal
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    padding: spacing.lg,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 420,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    padding: spacing.lg,
+  rejectField: {
     gap: spacing.sm,
-  },
-  modalTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  modalDescription: {
-    fontSize: fontSize.sm,
-    marginBottom: spacing.xs,
   },
   modalLabel: {
     fontSize: fontSize.sm,
@@ -395,11 +356,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     minHeight: 90,
     textAlignVertical: "top",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
   },
 });

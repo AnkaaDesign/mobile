@@ -1,8 +1,9 @@
 import { memo, useState, useCallback } from 'react'
-import { View, Modal, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
+import { StandardModal } from '@/components/ui/standard-modal'
 import { useTheme } from '@/lib/theme'
-import { IconFileExport, IconX, IconFileTypeCsv, IconJson, IconFileTypePdf } from '@tabler/icons-react-native'
+import { IconFileExport, IconFileTypeCsv, IconJson, IconFileTypePdf } from '@tabler/icons-react-native'
 import type { ExportProps, ExportFormat } from '../types'
 
 export const Export = memo(function Export({
@@ -55,152 +56,127 @@ export const Export = memo(function Export({
         <IconFileExport size={20} color={disabled ? colors.mutedForeground : colors.foreground} />
       </TouchableOpacity>
 
-      <Modal
+      <StandardModal
         visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        onClose={() => setModalVisible(false)}
+        title="Exportar Dados"
+        icon={IconFileExport}
       >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
-                Exportar Dados
-              </ThemedText>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={styles.closeButton}
+        {/* Export Mode Selection */}
+        {hasSelection && (
+          <View style={styles.modeSelection}>
+            <TouchableOpacity
+              style={[
+                styles.modeButton,
+                {
+                  backgroundColor: exportMode === 'all' ? colors.primary : colors.muted,
+                  borderColor: exportMode === 'all' ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setExportMode('all')}
+            >
+              <ThemedText
+                style={[
+                  styles.modeText,
+                  { color: exportMode === 'all' ? '#fff' : colors.foreground },
+                ]}
               >
-                <IconX size={24} color={colors.mutedForeground} />
-              </TouchableOpacity>
-            </View>
+                Exportar Todos ({totalCount})
+              </ThemedText>
+            </TouchableOpacity>
 
-            {/* Export Mode Selection */}
-            {hasSelection && (
-              <View style={styles.modeSelection}>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    {
-                      backgroundColor: exportMode === 'all' ? colors.primary : colors.muted,
-                      borderColor: exportMode === 'all' ? colors.primary : colors.border,
-                    },
-                  ]}
-                  onPress={() => setExportMode('all')}
-                >
-                  <ThemedText
-                    style={[
-                      styles.modeText,
-                      { color: exportMode === 'all' ? '#fff' : colors.foreground },
-                    ]}
-                  >
-                    Exportar Todos ({totalCount})
-                  </ThemedText>
-                </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.modeButton,
+                {
+                  backgroundColor: exportMode === 'selected' ? colors.primary : colors.muted,
+                  borderColor: exportMode === 'selected' ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setExportMode('selected')}
+            >
+              <ThemedText
+                style={[
+                  styles.modeText,
+                  { color: exportMode === 'selected' ? '#fff' : colors.foreground },
+                ]}
+              >
+                Exportar Selecionados ({selectedCount})
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
 
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    {
-                      backgroundColor: exportMode === 'selected' ? colors.primary : colors.muted,
-                      borderColor: exportMode === 'selected' ? colors.primary : colors.border,
-                    },
-                  ]}
-                  onPress={() => setExportMode('selected')}
-                >
-                  <ThemedText
-                    style={[
-                      styles.modeText,
-                      { color: exportMode === 'selected' ? '#fff' : colors.foreground },
-                    ]}
-                  >
-                    Exportar Selecionados ({selectedCount})
-                  </ThemedText>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Format Options */}
-            <View style={styles.formats}>
-              {formats.includes('csv') && (
-                <TouchableOpacity
-                  style={[styles.formatOption, { borderColor: colors.border }]}
-                  onPress={() => handleExport('csv')}
-                  disabled={isExporting}
-                  activeOpacity={0.7}
-                >
-                  <IconFileTypeCsv size={32} color={colors.primary} />
-                  <View style={styles.formatInfo}>
-                    <ThemedText style={[styles.formatTitle, { color: colors.foreground }]}>
-                      CSV
-                    </ThemedText>
-                    <ThemedText style={[styles.formatDescription, { color: colors.mutedForeground }]}>
-                      Excel e Google Sheets
-                    </ThemedText>
-                  </View>
-                </TouchableOpacity>
-              )}
-
-              {formats.includes('json') && (
-                <TouchableOpacity
-                  style={[styles.formatOption, { borderColor: colors.border }]}
-                  onPress={() => handleExport('json')}
-                  disabled={isExporting}
-                  activeOpacity={0.7}
-                >
-                  <IconJson size={32} color={colors.primary} />
-                  <View style={styles.formatInfo}>
-                    <ThemedText style={[styles.formatTitle, { color: colors.foreground }]}>
-                      JSON
-                    </ThemedText>
-                    <ThemedText style={[styles.formatDescription, { color: colors.mutedForeground }]}>
-                      Formato estruturado
-                    </ThemedText>
-                  </View>
-                </TouchableOpacity>
-              )}
-
-              {formats.includes('pdf') && (
-                <TouchableOpacity
-                  style={[styles.formatOption, { borderColor: colors.border }]}
-                  onPress={() => handleExport('pdf')}
-                  disabled={isExporting}
-                  activeOpacity={0.7}
-                >
-                  <IconFileTypePdf size={32} color={colors.primary} />
-                  <View style={styles.formatInfo}>
-                    <ThemedText style={[styles.formatTitle, { color: colors.foreground }]}>
-                      PDF
-                    </ThemedText>
-                    <ThemedText style={[styles.formatDescription, { color: colors.mutedForeground }]}>
-                      Documento portátil
-                    </ThemedText>
-                  </View>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Loading Indicator */}
-            {isExporting && (
-              <View style={styles.loading}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
-                  Exportando...
+        {/* Format Options */}
+        <View style={styles.formats}>
+          {formats.includes('csv') && (
+            <TouchableOpacity
+              style={[styles.formatOption, { borderColor: colors.border }]}
+              onPress={() => handleExport('csv')}
+              disabled={isExporting}
+              activeOpacity={0.7}
+            >
+              <IconFileTypeCsv size={32} color={colors.primary} />
+              <View style={styles.formatInfo}>
+                <ThemedText style={[styles.formatTitle, { color: colors.foreground }]}>
+                  CSV
+                </ThemedText>
+                <ThemedText style={[styles.formatDescription, { color: colors.mutedForeground }]}>
+                  Excel e Google Sheets
                 </ThemedText>
               </View>
-            )}
-          </View>
+            </TouchableOpacity>
+          )}
+
+          {formats.includes('json') && (
+            <TouchableOpacity
+              style={[styles.formatOption, { borderColor: colors.border }]}
+              onPress={() => handleExport('json')}
+              disabled={isExporting}
+              activeOpacity={0.7}
+            >
+              <IconJson size={32} color={colors.primary} />
+              <View style={styles.formatInfo}>
+                <ThemedText style={[styles.formatTitle, { color: colors.foreground }]}>
+                  JSON
+                </ThemedText>
+                <ThemedText style={[styles.formatDescription, { color: colors.mutedForeground }]}>
+                  Formato estruturado
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {formats.includes('pdf') && (
+            <TouchableOpacity
+              style={[styles.formatOption, { borderColor: colors.border }]}
+              onPress={() => handleExport('pdf')}
+              disabled={isExporting}
+              activeOpacity={0.7}
+            >
+              <IconFileTypePdf size={32} color={colors.primary} />
+              <View style={styles.formatInfo}>
+                <ThemedText style={[styles.formatTitle, { color: colors.foreground }]}>
+                  PDF
+                </ThemedText>
+                <ThemedText style={[styles.formatDescription, { color: colors.mutedForeground }]}>
+                  Documento portátil
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
-      </Modal>
+
+        {/* Loading Indicator */}
+        {isExporting && (
+          <View style={styles.loading}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
+              Exportando...
+            </ThemedText>
+          </View>
+        )}
+      </StandardModal>
     </>
   )
 })
@@ -217,37 +193,9 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  closeButton: {
-    padding: 4,
-  },
   modeSelection: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
   },
   modeButton: {
     flex: 1,
@@ -288,7 +236,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    marginTop: 20,
   },
   loadingText: {
     fontSize: 14,

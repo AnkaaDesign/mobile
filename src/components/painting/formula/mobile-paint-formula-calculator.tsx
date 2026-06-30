@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { View, TouchableOpacity, ScrollView, StyleSheet, Modal, KeyboardAvoidingView, Platform, Alert as RNAlert } from "react-native";
+import { View, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert as RNAlert } from "react-native";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
@@ -637,95 +638,82 @@ export function MobilePaintFormulaCalculator({ formula, allowPriceVisibility = t
       </ScrollView>
 
       {/* Error Dialog */}
-      <Modal
+      <StandardModal
         visible={showErrorDialog}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
+        onClose={() => {
           setShowErrorDialog(false);
           if (!errorComponentId) {
             setCorrectionMode(false);
             setActualAmount("");
           }
         }}
+        title="Informar Quantidade Real"
+        actions={[
+          {
+            label: "Cancelar",
+            variant: "outline",
+            onPress: () => {
+              setShowErrorDialog(false);
+              setCorrectionMode(false);
+              setActualAmount("");
+              setSelectedComponentForError(null);
+            },
+          },
+          {
+            label: "Confirmar Erro",
+            onPress: handleConfirmError,
+            disabled: (() => {
+              if (!actualAmount) return true;
+              const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
+              const expectedWeight = component?.weightInGrams || 0;
+              const typedValue = parseFloat(actualAmount) || 0;
+              return typedValue < expectedWeight;
+            })(),
+          },
+        ]}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Informar Quantidade Real</Text>
-            <Text style={[styles.modalDescription, { color: colors.mutedForeground }]}>
-              {selectedComponentForError &&
-                (() => {
-                  const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
-                  return component ? (
-                    <>
-                      Você está marcando o componente <Text style={{ fontWeight: "600" }}>{component.name}</Text> como tendo um erro. A quantidade esperada era de{" "}
-                      <Text style={{ fontWeight: "600" }}>{formatNumberWithDecimals(component.weightInGrams, 1)}g</Text>. Por favor, informe a quantidade real que foi adicionada.
-                    </>
-                  ) : null;
-                })()}
-            </Text>
+        <Text style={[styles.modalDescription, { color: colors.mutedForeground }]}>
+          {selectedComponentForError &&
+            (() => {
+              const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
+              return component ? (
+                <>
+                  Você está marcando o componente <Text style={{ fontWeight: "600" }}>{component.name}</Text> como tendo um erro. A quantidade esperada era de{" "}
+                  <Text style={{ fontWeight: "600" }}>{formatNumberWithDecimals(component.weightInGrams, 1)}g</Text>. Por favor, informe a quantidade real que foi adicionada.
+                </>
+              ) : null;
+            })()}
+        </Text>
 
-            <View
-              style={styles.modalInput}
-              onLayout={(e) => handlers.handleFieldLayout('actualAmount', e)}
-            >
-              <Text style={[styles.inputLabel, { color: colors.foreground }]}>Quantidade Real (g)</Text>
-              <Input
-                value={actualAmount}
-                onChangeText={(value) => setActualAmount(value?.toString() || "")}
-                keyboardType="numeric"
-                placeholder="Digite a quantidade real em gramas"
-                onFocus={() => handlers.handleFieldFocus('actualAmount')}
-              />
-              {selectedComponentForError &&
-                (() => {
-                  const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
-                  const expectedWeight = component?.weightInGrams || 0;
-                  const typedValue = parseFloat(actualAmount) || 0;
+        <View
+          style={styles.modalInput}
+          onLayout={(e) => handlers.handleFieldLayout('actualAmount', e)}
+        >
+          <Text style={[styles.inputLabel, { color: colors.foreground }]}>Quantidade Real (g)</Text>
+          <Input
+            value={actualAmount}
+            onChangeText={(value) => setActualAmount(value?.toString() || "")}
+            keyboardType="numeric"
+            placeholder="Digite a quantidade real em gramas"
+            onFocus={() => handlers.handleFieldFocus('actualAmount')}
+          />
+          {selectedComponentForError &&
+            (() => {
+              const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
+              const expectedWeight = component?.weightInGrams || 0;
+              const typedValue = parseFloat(actualAmount) || 0;
 
-                  if (actualAmount && typedValue < expectedWeight) {
-                    return (
-                      <Text style={[styles.errorText, { color: colors.destructive }]}>
-                        A quantidade não pode ser menor que o esperado ({formatNumberWithDecimals(expectedWeight, 1)}g)
-                      </Text>
-                    );
-                  }
-                  return null;
-                })()}
-            </View>
-
-            <View style={styles.modalActions}>
-              <View style={styles.modalButton}>
-                <Button
-                  variant="outline"
-                  onPress={() => {
-                    setShowErrorDialog(false);
-                    setCorrectionMode(false);
-                    setActualAmount("");
-                    setSelectedComponentForError(null);
-                  }}
-                >
-                  <Text>Cancelar</Text>
-                </Button>
-              </View>
-              <View style={styles.modalButton}>
-                <Button
-                  onPress={handleConfirmError}
-                  disabled={(() => {
-                    if (!actualAmount) return true;
-                    const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
-                    const expectedWeight = component?.weightInGrams || 0;
-                    const typedValue = parseFloat(actualAmount) || 0;
-                    return typedValue < expectedWeight;
-                  })()}
-                >
-                  <Text style={{ color: colors.primaryForeground }}>Confirmar Erro</Text>
-                </Button>
-              </View>
-            </View>
-          </View>
+              if (actualAmount && typedValue < expectedWeight) {
+                return (
+                  <Text style={[styles.errorText, { color: colors.destructive }]}>
+                    A quantidade não pode ser menor que o esperado ({formatNumberWithDecimals(expectedWeight, 1)}g)
+                  </Text>
+                );
+              }
+              return null;
+            })()}
         </View>
-      </Modal>
+      </StandardModal>
     </KeyboardAvoidingView>
   );
 }
@@ -898,24 +886,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 400,
-    borderRadius: 12,
-    padding: 20,
-    gap: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
   modalDescription: {
     fontSize: 14,
     lineHeight: 20,
@@ -930,12 +900,5 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 12,
     marginTop: 4,
-  },
-  modalActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
   },
 });

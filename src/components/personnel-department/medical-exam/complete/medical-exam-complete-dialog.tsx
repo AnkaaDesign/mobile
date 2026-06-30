@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { IconStethoscope } from "@tabler/icons-react-native";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -141,17 +142,17 @@ export function MedicalExamCompleteDialog({ exam, open, onOpenChange, onComplete
   };
 
   return (
-    <Dialog open={open} onOpenChange={(value) => !isSubmitting && onOpenChange(value)}>
-      <DialogContent style={{ maxWidth: 520, maxHeight: "90%" }}>
-        <DialogHeader>
-          <DialogTitle>Concluir Exame</DialogTitle>
-          <DialogDescription>
-            {`Registre o resultado do exame${exam?.user?.name ? ` de ${exam.user.name}` : ""}. O exame será marcado como realizado.`}
-          </DialogDescription>
-        </DialogHeader>
-
-        <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.body}>
+    <StandardModal
+      visible={open}
+      onClose={() => !isSubmitting && onOpenChange(false)}
+      title="Concluir Exame"
+      subtitle={`Registre o resultado do exame${exam?.user?.name ? ` de ${exam.user.name}` : ""}. O exame será marcado como realizado.`}
+      icon={IconStethoscope}
+      actions={[
+        { label: "Cancelar", variant: "outline", onPress: () => onOpenChange(false), disabled: isSubmitting },
+        { label: "Concluir Exame", onPress: form.handleSubmit(handleSubmit), disabled: isSubmitting, loading: isSubmitting },
+      ]}
+    >
             <FormFieldGroup label="Data do Exame" required error={form.formState.errors.examDate?.message}>
               <Controller
                 control={form.control}
@@ -289,30 +290,11 @@ export function MedicalExamCompleteDialog({ exam, open, onOpenChange, onComplete
                 )}
               />
             </FormFieldGroup>
-          </View>
-        </ScrollView>
-
-        <DialogFooter>
-          <Button variant="outline" onPress={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button onPress={form.handleSubmit(handleSubmit)} disabled={isSubmitting} loading={isSubmitting}>
-            Concluir Exame
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    maxHeight: 460,
-  },
-  body: {
-    gap: spacing.md,
-    paddingBottom: spacing.sm,
-  },
   presetRow: {
     flexDirection: "row",
     gap: spacing.sm,

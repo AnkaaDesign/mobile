@@ -5,6 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { DetailCard } from "@/components/ui/detail-page-layout";
+import { getPpeSizeEnumLabel } from "@/utils/enumLabelGetter";
+import type { PPE_SIZE } from "@/constants/enums";
 
 interface PpeSizesCardProps {
   employee: User;
@@ -78,7 +80,7 @@ export function PpeSizesCard({ employee }: PpeSizesCardProps) {
               {item.label}
             </ThemedText>
             <ThemedText style={[styles.sizeValue, { color: colors.foreground }]}>
-              {item.value}
+              {getPpeSizeEnumLabel(item.value as unknown as PPE_SIZE)}
             </ThemedText>
           </View>
         ))}

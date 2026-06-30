@@ -1,9 +1,10 @@
-// Bottom sheet to add a new widget to the dashboard. Web-parity gallery
-// rebuilt to spec §3.5 of `MOBILE_WIDGETS_SPEC.md`:
+// Add-widget gallery for the dashboard. Web-parity gallery rebuilt to spec
+// §3.5 of `MOBILE_WIDGETS_SPEC.md`, now hosted by the canonical StandardModal
+// (native pageSheet + drag indicator + standardized header/close):
 //
-//   • Sticky header     — title "Adicionar widget" (18/600) + description
-//                         "Escolha um widget para adicionar ao seu painel."
-//                         (13/400/muted) + 36×36 close (X) on the right.
+//   • Header            — StandardModal renders title "Adicionar widget" +
+//                         subtitle "Escolha um widget para adicionar ao seu
+//                         painel." + the rounded close button.
 //   • Search input      — sticky under header. IconSearch left affordance,
 //                         placeholder "Buscar widgets...", autoFocus on open.
 //   • Category tabs     — sticky pills: "Todos" + each populated category
@@ -26,12 +27,13 @@
 //   - Every other color is `useTheme().colors.*`.
 //
 // Mobile constraints:
-//   - The Sheet primitive auto-renders the drag-indicator pill. Do NOT
-//     add a second one.
-//   - Sheet snapPoints are integer percentages — `[90]`, never `[0.9]`.
-//   - Sheet renders inside a Modal, so the outer SafeArea insets do NOT
-//     apply automatically — we read `useSafeAreaInsets().bottom` and
-//     pad the scroll content with it.
+//   - StandardModal auto-renders the drag-indicator pill + header. Do NOT
+//     add a second one. The body is rendered with `scroll={false}` so the
+//     pinned search/category strip stays put while the gallery scrolls
+//     itself.
+//   - StandardModal renders inside a native Modal, so the outer SafeArea
+//     insets do NOT apply automatically — we read `useSafeAreaInsets().bottom`
+//     and pad the gallery scroll content with it.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -49,7 +51,7 @@ import {
   IconX,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { Sheet } from "@/components/ui/sheet";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { lightImpactHaptic } from "@/utils/haptics";
@@ -225,72 +227,15 @@ export function AddWidgetSheet({
   );
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={onOpenChange}
-      snapPoints={[90]}
-      backdropOpacity={0.5}
+    <StandardModal
+      visible={open}
+      onClose={handleClose}
+      title="Adicionar widget"
+      subtitle="Escolha um widget para adicionar ao seu painel."
+      scroll={false}
+      padded={false}
+      bodyStyle={{ paddingBottom: 0 }}
     >
-      <View style={{ flex: 1 }}>
-        {/* Sticky header — spec §3.5: title 18/600 + description 13/400/muted
-            + 36×36 close X. */}
-        <View
-          style={{
-            paddingHorizontal: spacing.md,
-            paddingTop: 8,
-            paddingBottom: 14,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            flexDirection: "row",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontSize: 18,
-                fontWeight: "600",
-                color: colors.foreground,
-                letterSpacing: -0.2,
-              }}
-            >
-              Adicionar widget
-            </Text>
-            <Text
-              numberOfLines={2}
-              style={{
-                fontSize: 13,
-                fontWeight: "400",
-                color: colors.mutedForeground,
-                marginTop: 4,
-                lineHeight: 18,
-              }}
-            >
-              Escolha um widget para adicionar ao seu painel.
-            </Text>
-          </View>
-          <Pressable
-            onPress={handleClose}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Fechar"
-            style={({ pressed }) => ({
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: pressed ? colors.muted : "transparent",
-              flexShrink: 0,
-            })}
-          >
-            <IconX size={20} color={colors.mutedForeground} />
-          </Pressable>
-        </View>
-
         {/* Search + category tabs strip — pinned beneath the header so they
             don't scroll out of view when the body list scrolls. */}
         <View
@@ -461,8 +406,7 @@ export function AddWidgetSheet({
             </View>
           </ScrollView>
         )}
-      </View>
-    </Sheet>
+    </StandardModal>
   );
 }
 

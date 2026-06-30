@@ -3,9 +3,9 @@
 // Mobile counterpart to `web/src/dashboard/widgets/hr-requests-table.tsx`
 // (1318 lines), built as a card list (NOT a tabular grid) per spec §6.5:
 //   • In-tile: compact list of request cards (one per Secullum request).
-//   • Tap a card → detail Sheet (90% snap) with metadata + comparison
-//     table + Aprovar / Rejeitar buttons.
-// Action buttons live inside the detail Sheet, NOT inline on every row, so
+//   • Tap a card → detail StandardModal with metadata + comparison table +
+//     Aprovar / Rejeitar footer actions.
+// Action buttons live inside the detail modal, NOT inline on every row, so
 // the list stays readable on narrow viewports.
 //
 // Hooks (already on mobile — see `mobile/src/hooks/secullum.ts`):
@@ -16,14 +16,12 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import {
   IconClock,
   IconClockEdit,
   IconUser,
   IconCalendar,
-  IconX,
-  IconCheck,
   IconFileDescription,
   IconArrowsExchange,
 } from "@tabler/icons-react-native";
@@ -38,8 +36,7 @@ import {
 } from "@/hooks/secullum";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetHeader, SheetFooter } from "@/components/ui/sheet";
-import { Modal, ModalContent } from "@/components/ui/modal";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { lightImpactHaptic } from "@/utils/haptics";
 import { notify } from "@/api-client";
 
@@ -512,95 +509,47 @@ function PersonnelDepartmentRequestsTableRender({
       />
 
       {/* Reject modal — input the reason. */}
-      <Modal
+      <StandardModal
         visible={!!rejectTarget}
         onClose={() => {
           setRejectTarget(null);
           setRejectReason("");
         }}
         title="Rejeitar requisição"
-        animationType="fade"
-        presentationStyle="overFullScreen"
-        size="md"
+        actions={[
+          {
+            label: "Cancelar",
+            variant: "outline",
+            onPress: () => {
+              setRejectTarget(null);
+              setRejectReason("");
+            },
+            disabled: rejectMutation.isPending,
+          },
+          {
+            label: "Rejeitar",
+            variant: "destructive",
+            onPress: onConfirmReject,
+            disabled: rejectMutation.isPending || !rejectReason.trim(),
+            loading: rejectMutation.isPending,
+          },
+        ]}
       >
-        <ModalContent>
-          <View style={{ gap: 12 }}>
-            <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
-              Tem certeza que deseja rejeitar a requisição de{" "}
-              <Text style={{ fontWeight: "600", color: colors.foreground }}>
-                {rejectTarget?.FuncionarioNome ?? ""}
-              </Text>
-              ? O motivo é obrigatório e será anexado ao registro no Secullum.
-            </Text>
-            <Input
-              placeholder="Ex.: marcação inconsistente, sem comprovante…"
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              multiline
-              numberOfLines={3}
-            />
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <View
-                style={{
-                  flex: 1,
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  overflow: "hidden",
-                  opacity: rejectMutation.isPending ? 0.6 : 1,
-                }}
-              >
-                <Pressable
-                  disabled={rejectMutation.isPending}
-                  onPress={() => {
-                    setRejectTarget(null);
-                    setRejectReason("");
-                  }}
-                  style={{
-                    paddingVertical: 10,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 13, color: colors.foreground }}>
-                    Cancelar
-                  </Text>
-                </Pressable>
-              </View>
-              <View
-                style={{
-                  flex: 1,
-                  borderRadius: 6,
-                  backgroundColor: colors.destructive,
-                  overflow: "hidden",
-                  opacity:
-                    rejectMutation.isPending || !rejectReason.trim() ? 0.6 : 1,
-                }}
-              >
-                <Pressable
-                  disabled={
-                    rejectMutation.isPending || !rejectReason.trim()
-                  }
-                  onPress={onConfirmReject}
-                  style={{
-                    paddingVertical: 10,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: colors.destructiveForeground,
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Rejeitar
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </ModalContent>
-      </Modal>
+        <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
+          Tem certeza que deseja rejeitar a requisição de{" "}
+          <Text style={{ fontWeight: "600", color: colors.foreground }}>
+            {rejectTarget?.FuncionarioNome ?? ""}
+          </Text>
+          ? O motivo é obrigatório e será anexado ao registro no Secullum.
+        </Text>
+        <Input
+          placeholder="Ex.: marcação inconsistente, sem comprovante…"
+          value={rejectReason}
+          onChangeText={setRejectReason}
+          multiline
+          numberOfLines={3}
+        />
+      </StandardModal>
     </WidgetCard>
   );
 }
@@ -756,76 +705,32 @@ function RequestDetailSheet({
   const isActionable = request ? ACTIONABLE_ESTADOS.has(request.Estado) : false;
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      snapPoints={[90]}
-      backdropOpacity={0.5}
+    <StandardModal
+      visible={open}
+      onClose={onClose}
+      title={request?.FuncionarioNome ?? ""}
+      subtitle={request ? TIPO_LABELS[request.Tipo] || request.TipoDescricao : ""}
+      bodyStyle={{ gap: 12 }}
+      actions={
+        showActions && isActionable && request
+          ? [
+              {
+                label: "Rejeitar",
+                variant: "destructive",
+                onPress: () => onReject(request),
+                disabled: approvePending || rejectPending,
+                loading: rejectPending,
+              },
+              {
+                label: "Aprovar",
+                onPress: () => onApprove(request),
+                disabled: approvePending || rejectPending,
+                loading: approvePending,
+              },
+            ]
+          : undefined
+      }
     >
-      <SheetHeader>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: colors.foreground,
-              }}
-            >
-              {request?.FuncionarioNome ?? ""}
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-              }}
-            >
-              {request ? TIPO_LABELS[request.Tipo] || request.TipoDescricao : ""}
-            </Text>
-          </View>
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              overflow: "hidden",
-            }}
-          >
-            <Pressable
-              onPress={onClose}
-              hitSlop={8}
-              accessibilityLabel="Fechar"
-              accessibilityRole="button"
-              android_ripple={{ color: colors.muted }}
-              style={{
-                width: 32,
-                height: 32,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <IconX size={18} color={colors.mutedForeground} />
-            </Pressable>
-          </View>
-        </View>
-      </SheetHeader>
-
-      <SheetContent>
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 20, gap: 12 }}
-          keyboardShouldPersistTaps="handled"
-        >
           {request && (
             <>
               {/* Information section */}
@@ -889,80 +794,7 @@ function RequestDetailSheet({
               )}
             </>
           )}
-        </ScrollView>
-      </SheetContent>
-
-      {showActions && isActionable && request && (
-        <SheetFooter>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View
-              style={{
-                flex: 1,
-                borderRadius: 6,
-                backgroundColor: colors.destructive,
-                overflow: "hidden",
-                opacity: approvePending || rejectPending ? 0.6 : 1,
-              }}
-            >
-              <Pressable
-                disabled={approvePending || rejectPending}
-                onPress={() => onReject(request)}
-                style={{
-                  paddingVertical: 12,
-                  alignItems: "center",
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-              >
-                <IconX size={16} color={colors.destructiveForeground} />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: colors.destructiveForeground,
-                  }}
-                >
-                  Rejeitar
-                </Text>
-              </Pressable>
-            </View>
-            <View
-              style={{
-                flex: 1,
-                borderRadius: 6,
-                backgroundColor: colors.primary,
-                overflow: "hidden",
-                opacity: approvePending || rejectPending ? 0.6 : 1,
-              }}
-            >
-              <Pressable
-                disabled={approvePending || rejectPending}
-                onPress={() => onApprove(request)}
-                style={{
-                  paddingVertical: 12,
-                  alignItems: "center",
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-              >
-                <IconCheck size={16} color={colors.primaryForeground} />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: colors.primaryForeground,
-                  }}
-                >
-                  Aprovar
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </SheetFooter>
-      )}
-    </Sheet>
+    </StandardModal>
   );
 }
 

@@ -5,26 +5,49 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
-import { useSecullumTimeEntries } from "@/hooks/secullum";
+import { useSecullumCalculations } from "@/hooks/secullum";
 import { useUsers } from "@/hooks/useUser";
 import { getBonusPeriod } from "@/utils";
 import { CalculationsTable } from "@/components/personal/calculations";
 import { CONTRACT_STATUS } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import type { CalculationRow } from "@/types/secullum";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 
+// Mirrors the personal "Meus Pontos" espelho de ponto — same calc columns, every
+// one always visible (the table scrolls horizontally). No "Origem" column: this
+// is the apuração matrix, not the raw punch list.
 const COLUMN_DEFINITIONS = [
-  { key: "date", label: "Data" },
-  { key: "entry1", label: "Entrada 1" },
-  { key: "exit1", label: "Saída 1" },
-  { key: "entry2", label: "Entrada 2" },
-  { key: "exit2", label: "Saída 2" },
-  { key: "entry3", label: "Entrada 3" },
-  { key: "exit3", label: "Saída 3" },
-  { key: "totalHours", label: "Total Horas" },
-  { key: "location", label: "Local" },
-  { key: "source", label: "Origem" },
+  { key: "date",       label: "Data"      },
+  { key: "entrada1",   label: "Entrada 1" },
+  { key: "saida1",     label: "Saída 1"   },
+  { key: "entrada2",   label: "Entrada 2" },
+  { key: "saida2",     label: "Saída 2"   },
+  { key: "entrada3",   label: "Entrada 3" },
+  { key: "saida3",     label: "Saída 3"   },
+  { key: "normais",    label: "Normais"   },
+  { key: "atras",      label: "Atraso"    },
+  { key: "faltas",     label: "Faltas"    },
+  { key: "ajuste",     label: "Ajuste"    },
+  { key: "ex50",       label: "Ex 50%"    },
+  { key: "ex100",      label: "Ex 100%"   },
+  { key: "ex150",      label: "Ex 150%"   },
+  { key: "dsr",        label: "DSR"       },
+  { key: "dsrDeb",     label: "DSR Déb"   },
+  { key: "not",        label: "Noturno"   },
+  { key: "exNot",      label: "Ex Not."   },
+  { key: "abono2",     label: "Abono 2"   },
+  { key: "abono3",     label: "Abono 3"   },
+  { key: "abono4",     label: "Abono 4"   },
+  { key: "adian",      label: "Adiant."   },
+  { key: "folga",      label: "Folga"     },
+  { key: "carga",      label: "Carga"     },
+  { key: "justPa",     label: "Just. PA"  },
+  { key: "tPlusMinus", label: "T +/-"     },
+  { key: "exInt",      label: "Ex Int"    },
+  { key: "notTot",     label: "Not. Tot." },
+  { key: "refeicao",   label: "Refeição"  },
 ];
 
 // Every column is always visible — the table scrolls horizontally, so there is
@@ -39,11 +62,6 @@ export default function TimeEntriesCollaboratorScreen() {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  // Clear cache on mount to ensure fresh data
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['secullum', 'time-entries'] });
-  }, []);
-
   // Fetch users for selector
   const { data: usersData, isLoading: usersLoading } = useUsers({
     where: { currentContractStatus: { not: CONTRACT_STATUS.TERMINATED }, secullumEmployeeId: { not: null } },
@@ -55,13 +73,10 @@ export default function TimeEntriesCollaboratorScreen() {
   const userOptions = useMemo(() => {
     if (!usersData?.data || !Array.isArray(usersData.data)) return [];
 
-    return [
-      { label: "Todos os usuários", value: "" },
-      ...usersData.data.map((user) => ({
-        label: user.name,
-        value: user.id,
-      })),
-    ];
+    return usersData.data.map((user) => ({
+      label: user.name,
+      value: user.id,
+    }));
   }, [usersData]);
 
   // Set first user as default when users are loaded and no user is selected
@@ -79,49 +94,56 @@ export default function TimeEntriesCollaboratorScreen() {
     return getBonusPeriod(year, month);
   }, [selectedDate]);
 
-  // Prepare query parameters
-  const queryParams = useMemo(() => {
-    const startDate = format(periodDates.startDate, "yyyy-MM-dd");
-    const endDate = format(periodDates.endDate, "yyyy-MM-dd");
+  const startDate = format(periodDates.startDate, "yyyy-MM-dd");
+  const endDate = format(periodDates.endDate, "yyyy-MM-dd");
 
-    return {
-      userId: selectedUserId || undefined,
-      startDate,
-      endDate,
-    };
-  }, [selectedUserId, periodDates]);
-
-  // Fetch time entries
+  // Fetch calculations (apuração matrix) for the selected user — same data the
+  // employee sees in "Meus Pontos", just scoped to the chosen collaborator.
   const {
-    data: timeEntriesData,
+    data: calculationsData,
     isLoading,
     error,
     refetch,
-  } = useSecullumTimeEntries(queryParams);
+  } = useSecullumCalculations(
+    selectedUserId ? { userId: selectedUserId, startDate, endDate } : undefined,
+  );
 
   useScreenReady(!isLoading);
 
-  // Transform time entries
-  const timeEntries = useMemo(() => {
-    // Extract entries from .data.data.lista
-    // Structure: timeEntriesData (React Query) -> .data (Axios response) -> .data (API response with {lista, meta})
-    const entriesArray = timeEntriesData?.data?.data?.lista;
+  // Parse calculation data (same approach as Meus Pontos / Cálculos)
+  const calculations: CalculationRow[] = useMemo(() => {
+    const apiResponse = calculationsData?.data || calculationsData;
 
-    if (!entriesArray || !Array.isArray(entriesArray)) {
+    if (apiResponse && "success" in apiResponse && apiResponse.success === false) {
       return [];
     }
 
-    // Helper to parse Secullum date format
+    const secullumData = apiResponse && "data" in apiResponse ? apiResponse.data : null;
+    if (!secullumData) return [];
+
+    const { Colunas = [], Linhas = [] } = secullumData;
+
+    if (!Array.isArray(Colunas) || !Array.isArray(Linhas)) {
+      return [];
+    }
+
+    // Create a mapping of column names to indices
+    const columnMap = new Map<string, number>();
+    Colunas.forEach((col: any, index: number) => {
+      if (col?.Nome) {
+        columnMap.set(col.Nome, index);
+      }
+    });
+
+    // Helper to parse Secullum date format (MM/DD/YYYY - Day)
     const parseSecullumDate = (dateStr: string): string => {
       if (!dateStr) return "";
       try {
-        // If it's in format "MM/DD/YYYY - Day", extract MM/DD/YYYY
         const datePart = dateStr.split(" - ")[0];
         if (datePart && datePart.includes("/")) {
           const parts = datePart.split("/");
           if (parts.length === 3) {
-            // Convert MM/DD/YYYY to ISO format YYYY-MM-DD
-            return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+            return `${parts[2]}-${parts[0].padStart(2, "0")}-${parts[1].padStart(2, "0")}`;
           }
         }
         return dateStr;
@@ -130,27 +152,45 @@ export default function TimeEntriesCollaboratorScreen() {
       }
     };
 
-    return entriesArray.map((entry: any, index: number) => ({
-      id: entry.Id?.toString() || entry.id?.toString() || `entry-${index}`,
-      date: parseSecullumDate(entry.DataExibicao || entry.Data || entry.date || ""),
-      entry1: entry.Entrada1 || entry.entry1 || "",
-      exit1: entry.Saida1 || entry.exit1 || "",
-      entry2: entry.Entrada2 || entry.entry2 || "",
-      exit2: entry.Saida2 || entry.exit2 || "",
-      entry3: entry.Entrada3 || entry.entry3 || "",
-      exit3: entry.Saida3 || entry.exit3 || "",
-      totalHours: entry.TotalHoras || entry.totalHours || "",
-      location: entry.Local || entry.location || "",
-      userName: entry.NomeFuncionario || entry.userName || "",
-      source: entry.Fonte || entry.source || "SECULLUM",
+    // Map rows using column indices
+    return Linhas.map((row: any[], rowIndex: number) => ({
+      id: `calc-${rowIndex}`,
+      date: parseSecullumDate(row[columnMap.get("Data") ?? 0] || ""),
+      entrada1: row[columnMap.get("Entrada 1") ?? 1] || "",
+      saida1: row[columnMap.get("Saída 1") ?? 2] || "",
+      entrada2: row[columnMap.get("Entrada 2") ?? 3] || "",
+      saida2: row[columnMap.get("Saída 2") ?? 4] || "",
+      entrada3: row[columnMap.get("Entrada 3") ?? 5] || "",
+      saida3: row[columnMap.get("Saída 3") ?? 6] || "",
+      normais: row[columnMap.get("Normais") ?? 7] || "",
+      faltas: row[columnMap.get("Faltas") ?? 8] || "",
+      ex50: row[columnMap.get("Ex50%") ?? 9] || "",
+      ex100: row[columnMap.get("Ex100%") ?? 10] || "",
+      ex150: row[columnMap.get("Ex150%") ?? 11] || "",
+      dsr: row[columnMap.get("DSR") ?? 12] || "",
+      dsrDeb: row[columnMap.get("DSR.Deb") ?? 13] || "",
+      not: row[columnMap.get("Not.") ?? 14] || "",
+      exNot: row[columnMap.get("ExNot") ?? 15] || "",
+      ajuste: row[columnMap.get("Ajuste") ?? 16] || "",
+      abono2: row[columnMap.get("Abono2") ?? 17] || "",
+      abono3: row[columnMap.get("Abono3") ?? 18] || "",
+      abono4: row[columnMap.get("Abono4") ?? 19] || "",
+      atras: row[columnMap.get("Atras.") ?? 20] || "",
+      adian: row[columnMap.get("Adian.") ?? 21] || "",
+      folga: row[columnMap.get("Folga") ?? 22] || "",
+      carga: row[columnMap.get("Carga") ?? 23] || "",
+      justPa: row[columnMap.get("JustPa.") ?? 24] || "",
+      tPlusMinus: row[columnMap.get("T+/-") ?? 25] || "",
+      exInt: row[columnMap.get("ExInt") ?? 26] || "",
+      notTot: row[columnMap.get("Not.Tot.") ?? 27] || "",
+      refeicao: row[columnMap.get("Refeição") ?? 28] || "",
     }));
-  }, [timeEntriesData]);
+  }, [calculationsData]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // Invalidate cache to force fresh data
-      await queryClient.invalidateQueries({ queryKey: ['secullum', 'time-entries'] });
+      await queryClient.invalidateQueries({ queryKey: ["secullum", "calculations"] });
       await refetch();
     } finally {
       setRefreshing(false);
@@ -194,20 +234,20 @@ export default function TimeEntriesCollaboratorScreen() {
     <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
 
-        {/* Header: User Selector + Month Navigator + Column Button */}
+        {/* Header: User Selector + Month Navigator */}
         <View style={styles.headerContainer}>
           {/* User Selector - Full Width */}
           <Combobox
             value={selectedUserId}
             onValueChange={(value) => setSelectedUserId(typeof value === 'string' ? value : value?.[0] ?? '')}
             options={userOptions}
-            placeholder="Selecionar usuário"
+            placeholder="Selecionar funcionário"
             disabled={usersLoading}
           />
 
           {/* Month Navigator */}
           <View style={styles.controlsRow}>
-            <View style={[styles.monthSelector, { backgroundColor: colors.input, borderColor: colors.border }]}>
+            <View style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <TouchableOpacity
                 style={[styles.navButton, { backgroundColor: colors.muted }]}
                 onPress={handlePreviousMonth}
@@ -234,9 +274,9 @@ export default function TimeEntriesCollaboratorScreen() {
           </View>
         </View>
 
-        {/* Table — all columns always visible */}
+        {/* Table — all columns always visible, mirroring Meus Pontos */}
         <CalculationsTable
-          data={timeEntries}
+          data={calculations}
           columns={COLUMN_DEFINITIONS}
           visibleColumns={ALL_VISIBLE_COLUMNS}
           onRefresh={handleRefresh}

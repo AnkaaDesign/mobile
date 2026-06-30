@@ -1,16 +1,14 @@
 import { useState, useCallback, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Modal, Pressable } from "react-native";
-import { IconX } from "@tabler/icons-react-native";
+import { View, StyleSheet } from "react-native";
 
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
 import { useItemCategories, useItemBrands, useSuppliers } from "@/hooks";
 
-import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
+import { StandardModal } from "@/components/ui/standard-modal";
 
 /**
  * ItemSelectorFilters
@@ -128,169 +126,91 @@ export function ItemSelectorFilters({
     (tempSupplierIds.length > 0 ? 1 : 0);
 
   return (
-    <Modal
+    <StandardModal
       visible={open}
-      animationType="slide"
-      transparent
-      onRequestClose={() => onOpenChange(false)}
+      onClose={() => onOpenChange(false)}
+      title="Filtros"
+      actions={[
+        {
+          label: "Limpar filtros",
+          variant: "outline",
+          onPress: handleClear,
+          disabled: tempActiveFilterCount === 0,
+        },
+        {
+          label: `Aplicar${tempActiveFilterCount > 0 ? ` (${tempActiveFilterCount})` : ""}`,
+          onPress: handleApply,
+        },
+      ]}
     >
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={() => onOpenChange(false)} />
-
-        <View
-          style={[
-            styles.content,
-            {
-              backgroundColor: colors.background,
-              borderTopColor: colors.border,
-            },
-          ]}
-        >
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              Filtros
-            </Text>
-            <Button
-              variant="ghost"
-              size="icon"
-              onPress={() => onOpenChange(false)}
-            >
-              <IconX size={20} color={colors.mutedForeground} />
-            </Button>
-          </View>
-
-          {/* Filters */}
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Show Inactive */}
-            <View style={styles.filterSection}>
-              <View style={styles.switchRow}>
-                <Label style={{ color: colors.foreground }}>
-                  Mostrar itens desativados
-                </Label>
-                <Switch
-                  checked={tempShowInactive}
-                  onCheckedChange={setTempShowInactive}
-                />
-              </View>
-            </View>
-
-            {/* Categories */}
-            <View style={styles.filterSection}>
-              <Label style={{ color: colors.foreground, marginBottom: spacing.sm }}>
-                Categorias
-              </Label>
-              <Combobox
-                options={categoryOptions}
-                value={tempCategoryIds}
-                onValueChange={(value) =>
-                  setTempCategoryIds(value as string[] || [])
-                }
-                placeholder="Selecione categorias..."
-                mode="multiple"
-                searchable
-              />
-            </View>
-
-            {/* Brands */}
-            <View style={styles.filterSection}>
-              <Label style={{ color: colors.foreground, marginBottom: spacing.sm }}>
-                Marcas
-              </Label>
-              <Combobox
-                options={brandOptions}
-                value={tempBrandIds}
-                onValueChange={(value) =>
-                  setTempBrandIds(value as string[] || [])
-                }
-                placeholder="Selecione marcas..."
-                mode="multiple"
-                searchable
-              />
-            </View>
-
-            {/* Suppliers */}
-            <View style={styles.filterSection}>
-              <Label style={{ color: colors.foreground, marginBottom: spacing.sm }}>
-                Fornecedores
-              </Label>
-              <Combobox
-                options={supplierOptions}
-                value={tempSupplierIds}
-                onValueChange={(value) =>
-                  setTempSupplierIds(value as string[] || [])
-                }
-                placeholder="Selecione fornecedores..."
-                mode="multiple"
-                searchable
-              />
-            </View>
-          </ScrollView>
-
-          {/* Footer */}
-          <View style={[styles.footer, { borderTopColor: colors.border }]}>
-            <Button
-              variant="outline"
-              onPress={handleClear}
-              disabled={tempActiveFilterCount === 0}
-              style={styles.footerButton}
-            >
-              <Text>Limpar filtros</Text>
-            </Button>
-            <Button
-              variant="default"
-              onPress={handleApply}
-              style={styles.footerButton}
-            >
-              <Text style={{ color: colors.primaryForeground }}>
-                Aplicar{tempActiveFilterCount > 0 ? ` (${tempActiveFilterCount})` : ""}
-              </Text>
-            </Button>
-          </View>
+      {/* Show Inactive */}
+      <View style={styles.filterSection}>
+        <View style={styles.switchRow}>
+          <Label style={{ color: colors.foreground }}>
+            Mostrar itens desativados
+          </Label>
+          <Switch
+            checked={tempShowInactive}
+            onCheckedChange={setTempShowInactive}
+          />
         </View>
       </View>
-    </Modal>
+
+      {/* Categories */}
+      <View style={styles.filterSection}>
+        <Label style={{ color: colors.foreground, marginBottom: spacing.sm }}>
+          Categorias
+        </Label>
+        <Combobox
+          options={categoryOptions}
+          value={tempCategoryIds}
+          onValueChange={(value) =>
+            setTempCategoryIds(value as string[] || [])
+          }
+          placeholder="Selecione categorias..."
+          mode="multiple"
+          searchable
+        />
+      </View>
+
+      {/* Brands */}
+      <View style={styles.filterSection}>
+        <Label style={{ color: colors.foreground, marginBottom: spacing.sm }}>
+          Marcas
+        </Label>
+        <Combobox
+          options={brandOptions}
+          value={tempBrandIds}
+          onValueChange={(value) =>
+            setTempBrandIds(value as string[] || [])
+          }
+          placeholder="Selecione marcas..."
+          mode="multiple"
+          searchable
+        />
+      </View>
+
+      {/* Suppliers */}
+      <View style={styles.filterSection}>
+        <Label style={{ color: colors.foreground, marginBottom: spacing.sm }}>
+          Fornecedores
+        </Label>
+        <Combobox
+          options={supplierOptions}
+          value={tempSupplierIds}
+          onValueChange={(value) =>
+            setTempSupplierIds(value as string[] || [])
+          }
+          placeholder="Selecione fornecedores..."
+          mode="multiple"
+          searchable
+        />
+      </View>
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  content: {
-    maxHeight: "80%",
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    borderTopWidth: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.md,
-    gap: spacing.lg,
-  },
   filterSection: {
     gap: spacing.xs,
   },
@@ -298,15 +218,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  footer: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderTopWidth: 1,
-  },
-  footerButton: {
-    flex: 1,
   },
 });
 

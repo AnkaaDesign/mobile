@@ -1,16 +1,11 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, StyleSheet, Pressable, Dimensions } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { View, ScrollView, StyleSheet, Pressable } from "react-native";
 import { IconCheck, IconX, IconAlertCircle, IconPackage, IconFileText } from "@tabler/icons-react-native";
-import { Modal } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/text";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, borderRadius, shadow, transitions } from "@/constants/design-system";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import type { BatchOperationResult, BatchOperationError } from "@/types/common";
-
-const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
 
 export interface BatchOperationResultModalProps<TSuccess = unknown, TFailed = unknown> {
   open: boolean;
@@ -28,8 +23,9 @@ type TabType = "success" | "failed";
 /**
  * BatchOperationResultModal Component
  *
- * A modal component with fade effect for displaying detailed batch operation results.
- * Shows success/failure counts with tabs for viewing individual items.
+ * Displays detailed batch operation results on the canonical StandardModal
+ * (bonus-modal rules). Shows success/failure counts with tabs for viewing
+ * individual items.
  */
 export function BatchOperationResultModal<TSuccess = unknown, TFailed = unknown>({
   open,
@@ -75,15 +71,8 @@ export function BatchOperationResultModal<TSuccess = unknown, TFailed = unknown>
 
   if (!result) return null;
 
-  const getStatusIcon = () => {
-    if (hasFailures && !hasSuccesses) {
-      return <IconX size={24} color="#dc2626" />;
-    }
-    if (hasSuccesses && !hasFailures) {
-      return <IconCheck size={24} color="#16a34a" />;
-    }
-    return <IconAlertCircle size={24} color="#d97706" />;
-  };
+  const StatusIcon = hasFailures && !hasSuccesses ? IconX : hasSuccesses && !hasFailures ? IconCheck : IconAlertCircle;
+  const statusColor = hasFailures && !hasSuccesses ? "#dc2626" : hasSuccesses && !hasFailures ? "#16a34a" : "#d97706";
 
   const getStatusTitle = () => {
     if (hasFailures && !hasSuccesses) {
@@ -96,239 +85,167 @@ export function BatchOperationResultModal<TSuccess = unknown, TFailed = unknown>
   };
 
   return (
-    <Modal
+    <StandardModal
       visible={open}
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      title={getStatusTitle()}
+      icon={StatusIcon}
+      iconColor={statusColor}
+      scroll={false}
+      padded={false}
+      actions={[{ label: "Fechar", variant: "outline", onPress: handleClose }]}
     >
-      <View style={styles.overlay}>
-        {/* Backdrop with fade animation */}
-        <Animated.View
-          style={styles.backdrop}
-          entering={FadeIn.duration(transitions.normal)}
-          exiting={FadeOut.duration(transitions.fast)}
-        />
+      {/* Summary Stats Grid */}
+      <View style={styles.statsGrid}>
+        <View style={[styles.statCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <View style={styles.statContent}>
+            <ThemedText style={[styles.statLabel, { color: colors.foreground }]}>Processado</ThemedText>
+            <ThemedText style={[styles.statValue, { color: colors.foreground }]}>{result.totalProcessed}</ThemedText>
+          </View>
+          <IconFileText size={24} color={colors.foreground} style={styles.statIcon} />
+        </View>
 
-        {/* Content container */}
-        <View style={styles.contentContainer}>
-          <Pressable style={styles.backdropPressable} onPress={handleClose} />
+        <View style={[styles.statCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <View style={styles.statContent}>
+            <ThemedText style={[styles.statLabel, { color: colors.foreground }]}>Sucesso</ThemedText>
+            <ThemedText style={[styles.statValue, { color: "#16a34a" }]}>{result.totalSuccess}</ThemedText>
+          </View>
+          <IconCheck size={24} color="#16a34a" style={styles.statIcon} />
+        </View>
 
-          <Animated.View
-            entering={FadeIn.duration(transitions.normal).springify()}
-            exiting={FadeOut.duration(transitions.fast)}
-            style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerTitle}>
-                {getStatusIcon()}
-                <ThemedText style={styles.title}>{getStatusTitle()}</ThemedText>
-              </View>
-            </View>
-
-            {/* Summary Stats Grid */}
-            <View style={styles.statsGrid}>
-              <View style={[styles.statCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <View style={styles.statContent}>
-                  <ThemedText style={[styles.statLabel, { color: colors.foreground }]}>Processado</ThemedText>
-                  <ThemedText style={[styles.statValue, { color: colors.foreground }]}>{result.totalProcessed}</ThemedText>
-                </View>
-                <IconFileText size={24} color={colors.foreground} style={styles.statIcon} />
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <View style={styles.statContent}>
-                  <ThemedText style={[styles.statLabel, { color: colors.foreground }]}>Sucesso</ThemedText>
-                  <ThemedText style={[styles.statValue, { color: "#16a34a" }]}>{result.totalSuccess}</ThemedText>
-                </View>
-                <IconCheck size={24} color="#16a34a" style={styles.statIcon} />
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <View style={styles.statContent}>
-                  <ThemedText style={[styles.statLabel, { color: colors.foreground }]}>Falha</ThemedText>
-                  <ThemedText style={[styles.statValue, { color: "#dc2626" }]}>{result.totalFailed}</ThemedText>
-                </View>
-                <IconX size={24} color="#dc2626" style={styles.statIcon} />
-              </View>
-            </View>
-
-            {/* Tabs */}
-            <View style={[styles.tabsContainer, { backgroundColor: colors.muted }]}>
-              <Pressable
-                style={[
-                  styles.tab,
-                  activeTab === "success" && [styles.tabActive, { backgroundColor: colors.card }],
-                  !hasSuccesses && styles.tabDisabled,
-                ]}
-                onPress={() => handleTabPress("success", hasSuccesses)}
-                disabled={!hasSuccesses}
-              >
-                <IconCheck size={16} color={activeTab === "success" ? "#16a34a" : colors.mutedForeground} />
-                <ThemedText
-                  style={[
-                    styles.tabText,
-                    { color: activeTab === "success" ? colors.foreground : colors.mutedForeground },
-                  ]}
-                >
-                  Sucesso ({result.totalSuccess})
-                </ThemedText>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.tab,
-                  activeTab === "failed" && [styles.tabActive, { backgroundColor: colors.card }],
-                  !hasFailures && styles.tabDisabled,
-                ]}
-                onPress={() => handleTabPress("failed", hasFailures)}
-                disabled={!hasFailures}
-              >
-                <IconX size={16} color={activeTab === "failed" ? "#dc2626" : colors.mutedForeground} />
-                <ThemedText
-                  style={[
-                    styles.tabText,
-                    { color: activeTab === "failed" ? colors.foreground : colors.mutedForeground },
-                  ]}
-                >
-                  Falhas ({result.totalFailed})
-                </ThemedText>
-              </Pressable>
-            </View>
-
-            {/* Tab Content */}
-            <ScrollView
-              style={styles.tabContent}
-              contentContainerStyle={styles.tabContentContainer}
-              showsVerticalScrollIndicator={false}
-            >
-              {activeTab === "success" && (
-                <>
-                  {result.success.length > 0 ? (
-                    <View style={styles.itemsList}>
-                      {result.success.map((item, index) => (
-                        <View
-                          key={index}
-                          style={[styles.successItem, { backgroundColor: "rgba(22, 163, 74, 0.1)", borderColor: "rgba(22, 163, 74, 0.3)" }]}
-                        >
-                          <IconCheck size={16} color="#16a34a" style={styles.itemIcon} />
-                          <View style={styles.itemContent}>
-                            {successItemDisplay ? (
-                              successItemDisplay(item, index)
-                            ) : (
-                              <ThemedText style={styles.itemText}>
-                                Item {index + 1} {operationLabel} com sucesso
-                              </ThemedText>
-                            )}
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  ) : (
-                    <View style={styles.emptyState}>
-                      <IconPackage size={48} color={colors.mutedForeground} />
-                      <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                        Nenhum item foi processado com sucesso
-                      </ThemedText>
-                    </View>
-                  )}
-                </>
-              )}
-
-              {activeTab === "failed" && (
-                <>
-                  {result.failed.length > 0 ? (
-                    <View style={styles.itemsList}>
-                      {result.failed.map((error, index) => (
-                        <View
-                          key={index}
-                          style={[styles.failedItem, { backgroundColor: "rgba(220, 38, 38, 0.1)", borderColor: "rgba(220, 38, 38, 0.3)" }]}
-                        >
-                          <IconX size={16} color="#dc2626" style={styles.itemIcon} />
-                          <View style={styles.itemContent}>
-                            {failedItemDisplay ? (
-                              failedItemDisplay(error, index)
-                            ) : (
-                              <View>
-                                <ThemedText style={styles.itemTitle}>Item {error.index + 1}</ThemedText>
-                                <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-                                  {error.error}
-                                </ThemedText>
-                              </View>
-                            )}
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  ) : (
-                    <View style={styles.emptyState}>
-                      <IconCheck size={48} color={colors.mutedForeground} />
-                      <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                        Nenhuma falha ocorreu
-                      </ThemedText>
-                    </View>
-                  )}
-                </>
-              )}
-            </ScrollView>
-
-            {/* Footer */}
-            <View style={[styles.footer, { borderTopColor: colors.border }]}>
-              <Button variant="outline" onPress={handleClose} style={styles.closeButton}>
-                <Text>Fechar</Text>
-              </Button>
-            </View>
-          </Animated.View>
+        <View style={[styles.statCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <View style={styles.statContent}>
+            <ThemedText style={[styles.statLabel, { color: colors.foreground }]}>Falha</ThemedText>
+            <ThemedText style={[styles.statValue, { color: "#dc2626" }]}>{result.totalFailed}</ThemedText>
+          </View>
+          <IconX size={24} color="#dc2626" style={styles.statIcon} />
         </View>
       </View>
-    </Modal>
+
+      {/* Tabs */}
+      <View style={[styles.tabsContainer, { backgroundColor: colors.muted }]}>
+        <Pressable
+          style={[
+            styles.tab,
+            activeTab === "success" && [styles.tabActive, { backgroundColor: colors.card }],
+            !hasSuccesses && styles.tabDisabled,
+          ]}
+          onPress={() => handleTabPress("success", hasSuccesses)}
+          disabled={!hasSuccesses}
+        >
+          <IconCheck size={16} color={activeTab === "success" ? "#16a34a" : colors.mutedForeground} />
+          <ThemedText
+            style={[
+              styles.tabText,
+              { color: activeTab === "success" ? colors.foreground : colors.mutedForeground },
+            ]}
+          >
+            Sucesso ({result.totalSuccess})
+          </ThemedText>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.tab,
+            activeTab === "failed" && [styles.tabActive, { backgroundColor: colors.card }],
+            !hasFailures && styles.tabDisabled,
+          ]}
+          onPress={() => handleTabPress("failed", hasFailures)}
+          disabled={!hasFailures}
+        >
+          <IconX size={16} color={activeTab === "failed" ? "#dc2626" : colors.mutedForeground} />
+          <ThemedText
+            style={[
+              styles.tabText,
+              { color: activeTab === "failed" ? colors.foreground : colors.mutedForeground },
+            ]}
+          >
+            Falhas ({result.totalFailed})
+          </ThemedText>
+        </Pressable>
+      </View>
+
+      {/* Tab Content */}
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.tabContentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {activeTab === "success" && (
+          <>
+            {result.success.length > 0 ? (
+              <View style={styles.itemsList}>
+                {result.success.map((item, index) => (
+                  <View
+                    key={index}
+                    style={[styles.successItem, { backgroundColor: "rgba(22, 163, 74, 0.1)", borderColor: "rgba(22, 163, 74, 0.3)" }]}
+                  >
+                    <IconCheck size={16} color="#16a34a" style={styles.itemIcon} />
+                    <View style={styles.itemContent}>
+                      {successItemDisplay ? (
+                        successItemDisplay(item, index)
+                      ) : (
+                        <ThemedText style={styles.itemText}>
+                          Item {index + 1} {operationLabel} com sucesso
+                        </ThemedText>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <IconPackage size={48} color={colors.mutedForeground} />
+                <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                  Nenhum item foi processado com sucesso
+                </ThemedText>
+              </View>
+            )}
+          </>
+        )}
+
+        {activeTab === "failed" && (
+          <>
+            {result.failed.length > 0 ? (
+              <View style={styles.itemsList}>
+                {result.failed.map((error, index) => (
+                  <View
+                    key={index}
+                    style={[styles.failedItem, { backgroundColor: "rgba(220, 38, 38, 0.1)", borderColor: "rgba(220, 38, 38, 0.3)" }]}
+                  >
+                    <IconX size={16} color="#dc2626" style={styles.itemIcon} />
+                    <View style={styles.itemContent}>
+                      {failedItemDisplay ? (
+                        failedItemDisplay(error, index)
+                      ) : (
+                        <View>
+                          <ThemedText style={styles.itemTitle}>Item {error.index + 1}</ThemedText>
+                          <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
+                            {error.error}
+                          </ThemedText>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <IconCheck size={48} color={colors.mutedForeground} />
+                <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                  Nenhuma falha ocorreu
+                </ThemedText>
+              </View>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </StandardModal>
   );
 }
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
-    overlay: {
-      flex: 1,
-    },
-    backdrop: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0, 0, 0, 0.6)",
-    },
-    backdropPressable: {
-      ...StyleSheet.absoluteFillObject,
-    },
-    contentContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      paddingHorizontal: 24,
-      paddingVertical: 40,
-    },
-    modalContent: {
-      width: screenWidth - 48,
-      maxWidth: 500,
-      borderRadius: borderRadius.lg,
-      borderWidth: 1,
-      overflow: "hidden",
-      ...shadow.lg,
-    },
-    header: {
-      padding: spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerTitle: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-    },
-    title: {
-      fontSize: fontSize.lg,
-      fontWeight: "600",
-      flex: 1,
-    },
     statsGrid: {
       flexDirection: "row",
       gap: spacing.xs,
@@ -381,7 +298,7 @@ const createStyles = (colors: any) =>
       fontWeight: "500",
     },
     tabContent: {
-      maxHeight: screenHeight * 0.35,
+      flex: 1,
     },
     tabContentContainer: {
       padding: spacing.sm,
@@ -430,13 +347,5 @@ const createStyles = (colors: any) =>
     emptyText: {
       fontSize: fontSize.sm,
       textAlign: "center",
-    },
-    footer: {
-      padding: spacing.sm,
-      borderTopWidth: 1,
-      alignItems: "flex-end",
-    },
-    closeButton: {
-      minWidth: 100,
     },
   });

@@ -3,13 +3,16 @@
 // status machines. The API hard-requires a non-empty trimmed `reason` when a
 // process is cancelled (api termination/admission .service ~944), so the UI must
 // collect it. Mirrors the web cancel dialog (required reason textarea).
+//
+// Standardized onto the canonical StandardModal (bonus-modal rules).
 
 import { useState } from "react";
-import { View, StyleSheet, Modal, TextInput } from "react-native";
+import { StyleSheet, TextInput } from "react-native";
+import { IconAlertTriangle } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 
 interface CancelReasonModalProps {
   visible: boolean;
@@ -49,56 +52,41 @@ export function CancelReasonModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <View style={[styles.content, { backgroundColor: colors.background }]}>
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>{title}</ThemedText>
-          <ThemedText style={[styles.description, { color: colors.mutedForeground }]}>{description}</ThemedText>
-
-          <TextInput
-            value={reason}
-            onChangeText={setReason}
-            placeholder="Motivo do cancelamento (obrigatório)"
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            numberOfLines={4}
-            autoFocus
-            style={[
-              styles.input,
-              { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.muted },
-            ]}
-          />
-          {trimmed.length === 0 && (
-            <ThemedText style={[styles.helper, { color: colors.mutedForeground }]}>
-              O motivo é obrigatório para cancelar.
-            </ThemedText>
-          )}
-
-          <View style={styles.actions}>
-            <Button variant="outline" onPress={handleClose} disabled={loading}>
-              Voltar
-            </Button>
-            <Button variant="destructive" onPress={handleConfirm} disabled={!canSubmit} loading={loading}>
-              {confirmLabel}
-            </Button>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    <StandardModal
+      visible={visible}
+      onClose={handleClose}
+      title={title}
+      subtitle={description}
+      icon={IconAlertTriangle}
+      iconColor={colors.destructive}
+      actions={[
+        { label: "Voltar", variant: "outline", onPress: handleClose, disabled: loading },
+        { label: confirmLabel, variant: "destructive", onPress: handleConfirm, disabled: !canSubmit, loading },
+      ]}
+    >
+      <TextInput
+        value={reason}
+        onChangeText={setReason}
+        placeholder="Motivo do cancelamento (obrigatório)"
+        placeholderTextColor={colors.mutedForeground}
+        multiline
+        numberOfLines={4}
+        autoFocus
+        style={[
+          styles.input,
+          { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.muted },
+        ]}
+      />
+      {trimmed.length === 0 && (
+        <ThemedText style={[styles.helper, { color: colors.mutedForeground }]}>
+          O motivo é obrigatório para cancelar.
+        </ThemedText>
+      )}
+    </StandardModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  content: { width: "100%", borderRadius: borderRadius.lg, padding: spacing.lg, gap: spacing.md },
-  title: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold },
-  description: { fontSize: fontSize.sm },
   input: {
     borderWidth: 1,
     borderRadius: borderRadius.md,
@@ -108,5 +96,4 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   helper: { fontSize: fontSize.xs },
-  actions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing.sm },
 });

@@ -10,7 +10,7 @@
 //   - Inline action buttons are replaced with a long-press ActionSheet —
 //     squeezing buttons into a 2-column row on mobile breaks the column
 //     model. Approve/reject still gate on canManageHR equivalent (sector
-//     ∈ {HR, ADMIN}). The reject reason dialog stays a Modal (RN-friendly).
+//     ∈ {HR, ADMIN}). The reject reason dialog uses the canonical StandardModal.
 //   - Multi-sort schema preserved for round-trip with web; the config UI
 //     surfaces a single primary sort because chip-based reordering inside
 //     a bottom sheet is unreliable on RN.
@@ -67,7 +67,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollView } from "react-native-gesture-handler";
-import { Modal, ModalContent } from "@/components/ui/modal";
+import { StandardModal } from "@/components/ui/standard-modal";
 import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -539,92 +539,39 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         items={actionItems}
       />
 
-      {/* Reject reason dialog. Modal gives a styled native dialog without
-          the AlertDialog button-typing constraints. */}
-      <Modal
+      {/* Reject reason dialog — StandardModal collects the optional reason. */}
+      <StandardModal
         visible={!!rejectTarget}
         onClose={() => setRejectTarget(null)}
         title="Reprovar entrega"
-        animationType="fade"
-        presentationStyle="overFullScreen"
-        size="md"
+        actions={[
+          {
+            label: "Cancelar",
+            variant: "outline",
+            onPress: () => setRejectTarget(null),
+            disabled: rejectMutation.isPending,
+          },
+          {
+            label: "Reprovar",
+            variant: "destructive",
+            onPress: onConfirmReject,
+            disabled: rejectMutation.isPending,
+            loading: rejectMutation.isPending,
+          },
+        ]}
       >
-        <ModalContent>
-          <View style={{ gap: 12 }}>
-            <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
-              Você está reprovando a entrega de {rejectTarget?.label}. Informe
-              um motivo (opcional).
-            </Text>
-            <Input
-              placeholder="Motivo da reprovação"
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              multiline
-              numberOfLines={3}
-            />
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {/* Cardinal-rule fix: chrome on outer View, Pressable is a tap surface. */}
-              <View
-                style={{
-                  flex: 1,
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  overflow: "hidden",
-                }}
-              >
-                <Pressable
-                  disabled={rejectMutation.isPending}
-                  onPress={() => setRejectTarget(null)}
-                  android_ripple={{ color: "rgba(0,0,0,0.08)" }}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 13, color: colors.foreground }}>
-                    Cancelar
-                  </Text>
-                </Pressable>
-              </View>
-              <View
-                style={{
-                  flex: 1,
-                  borderRadius: 6,
-                  // Theme-driven destructive color so dark mode renders the
-                  // desaturated red from colors.ts instead of full-saturation
-                  // red-700 that fails contrast on dark cards.
-                  backgroundColor: colors.destructive,
-                  opacity: rejectMutation.isPending ? 0.6 : 1,
-                  overflow: "hidden",
-                }}
-              >
-                <Pressable
-                  disabled={rejectMutation.isPending}
-                  onPress={onConfirmReject}
-                  android_ripple={{ color: "rgba(255,255,255,0.18)" }}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: colors.destructiveForeground,
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Reprovar
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </ModalContent>
-      </Modal>
+        <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
+          Você está reprovando a entrega de {rejectTarget?.label}. Informe um
+          motivo (opcional).
+        </Text>
+        <Input
+          placeholder="Motivo da reprovação"
+          value={rejectReason}
+          onChangeText={setRejectReason}
+          multiline
+          numberOfLines={3}
+        />
+      </StandardModal>
     </WidgetCard>
   );
 }
