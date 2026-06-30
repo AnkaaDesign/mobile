@@ -644,27 +644,6 @@ export default function ScheduleDetailsScreen() {
                 </View>
                 <View style={styles.sectionContent}>
                   <View style={styles.viewModeControls}>
-                    {artworkFiles.length > 1 && (
-                      <TouchableOpacity
-                        style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-                        onPress={async () => {
-                          for (const file of artworkFiles) {
-                            try {
-                              await fileViewer.actions.downloadFile(file);
-                            } catch (_error) {
-                              console.error("Error downloading file:", _error);
-                            }
-                          }
-                          Alert.alert("Sucesso", `${artworkFiles.length} arquivos baixados`);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <IconDownload size={16} color={colors.primaryForeground} />
-                        <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-                          Baixar Todos
-                        </ThemedText>
-                      </TouchableOpacity>
-                    )}
                     <View style={styles.viewModeButtons}>
                       <TouchableOpacity
                         style={[
@@ -698,11 +677,11 @@ export default function ScheduleDetailsScreen() {
                             viewMode={artworksViewMode}
                             baseUrl={process.env.EXPO_PUBLIC_API_URL}
                             onPress={() => {
-                              fileViewer.actions.viewFiles(artworkFiles, index);
+                              fileViewer.actions.viewFiles(artworkFiles, index, { allowDownload: false });
                             }}
                           />
                           {canViewArtworkBadges && artwork.status && (
-                            <View style={[styles.artworkBadgeContainer, { backgroundColor: colors.card }]}>
+                            <View style={styles.artworkBadgeContainer} pointerEvents="none">
                               <Badge
                                 variant={artwork.status === 'APPROVED' ? 'success' : artwork.status === 'REPROVED' ? 'destructive' : 'secondary'}
                               >
@@ -1294,6 +1273,7 @@ const styles = StyleSheet.create({
   viewModeButtons: {
     flexDirection: "row",
     gap: spacing.xs,
+    marginLeft: "auto",
   },
   viewModeButton: {
     width: 32,
@@ -1315,13 +1295,8 @@ const styles = StyleSheet.create({
   },
   artworkBadgeContainer: {
     position: "absolute",
-    top: spacing.sm,
+    top: spacing.xs,
     right: spacing.xs,
-    paddingLeft: spacing.md,
-    paddingRight: spacing.xs,
-    paddingVertical: spacing.xxs,
-    borderTopLeftRadius: borderRadius.md,
-    borderBottomLeftRadius: borderRadius.md,
   },
   documentSection: {
     marginTop: spacing.md,

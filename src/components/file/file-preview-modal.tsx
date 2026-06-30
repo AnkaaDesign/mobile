@@ -44,6 +44,7 @@ import {
   IconColorPicker,
   IconCopy,
   IconCheck,
+  IconRuler2,
 } from "@tabler/icons-react-native";
 import { useQuery } from "@tanstack/react-query";
 import { getPaints } from "@/api-client";
@@ -518,6 +519,7 @@ export interface FilePreviewModalProps {
   enableRotation?: boolean;
   showThumbnailStrip?: boolean;
   showImageCounter?: boolean;
+  allowDownload?: boolean;
 }
 
 export function FilePreviewModal({
@@ -531,6 +533,7 @@ export function FilePreviewModal({
   enableRotation: _enableRotation = true,
   showThumbnailStrip = true,
   showImageCounter = true,
+  allowDownload = true,
 }: FilePreviewModalProps) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -557,6 +560,14 @@ export function FilePreviewModal({
   const pickerY = useSharedValue(SCREEN_HEIGHT / 2);
   const savedPickerX = useSharedValue(SCREEN_WIDTH / 2);
   const savedPickerY = useSharedValue(SCREEN_HEIGHT / 2);
+
+  // Alignment guide state — one vertical + one horizontal line the user can drag
+  // independently to eyeball element alignment. Purely an on-screen overlay.
+  const [isGuideActive, setIsGuideActive] = useState(false);
+  const guideX = useSharedValue(SCREEN_WIDTH / 2);
+  const guideY = useSharedValue(SCREEN_HEIGHT / 2);
+  const savedGuideX = useSharedValue(SCREEN_WIDTH / 2);
+  const savedGuideY = useSharedValue(SCREEN_HEIGHT / 2);
 
   // Best paint match query
   const pickedColorHex = pickedColor
@@ -952,6 +963,16 @@ export function FilePreviewModal({
     setIsCapturing(false);
   }, [currentIndex]);
 
+  // Re-center the alignment guides each time guide mode is (re)activated.
+  useEffect(() => {
+    if (isGuideActive) {
+      guideX.value = SCREEN_WIDTH / 2;
+      guideY.value = SCREEN_HEIGHT / 2;
+      savedGuideX.value = SCREEN_WIDTH / 2;
+      savedGuideY.value = SCREEN_HEIGHT / 2;
+    }
+  }, [isGuideActive]);
+
   // Re-center the loupe each time picker mode is (re)activated; tear down modal when deactivated.
   // Header visibility while picker is active is handled by `animatedHeaderStyle`
   // (it stays opaque whenever isColorPickerActive is true) — the bottom thumbnail strip
@@ -1283,6 +1304,43 @@ export function FilePreviewModal({
       savedPickerY.value = pickerY.value;
     });
 
+  // Alignment guide pan gestures — each line drags only along its own axis.
+  // minDistance(0) so the line tracks the finger immediately. The visible line is
+  // thin (2px) but each has a wide invisible hit area so it's easy to grab.
+  const guideVPanGesture = Gesture.Pan()
+    .minDistance(0)
+    .onStart(() => {
+      'worklet';
+      savedGuideX.value = guideX.value;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      guideX.value = clamp(savedGuideX.value + event.translationX, 0, SCREEN_WIDTH);
+    })
+    .onEnd(() => {
+      'worklet';
+      savedGuideX.value = guideX.value;
+    });
+
+  const guideHPanGesture = Gesture.Pan()
+    .minDistance(0)
+    .onStart(() => {
+      'worklet';
+      savedGuideY.value = guideY.value;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      guideY.value = clamp(savedGuideY.value + event.translationY, 0, SCREEN_HEIGHT);
+    })
+    .onEnd(() => {
+      'worklet';
+      savedGuideY.value = guideY.value;
+    });
+
+  const GUIDE_HIT = 44;
+  const animatedGuideVStyle = useAnimatedStyle(() => ({ left: guideX.value - GUIDE_HIT / 2 }));
+  const animatedGuideHStyle = useAnimatedStyle(() => ({ top: guideY.value - GUIDE_HIT / 2 }));
+
   // Loupe positioning — drives the circle and the full-screen crosshair lines.
   const animatedLoupeStyle = useAnimatedStyle(() => ({
     top: pickerY.value - LOUPE_SIZE / 2,
@@ -1314,7 +1372,7 @@ export function FilePreviewModal({
   // to exit picker mode. Bottom thumbnail strip keeps the original auto-hide behavior.
   const animatedHeaderStyle = useAnimatedStyle(() => {
     return {
-      opacity: withTiming((isControlsVisible || isColorPickerActive) ? 1 : 0, { duration: 300 }),
+      opacity: withTiming((isControlsVisible || isColorPickerActive || isGuideActive) ? 1 : 0, { duration: 300 }),
     };
   });
 
@@ -1443,7 +1501,7 @@ export function FilePreviewModal({
               animatedHeaderStyle,
               { paddingTop: insets.top + 12 }
             ]}
-            pointerEvents={(isControlsVisible || isColorPickerActive) ? 'auto' : 'none'}
+            pointerEvents={(isControlsVisible || isColorPickerActive || isGuideActive) ? 'auto' : 'none'}
           >
             <View style={styles.headerLeft}>
               <View style={styles.fileInfo}>
@@ -1476,6 +1534,25 @@ export function FilePreviewModal({
                   activeOpacity={0.7}
                 />
               )}
+              {/* Alignment guide toggle */}
+              {!isVideo && (
+                <TouchableOpacity
+                  style={[
+                    styles.headerButton,
+                    isGuideActive && styles.headerButtonActive,
+                  ]}
+                  onPress={() => {
+                    setIsGuideActive((prev) => {
+                      const next = !prev;
+                      if (next) setIsColorPickerActive(false);
+                      return next;
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <IconRuler2 size={20} color={isGuideActive ? "#38bdf8" : "#ffffff"} />
+                </TouchableOpacity>
+              )}
               {/* Color picker toggle */}
               {!isVideo && (
                 <TouchableOpacity
@@ -1483,7 +1560,11 @@ export function FilePreviewModal({
                     styles.headerButton,
                     isColorPickerActive && styles.headerButtonActive,
                   ]}
-                  onPress={() => setIsColorPickerActive((prev) => !prev)}
+                  onPress={() => setIsColorPickerActive((prev) => {
+                    const next = !prev;
+                    if (next) setIsGuideActive(false);
+                    return next;
+                  })}
                   activeOpacity={0.7}
                 >
                   <IconColorPicker size={20} color={isColorPickerActive ? "#fde047" : "#ffffff"} />
@@ -1500,9 +1581,11 @@ export function FilePreviewModal({
                   <IconDeviceMobile size={20} color="#ffffff" />
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.headerButton} onPress={handleShare} activeOpacity={0.7}>
-                <IconExternalLink size={22} color="#ffffff" />
-              </TouchableOpacity>
+              {allowDownload && (
+                <TouchableOpacity style={styles.headerButton} onPress={handleShare} activeOpacity={0.7}>
+                  <IconExternalLink size={22} color="#ffffff" />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={styles.headerButton} onPress={handleClose} activeOpacity={0.7}>
                 <IconX size={24} color="#ffffff" />
               </TouchableOpacity>
@@ -1797,6 +1880,95 @@ export function FilePreviewModal({
               </ScrollView>
             </Animated.View>
           )}
+          {/* Alignment guide overlay — one vertical + one horizontal line, each dragged
+              independently along its own axis to eyeball element alignment. */}
+          {isGuideActive && !isVideo && (
+            <>
+              {/* Vertical guide — drags left/right */}
+              <GestureDetector gesture={guideVPanGesture}>
+                <Animated.View
+                  style={[
+                    {
+                      position: 'absolute',
+                      top: 0,
+                      bottom: 0,
+                      width: GUIDE_HIT,
+                      alignItems: 'center',
+                      zIndex: 250,
+                    },
+                    animatedGuideVStyle,
+                  ]}
+                >
+                  <View
+                    style={{
+                      width: 2,
+                      height: '100%',
+                      backgroundColor: '#38bdf8',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.6,
+                      shadowRadius: 2,
+                    }}
+                  />
+                </Animated.View>
+              </GestureDetector>
+
+              {/* Horizontal guide — drags up/down */}
+              <GestureDetector gesture={guideHPanGesture}>
+                <Animated.View
+                  style={[
+                    {
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      height: GUIDE_HIT,
+                      justifyContent: 'center',
+                      zIndex: 250,
+                    },
+                    animatedGuideHStyle,
+                  ]}
+                >
+                  <View
+                    style={{
+                      height: 2,
+                      width: '100%',
+                      backgroundColor: '#38bdf8',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.6,
+                      shadowRadius: 2,
+                    }}
+                  />
+                </Animated.View>
+              </GestureDetector>
+
+              {/* Hint pill */}
+              <View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: Math.max(insets.bottom, 16) + 24,
+                  alignItems: 'center',
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: 'rgba(0,0,0,0.65)',
+                    paddingHorizontal: 14,
+                    paddingVertical: 5,
+                    borderRadius: 14,
+                  }}
+                >
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '500' }}>
+                    Arraste as linhas para conferir o alinhamento
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
+
           {/* Color picker overlay — full-screen crosshair, draggable loupe, and capture button.
               Hidden during the screenshot capture so the sampled pixel reflects the underlying image. */}
           {isColorPickerActive && !isVideo && !isCapturing && (

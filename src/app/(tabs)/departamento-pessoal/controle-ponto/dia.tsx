@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
+import { TimeSlotChip } from "@/components/personnel-department/time-clock/time-slot-chip";
 import { useTheme } from "@/lib/theme";
 import { useSecullumTimeEntriesByDay } from "@/hooks/secullum";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -112,26 +113,11 @@ export default function TimeEntriesDayScreen() {
           )}
         </View>
         <View style={styles.timeRow}>
-          <View style={styles.timeSlot}>
-            <ThemedText style={[styles.timeLabel, { color: colors.mutedForeground }]}>Ent. 1</ThemedText>
-            <ThemedText style={styles.timeValue}>{item.entry1}</ThemedText>
-          </View>
-          <View style={styles.timeSlot}>
-            <ThemedText style={[styles.timeLabel, { color: colors.mutedForeground }]}>Saí. 1</ThemedText>
-            <ThemedText style={styles.timeValue}>{item.exit1}</ThemedText>
-          </View>
-          <View style={styles.timeSlot}>
-            <ThemedText style={[styles.timeLabel, { color: colors.mutedForeground }]}>Ent. 2</ThemedText>
-            <ThemedText style={styles.timeValue}>{item.entry2}</ThemedText>
-          </View>
-          <View style={styles.timeSlot}>
-            <ThemedText style={[styles.timeLabel, { color: colors.mutedForeground }]}>Saí. 2</ThemedText>
-            <ThemedText style={styles.timeValue}>{item.exit2}</ThemedText>
-          </View>
-          <View style={styles.timeSlot}>
-            <ThemedText style={[styles.timeLabel, { color: colors.mutedForeground }]}>Faltas</ThemedText>
-            <ThemedText style={styles.timeValue}>{item.faltas}</ThemedText>
-          </View>
+          <TimeSlotChip label="Ent. 1" value={item.entry1} colors={colors} />
+          <TimeSlotChip label="Saí. 1" value={item.exit1} colors={colors} />
+          <TimeSlotChip label="Ent. 2" value={item.entry2} colors={colors} />
+          <TimeSlotChip label="Saí. 2" value={item.exit2} colors={colors} />
+          <TimeSlotChip label="Faltas" value={item.faltas} colors={colors} />
         </View>
       </Card>
     ),
@@ -227,8 +213,5 @@ const styles = StyleSheet.create({
   rowHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   rowHeaderLeft: { flex: 1, gap: 2 },
   userName: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-  timeRow: { flexDirection: "row", justifyContent: "space-between" },
-  timeSlot: { alignItems: "center", flex: 1, gap: 2 },
-  timeLabel: { fontSize: 10, fontWeight: fontWeight.medium },
-  timeValue: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+  timeRow: { flexDirection: "row", gap: spacing.xs },
 });

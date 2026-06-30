@@ -1223,10 +1223,11 @@ export const personnelDepartmentRequestsTableWidget: WidgetDefinition<PersonnelD
     "Aprove ou rejeite requisições de ajuste de ponto e justificativas de ausência. Toque em uma requisição para ver detalhes e agir.",
   icon: IconClockEdit,
   category: "hr",
-  // Per spec §6.5 — HR + Admin only.
+  // Per spec §6.5 — HR + Admin + Accounting.
   allowedSectors: [
     SECTOR_PRIVILEGES.HUMAN_RESOURCES,
     SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.ACCOUNTING,
   ],
   allowedSpans: [3],
   defaultSpan: 3,

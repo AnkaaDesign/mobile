@@ -4,7 +4,7 @@
 import React, { useMemo, Suspense, lazy, useEffect, useRef, useCallback } from "react";
 import { Drawer } from "expo-router/drawer";
 import { router } from "expo-router";
-import { DrawerActions, useFocusEffect } from "@react-navigation/native";
+import { DrawerActions, useFocusEffect, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform, AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -447,6 +447,21 @@ function getRouteTitle(routeName: string): string {
   // Fallback to normalized name if no title found
   ROUTE_TITLE_CACHE.set(routeName, normalizedName);
   return normalizedName;
+}
+
+/**
+ * Resolves the header title for a drawer route, descending into nested
+ * navigators (e.g. the controle-ponto Stack group) so each sub-screen shows
+ * its own title instead of the static group title. Falls back to the group's
+ * own title when no nested route is focused or the combined name isn't mapped.
+ */
+function getHeaderTitleForRoute(route: { name: string }): string {
+  const focused = getFocusedRouteNameFromRoute(route as any);
+  if (focused) {
+    const nested = ROUTE_TITLE_MAP.get(`${route.name}/${focused}`);
+    if (nested) return nested;
+  }
+  return getRouteTitle(route.name);
 }
 
 // Filter routes based on user privileges
@@ -1006,7 +1021,7 @@ function InnerLayout() {
   // headerLeft/headerRight for every screen.
   const screenOptions = useCallback(
     ({ navigation, route }: { navigation: any; route: any }) => ({
-      headerTitle: getRouteTitle(route.name),
+      headerTitle: getHeaderTitleForRoute(route),
       headerTitleAlign: 'center' as const,
       headerTitleStyle: headerStyles.headerTitleStyle,
       headerStyle: headerStyles.headerStyle,

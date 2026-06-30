@@ -1121,10 +1121,11 @@ export const dailyPontoWidget: WidgetDefinition<Config> = {
     "Resumo diário do ponto: 28 colunas configuráveis (colaborador, setor, justificativa, batidas, agregados), filtros por ausência/justificativa/atraso, navegador de dia e busca em tempo real.",
   icon: IconClock24,
   category: "hr",
-  // Same scope as web — HR + Admin + Production-Manager.
+  // Same scope as web — HR + Admin + Production-Manager + Accounting.
   allowedSectors: [
     SECTOR_PRIVILEGES.HUMAN_RESOURCES,
     SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+    SECTOR_PRIVILEGES.ACCOUNTING,
     SECTOR_PRIVILEGES.ADMIN,
   ],
   // 28 columns means full width or nothing on a phone. Force span 3 + tall.

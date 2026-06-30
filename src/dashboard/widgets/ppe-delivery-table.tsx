@@ -204,7 +204,8 @@ function actionableSetFor(
 ): Set<PPE_DELIVERY_STATUS> {
   if (
     sector === SECTOR_PRIVILEGES.HUMAN_RESOURCES ||
-    sector === SECTOR_PRIVILEGES.ADMIN
+    sector === SECTOR_PRIVILEGES.ADMIN ||
+    sector === SECTOR_PRIVILEGES.ACCOUNTING
   ) {
     return HR_ACTIONABLE_STATUSES;
   }
@@ -340,7 +341,8 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
   const sector = user?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
   const canApprove =
     sector === SECTOR_PRIVILEGES.HUMAN_RESOURCES ||
-    sector === SECTOR_PRIVILEGES.ADMIN;
+    sector === SECTOR_PRIVILEGES.ADMIN ||
+    sector === SECTOR_PRIVILEGES.ACCOUNTING;
 
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -1038,6 +1040,7 @@ export const ppeDeliveryTableWidget: WidgetDefinition<Config> = {
     SECTOR_PRIVILEGES.HUMAN_RESOURCES,
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.ACCOUNTING,
   ],
   allowedSpans: [3],
   defaultSpan: 3,

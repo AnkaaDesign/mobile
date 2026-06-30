@@ -48,11 +48,13 @@ export interface FileViewerState {
   // Shared state
   currentFiles: AnkaaFile[];
   currentFileIndex: number;
+  // When false, the preview modal hides all download/share affordances
+  allowDownload: boolean;
 }
 
 export interface FileViewerActions {
   // Image modal
-  openImageModal: (files: AnkaaFile[], initialIndex?: number) => void;
+  openImageModal: (files: AnkaaFile[], initialIndex?: number, options?: { allowDownload?: boolean }) => void;
   closeImageModal: () => void;
   // PDF modal
   openPdfModal: (file: AnkaaFile) => void;
@@ -62,7 +64,7 @@ export interface FileViewerActions {
   closeVideoModal: () => void;
   // Generic file viewing
   viewFile: (file: AnkaaFile) => void;
-  viewFiles: (files: AnkaaFile[], initialIndex: number) => void;
+  viewFiles: (files: AnkaaFile[], initialIndex: number, options?: { allowDownload?: boolean }) => void;
   // File operations
   downloadFile: (file: AnkaaFile) => Promise<void>;
   shareFile: (file: AnkaaFile) => Promise<void>;
@@ -99,19 +101,21 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
     isVideoModalOpen: false,
     currentFiles: [],
     currentFileIndex: 0,
+    allowDownload: true,
   });
 
   // =====================
   // Image Modal Actions
   // =====================
 
-  const openImageModal = useCallback((files: AnkaaFile[], initialIndex: number = 0) => {
+  const openImageModal = useCallback((files: AnkaaFile[], initialIndex: number = 0, options?: { allowDownload?: boolean }) => {
     console.log('[File Viewer] Opening image modal:', files.length, 'files');
     setState(prev => ({
       ...prev,
       isImageModalOpen: true,
       currentFiles: files,
       currentFileIndex: initialIndex,
+      allowDownload: options?.allowDownload !== false,
     }));
   }, []);
 
@@ -298,7 +302,7 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
     }
   }, [openImageModal, openPdfModal, openVideoModal, shareFile, downloadFile]);
 
-  const viewFiles = useCallback((files: AnkaaFile[], initialIndex: number) => {
+  const viewFiles = useCallback((files: AnkaaFile[], initialIndex: number, options?: { allowDownload?: boolean }) => {
     console.log('[File Viewer] View files:', files.length, 'initial index:', initialIndex);
 
     // Import canPreviewFile to check which files are previewable
@@ -344,7 +348,7 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
     const finalIndex = adjustedIndex >= 0 ? adjustedIndex : 0;
 
     // Open the unified image modal (which now handles PDFs and videos too)
-    openImageModal(previewableFiles, finalIndex);
+    openImageModal(previewableFiles, finalIndex, options);
   }, [viewFile, openImageModal]);
 
   // =====================
@@ -408,6 +412,7 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
           enableRotation={true}
           showThumbnailStrip={state.currentFiles.length > 1}
           showImageCounter={true}
+          allowDownload={state.allowDownload}
         />
       )}
 

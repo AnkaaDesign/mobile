@@ -878,7 +878,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                           const response = await getUsers({
                             take: pageSize,
                             skip: (page - 1) * pageSize,
-                            includeSectorPrivileges: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
+                            includeSectorPrivileges: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.ACCOUNTING],
                             where: {
                               currentContractStatus: CONTRACT_STATUS.ACTIVE,
                               ...(searchTerm ? {

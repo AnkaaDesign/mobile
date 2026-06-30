@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from "react-native";
-import { IconChevronLeft, IconChevronRight, IconEdit } from "@tabler/icons-react-native";
+import { IconChevronLeft, IconChevronRight, IconPencil } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TimeSlotChip } from "@/components/personnel-department/time-clock/time-slot-chip";
 import { EditTimeEntryModal } from "@/components/personnel-department/time-clock/edit-time-entry-modal";
 import { useTheme } from "@/lib/theme";
 import { useSecullumTimeEntries } from "@/hooks/secullum";
@@ -144,33 +145,20 @@ export default function TimeEntriesEditScreen() {
 
   const renderRow = useCallback(
     ({ item }: { item: EditRow }) => (
-      <Card style={styles.rowCard}>
-        <View style={styles.rowHeader}>
-          <ThemedText style={styles.rowDate}>{formatDateDisplay(item.date)}</ThemedText>
-          <TouchableOpacity
-            style={[styles.editButton, { borderColor: colors.border }]}
-            onPress={() => setEditingRow(item)}
-            activeOpacity={0.7}
-          >
-            <IconEdit size={16} color={colors.primary} />
-            <ThemedText style={[styles.editText, { color: colors.primary }]}>Editar</ThemedText>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.timeRow}>
-          <ThemedText style={[styles.timeCell, { color: colors.mutedForeground }]}>
-            E1 {item.entry1 || "—"}
-          </ThemedText>
-          <ThemedText style={[styles.timeCell, { color: colors.mutedForeground }]}>
-            S1 {item.exit1 || "—"}
-          </ThemedText>
-          <ThemedText style={[styles.timeCell, { color: colors.mutedForeground }]}>
-            E2 {item.entry2 || "—"}
-          </ThemedText>
-          <ThemedText style={[styles.timeCell, { color: colors.mutedForeground }]}>
-            S2 {item.exit2 || "—"}
-          </ThemedText>
-        </View>
-      </Card>
+      <TouchableOpacity onPress={() => setEditingRow(item)} activeOpacity={0.7}>
+        <Card style={styles.rowCard}>
+          <View style={styles.rowHeader}>
+            <ThemedText style={styles.rowDate}>{formatDateDisplay(item.date)}</ThemedText>
+            <IconPencil size={16} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.timeRow}>
+            <TimeSlotChip label="Ent. 1" value={item.entry1} colors={colors} />
+            <TimeSlotChip label="Saí. 1" value={item.exit1} colors={colors} />
+            <TimeSlotChip label="Ent. 2" value={item.entry2} colors={colors} />
+            <TimeSlotChip label="Saí. 2" value={item.exit2} colors={colors} />
+          </View>
+        </Card>
+      </TouchableOpacity>
     ),
     [colors],
   );
@@ -272,16 +260,5 @@ const styles = StyleSheet.create({
   rowCard: { padding: spacing.md, gap: spacing.sm },
   rowHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   rowDate: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, textTransform: "capitalize" },
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  editText: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
-  timeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  timeCell: { fontSize: fontSize.xs },
+  timeRow: { flexDirection: "row", gap: spacing.xs },
 });

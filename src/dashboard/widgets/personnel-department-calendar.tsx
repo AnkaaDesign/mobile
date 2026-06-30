@@ -998,6 +998,7 @@ export const personnelDepartmentCalendarWidget: WidgetDefinition<PersonnelDepart
     SECTOR_PRIVILEGES.HUMAN_RESOURCES,
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+    SECTOR_PRIVILEGES.ACCOUNTING,
   ],
   // Per spec §6.8: span [3] only on phones; rows [3, 4] (calendar grid
   // doesn't fit at smaller heights — 6 weeks × 7 cols needs ~452px+).
