@@ -183,6 +183,27 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
                     <ThemedText style={styles.itemName} numberOfLines={2}>
                       {itemDisplay}
                     </ThemedText>
+                    {/* Temporary item discrete fields (itemId === null) */}
+                    {isTemporaryItem && orderItem.temporaryItemUniCode ? (
+                      <ThemedText style={[styles.tempMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        Código: {orderItem.temporaryItemUniCode}
+                      </ThemedText>
+                    ) : null}
+                    {isTemporaryItem && orderItem.temporaryItemBrand ? (
+                      <ThemedText style={[styles.tempMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        Marca: {orderItem.temporaryItemBrand}
+                      </ThemedText>
+                    ) : null}
+                    {isTemporaryItem && orderItem.temporaryItemCategory?.name ? (
+                      <ThemedText style={[styles.tempMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        Categoria: {orderItem.temporaryItemCategory.name}
+                      </ThemedText>
+                    ) : null}
+                    {isTemporaryItem && orderItem.temporaryItemMeasures ? (
+                      <ThemedText style={[styles.tempMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        Medidas: {orderItem.temporaryItemMeasures}
+                      </ThemedText>
+                    ) : null}
                   </View>
 
                   {/* Stock Column */}
@@ -343,6 +364,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
     lineHeight: 16,
+  },
+  tempMeta: {
+    fontSize: 10,
+    marginTop: 1,
   },
   stockCell: {
     flexDirection: "row",

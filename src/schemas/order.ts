@@ -1428,6 +1428,10 @@ export const orderCreateSchema = z
         z.object({
           itemId: z.string().uuid({ message: "Item inválido" }).optional(),
           temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
+          temporaryItemUniCode: z.string().max(100, "Código muito longo").optional(),
+          temporaryItemBrand: z.string().max(200, "Marca muito longa").optional(),
+          temporaryItemMeasures: z.string().max(200, "Medidas muito longas").optional(),
+          temporaryItemCategoryId: z.string().uuid({ message: "Categoria inválida" }).optional(),
           orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
           price: unitPriceSchema,
           icms: z
@@ -1538,6 +1542,10 @@ export const orderUpdateSchema = z
         z.object({
           itemId: z.string().uuid({ message: "Item inválido" }).optional(),
           temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
+          temporaryItemUniCode: z.string().max(100, "Código muito longo").optional(),
+          temporaryItemBrand: z.string().max(200, "Marca muito longa").optional(),
+          temporaryItemMeasures: z.string().max(200, "Medidas muito longas").optional(),
+          temporaryItemCategoryId: z.string().uuid({ message: "Categoria inválida" }).optional(),
           orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
           price: unitPriceSchema,
           icms: z
@@ -1594,6 +1602,10 @@ export const orderItemCreateSchema = z
     orderId: z.string().uuid({ message: "Pedido inválido" }),
     itemId: z.string().uuid({ message: "Item inválido" }).optional(),
     temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
+    temporaryItemUniCode: z.string().max(100, "Código muito longo").optional(),
+    temporaryItemBrand: z.string().max(200, "Marca muito longa").optional(),
+    temporaryItemMeasures: z.string().max(200, "Medidas muito longas").optional(),
+    temporaryItemCategoryId: z.string().uuid({ message: "Categoria inválida" }).optional(),
     orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
     price: unitPriceSchema,
     icms: z
@@ -1631,6 +1643,10 @@ export const orderItemCreateSchema = z
 export const orderItemUpdateSchema = z
   .object({
     temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
+    temporaryItemUniCode: z.string().max(100, "Código muito longo").optional(),
+    temporaryItemBrand: z.string().max(200, "Marca muito longa").optional(),
+    temporaryItemMeasures: z.string().max(200, "Medidas muito longas").optional(),
+    temporaryItemCategoryId: z.string().uuid({ message: "Categoria inválida" }).optional(),
     orderedQuantity: z.number().positive("Quantidade deve ser positiva").optional(),
     receivedQuantity: z.number().min(0, "Quantidade recebida deve ser não negativa").optional(),
     price: unitPriceSchema.optional(),

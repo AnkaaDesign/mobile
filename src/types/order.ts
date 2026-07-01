@@ -3,7 +3,7 @@
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { ORDER_STATUS, ORDER_PAYMENT_STATUS, ORDER_INSTALLMENT_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
-import type { Item, ItemIncludes, ItemOrderBy, ItemWhere } from "./item";
+import type { Item, ItemIncludes, ItemOrderBy, ItemWhere, ItemCategory } from "./item";
 import type { File, FileIncludes } from "./file";
 import type {
   PpeDeliverySchedule,
@@ -91,7 +91,12 @@ export interface OrderRule extends BaseEntity {
 export interface OrderItem extends BaseEntity {
   orderId: string;
   itemId: string | null;
+  // Temporary item (itemId === null) discrete fields. temporaryItemDescription stays the pure name.
   temporaryItemDescription: string | null;
+  temporaryItemUniCode: string | null;
+  temporaryItemBrand: string | null;
+  temporaryItemMeasures: string | null;
+  temporaryItemCategoryId: string | null;
   orderedQuantity: number;
   receivedQuantity: number;
   price: number;
@@ -103,6 +108,7 @@ export interface OrderItem extends BaseEntity {
 
   // Relations (optional, populated based on query)
   item?: Item;
+  temporaryItemCategory?: ItemCategory;
   order?: Order;
   activities?: Activity[];
 }
@@ -237,6 +243,7 @@ export interface OrderItemIncludes {
         where?: ItemWhere;
         orderBy?: ItemOrderBy;
       };
+  temporaryItemCategory?: boolean;
   order?:
     | boolean
     | {

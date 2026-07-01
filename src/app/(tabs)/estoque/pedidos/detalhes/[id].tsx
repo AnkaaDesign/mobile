@@ -65,6 +65,8 @@ export default function OrderDetailScreen() {
               measures: true,
             },
           },
+          // Temporary items (itemId === null) carry their own category relation
+          temporaryItemCategory: true,
         },
       },
       supplier: {

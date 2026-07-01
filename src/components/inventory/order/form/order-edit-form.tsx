@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useSuppliers, useItems, useOrderMutations, useOrder, useCanViewPrices } from "@/hooks";
+import { useSuppliers, useItems, useOrderMutations, useOrder, useCanViewPrices, useItemCategories } from "@/hooks";
 import { getUsers, getSuppliers } from "@/api-client";
 import { useMultiStepForm } from "@/hooks";
 import {
@@ -79,10 +79,15 @@ interface OrderEditFormProps {
   onSuccess?: () => void;
 }
 
-// Temporary item interface
+// Temporary item interface. `description` stays the PURE name; the other
+// discrete fields mirror the api's temporaryItem* columns.
 interface TemporaryItem {
   id: string;
   description: string;
+  uniCode?: string;
+  brand?: string;
+  measures?: string;
+  categoryId?: string;
   quantity: number;
   price: number;
   icms: number;
@@ -268,6 +273,10 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           tempItems.push({
             id: `temp-${item.id || Date.now()}-${Math.random().toString(36).slice(2)}`,
             description: item.temporaryItemDescription || "",
+            uniCode: item.temporaryItemUniCode || undefined,
+            brand: item.temporaryItemBrand || undefined,
+            measures: item.temporaryItemMeasures || undefined,
+            categoryId: item.temporaryItemCategoryId || undefined,
             quantity: item.orderedQuantity || 1,
             price: item.price || 0,
             icms: item.icms || 0,
@@ -323,6 +332,21 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     }
     return "Não selecionado";
   }, [suppliers, multiStepForm.formData.supplierId, order?.supplier]);
+
+  // Item categories for temporary-item classification (reuses the shared hook)
+  const { data: itemCategories, isLoading: isLoadingCategories } = useItemCategories({
+    orderBy: { name: "asc" },
+    take: 100,
+  });
+
+  const categoryOptions = useMemo(
+    () =>
+      itemCategories?.data?.map((category) => ({
+        value: category.id,
+        label: category.name,
+      })) || [],
+    [itemCategories],
+  );
 
   // Fetch selected items for review step (only when on step 3)
   const selectedItemIds = useMemo(
@@ -456,6 +480,10 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       temporaryItems.forEach((item) => {
         itemsData.push({
           temporaryItemDescription: item.description,
+          temporaryItemUniCode: item.uniCode?.trim() || undefined,
+          temporaryItemBrand: item.brand?.trim() || undefined,
+          temporaryItemMeasures: item.measures?.trim() || undefined,
+          temporaryItemCategoryId: item.categoryId || undefined,
           orderedQuantity: item.quantity,
           price: item.price,
           icms: item.icms,
@@ -985,6 +1013,60 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                               value={item.description}
                               onChangeText={(val) => handleUpdateTemporaryItem(item.id, "description", val)}
                               placeholder="Descrição do item"
+                              editable={!isSubmitting}
+                            />
+                          </View>
+
+                          {/* Discrete temporary-item fields (mirror inventory item attributes) */}
+                          <View style={styles.rowFields}>
+                            <View style={styles.smallField}>
+                              <Label>Código</Label>
+                              <Input
+                                value={item.uniCode || ""}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "uniCode", val)}
+                                placeholder="Código"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                            <View style={styles.smallField}>
+                              <Label>Marca</Label>
+                              <Input
+                                value={item.brand || ""}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "brand", val)}
+                                placeholder="Marca"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                          </View>
+
+                          <View style={styles.fieldGroup}>
+                            <Label>Categoria</Label>
+                            <Combobox
+                              value={item.categoryId || ""}
+                              onValueChange={(val) =>
+                                handleUpdateTemporaryItem(
+                                  item.id,
+                                  "categoryId",
+                                  (Array.isArray(val) ? val[0] : val) || "",
+                                )
+                              }
+                              options={categoryOptions}
+                              placeholder="Selecione a categoria (opcional)"
+                              searchPlaceholder="Buscar categoria..."
+                              emptyText="Nenhuma categoria encontrada"
+                              disabled={isSubmitting || isLoadingCategories}
+                              loading={isLoadingCategories}
+                              clearable
+                              searchable
+                            />
+                          </View>
+
+                          <View style={styles.fieldGroup}>
+                            <Label>Medidas</Label>
+                            <Input
+                              value={item.measures || ""}
+                              onChangeText={(val) => handleUpdateTemporaryItem(item.id, "measures", val)}
+                              placeholder="Ex: 10x20cm, 500ml"
                               editable={!isSubmitting}
                             />
                           </View>

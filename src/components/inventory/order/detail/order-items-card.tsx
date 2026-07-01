@@ -202,6 +202,7 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
                       <ThemedText style={{ fontSize: fontSize.xs }}>Temporário</ThemedText>
                     </Badge>
                   )}
+                  {/* Inventory item attributes */}
                   {item?.uniCode && (
                     <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
                       Código: {item.uniCode}
@@ -210,6 +211,27 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
                   {item?.brands && item.brands.length > 0 && (
                     <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
                       {item.brands.map((b) => b.name).join(", ")}
+                    </ThemedText>
+                  )}
+                  {/* Temporary item discrete fields (itemId === null) */}
+                  {!orderItem.itemId && orderItem.temporaryItemUniCode && (
+                    <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
+                      Código: {orderItem.temporaryItemUniCode}
+                    </ThemedText>
+                  )}
+                  {!orderItem.itemId && orderItem.temporaryItemBrand && (
+                    <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
+                      Marca: {orderItem.temporaryItemBrand}
+                    </ThemedText>
+                  )}
+                  {!orderItem.itemId && orderItem.temporaryItemCategory?.name && (
+                    <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
+                      Categoria: {orderItem.temporaryItemCategory.name}
+                    </ThemedText>
+                  )}
+                  {!orderItem.itemId && orderItem.temporaryItemMeasures && (
+                    <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
+                      Medidas: {orderItem.temporaryItemMeasures}
                     </ThemedText>
                   )}
                 </View>
