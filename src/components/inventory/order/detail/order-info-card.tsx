@@ -10,7 +10,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey, resolveOrderTotal } from "@/utils";
 import { formatOrderNumber } from "@/utils/order-code";
 import type { Order } from "../../../../types";
-import { PAYMENT_METHOD_LABELS, ORDER_INSTALLMENT_STATUS_LABELS, ORDER_INSTALLMENT_STATUS, SECTOR_PRIVILEGES, getBadgeVariant } from "@/constants";
+import { PAYMENT_METHOD_LABELS, ORDER_INSTALLMENT_STATUS_LABELS, ORDER_INSTALLMENT_STATUS, ORDER_PAYMENT_STATUS_LABELS, SECTOR_PRIVILEGES, getBadgeVariant } from "@/constants";
 import { useCanViewPrices, useOrderMutations, usePrivileges } from "@/hooks";
 
 interface OrderInfoCardProps {
@@ -244,13 +244,30 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
         )}
       </DetailSection>
 
-      {/* Payment Information Section — financial-only, hidden from WAREHOUSE. */}
-      {canViewPrices && (order.paymentMethod || order.paymentResponsible || order.paymentResponsibleId) && (
+      {/* Payment Information Section — financial-only, hidden from WAREHOUSE.
+          Rendered whenever there is a payment status (always true), a method, or a
+          responsible — so PENDING orders (no method yet) still show their status. */}
+      {canViewPrices && (order.paymentStatus || order.paymentMethod || order.paymentResponsible || order.paymentResponsibleId) && (
         <>
           {/* Separator */}
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
           <DetailSection title="Pagamento">
+            {/* Payment Status — overall contas-a-pagar state (PENDING/AWAITING/PAID). */}
+            {order.paymentStatus && (
+              <DetailField
+                label="Status de Pagamento"
+                icon="cash"
+                value={
+                  <Badge variant={getBadgeVariant(order.paymentStatus, "ORDER_PAYMENT")} size="sm">
+                    <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
+                      {ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus as keyof typeof ORDER_PAYMENT_STATUS_LABELS]}
+                    </ThemedText>
+                  </Badge>
+                }
+              />
+            )}
+
             {/* Payment Responsible */}
             {(order.paymentResponsible || order.paymentResponsibleId) && (
               <DetailField

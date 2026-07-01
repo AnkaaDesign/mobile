@@ -1373,11 +1373,11 @@ export const orderCreateSchema = z
         errorMap: () => ({ message: "Status inválido" }),
       })
       .default(ORDER_STATUS.CREATED),
-    supplierId: z.string().uuid({ message: "Fornecedor inválido" }).optional(),
+    supplierId: z.string().uuid({ message: "Fornecedor inválido" }).nullable().optional(),
     orderScheduleId: z.string().uuid({ message: "Cronograma inválido" }).optional(),
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
-    notes: z.string().optional(),
+    notes: z.string().nullable().optional(),
     // Freight (verified against api/src/schemas/order.ts orderCreateSchema)
     freight: z
       .number()
@@ -1484,11 +1484,11 @@ export const orderUpdateSchema = z
         errorMap: () => ({ message: "Status inválido" }),
       })
       .optional(),
-    supplierId: z.string().uuid({ message: "Fornecedor inválido" }).optional(),
+    supplierId: z.string().uuid({ message: "Fornecedor inválido" }).nullable().optional(),
     orderScheduleId: z.string().uuid({ message: "Cronograma inválido" }).optional(),
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
-    notes: z.string().optional(),
+    notes: z.string().nullable().optional(),
     // Freight (verified against api/src/schemas/order.ts orderUpdateSchema)
     freight: z
       .number()

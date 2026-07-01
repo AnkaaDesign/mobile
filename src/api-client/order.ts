@@ -127,6 +127,18 @@ export class OrderService {
     return response.data;
   }
 
+  /** ADMIN: request payment for a PENDING order (PENDING → AWAITING_PAYMENT), making it payable. */
+  async requestOrderPayment(id: string): Promise<OrderUpdateResponse> {
+    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/request-payment`);
+    return response.data;
+  }
+
+  /** ADMIN: cancel a payment request (AWAITING_PAYMENT → PENDING) while still unpaid. */
+  async cancelOrderPaymentRequest(id: string): Promise<OrderUpdateResponse> {
+    const response = await apiClient.put<OrderUpdateResponse>(`${this.basePath}/${id}/cancel-payment-request`);
+    return response.data;
+  }
+
   /** Unified Contas a Pagar feed: open orders + airbrushing painter payments + scheduled/expected outflows. */
   async getPayables(): Promise<PayablesResponse> {
     const response = await apiClient.get<PayablesResponse>(`/financial/payables`);
@@ -335,6 +347,8 @@ export const batchDeleteOrders = (data: OrderBatchDeleteFormData) => orderServic
 export const markOrderPaid = (id: string) => orderService.markOrderPaid(id);
 export const markInstallmentPaid = (installmentId: string) => orderService.markInstallmentPaid(installmentId);
 export const markOrderAwaitingPayment = (id: string) => orderService.markOrderAwaitingPayment(id);
+export const requestOrderPayment = (id: string) => orderService.requestOrderPayment(id);
+export const cancelOrderPaymentRequest = (id: string) => orderService.cancelOrderPaymentRequest(id);
 export const getPayables = () => orderService.getPayables();
 export const settlePayrollMonth = (year: number, month: number, amount: number | null) => orderService.settlePayrollMonth(year, month, amount);
 

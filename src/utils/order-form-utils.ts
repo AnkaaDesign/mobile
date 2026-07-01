@@ -262,7 +262,17 @@ export function createOrderFormData(
 
   // Add regular form data
   Object.entries(data).forEach(([key, value]) => {
-    if (value !== null && value !== undefined) {
+    // Explicitly handle null values - send the literal string "null" so the API's
+    // ArrayFixPipe converts it back to null and CLEARS the field. Mirrors web's
+    // form-data-helper. Skipping null (as before) dropped clears on the multipart
+    // path, so e.g. forecast/paymentResponsibleId could never be cleared when a
+    // receipt was attached. Sending "" would instead fail UUID/enum validation.
+    if (value === null) {
+      formData.append(key, "null");
+      return;
+    }
+
+    if (value !== undefined) {
       if (value instanceof Date) {
         formData.append(key, value.toISOString());
       } else if (Array.isArray(value)) {

@@ -49,9 +49,10 @@ const orderCreateFormSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória"),
   supplierId: z.string().uuid("Selecione um fornecedor válido").optional().nullable(),
   forecast: z.date().optional().nullable(),
-  notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+  notes: z.string().optional().nullable(),
   freight: z.number().min(0, "Frete deve ser maior ou igual a 0").optional().nullable(),
   discount: z.number().min(0).max(100).optional().nullable(),
+  totalOverride: z.number().min(0, "Valor total deve ser maior ou igual a 0").optional().nullable(),
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
   paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
@@ -119,6 +120,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       notes: "",
       freight: null,
       discount: null,
+      totalOverride: null,
       paymentMethod: null,
       paymentPix: null,
       paymentDueDays: null,
@@ -358,6 +360,13 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         notes: multiStepForm.formData.notes || undefined,
         freight: freightValue,
         discount: discountValue,
+        // Manual grand-total override (Valor Total). null = use the automatic computed total.
+        totalOverride:
+          multiStepForm.formData.totalOverride != null &&
+          Number.isFinite(Number(multiStepForm.formData.totalOverride)) &&
+          Number(multiStepForm.formData.totalOverride) >= 0
+            ? Number(multiStepForm.formData.totalOverride)
+            : null,
         items: itemsData,
         paymentMethod: multiStepForm.formData.paymentMethod || undefined,
         paymentPix: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX ? multiStepForm.formData.paymentPix || undefined : undefined,
@@ -1044,7 +1053,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                     control={form.control}
                     name="discount"
                     render={({ field: { value } }) => (
-                      <View style={styles.lastFieldGroup}>
+                      <View style={styles.fieldGroup}>
                         <Label>Desconto (%)</Label>
                         <Input
                           type="percentage"
@@ -1060,6 +1069,35 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                         />
                         <ThemedText style={styles.helpText}>
                           Percentual de desconto aplicado sobre o subtotal
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
+
+                {/* Manual total override — leave blank to use the automatic total computed from items. */}
+                {canViewPrices && (
+                  <Controller
+                    control={form.control}
+                    name="totalOverride"
+                    render={({ field: { value } }) => (
+                      <View style={styles.lastFieldGroup}>
+                        <Label>Valor Total (manual)</Label>
+                        <Input
+                          type="currency"
+                          value={(value as number | null | undefined) ?? null}
+                          onChange={(val) => {
+                            const num = typeof val === "number" ? val : null;
+                            handleFormChange(
+                              "totalOverride",
+                              num != null && Number.isFinite(num) && num >= 0 ? num : null,
+                            );
+                          }}
+                          placeholder="Total automático"
+                          editable={!isSubmitting}
+                        />
+                        <ThemedText style={styles.helpText}>
+                          Substitui o total calculado. Deixe em branco para usar o total automático.
                         </ThemedText>
                       </View>
                     )}

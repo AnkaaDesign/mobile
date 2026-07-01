@@ -60,9 +60,10 @@ const orderEditFormSchema = z.object({
   status: z.nativeEnum(ORDER_STATUS).optional().nullable(),
   supplierId: z.string().uuid("Selecione um fornecedor válido").optional().nullable(),
   forecast: z.date().optional().nullable(),
-  notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+  notes: z.string().optional().nullable(),
   freight: z.number().min(0, "Frete deve ser maior ou igual a 0").optional().nullable(),
   discount: z.number().min(0).max(100).optional().nullable(),
+  totalOverride: z.number().min(0, "Valor total deve ser maior ou igual a 0").optional().nullable(),
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
   paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
@@ -153,6 +154,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       notes: "",
       freight: null,
       discount: null,
+      totalOverride: null,
       paymentMethod: null,
       paymentPix: null,
       paymentDueDays: null,
@@ -225,6 +227,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       notes: order.notes || "",
       freight: (order as any).freight ?? 0,
       discount: (order as any).discount ?? 0,
+      totalOverride: (order as any).totalOverride ?? null,
       paymentMethod: (order.paymentMethod as any) || null,
       paymentPix: order.paymentPix || null,
       paymentDueDays: order.paymentDueDays || null,
@@ -471,14 +474,17 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       if (multiStepForm.formData.description !== order?.description) {
         changedData.description = multiStepForm.formData.description;
       }
+      // Supplier / notes follow the shared CLEAR contract: send null (not undefined)
+      // when the user cleared them so the API actually clears the column; undefined is
+      // "leave unchanged" and would keep the old value.
       if (multiStepForm.formData.supplierId !== order?.supplierId) {
-        changedData.supplierId = multiStepForm.formData.supplierId || undefined;
+        changedData.supplierId = multiStepForm.formData.supplierId || null;
       }
       if (forecastDate?.getTime() !== (order?.forecast ? new Date(order.forecast).getTime() : undefined)) {
         changedData.forecast = forecastDate ?? null;
       }
       if (multiStepForm.formData.notes !== (order?.notes || "")) {
-        changedData.notes = multiStepForm.formData.notes || undefined;
+        changedData.notes = multiStepForm.formData.notes?.trim() || null;
       }
       if (freightValue !== ((order as any)?.freight ?? 0)) {
         changedData.freight = freightValue;
@@ -486,41 +492,45 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       if (discountValue !== ((order as any)?.discount ?? 0)) {
         changedData.discount = discountValue;
       }
-      if (multiStepForm.formData.paymentMethod !== order?.paymentMethod) {
-        changedData.paymentMethod = multiStepForm.formData.paymentMethod || undefined;
-      }
-      if (multiStepForm.formData.paymentPix !== order?.paymentPix) {
-        changedData.paymentPix = multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX
-          ? multiStepForm.formData.paymentPix || undefined
-          : undefined;
-      }
-      if (multiStepForm.formData.paymentDueDays !== order?.paymentDueDays) {
-        // Persist the default interval (30 days) shown for 2x+ boletos when none was explicitly chosen.
-        changedData.paymentDueDays = multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP
+
+      // Payment block — ALWAYS sent whole and internally consistent (mirrors web
+      // order-edit-form). Per-field diffing skipped interdependent recomputes: e.g.
+      // bumping parcelas 1→3 without touching the interval left paymentDueDays unsent,
+      // so the API generated parcelas with no spacing (H3). Sending the recomputed block
+      // also fixes removing the method never persisting (H2) and the stale Pix key (M2),
+      // since cleared fields now send explicit null instead of being omitted.
+      const pm = multiStepForm.formData.paymentMethod || null;
+      // Effective Pix = typed key, else the selected supplier's default (shown in the field).
+      const pixSupplier =
+        suppliers?.data?.find((s) => s.id === multiStepForm.formData.supplierId) || order?.supplier;
+      const effectivePix = ((multiStepForm.formData.paymentPix || pixSupplier?.pix) ?? "").toString().trim();
+      // PIX with no key at all is undefined — drop the method too (the order keeps
+      // its real payment status; the method is just left unset until paid).
+      const pixCleared = pm === PAYMENT_METHOD.PIX && !effectivePix;
+      const resolvedPaymentMethod = pixCleared ? null : pm;
+
+      changedData.paymentMethod = resolvedPaymentMethod;
+      // Persist the effective Pix; null clears it. Non-PIX methods clear it.
+      changedData.paymentPix = pm === PAYMENT_METHOD.PIX ? effectivePix || null : null;
+      // Persist the default interval (30 days) shown for 2x+ boletos when none was explicitly chosen.
+      changedData.paymentDueDays =
+        pm === PAYMENT_METHOD.BANK_SLIP
           ? (multiStepForm.formData.installmentCount || 1) > 1
             ? multiStepForm.formData.paymentDueDays || 30
             : multiStepForm.formData.paymentDueDays || undefined
           : undefined;
-      }
-      {
-        const newFirstDue = multiStepForm.formData.paymentFirstDueDate
-          ? new Date(multiStepForm.formData.paymentFirstDueDate).getTime()
+      changedData.paymentFirstDueDate =
+        pm === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.paymentFirstDueDate || null : null;
+      changedData.installmentCount =
+        pm === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.installmentCount || 1 : 1;
+      changedData.paymentResponsibleId = multiStepForm.formData.paymentResponsibleId || null;
+
+      // Manual grand-total override (Valor Total). null clears it (back to computed total).
+      const rawTotalOverride = multiStepForm.formData.totalOverride;
+      changedData.totalOverride =
+        rawTotalOverride != null && Number.isFinite(Number(rawTotalOverride)) && Number(rawTotalOverride) >= 0
+          ? Number(rawTotalOverride)
           : null;
-        const oldFirstDue = order?.paymentFirstDueDate ? new Date(order.paymentFirstDueDate).getTime() : null;
-        if (newFirstDue !== oldFirstDue) {
-          changedData.paymentFirstDueDate = multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP
-            ? multiStepForm.formData.paymentFirstDueDate || undefined
-            : undefined;
-        }
-      }
-      if ((multiStepForm.formData.installmentCount || 1) !== (order?.installmentCount || 1)) {
-        changedData.installmentCount = multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP
-          ? multiStepForm.formData.installmentCount || 1
-          : 1;
-      }
-      if (multiStepForm.formData.paymentResponsibleId !== order?.paymentResponsibleId) {
-        changedData.paymentResponsibleId = multiStepForm.formData.paymentResponsibleId || null;
-      }
 
       // Send status only when the user actually changed it (mirrors web: avoids a
       // no-op same→same transition the API would reject).
@@ -1229,7 +1239,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                     control={form.control}
                     name="discount"
                     render={({ field: { value } }) => (
-                      <View style={styles.lastFieldGroup}>
+                      <View style={styles.fieldGroup}>
                         <Label>Desconto (%)</Label>
                         <Input
                           type="percentage"
@@ -1245,6 +1255,35 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                         />
                         <ThemedText style={styles.helpText}>
                           Percentual de desconto aplicado sobre o subtotal
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
+
+                {/* Manual total override — leave blank to use the automatic total computed from items. */}
+                {canViewPrices && (
+                  <Controller
+                    control={form.control}
+                    name="totalOverride"
+                    render={({ field: { value } }) => (
+                      <View style={styles.lastFieldGroup}>
+                        <Label>Valor Total (manual)</Label>
+                        <Input
+                          type="currency"
+                          value={(value as number | null | undefined) ?? null}
+                          onChange={(val) => {
+                            const num = typeof val === "number" ? val : null;
+                            handleFormChange(
+                              "totalOverride",
+                              num != null && Number.isFinite(num) && num >= 0 ? num : null,
+                            );
+                          }}
+                          placeholder="Total automático"
+                          editable={!isSubmitting}
+                        />
+                        <ThemedText style={styles.helpText}>
+                          Substitui o total calculado. Deixe em branco para usar o total automático.
                         </ThemedText>
                       </View>
                     )}

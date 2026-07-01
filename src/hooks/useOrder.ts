@@ -13,6 +13,8 @@ import {
   markOrderPaid,
   markInstallmentPaid,
   markOrderAwaitingPayment,
+  requestOrderPayment,
+  cancelOrderPaymentRequest,
   getPayables,
   settlePayrollMonth,
 } from '@/api-client';
@@ -220,6 +222,24 @@ export const useOrderMutations = (options?: {
     },
   });
 
+  // REQUEST PAYMENT (ADMIN: PENDING → Aguardando Pagamento, making the order payable)
+  const requestPaymentMutation = useMutation({
+    mutationFn: (id: string) => requestOrderPayment(id),
+    onSuccess: (data) => {
+      invalidateQueries(data.data?.supplierId || undefined);
+      queryClient.invalidateQueries({ queryKey: orderKeys.payables() });
+    },
+  });
+
+  // CANCEL PAYMENT REQUEST (ADMIN: Aguardando Pagamento → PENDING, while still unpaid)
+  const cancelPaymentRequestMutation = useMutation({
+    mutationFn: (id: string) => cancelOrderPaymentRequest(id),
+    onSuccess: (data) => {
+      invalidateQueries(data.data?.supplierId || undefined);
+      queryClient.invalidateQueries({ queryKey: orderKeys.payables() });
+    },
+  });
+
   // MARK INSTALLMENT PAID (settle ONE boleto parcela — not the whole order). The
   // API endpoint closes only that Installment and re-rolls the order's payment
   // status (PARTIALLY_PAID/PAID); the full invalidate sweep refreshes the detail
@@ -238,6 +258,8 @@ export const useOrderMutations = (options?: {
     deleteMutation.isPending ||
     markPaidMutation.isPending ||
     markAwaitingPaymentMutation.isPending ||
+    requestPaymentMutation.isPending ||
+    cancelPaymentRequestMutation.isPending ||
     markInstallmentPaidMutation.isPending;
 
   const error =
@@ -246,6 +268,8 @@ export const useOrderMutations = (options?: {
     deleteMutation.error ||
     markPaidMutation.error ||
     markAwaitingPaymentMutation.error ||
+    requestPaymentMutation.error ||
+    cancelPaymentRequestMutation.error ||
     markInstallmentPaidMutation.error;
 
   return {
@@ -259,6 +283,10 @@ export const useOrderMutations = (options?: {
     markPaidAsync: markPaidMutation.mutateAsync,
     markAwaitingPayment: markAwaitingPaymentMutation.mutate,
     markAwaitingPaymentAsync: markAwaitingPaymentMutation.mutateAsync,
+    requestPayment: requestPaymentMutation.mutate,
+    requestPaymentAsync: requestPaymentMutation.mutateAsync,
+    cancelPaymentRequest: cancelPaymentRequestMutation.mutate,
+    cancelPaymentRequestAsync: cancelPaymentRequestMutation.mutateAsync,
     markInstallmentPaid: markInstallmentPaidMutation.mutate,
     markInstallmentPaidAsync: markInstallmentPaidMutation.mutateAsync,
     isLoading,
@@ -270,6 +298,8 @@ export const useOrderMutations = (options?: {
     deleteMutation,
     markPaidMutation,
     markAwaitingPaymentMutation,
+    requestPaymentMutation,
+    cancelPaymentRequestMutation,
     markInstallmentPaidMutation,
   };
 };

@@ -393,6 +393,7 @@ export const ENTITY_BADGE_CONFIG = {
 
   // Order Payment Status (Contas a Pagar)
   ORDER_PAYMENT: {
+    [ORDER_PAYMENT_STATUS.PENDING]: "gray" as BadgeVariant,            // Gray - payment not yet requested
     [ORDER_PAYMENT_STATUS.AWAITING_PAYMENT]: "pending" as BadgeVariant, // Amber - awaiting payment
     [ORDER_PAYMENT_STATUS.PARTIALLY_PAID]: "orange" as BadgeVariant,    // Orange - partially paid
     [ORDER_PAYMENT_STATUS.PAID]: "green" as BadgeVariant,              // Green - paid
@@ -1046,6 +1047,10 @@ export const ACCOUNTING_TYPE_COLORS: Record<
   [ACCOUNTING_TYPE.MANUTENCAO]: {
     bg: "#ffedd5", // orange-100
     text: "#c2410c", // orange-700
+  },
+  [ACCOUNTING_TYPE.PRESTACAO_SERVICO]: {
+    bg: "#e0f2fe", // sky-100
+    text: "#0369a1", // sky-700
   },
   [ACCOUNTING_TYPE.COZINHA_ALIMENTACAO]: {
     bg: "#fef9c3", // yellow-100

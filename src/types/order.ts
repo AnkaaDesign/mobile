@@ -582,6 +582,17 @@ export interface PayableRow {
   clearedAt?: Date | string | null;
   /** The bank transaction that cleared this row (for row → extrato linking). */
   bankTransactionId?: string | null;
+  /**
+   * Whether payment has been requested for this row. ORDER rows in the new
+   * PENDING payment state have `paymentRequested === false` and are shown like
+   * EXPECTED/scheduled rows (non-payable). An ADMIN presses "Requisitar
+   * Pagamento" (PENDING → AWAITING_PAYMENT) to make the order payable.
+   */
+  paymentRequested?: boolean;
+  /** Supplier CNPJ (the "Tomador") — surfaced for copy-to-clipboard. */
+  payeeCnpj?: string | null;
+  /** PIX key (PIX-method orders only) — surfaced for copy-to-clipboard. */
+  pixKey?: string | null;
 }
 
 export interface PayablesSummaryBucket {

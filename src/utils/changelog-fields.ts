@@ -1328,6 +1328,18 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return orderStatusLabels[value] || value;
   }
 
+  // Handle order payment status (contas a pagar) — otherwise the raw enum
+  // ("PENDING"/"AWAITING_PAYMENT") would show in the changelog instead of Portuguese.
+  if (field === "paymentStatus" && entityType === CHANGE_LOG_ENTITY_TYPE.ORDER && typeof value === "string") {
+    const orderPaymentStatusLabels: Record<string, string> = {
+      PENDING: "Pagamento Pendente",
+      AWAITING_PAYMENT: "Aguardando Pagamento",
+      PARTIALLY_PAID: "Parcialmente Pago",
+      PAID: "Pago",
+    };
+    return orderPaymentStatusLabels[value] || value;
+  }
+
   // Handle external withdrawal status
   if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.EXTERNAL_OPERATION && typeof value === "string") {
     const externalOperationStatusLabels: Record<string, string> = {

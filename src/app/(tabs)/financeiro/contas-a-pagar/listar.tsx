@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { View, Text, ScrollView, Pressable, RefreshControl, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import * as Clipboard from "expo-clipboard";
 
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
@@ -13,7 +13,7 @@ import { usePayables, usePayableMutations } from "@/hooks";
 import { useNav } from "@/contexts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatCNPJ, formatPixKey } from "@/utils";
 import { formatDate } from "@/utils/date";
 import type { PayableRow, PayableState, ClearanceState } from "@/types/order";
 
@@ -73,16 +73,23 @@ function getClearanceBadge(row: PayableRow): ClearanceBadge | null {
 /** Rows the user can settle directly from the mobile list. */
 function canSettleHere(row: PayableRow): boolean {
   if (row.paymentState === "PAID") return false;
+  // PENDING orders (payment not yet requested) are non-payable — shown like
+  // EXPECTED/scheduled rows until an ADMIN presses "Requisitar Pagamento".
+  if (row.paymentRequested === false) return false;
   // Boleto installments and scheduled rows settle on the computer (web).
   return row.settleVia === "ORDER_LIFECYCLE" || row.settleVia === "PAYROLL_MONTH";
 }
 
 function ContasAPagarContent() {
-  const router = useRouter();
   const { colors } = useTheme();
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
+
+  const handleCopy = useCallback(async (label: string, value: string) => {
+    await Clipboard.setStringAsync(value);
+    Alert.alert("Copiado", `${label} copiado para a área de transferência.`);
+  }, []);
 
   const { data, isLoading, error, refetch } = usePayables();
   const { markPaidMutation, markInstallmentPaidMutation, settlePayrollMutation } = usePayableMutations();
@@ -217,18 +224,13 @@ function ContasAPagarContent() {
             {sortedRows.map((row) => {
               const clearance = getClearanceBadge(row);
               const settleable = canSettleHere(row);
-              const needsWeb = row.paymentState !== "PAID" && !settleable;
-              const goToOrder = row.source === "ORDER" && row.id;
+              // PENDING orders have payment not yet requested — non-payable.
+              const isPending = row.paymentRequested === false;
+              const needsWeb = !isPending && row.paymentState !== "PAID" && !settleable;
 
               return (
-                <Pressable
+                <View
                   key={`${row.source}-${row.id}`}
-                  disabled={!goToOrder}
-                  onPress={
-                    goToOrder
-                      ? () => router.push(`/(tabs)/estoque/pedidos/detalhes/${row.id}` as any)
-                      : undefined
-                  }
                   style={{
                     backgroundColor: colors.card,
                     padding: 14,
@@ -236,6 +238,7 @@ function ContasAPagarContent() {
                     borderWidth: 1,
                     borderColor: colors.border,
                     gap: 8,
+                    opacity: isPending ? 0.7 : 1,
                   }}
                 >
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
@@ -256,9 +259,15 @@ function ContasAPagarContent() {
 
                   {/* Axis A + Axis B badges */}
                   <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-                    <Badge variant={PAYMENT_VARIANT[row.paymentState]} size="sm">
-                      {PAYMENT_LABEL[row.paymentState]}
-                    </Badge>
+                    {isPending ? (
+                      <Badge variant="secondary" size="sm">
+                        Pagamento Pendente
+                      </Badge>
+                    ) : (
+                      <Badge variant={PAYMENT_VARIANT[row.paymentState]} size="sm">
+                        {PAYMENT_LABEL[row.paymentState]}
+                      </Badge>
+                    )}
                     {clearance && (
                       <Badge variant={clearance.variant} size="sm">
                         {clearance.label}
@@ -268,6 +277,36 @@ function ContasAPagarContent() {
                       <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Venc. {formatDate(row.dueDate)}</Text>
                     )}
                   </View>
+
+                  {/* Tomador (supplier) CNPJ + PIX — click to copy */}
+                  {(row.payeeCnpj || row.pixKey) && (
+                    <View style={{ gap: 4 }}>
+                      {row.payeeCnpj ? (
+                        <Pressable
+                          onPress={() => handleCopy("CNPJ", formatCNPJ(row.payeeCnpj!))}
+                          style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                        >
+                          <Text style={{ color: colors.mutedForeground, fontSize: 11, fontWeight: "600" }}>CNPJ</Text>
+                          <Text style={{ color: colors.foreground, fontSize: 12, flex: 1 }} numberOfLines={1}>
+                            {formatCNPJ(row.payeeCnpj)}
+                          </Text>
+                          <Icon name="copy" size={14} color={colors.mutedForeground} />
+                        </Pressable>
+                      ) : null}
+                      {row.pixKey ? (
+                        <Pressable
+                          onPress={() => handleCopy("Chave PIX", formatPixKey(row.pixKey!))}
+                          style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                        >
+                          <Text style={{ color: colors.mutedForeground, fontSize: 11, fontWeight: "600" }}>PIX</Text>
+                          <Text style={{ color: colors.foreground, fontSize: 12, flex: 1 }} numberOfLines={1}>
+                            {formatPixKey(row.pixKey)}
+                          </Text>
+                          <Icon name="copy" size={14} color={colors.mutedForeground} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  )}
 
                   {/* Inline action */}
                   {settleable && (
@@ -289,6 +328,15 @@ function ContasAPagarContent() {
                     </Pressable>
                   )}
 
+                  {isPending && (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                      <Icon name="clock" size={14} color={colors.mutedForeground} />
+                      <Text style={{ color: colors.mutedForeground, fontSize: 11, flex: 1 }}>
+                        Aguardando requisição de pagamento (ADMIN).
+                      </Text>
+                    </View>
+                  )}
+
                   {needsWeb && (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
                       <Icon name="device-desktop" size={14} color={colors.mutedForeground} />
@@ -297,7 +345,7 @@ function ContasAPagarContent() {
                       </Text>
                     </View>
                   )}
-                </Pressable>
+                </View>
               );
             })}
           </View>
